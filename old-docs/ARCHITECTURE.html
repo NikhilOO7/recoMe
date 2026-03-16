@@ -1,0 +1,1803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RecoMe — High Level Architecture</title>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e2d45;
+    --accent: #6366f1;
+    --accent2: #8b5cf6;
+    --accent3: #06b6d4;
+    --accent4: #10b981;
+    --accent5: #f59e0b;
+    --accent6: #ef4444;
+    --text: #e2e8f0;
+    --text-muted: #64748b;
+    --text-dim: #94a3b8;
+    --glow: rgba(99,102,241,0.15);
+    --glow2: rgba(139,92,246,0.1);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    font-size: 15px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: relative;
+    text-align: center;
+    padding: 80px 24px 60px;
+    overflow: hidden;
+    background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(99,102,241,0.25) 0%, transparent 70%);
+    border-bottom: 1px solid var(--border);
+  }
+  header::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%236366f1' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+  .logo-badge {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 6px 18px;
+    font-size: 12px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+  .logo-badge span { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: inline-block; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.3)} }
+  header h1 { font-size: clamp(36px,6vw,64px); font-weight: 800; letter-spacing: -2px; background: linear-gradient(135deg, #fff 30%, var(--accent) 70%, var(--accent2) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  header .tagline { font-size: 18px; color: var(--text-dim); margin-top: 12px; max-width: 600px; margin-left: auto; margin-right: auto; }
+  .header-meta { display: flex; justify-content: center; gap: 24px; margin-top: 32px; flex-wrap: wrap; }
+  .meta-pill { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 16px; font-size: 12px; color: var(--text-muted); }
+  .meta-pill strong { color: var(--text-dim); }
+
+  /* ── NAV ── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,14,26,0.9);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    display: flex; gap: 4px;
+    padding: 0 24px;
+    overflow-x: auto;
+  }
+  nav a {
+    display: block;
+    padding: 14px 16px;
+    font-size: 13px;
+    color: var(--text-muted);
+    text-decoration: none;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  nav a:hover { color: var(--text); border-color: var(--accent); }
+
+  /* ── LAYOUT ── */
+  main { max-width: 1200px; margin: 0 auto; padding: 60px 24px; }
+  section { margin-bottom: 80px; }
+
+  /* ── SECTION HEADERS ── */
+  .section-label {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--accent); font-weight: 600; margin-bottom: 12px;
+  }
+  .section-label::before { content: ''; width: 24px; height: 1px; background: var(--accent); }
+  h2 { font-size: clamp(24px,4vw,36px); font-weight: 700; letter-spacing: -1px; margin-bottom: 16px; }
+  h3 { font-size: 20px; font-weight: 600; margin-bottom: 12px; }
+  h4 { font-size: 15px; font-weight: 600; margin-bottom: 8px; color: var(--text-dim); }
+  p { color: var(--text-dim); margin-bottom: 12px; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .card-glow {
+    box-shadow: 0 0 40px var(--glow);
+    border-color: rgba(99,102,241,0.3);
+  }
+  .grid { display: grid; gap: 20px; }
+  .grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .grid-3 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .grid-4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+  /* ── ARCHITECTURE DIAGRAM ── */
+  .arch-diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 40px;
+    overflow-x: auto;
+  }
+  .arch-layer {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    position: relative;
+  }
+  .arch-layer-label {
+    position: absolute;
+    top: -10px; left: 20px;
+    background: var(--bg);
+    padding: 0 8px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .arch-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .arch-box {
+    flex: 1; min-width: 120px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+    cursor: default;
+  }
+  .arch-box:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px var(--glow); }
+  .arch-box .icon { font-size: 22px; margin-bottom: 6px; display: block; }
+  .arch-box small { display: block; font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+  .arch-arrow {
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted); font-size: 24px; margin: 4px 0;
+  }
+
+  /* Layer colors */
+  .layer-ui { border-color: rgba(16,185,129,0.3); }
+  .layer-ui .arch-layer-label { color: var(--accent4); }
+  .layer-bg { border-color: rgba(99,102,241,0.3); }
+  .layer-bg .arch-layer-label { color: var(--accent); }
+  .layer-intel { border-color: rgba(139,92,246,0.3); }
+  .layer-intel .arch-layer-label { color: var(--accent2); }
+  .layer-data { border-color: rgba(6,182,212,0.3); }
+  .layer-data .arch-layer-label { color: var(--accent3); }
+
+  .box-ui { border-color: rgba(16,185,129,0.4); }
+  .box-bg { border-color: rgba(99,102,241,0.4); }
+  .box-intel { border-color: rgba(139,92,246,0.4); }
+  .box-data { border-color: rgba(6,182,212,0.4); }
+
+  /* ── FLOW DIAGRAM ── */
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    overflow-x: auto;
+    padding: 20px 0;
+    flex-wrap: wrap;
+  }
+  .flow-step {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    text-align: center;
+    min-width: 120px;
+  }
+  .flow-arrow {
+    color: var(--text-muted);
+    padding: 0 8px;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .flow-step.active { border-color: var(--accent); background: rgba(99,102,241,0.1); }
+  .flow-step.intel { border-color: var(--accent2); background: rgba(139,92,246,0.1); }
+  .flow-step.data { border-color: var(--accent3); background: rgba(6,182,212,0.1); }
+  .flow-step.success { border-color: var(--accent4); background: rgba(16,185,129,0.1); }
+  .flow-step.warn { border-color: var(--accent5); background: rgba(245,158,11,0.1); }
+
+  /* ── MEMORY SYSTEM ── */
+  .memory-lanes {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 12px;
+  }
+  @media(max-width:900px){ .memory-lanes { grid-template-columns: 1fr 1fr; } }
+  @media(max-width:500px){ .memory-lanes { grid-template-columns: 1fr; } }
+
+  .memory-lane {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .memory-lane h4 { font-size: 13px; margin-bottom: 8px; }
+  .memory-entry {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .memory-entry.fading { opacity: 0.5; border-style: dashed; }
+
+  /* Lifecycle badges */
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .badge-core { background: rgba(16,185,129,0.15); color: var(--accent4); border: 1px solid rgba(16,185,129,0.3); }
+  .badge-dream { background: rgba(99,102,241,0.15); color: var(--accent); border: 1px solid rgba(99,102,241,0.3); }
+  .badge-forgotten { background: rgba(245,158,11,0.15); color: var(--accent5); border: 1px solid rgba(245,158,11,0.3); }
+  .badge-deleted { background: rgba(239,68,68,0.15); color: var(--accent6); border: 1px solid rgba(239,68,68,0.3); }
+
+  /* ── KNOWLEDGE GRAPH ── */
+  .kg-visual {
+    position: relative;
+    height: 320px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .kg-node {
+    position: absolute;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600;
+    text-align: center;
+    transition: all 0.3s;
+  }
+  .kg-node:hover { transform: scale(1.1); z-index: 10; }
+  .kg-center { width: 80px; height: 80px; background: rgba(99,102,241,0.2); border: 2px solid var(--accent); color: var(--accent); top: 50%; left: 50%; transform: translate(-50%,-50%); }
+  .kg-sat { width: 60px; height: 60px; font-size: 10px; }
+  .kg-node1 { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.4); color: var(--accent4); }
+  .kg-node2 { background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.4); color: var(--accent5); }
+  .kg-node3 { background: rgba(6,182,212,0.15); border: 1px solid rgba(6,182,212,0.4); color: var(--accent3); }
+  .kg-node4 { background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.4); color: var(--accent2); }
+  .kg-edge {
+    position: absolute;
+    background: var(--border);
+    transform-origin: left center;
+  }
+
+  /* ── SCORING BAR ── */
+  .score-factor {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 14px;
+  }
+  .score-label { width: 200px; font-size: 13px; color: var(--text-dim); flex-shrink: 0; }
+  .score-bar-track { flex: 1; height: 8px; background: var(--surface2); border-radius: 100px; overflow: hidden; }
+  .score-bar-fill { height: 100%; border-radius: 100px; transition: width 1s ease; }
+  .score-weight { font-size: 13px; font-weight: 700; color: var(--text); width: 40px; text-align: right; }
+
+  /* ── PLATFORM GRID ── */
+  .platform-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .platform-card:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 12px 30px var(--glow); }
+  .platform-icon { font-size: 32px; margin-bottom: 10px; display: block; }
+  .platform-card h4 { font-size: 14px; margin-bottom: 4px; color: var(--text); }
+  .platform-card p { font-size: 12px; color: var(--text-muted); margin: 0; }
+
+  /* ── DATA SCHEMA ── */
+  .schema-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .schema-table th { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text-muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .schema-table td { padding: 10px 14px; border-bottom: 1px solid rgba(30,45,69,0.5); color: var(--text-dim); vertical-align: top; }
+  .schema-table tr:last-child td { border-bottom: none; }
+  .schema-table tr:hover td { background: rgba(99,102,241,0.04); }
+  .type-badge { background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 2px 7px; font-size: 11px; font-family: monospace; color: var(--accent3); }
+
+  /* ── PHASE TIMELINE ── */
+  .timeline { position: relative; padding-left: 36px; }
+  .timeline::before { content: ''; position: absolute; left: 14px; top: 0; bottom: 0; width: 2px; background: var(--border); }
+  .phase {
+    position: relative;
+    margin-bottom: 32px;
+  }
+  .phase::before {
+    content: attr(data-phase);
+    position: absolute;
+    left: -36px; top: 0;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 2px solid var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: var(--accent);
+  }
+  .phase h4 { color: var(--text); font-size: 15px; margin-bottom: 6px; }
+  .phase-items { display: flex; flex-wrap: wrap; gap: 6px; }
+  .phase-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; font-size: 12px; color: var(--text-muted); }
+
+  /* ── CODE BLOCK ── */
+  pre {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    font-family: 'Fira Code', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    overflow-x: auto;
+    line-height: 1.6;
+  }
+  code { font-family: 'Fira Code', monospace; font-size: 12px; color: var(--accent3); }
+
+  /* ── PRINCIPLE CARDS ── */
+  .principle {
+    background: var(--surface2);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 10px 10px 0;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+  }
+  .principle h4 { color: var(--text); font-size: 14px; margin-bottom: 4px; }
+  .principle p { font-size: 13px; margin: 0; }
+
+  /* ── CONTEXT BUCKET ── */
+  .context-bucket {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+  }
+  .context-bucket .icon { font-size: 28px; margin-bottom: 8px; display: block; }
+  .context-bucket h4 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .context-bucket p { font-size: 11px; color: var(--text-muted); margin: 0; }
+
+  /* ── MESSAGE PROTOCOL ── */
+  .msg-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 10px;
+    display: flex; gap: 12px; align-items: flex-start;
+  }
+  .msg-type { font-size: 11px; font-family: monospace; color: var(--accent3); background: rgba(6,182,212,0.1); border: 1px solid rgba(6,182,212,0.2); border-radius: 4px; padding: 3px 8px; white-space: nowrap; flex-shrink: 0; }
+  .msg-desc { font-size: 13px; color: var(--text-dim); }
+
+  /* ── SVG CONNECTORS ── */
+  .connector-wrap { position: relative; }
+  .connector-wrap svg { position: absolute; pointer-events: none; }
+
+  /* ── CALLOUT ── */
+  .callout {
+    background: rgba(99,102,241,0.07);
+    border: 1px solid rgba(99,102,241,0.25);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    display: flex; gap: 12px;
+  }
+  .callout-icon { font-size: 20px; flex-shrink: 0; }
+  .callout p { margin: 0; font-size: 13px; color: var(--text-dim); }
+
+  /* ── TECH STACK ── */
+  .tech-item {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  .tech-item .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── DIVIDER ── */
+  hr { border: none; border-top: 1px solid var(--border); margin: 60px 0; }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 40px 24px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════ HEADER -->
+<header>
+  <div class="logo-badge"><span></span> System Design Document</div>
+  <h1>RecoMe Architecture</h1>
+  <p class="tagline">An intelligent browser extension that learns, remembers, and curates your digital experience — powered by human-like memory and a semantic knowledge graph.</p>
+  <div class="header-meta">
+    <div class="meta-pill"><strong>Type:</strong> Chrome MV3 Extension</div>
+    <div class="meta-pill"><strong>Stack:</strong> TypeScript · React 18 · IndexedDB</div>
+    <div class="meta-pill"><strong>Platforms:</strong> YouTube · Amazon · Twitter · Facebook · eBay · Walmart</div>
+    <div class="meta-pill"><strong>Status:</strong> Architecture Phase</div>
+    <div class="meta-pill"><strong>Version:</strong> 1.0.0-alpha</div>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════ NAV -->
+<nav>
+  <a href="#problem">Problem</a>
+  <a href="#overview">Overview</a>
+  <a href="#layers">Layers</a>
+  <a href="#memory">Memory System</a>
+  <a href="#knowledge-graph">Knowledge Graph</a>
+  <a href="#recommendation">Recommendation Engine</a>
+  <a href="#platforms">Platform Adapters</a>
+  <a href="#data">Data Layer</a>
+  <a href="#messages">Message Protocol</a>
+  <a href="#ui">UI & UX</a>
+  <a href="#tech">Tech Stack</a>
+  <a href="#roadmap">Roadmap</a>
+</nav>
+
+<main>
+
+<!-- ═══════════════════════════════════════════════════════════ PROBLEM -->
+<section id="problem">
+  <div class="section-label">01 — The Problem</div>
+  <h2>Why RecoMe Exists</h2>
+  <p>Modern social media and shopping feeds are optimised for engagement, not for your wellbeing or goals. Users scroll through irrelevant ads, creators they've long lost interest in, and content that contradicts their current focus. Existing blockers are dumb — they block keywords or domains globally with no concept of context, relevance, or time.</p>
+
+  <div class="grid grid-3" style="margin-top:24px">
+    <div class="card" style="border-color:rgba(239,68,68,0.3)">
+      <div style="font-size:28px;margin-bottom:12px">🎯</div>
+      <h4 style="color:var(--accent6)">Contextual Blindness</h4>
+      <p>Blocking "crypto" while at work should not block it when you're doing personal research. Context matters — no current tool understands this.</p>
+    </div>
+    <div class="card" style="border-color:rgba(245,158,11,0.3)">
+      <div style="font-size:28px;margin-bottom:12px">🧠</div>
+      <h4 style="color:var(--accent5)">No Memory</h4>
+      <p>Feedback given to an algorithm is forgotten or misapplied. You hide a video today but it comes back tomorrow under a different creator.</p>
+    </div>
+    <div class="card" style="border-color:rgba(99,102,241,0.3)">
+      <div style="font-size:28px;margin-bottom:12px">🔗</div>
+      <h4 style="color:var(--accent)">Semantic Gap</h4>
+      <p>Blocking "Bitcoin" doesn't block "BTC" or the creator who makes Bitcoin videos. No relationship understanding exists in today's tools.</p>
+    </div>
+  </div>
+
+  <div class="callout" style="margin-top:24px">
+    <span class="callout-icon">💡</span>
+    <p><strong style="color:var(--text)">RecoMe's Answer:</strong> A browser extension that builds a personal model of your interests using a Mnemosyne memory system and a knowledge graph — so it understands not just <em>what</em> you want hidden, but <em>why</em>, <em>when</em>, and for <em>how long</em>.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ OVERVIEW -->
+<section id="overview">
+  <div class="section-label">02 — System Overview</div>
+  <h2>High Level Architecture</h2>
+  <p>RecoMe is structured as a Chrome Manifest V3 extension with four distinct layers that communicate via a typed message bus. All intelligence runs locally — no server, no telemetry, complete privacy.</p>
+
+  <div class="arch-diagram" style="margin-top:28px">
+
+    <!-- UI Layer -->
+    <div class="arch-layer layer-ui">
+      <span class="arch-layer-label" style="color:var(--accent4)">UI Layer — Presentation</span>
+      <div class="arch-row">
+        <div class="arch-box box-ui">
+          <span class="icon">🪟</span>
+          React Popup
+          <small>Dashboard & Controls</small>
+        </div>
+        <div class="arch-box box-ui">
+          <span class="icon">📺</span>
+          YouTube Adapter
+          <small>Content Script</small>
+        </div>
+        <div class="arch-box box-ui">
+          <span class="icon">🛒</span>
+          Amazon Adapter
+          <small>Content Script</small>
+        </div>
+        <div class="arch-box box-ui">
+          <span class="icon">🐦</span>
+          Twitter Adapter
+          <small>Content Script</small>
+        </div>
+        <div class="arch-box box-ui">
+          <span class="icon">📘</span>
+          Facebook Adapter
+          <small>Content Script</small>
+        </div>
+        <div class="arch-box box-ui">
+          <span class="icon">🏪</span>
+          eBay / Walmart
+          <small>Content Scripts</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-arrow">↕ Chrome Message Bus (typed)</div>
+
+    <!-- Background Layer -->
+    <div class="arch-layer layer-bg">
+      <span class="arch-layer-label" style="color:var(--accent)">Background Service — Orchestration</span>
+      <div class="arch-row">
+        <div class="arch-box box-bg">
+          <span class="icon">⚙️</span>
+          Service Worker
+          <small>MV3 Background</small>
+        </div>
+        <div class="arch-box box-bg">
+          <span class="icon">📨</span>
+          Message Broker
+          <small>Route & Dispatch</small>
+        </div>
+        <div class="arch-box box-bg">
+          <span class="icon">📡</span>
+          Event Bus
+          <small>Internal Pub/Sub</small>
+        </div>
+        <div class="arch-box box-bg">
+          <span class="icon">🔄</span>
+          Decay Manager
+          <small>Scheduled Forgetting</small>
+        </div>
+        <div class="arch-box box-bg">
+          <span class="icon">🕐</span>
+          Alarm Manager
+          <small>Periodic Tasks</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-arrow">↕ Internal API Calls</div>
+
+    <!-- Intelligence Layer -->
+    <div class="arch-layer layer-intel">
+      <span class="arch-layer-label" style="color:var(--accent2)">Intelligence Layer — Domain</span>
+      <div class="arch-row">
+        <div class="arch-box box-intel">
+          <span class="icon">🧠</span>
+          Mnemosyne
+          <small>Memory Service</small>
+        </div>
+        <div class="arch-box box-intel">
+          <span class="icon">🕸️</span>
+          Knowledge Graph
+          <small>Semantic Relations</small>
+        </div>
+        <div class="arch-box box-intel">
+          <span class="icon">🎯</span>
+          Recommendation Engine
+          <small>Scoring Pipeline</small>
+        </div>
+        <div class="arch-box box-intel">
+          <span class="icon">🔍</span>
+          Context Detector
+          <small>Work / Shopping etc.</small>
+        </div>
+        <div class="arch-box box-intel">
+          <span class="icon">📊</span>
+          Pattern Detector
+          <small>Habit Recognition</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-arrow">↕ Repository Pattern</div>
+
+    <!-- Data Layer -->
+    <div class="arch-layer layer-data">
+      <span class="arch-layer-label" style="color:var(--accent3)">Data Layer — Infrastructure</span>
+      <div class="arch-row">
+        <div class="arch-box box-data">
+          <span class="icon">💾</span>
+          Memory Store
+          <small>IndexedDB</small>
+        </div>
+        <div class="arch-box box-data">
+          <span class="icon">🗺️</span>
+          Graph Store
+          <small>IndexedDB</small>
+        </div>
+        <div class="arch-box box-data">
+          <span class="icon">⚙️</span>
+          Settings Store
+          <small>chrome.storage.sync</small>
+        </div>
+        <div class="arch-box box-data">
+          <span class="icon">📦</span>
+          Cache Layer
+          <small>LRU in-memory</small>
+        </div>
+        <div class="arch-box box-data">
+          <span class="icon">🔢</span>
+          Migration System
+          <small>Schema Versioning</small>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="callout" style="margin-top:20px">
+    <span class="callout-icon">🔒</span>
+    <p><strong style="color:var(--text)">Privacy First:</strong> All data is stored locally in the browser's IndexedDB. Nothing leaves the device. No network requests to any backend. The extension has no server component.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ LAYERS -->
+<section id="layers">
+  <div class="section-label">03 — Layer Deep Dives</div>
+  <h2>Each Layer Explained</h2>
+
+  <!-- UI Layer -->
+  <div class="card card-glow" style="margin-bottom:20px; border-color:rgba(16,185,129,0.3)">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <div style="width:40px;height:40px;border-radius:10px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);display:flex;align-items:center;justify-content:center;font-size:20px">🪟</div>
+      <div>
+        <h3 style="margin:0">UI Layer — Presentation</h3>
+        <p style="margin:0;font-size:12px">React 18 · Content Scripts · Popup</p>
+      </div>
+    </div>
+    <p><strong style="color:var(--text)">What:</strong> Every pixel the user sees. Divided into two parts — platform-specific content scripts that run in the page and inject overlay UI, and the extension popup (React app) for global settings and dashboards.</p>
+    <p><strong style="color:var(--text)">Why separate:</strong> Content scripts must be lightweight (they run in every page load) while the popup can be a full React SPA. Platform adapters know page DOM structure; the popup knows user intent.</p>
+    <div class="grid grid-3" style="margin-top:16px">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px">
+        <h4 style="font-size:13px;color:var(--accent4)">Platform Adapter</h4>
+        <p style="font-size:12px;margin:0">Observes DOM mutations via MutationObserver, extracts content metadata, sends to background, injects hide/show overlays with animations.</p>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px">
+        <h4 style="font-size:13px;color:var(--accent4)">Feedback Controls</h4>
+        <p style="font-size:12px;margin:0">Thumbs-up/down, hide buttons rendered on each content card. Capture user feedback and dispatch FEEDBACK messages to background.</p>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px">
+        <h4 style="font-size:13px;color:var(--accent4)">React Popup</h4>
+        <p style="font-size:12px;margin:0">Dashboard showing memory stats, blocked topics, graph visualisation, context switcher, settings sliders for aggressiveness.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Background Layer -->
+  <div class="card card-glow" style="margin-bottom:20px; border-color:rgba(99,102,241,0.3)">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <div style="width:40px;height:40px;border-radius:10px;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);display:flex;align-items:center;justify-content:center;font-size:20px">⚙️</div>
+      <div>
+        <h3 style="margin:0">Background Service — Orchestration</h3>
+        <p style="margin:0;font-size:12px">Service Worker · MV3 · Message Broker · Event Bus</p>
+      </div>
+    </div>
+    <p><strong style="color:var(--text)">What:</strong> The central nervous system. A Manifest V3 service worker that lives as long as there are open connections or alarms. Receives all messages from content scripts and popup, routes them to the right intelligence service, and sends back scored recommendations.</p>
+    <p><strong style="color:var(--text)">Why a service worker:</strong> MV3 requires service workers instead of background pages. They are event-driven, ephemeral — they wake up to handle events and can be terminated by Chrome. All state must be persisted to IndexedDB rather than in-memory globals.</p>
+    <div class="grid grid-2" style="margin-top:16px">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px">
+        <h4 style="font-size:13px;color:var(--accent)">Message Broker</h4>
+        <p style="font-size:12px;margin:0">Routes typed messages between content scripts, popup, and internal services. Validates message schemas. Returns typed responses. Acts as the single communication gateway.</p>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px">
+        <h4 style="font-size:13px;color:var(--accent)">Event Bus (Pub/Sub)</h4>
+        <p style="font-size:12px;margin:0">Internal event system for decoupling services. MemoryService publishes PATTERN_DETECTED; RecommendationEngine subscribes. No tight coupling between intelligence services.</p>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px">
+        <h4 style="font-size:13px;color:var(--accent)">Decay Manager</h4>
+        <p style="font-size:12px;margin:0">Runs on a chrome.alarms schedule (every 15 minutes). Walks through all memory entries and transitions them through the forgetting lifecycle: Core → Dream → Forgotten → Deleted.</p>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px">
+        <h4 style="font-size:13px;color:var(--accent)">Alarm Manager</h4>
+        <p style="font-size:12px;margin:0">Wraps chrome.alarms API to schedule periodic housekeeping: decay runs, cache invalidation, graph pruning, and statistics aggregation.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Intelligence Layer -->
+  <div class="card card-glow" style="margin-bottom:20px; border-color:rgba(139,92,246,0.3)">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <div style="width:40px;height:40px;border-radius:10px;background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.3);display:flex;align-items:center;justify-content:center;font-size:20px">🧠</div>
+      <div>
+        <h3 style="margin:0">Intelligence Layer — Domain</h3>
+        <p style="margin:0;font-size:12px">MemoryService · KnowledgeGraph · RecommendationEngine · ContextDetector</p>
+      </div>
+    </div>
+    <p><strong style="color:var(--text)">What:</strong> The brain of RecoMe. Three co-operating systems that together produce intelligent, context-aware, time-aware content filtering decisions. All pure business logic — no DOM access, no Chrome APIs, fully unit-testable.</p>
+    <p><strong style="color:var(--text)">Why separated:</strong> Each system has a distinct responsibility and a different rate of change. The memory system changes on every user interaction. The knowledge graph changes when feedback implies new semantic relationships. The recommendation engine just reads from both and scores.</p>
+  </div>
+
+  <!-- Data Layer -->
+  <div class="card card-glow" style="border-color:rgba(6,182,212,0.3)">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <div style="width:40px;height:40px;border-radius:10px;background:rgba(6,182,212,0.15);border:1px solid rgba(6,182,212,0.3);display:flex;align-items:center;justify-content:center;font-size:20px">💾</div>
+      <div>
+        <h3 style="margin:0">Data Layer — Infrastructure</h3>
+        <p style="margin:0;font-size:12px">IndexedDB · chrome.storage · LRU Cache · Repository Pattern</p>
+      </div>
+    </div>
+    <p><strong style="color:var(--text)">What:</strong> Handles all persistence. Uses IndexedDB via a typed repository abstraction (not raw IDB calls). Intelligence services never talk to IndexedDB directly — they go through repositories, which makes testing trivial and storage backends swappable.</p>
+    <p><strong style="color:var(--text)">Why IndexedDB:</strong> The only browser-side storage capable of storing structured, indexed, multi-GB data. localStorage would be too slow and size-limited for the memory system. chrome.storage.local has a 10MB cap. IndexedDB has no practical limit and supports efficient range queries.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ MEMORY -->
+<section id="memory">
+  <div class="section-label">04 — Mnemosyne Memory System</div>
+  <h2>Human-Like Memory</h2>
+  <p>Named after the Greek goddess of memory and mother of the Muses, Mnemosyne is the most novel part of RecoMe. It models memory the way humans remember things — not as a flat list of rules, but as contextual, time-decaying impressions that fade naturally when not reinforced.</p>
+
+  <!-- Context Buckets -->
+  <h3 style="margin-top:32px">Context Buckets</h3>
+  <p>Every memory entry is tagged with a context. The context is detected automatically from time of day, active tab URL, and content type. A "hide crypto" preference in <em>Work</em> context does not apply in <em>Learning</em> context.</p>
+
+  <div class="grid grid-3" style="margin-top:16px">
+    <div class="context-bucket">
+      <span class="icon">💼</span>
+      <h4>Work</h4>
+      <p>Weekdays 9am–6pm. Deep focus. High content filtering aggressiveness.</p>
+    </div>
+    <div class="context-bucket">
+      <span class="icon">📚</span>
+      <h4>Learning</h4>
+      <p>Detected from educational domains, tutorial sites, documentation.</p>
+    </div>
+    <div class="context-bucket">
+      <span class="icon">🛒</span>
+      <h4>Shopping</h4>
+      <p>Amazon, eBay, Walmart active tabs. Product comparison mode.</p>
+    </div>
+    <div class="context-bucket">
+      <span class="icon">🎮</span>
+      <h4>Entertainment</h4>
+      <p>Evening hours, YouTube, social platforms. Relaxed filtering.</p>
+    </div>
+    <div class="context-bucket">
+      <span class="icon">👥</span>
+      <h4>Social</h4>
+      <p>Twitter, Facebook active. Community-focused content signals.</p>
+    </div>
+    <div class="context-bucket">
+      <span class="icon">🌐</span>
+      <h4>General</h4>
+      <p>Fallback when context is ambiguous. Uses moderate defaults.</p>
+    </div>
+  </div>
+
+  <!-- Memory Lanes -->
+  <h3 style="margin-top:40px">Memory Lanes Architecture</h3>
+  <p>Memory is not one flat store — it has lanes that mirror human cognitive architecture: working memory, short-term, mid-term patterns, and long-term preferences.</p>
+
+  <div class="memory-lanes" style="margin-top:16px">
+    <div class="memory-lane" style="border-color:rgba(16,185,129,0.3)">
+      <h4 style="color:var(--accent4)">⚡ Short-Term</h4>
+      <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Ring buffer · Last 50 interactions · TTL 2h</p>
+      <div class="memory-entry">Hid "Crypto" video — YouTube</div>
+      <div class="memory-entry">Liked "React" tutorial — Twitter</div>
+      <div class="memory-entry fading">Skipped "Ad" post — Facebook</div>
+      <p style="font-size:10px;color:var(--text-muted);margin-top:6px">Newest evicts oldest. Used for immediate context.</p>
+    </div>
+    <div class="memory-lane" style="border-color:rgba(99,102,241,0.3)">
+      <h4 style="color:var(--accent)">🃏 Mid-Term Patterns</h4>
+      <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Pattern cards · Threshold 5+ events · TTL 30d</p>
+      <div class="memory-entry">Block pattern: Crypto content</div>
+      <div class="memory-entry">Interest pattern: React/TypeScript</div>
+      <div class="memory-entry fading">Research pattern: AI tools</div>
+      <p style="font-size:10px;color:var(--text-muted);margin-top:6px">Auto-formed when short-term events cluster.</p>
+    </div>
+    <div class="memory-lane" style="border-color:rgba(6,182,212,0.3)">
+      <h4 style="color:var(--accent3)">🎯 Working Set</h4>
+      <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Hot cache · Current session · In-memory</p>
+      <div class="memory-entry">Active context: Work</div>
+      <div class="memory-entry">Recent hides: 3 today</div>
+      <div class="memory-entry">Boosts: 1 topic</div>
+      <p style="font-size:10px;color:var(--text-muted);margin-top:6px">Ephemeral. Drives instant scoring decisions.</p>
+    </div>
+    <div class="memory-lane" style="border-color:rgba(245,158,11,0.3)">
+      <h4 style="color:var(--accent5)">📜 Long-Term</h4>
+      <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Preferences · Explicit rules · Persisted forever</p>
+      <div class="memory-entry">Never show: MLM content</div>
+      <div class="memory-entry">Always show: Tech news</div>
+      <div class="memory-entry">Preferred: Long-form video</div>
+      <p style="font-size:10px;color:var(--text-muted);margin-top:6px">Explicit user rules. Never auto-deleted.</p>
+    </div>
+  </div>
+
+  <!-- Forgetting Lifecycle -->
+  <h3 style="margin-top:40px">Forgetting Lifecycle — State Machine</h3>
+  <p>Unlike rules-based blockers, RecoMe forgets naturally. This prevents preference rot — the problem where years-old preferences continue blocking content you'd now enjoy.</p>
+
+  <div class="card" style="margin-top:16px">
+    <div class="flow" style="justify-content:center">
+      <div class="flow-step success" style="flex-direction:column;gap:6px">
+        <span class="badge badge-core">CORE</span>
+        <small style="font-size:11px;color:var(--text-muted)">Active memory<br>Full strength</small>
+      </div>
+      <div style="text-align:center">
+        <div class="flow-arrow">→</div>
+        <small style="font-size:10px;color:var(--text-muted);display:block">No reinforcement<br>for 7d</small>
+      </div>
+      <div class="flow-step active" style="flex-direction:column;gap:6px">
+        <span class="badge badge-dream">DREAM</span>
+        <small style="font-size:11px;color:var(--text-muted)">50% strength<br>Fading</small>
+      </div>
+      <div style="text-align:center">
+        <div class="flow-arrow">→</div>
+        <small style="font-size:10px;color:var(--text-muted);display:block">Still no use<br>for 14d</small>
+      </div>
+      <div class="flow-step warn" style="flex-direction:column;gap:6px">
+        <span class="badge badge-forgotten">FORGOTTEN</span>
+        <small style="font-size:11px;color:var(--text-muted)">10% strength<br>Ghost</small>
+      </div>
+      <div style="text-align:center">
+        <div class="flow-arrow">→</div>
+        <small style="font-size:10px;color:var(--text-muted);display:block">Still no use<br>for 30d</small>
+      </div>
+      <div class="flow-step" style="flex-direction:column;gap:6px;border-color:rgba(239,68,68,0.4);background:rgba(239,68,68,0.08)">
+        <span class="badge badge-deleted">DELETED</span>
+        <small style="font-size:11px;color:var(--text-muted)">Purged<br>from DB</small>
+      </div>
+    </div>
+    <div class="flow" style="justify-content:center;margin-top:8px">
+      <div class="flow-arrow" style="font-size:14px;color:var(--accent4)">↩ Any interaction resets back to CORE</div>
+    </div>
+  </div>
+
+  <div class="grid grid-2" style="margin-top:20px">
+    <div class="callout">
+      <span class="callout-icon">⏰</span>
+      <p><strong style="color:var(--text)">Decay Policy:</strong> Short-term entries decay in 2h. Mid-term patterns survive 30d. Long-term preferences never decay unless explicitly deleted. Timings are configurable per-user.</p>
+    </div>
+    <div class="callout" style="background:rgba(16,185,129,0.07);border-color:rgba(16,185,129,0.25)">
+      <span class="callout-icon">🔄</span>
+      <p><strong style="color:var(--text)">Reinforcement:</strong> Every time a memory entry is accessed (not just written), its lastAccessedAt updates and it stays CORE. Frequently-used memories never fade.</p>
+    </div>
+  </div>
+
+  <!-- Pattern Detection -->
+  <h3 style="margin-top:40px">Pattern Detection</h3>
+  <p>Short-term events are continuously monitored by the PatternDetector. When ≥5 events of the same type cluster around the same topic, a mid-term pattern card is automatically created.</p>
+
+  <div class="grid grid-3" style="margin-top:16px">
+    <div class="card">
+      <h4 style="color:var(--accent)">Block Pattern</h4>
+      <p style="font-size:13px">5+ hide/dislike events for same topic → auto-block rule created</p>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--accent4)">Interest Pattern</h4>
+      <p style="font-size:13px">5+ engage/like events for topic → boost rule + graph affinity update</p>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--accent2)">Research Pattern</h4>
+      <p style="font-size:13px">Repeated visits to a topic over time → temporary interest spike, not permanent</p>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--accent5)">Time Pattern</h4>
+      <p style="font-size:13px">Consistent behaviour at specific hours → context-aware scheduling</p>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--accent3)">Context Pattern</h4>
+      <p style="font-size:13px">Preferences differ by context → separate rules per context bucket</p>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--text-muted)">Cross-Platform</h4>
+      <p style="font-size:13px">Same topic hidden on both YouTube and Twitter → global rule elevated in strength</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ KNOWLEDGE GRAPH -->
+<section id="knowledge-graph">
+  <div class="section-label">05 — Knowledge Graph</div>
+  <h2>Semantic Understanding</h2>
+  <p>The Knowledge Graph is what separates RecoMe from keyword blockers. It understands that "Bitcoin" and "BTC" are the same thing, that a creator who makes crypto videos is related to crypto, and that if you dislike crypto you probably don't want NFT content either.</p>
+
+  <!-- Entity Types -->
+  <h3 style="margin-top:32px">Entity Types</h3>
+  <div class="grid grid-4" style="margin-top:16px">
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px">
+      <div style="font-size:20px;margin-bottom:6px">👤</div>
+      <h4>User</h4>
+      <p style="font-size:12px">The person — root entity. All preferences anchor here.</p>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px">
+      <div style="font-size:20px;margin-bottom:6px">🎬</div>
+      <h4>Creator</h4>
+      <p style="font-size:12px">Channel, page owner, author. Linked to their topics.</p>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px">
+      <div style="font-size:20px;margin-bottom:6px">🏢</div>
+      <h4>Brand</h4>
+      <p style="font-size:12px">Products, companies. "Apple" links to "iPhone", "MacBook".</p>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px">
+      <div style="font-size:20px;margin-bottom:6px">📦</div>
+      <h4>Product</h4>
+      <p style="font-size:12px">Specific items. Used for shopping platform filtering.</p>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px">
+      <div style="font-size:20px;margin-bottom:6px">🏷️</div>
+      <h4>Topic</h4>
+      <p style="font-size:12px">Subject matter. "Crypto", "React", "Machine Learning".</p>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px">
+      <div style="font-size:20px;margin-bottom:6px">📁</div>
+      <h4>Category</h4>
+      <p style="font-size:12px">Broader groupings. Topics belong to categories.</p>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px">
+      <div style="font-size:20px;margin-bottom:6px">😊</div>
+      <h4>Sentiment</h4>
+      <p style="font-size:12px">Positive/negative/neutral signals attached to content.</p>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px">
+      <div style="font-size:20px;margin-bottom:6px">🎭</div>
+      <h4>Format</h4>
+      <p style="font-size:12px">Short video, long video, article, podcast, product listing.</p>
+    </div>
+  </div>
+
+  <!-- Affinity Propagation -->
+  <h3 style="margin-top:40px">Affinity Propagation</h3>
+  <p>When you dislike an entity, the negative affinity propagates through the graph to related entities with a decay factor of 0.7 per hop. Blocking "Bitcoin" automatically reduces affinity for "Ethereum", "NFT", "CryptoPunks" etc.</p>
+
+  <div class="card" style="margin-top:16px">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+      <div style="text-align:center">
+        <div style="background:rgba(239,68,68,0.15);border:2px solid rgba(239,68,68,0.4);border-radius:50%;width:80px;height:80px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#ef4444;margin:0 auto">Bitcoin<br><small style="font-size:10px">-1.0</small></div>
+        <p style="font-size:11px;color:var(--text-muted);margin-top:6px">User hides this</p>
+      </div>
+      <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">1 hop · ×0.7</div>
+          <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:8px;text-align:center;font-size:12px;color:var(--accent5)">Ethereum <span style="opacity:.6">-0.70</span></div>
+          <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:8px;text-align:center;font-size:12px;color:var(--accent5);margin-top:6px">BTC <span style="opacity:.6">-0.70</span></div>
+          <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:8px;text-align:center;font-size:12px;color:var(--accent5);margin-top:6px">Crypto <span style="opacity:.6">-0.70</span></div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">2 hops · ×0.49</div>
+          <div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:8px;padding:8px;text-align:center;font-size:12px;color:var(--accent)">NFT <span style="opacity:.6">-0.49</span></div>
+          <div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:8px;padding:8px;text-align:center;font-size:12px;color:var(--accent);margin-top:6px">DeFi <span style="opacity:.6">-0.49</span></div>
+          <div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:8px;padding:8px;text-align:center;font-size:12px;color:var(--accent);margin-top:6px">Web3 <span style="opacity:.6">-0.49</span></div>
+        </div>
+      </div>
+    </div>
+    <pre>// Affinity calculation
+function getAffinity(user, entity): number {
+  // Direct edge → weight × 1.0
+  // 1-hop neighbours → weight × 0.70
+  // 2-hop neighbours → weight × 0.49 (0.7²)
+  // 3-hop neighbours → weight × 0.34 (0.7³)
+  // Beyond 3 hops → ignored (too diluted)
+  return pathScore * Math.pow(DECAY_FACTOR, hopCount);
+}</pre>
+  </div>
+
+  <!-- Pre-seeded Data -->
+  <h3 style="margin-top:32px">Pre-Seeded Knowledge</h3>
+  <p>The graph ships with seed data — well-known entity clusters — so users get intelligent filtering from day one without needing to train the model.</p>
+
+  <div class="grid grid-3" style="margin-top:16px">
+    <div class="card">
+      <h4>Crypto Cluster</h4>
+      <p style="font-size:12px">Bitcoin → Ethereum → Litecoin → BNB → Solana → NFT → DeFi → Web3 → Blockchain</p>
+    </div>
+    <div class="card">
+      <h4>Tech Brands</h4>
+      <p style="font-size:12px">Apple → iPhone/Mac. Google → Android/Chrome. Microsoft → Windows/Azure. Meta → Facebook/Instagram.</p>
+    </div>
+    <div class="card">
+      <h4>Content Categories</h4>
+      <p style="font-size:12px">Technology → Programming → Web Dev → React/Vue/Angular. Finance → Investing → Crypto/Stocks.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ RECOMMENDATION -->
+<section id="recommendation">
+  <div class="section-label">06 — Recommendation Engine</div>
+  <h2>Multi-Factor Scoring Pipeline</h2>
+  <p>Every piece of content on every supported platform passes through the scoring pipeline. A score is computed in real-time from 6 weighted factors. Content below the hide threshold is hidden; content above the boost threshold is highlighted.</p>
+
+  <!-- Scoring factors -->
+  <div class="card" style="margin-top:24px">
+    <h3 style="margin-bottom:24px">Scoring Factors &amp; Weights</h3>
+
+    <div class="score-factor">
+      <div class="score-label">
+        <strong style="color:var(--accent2)">Knowledge Graph Affinity</strong>
+        <div style="font-size:11px;color:var(--text-muted)">Semantic entity relationships</div>
+      </div>
+      <div class="score-bar-track">
+        <div class="score-bar-fill" style="width:35%;background:linear-gradient(90deg,var(--accent2),var(--accent))"></div>
+      </div>
+      <div class="score-weight">35%</div>
+    </div>
+
+    <div class="score-factor">
+      <div class="score-label">
+        <strong style="color:var(--accent)">Memory Relevance</strong>
+        <div style="font-size:11px;color:var(--text-muted)">Historical interactions with this type</div>
+      </div>
+      <div class="score-bar-track">
+        <div class="score-bar-fill" style="width:25%;background:linear-gradient(90deg,var(--accent),var(--accent3))"></div>
+      </div>
+      <div class="score-weight">25%</div>
+    </div>
+
+    <div class="score-factor">
+      <div class="score-label">
+        <strong style="color:var(--accent3)">Recency</strong>
+        <div style="font-size:11px;color:var(--text-muted)">How fresh the content is</div>
+      </div>
+      <div class="score-bar-track">
+        <div class="score-bar-fill" style="width:15%;background:linear-gradient(90deg,var(--accent3),var(--accent4))"></div>
+      </div>
+      <div class="score-weight">15%</div>
+    </div>
+
+    <div class="score-factor">
+      <div class="score-label">
+        <strong style="color:var(--accent4)">Diversity</strong>
+        <div style="font-size:11px;color:var(--text-muted)">Avoid repetition in feed</div>
+      </div>
+      <div class="score-bar-track">
+        <div class="score-bar-fill" style="width:10%;background:linear-gradient(90deg,var(--accent4),#84cc16)"></div>
+      </div>
+      <div class="score-weight">10%</div>
+    </div>
+
+    <div class="score-factor">
+      <div class="score-label">
+        <strong style="color:var(--accent5)">Temporal Patterns</strong>
+        <div style="font-size:11px;color:var(--text-muted)">Time-of-day behaviour patterns</div>
+      </div>
+      <div class="score-bar-track">
+        <div class="score-bar-fill" style="width:10%;background:linear-gradient(90deg,var(--accent5),#f97316)"></div>
+      </div>
+      <div class="score-weight">10%</div>
+    </div>
+
+    <div class="score-factor">
+      <div class="score-label">
+        <strong style="color:var(--accent6)">Social Signals</strong>
+        <div style="font-size:11px;color:var(--text-muted)">Trending / viral multiplier</div>
+      </div>
+      <div class="score-bar-track">
+        <div class="score-bar-fill" style="width:5%;background:linear-gradient(90deg,var(--accent6),#f43f5e)"></div>
+      </div>
+      <div class="score-weight">5%</div>
+    </div>
+  </div>
+
+  <!-- Thresholds -->
+  <h3 style="margin-top:32px">Decision Thresholds</h3>
+  <div class="grid grid-3" style="margin-top:16px">
+    <div class="card" style="border-color:rgba(239,68,68,0.3);text-align:center">
+      <div style="font-size:32px;font-weight:800;color:var(--accent6)">≤ 0.2</div>
+      <h4 style="color:var(--accent6)">HIDE</h4>
+      <p style="font-size:13px">Content is hidden with smooth animation. User can reveal via overlay button.</p>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:32px;font-weight:800;color:var(--text-dim)">0.2 – 0.7</div>
+      <h4>SHOW NORMALLY</h4>
+      <p style="font-size:13px">Content is displayed as-is. No intervention. Majority of content falls here.</p>
+    </div>
+    <div class="card" style="border-color:rgba(16,185,129,0.3);text-align:center">
+      <div style="font-size:32px;font-weight:800;color:var(--accent4)">≥ 0.7</div>
+      <h4 style="color:var(--accent4)">BOOST</h4>
+      <p style="font-size:13px">Content gets a subtle highlight ring indicating RecoMe thinks you'll love it.</p>
+    </div>
+  </div>
+
+  <!-- Pipeline Flow -->
+  <h3 style="margin-top:32px">Scoring Pipeline</h3>
+  <div class="card" style="margin-top:16px">
+    <div class="flow" style="flex-wrap:wrap;gap:6px;justify-content:center">
+      <div class="flow-step active">Content Detected<br><small>DOM Observer</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">Metadata<br>Extracted</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step intel">Graph<br>Affinity</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step intel">Memory<br>Lookup</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step intel">Context<br>Check</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step data">Weighted<br>Score</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step warn">Threshold<br>Decision</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step success">Hide / Show<br>/ Boost</div>
+    </div>
+  </div>
+
+  <!-- Feedback Loop -->
+  <h3 style="margin-top:32px">Feedback Learning Loop</h3>
+  <p>The engine is not static. Every user interaction updates both the memory system and the knowledge graph, making future scores more accurate.</p>
+  <div class="card" style="margin-top:16px">
+    <div class="flow" style="justify-content:center;flex-wrap:wrap;gap:6px">
+      <div class="flow-step success">User Feedback<br><small>👍👎 Hide Reveal</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step active">Write Memory<br><small>MemoryService</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step intel">Update Graph<br><small>KnowledgeGraph</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step data">Detect Pattern<br><small>PatternDetector</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step warn">Propagate<br><small>Affinity edges</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step success">Better Score<br><small>Next time</small></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ PLATFORMS -->
+<section id="platforms">
+  <div class="section-label">07 — Platform Adapters</div>
+  <h2>Multi-Platform Support</h2>
+  <p>Each platform has a dedicated content script adapter. Adapters follow the <strong style="color:var(--text)">BaseAdapter</strong> interface but implement platform-specific DOM selectors, metadata extractors, and injection points.</p>
+
+  <div class="grid grid-3" style="margin-top:24px">
+    <div class="platform-card">
+      <span class="platform-icon">📺</span>
+      <h4>YouTube</h4>
+      <p>Video cards in feed, search results, recommended sidebar. Extracts title, channel, duration, views, thumbnail. Observes feed scroll with MutationObserver.</p>
+    </div>
+    <div class="platform-card">
+      <span class="platform-icon">🛒</span>
+      <h4>Amazon</h4>
+      <p>Product listing cards in search results and recommendations. Extracts product name, brand, ASIN, price, rating. Filters sponsored vs organic.</p>
+    </div>
+    <div class="platform-card">
+      <span class="platform-icon">𝕏</span>
+      <h4>Twitter / X</h4>
+      <p>Timeline tweets, promoted content, "You might like" section. Extracts author, hashtags, entities, engagement counts. Handles both old and new X UI.</p>
+    </div>
+    <div class="platform-card">
+      <span class="platform-icon">📘</span>
+      <h4>Facebook</h4>
+      <p>News feed posts, suggested pages, sponsored posts. Extracts page name, post type, topics. Handles both desktop and mobile-web layouts.</p>
+    </div>
+    <div class="platform-card">
+      <span class="platform-icon">🏷️</span>
+      <h4>eBay</h4>
+      <p>Search results, category listings, sponsored items. Extracts item title, seller, price, condition. Used for shopping context filtering.</p>
+    </div>
+    <div class="platform-card">
+      <span class="platform-icon">🏪</span>
+      <h4>Walmart</h4>
+      <p>Product search and category pages. Extracts product info, brand, department. Works alongside Amazon for cross-platform shopping preferences.</p>
+    </div>
+  </div>
+
+  <!-- Adapter interface -->
+  <h3 style="margin-top:32px">Base Adapter Interface</h3>
+  <pre style="margin-top:16px">interface BaseAdapter {
+  platform: Platform;                          // 'youtube' | 'amazon' | 'twitter' | ...
+  selectors: Record&lt;string, string&gt;;          // CSS selectors for content cards
+
+  init(): void;                                // Bootstrap MutationObserver
+  extractMetadata(element: Element): ContentMetadata;  // DOM → structured data
+  injectOverlay(element: Element, score: number): void; // Render hide/boost UI
+  cleanup(): void;                             // Remove observers on unload
+}
+
+interface ContentMetadata {
+  id: string;           // Unique content identifier
+  platform: Platform;
+  type: ContentType;    // 'video' | 'product' | 'post' | 'ad'
+  title: string;
+  creator?: string;
+  topics: string[];     // Extracted topics/tags
+  entities: string[];   // Named entities (brands, people, places)
+  timestamp: number;
+  url: string;
+}</pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ DATA LAYER -->
+<section id="data">
+  <div class="section-label">08 — Data Layer</div>
+  <h2>Persistence &amp; Schema</h2>
+  <p>All data lives in IndexedDB — the browser's built-in structured database. The repository pattern abstracts raw IDB operations behind typed interfaces, making the intelligence layer completely agnostic to storage implementation.</p>
+
+  <!-- Memory Entry Schema -->
+  <h3 style="margin-top:28px">MemoryEntry Schema</h3>
+  <div class="card" style="margin-top:16px;overflow-x:auto">
+    <table class="schema-table">
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><code>id</code></td><td><span class="type-badge">UUID</span></td><td>Unique identifier for the memory entry</td></tr>
+        <tr><td><code>lane</code></td><td><span class="type-badge">Enum</span></td><td>short_term | mid_term | working | long_term</td></tr>
+        <tr><td><code>state</code></td><td><span class="type-badge">Enum</span></td><td>core | dream | forgotten | deleted</td></tr>
+        <tr><td><code>context</code></td><td><span class="type-badge">Enum</span></td><td>work | learning | shopping | entertainment | social | general</td></tr>
+        <tr><td><code>type</code></td><td><span class="type-badge">Enum</span></td><td>hide | like | dislike | boost | neutral</td></tr>
+        <tr><td><code>entityId</code></td><td><span class="type-badge">string</span></td><td>The topic/creator/brand this memory is about</td></tr>
+        <tr><td><code>strength</code></td><td><span class="type-badge">float</span></td><td>0.0–1.0. Decays over time. Reinforced on access.</td></tr>
+        <tr><td><code>platform</code></td><td><span class="type-badge">string</span></td><td>Which platform this memory originated from</td></tr>
+        <tr><td><code>createdAt</code></td><td><span class="type-badge">timestamp</span></td><td>When the memory was first created</td></tr>
+        <tr><td><code>lastAccessedAt</code></td><td><span class="type-badge">timestamp</span></td><td>Last time this memory influenced a decision</td></tr>
+        <tr><td><code>metadata</code></td><td><span class="type-badge">JSON</span></td><td>Arbitrary additional context (title, url, etc.)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Knowledge Graph Schema -->
+  <h3 style="margin-top:32px">Knowledge Graph Schema</h3>
+  <div class="grid grid-2" style="margin-top:16px">
+    <div class="card overflow-x:auto">
+      <h4>Entity Store</h4>
+      <table class="schema-table">
+        <thead><tr><th>Field</th><th>Type</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td><span class="type-badge">string</span></td></tr>
+          <tr><td><code>type</code></td><td><span class="type-badge">EntityType</span></td></tr>
+          <tr><td><code>label</code></td><td><span class="type-badge">string</span></td></tr>
+          <tr><td><code>aliases</code></td><td><span class="type-badge">string[]</span></td></tr>
+          <tr><td><code>metadata</code></td><td><span class="type-badge">JSON</span></td></tr>
+          <tr><td><code>createdAt</code></td><td><span class="type-badge">timestamp</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h4>Relation Store</h4>
+      <table class="schema-table">
+        <thead><tr><th>Field</th><th>Type</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td><span class="type-badge">string</span></td></tr>
+          <tr><td><code>fromId</code></td><td><span class="type-badge">EntityId</span></td></tr>
+          <tr><td><code>toId</code></td><td><span class="type-badge">EntityId</span></td></tr>
+          <tr><td><code>type</code></td><td><span class="type-badge">RelationType</span></td></tr>
+          <tr><td><code>weight</code></td><td><span class="type-badge">float</span></td></tr>
+          <tr><td><code>bidirectional</code></td><td><span class="type-badge">boolean</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- IndexedDB Stores -->
+  <h3 style="margin-top:32px">IndexedDB Object Stores &amp; Indexes</h3>
+  <div class="card" style="margin-top:16px">
+    <table class="schema-table">
+      <thead>
+        <tr><th>Store</th><th>Primary Key</th><th>Indexes</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>memories</code></td>
+          <td><span class="type-badge">id</span></td>
+          <td>context+state, entityId, lane, lastAccessedAt, createdAt</td>
+          <td>All MemoryEntry records</td>
+        </tr>
+        <tr>
+          <td><code>events</code></td>
+          <td><span class="type-badge">id</span></td>
+          <td>timestamp, platform, entityId, type</td>
+          <td>Raw interaction events for pattern detection</td>
+        </tr>
+        <tr>
+          <td><code>patterns</code></td>
+          <td><span class="type-badge">id</span></td>
+          <td>context, type, entityId</td>
+          <td>Mid-term pattern cards</td>
+        </tr>
+        <tr>
+          <td><code>kg_entities</code></td>
+          <td><span class="type-badge">id</span></td>
+          <td>type, label</td>
+          <td>Knowledge graph entity nodes</td>
+        </tr>
+        <tr>
+          <td><code>kg_relations</code></td>
+          <td><span class="type-badge">id</span></td>
+          <td>fromId, toId, type</td>
+          <td>Knowledge graph edges</td>
+        </tr>
+        <tr>
+          <td><code>affinities</code></td>
+          <td><span class="type-badge">userId+entityId</span></td>
+          <td>entityId, score, updatedAt</td>
+          <td>Cached affinity scores per entity</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Cache Layer -->
+  <h3 style="margin-top:32px">LRU Cache Layer</h3>
+  <p>Frequently-accessed data (like affinity scores for common topics) is kept in an in-memory LRU cache to avoid redundant IndexedDB reads on every content card scored.</p>
+  <div class="grid grid-3" style="margin-top:16px">
+    <div class="card">
+      <h4 style="color:var(--accent3)">Affinity Cache</h4>
+      <p style="font-size:12px">LRU(500 entries), TTL 5min. Stores pre-computed affinity scores for entity pairs. Invalidated on graph updates.</p>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--accent3)">Memory Cache</h4>
+      <p style="font-size:12px">LRU(200 entries), TTL 2min. Caches recent memory lookups. Invalidated on new writes to MemoryStore.</p>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--accent3)">Pattern Cache</h4>
+      <p style="font-size:12px">LRU(100 entries), TTL 10min. Caches active pattern cards. Invalidated when PatternDetector creates new patterns.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ MESSAGES -->
+<section id="messages">
+  <div class="section-label">09 — Message Protocol</div>
+  <h2>Communication Layer</h2>
+  <p>All cross-context communication (content script ↔ background ↔ popup) uses Chrome's <code>runtime.sendMessage</code> with a strictly-typed message protocol. Every message has a discriminated union type for full TypeScript narrowing.</p>
+
+  <h3 style="margin-top:24px">Content Script → Background</h3>
+  <div style="margin-top:16px">
+    <div class="msg-card">
+      <span class="msg-type">SCORE_CONTENT</span>
+      <span class="msg-desc">Request scoring for a detected content card. Payload: ContentMetadata. Response: { score, action: 'hide'|'show'|'boost' }</span>
+    </div>
+    <div class="msg-card">
+      <span class="msg-type">RECORD_FEEDBACK</span>
+      <span class="msg-desc">User clicked thumbs up/down or hide. Payload: { contentId, type: FeedbackType, context }. Triggers memory write + graph update.</span>
+    </div>
+    <div class="msg-card">
+      <span class="msg-type">CONTENT_VISIBLE</span>
+      <span class="msg-desc">Content scrolled into view. Triggers implicit tracking for engagement patterns. Payload: { contentId, duration? }</span>
+    </div>
+    <div class="msg-card">
+      <span class="msg-type">GET_CONTEXT</span>
+      <span class="msg-desc">Ask background what context the user is in right now. Response: { context: ContextType }. Used by adapters before rendering UI.</span>
+    </div>
+  </div>
+
+  <h3 style="margin-top:24px">Background → Content Script</h3>
+  <div style="margin-top:16px">
+    <div class="msg-card">
+      <span class="msg-type">APPLY_DECISION</span>
+      <span class="msg-desc">Push a scoring decision to the content script. Payload: { contentId, action, score }. Used for async re-scoring after pattern detection.</span>
+    </div>
+    <div class="msg-card">
+      <span class="msg-type">CONTEXT_CHANGED</span>
+      <span class="msg-desc">Broadcast when context switches (e.g. work→entertainment). All adapters re-score visible content with new context weights.</span>
+    </div>
+  </div>
+
+  <h3 style="margin-top:24px">Popup → Background</h3>
+  <div style="margin-top:16px">
+    <div class="msg-card">
+      <span class="msg-type">GET_STATS</span>
+      <span class="msg-desc">Request aggregated statistics for the dashboard. Response: { hiddenToday, patternsActive, memoryCount, topBlockedTopics }</span>
+    </div>
+    <div class="msg-card">
+      <span class="msg-type">UPDATE_SETTINGS</span>
+      <span class="msg-desc">User changed aggressiveness slider or toggled a platform. Triggers re-scoring and cache invalidation.</span>
+    </div>
+    <div class="msg-card">
+      <span class="msg-type">CLEAR_MEMORY</span>
+      <span class="msg-desc">User explicitly clears all memory. Triggers full IndexedDB wipe and graph reset to seed data only.</span>
+    </div>
+    <div class="msg-card">
+      <span class="msg-type">EXPORT_DATA</span>
+      <span class="msg-desc">Export all user data as JSON. Privacy feature — lets users inspect or backup their memory and graph data.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ UI -->
+<section id="ui">
+  <div class="section-label">10 — UI & UX Design</div>
+  <h2>Design System &amp; Interaction</h2>
+  <p>RecoMe is built on the principle that the UI should feel invisible — it acts quietly and only surfaces itself when meaningful. Interactions are delightful but never interruptive.</p>
+
+  <div class="grid grid-2" style="margin-top:24px">
+    <!-- Design principles -->
+    <div>
+      <h3 style="margin-bottom:16px">Design Principles</h3>
+      <div class="principle">
+        <h4>Invisible by Default</h4>
+        <p>Filtering happens silently. The user's feed just gets better — no popups, no notifications, no friction.</p>
+      </div>
+      <div class="principle" style="border-color:var(--accent2)">
+        <h4>Delight in the Details</h4>
+        <p>When content is hidden, it fades out with a gentle animation. When revealed, it slides back in smoothly. Every micro-interaction is considered.</p>
+      </div>
+      <div class="principle" style="border-color:var(--accent3)">
+        <h4>Always Reversible</h4>
+        <p>Anything hidden can be revealed. Preferences can be cleared. The user is always in control — RecoMe is a tool, not an authority.</p>
+      </div>
+      <div class="principle" style="border-color:var(--accent4)">
+        <h4>Transparent Reasoning</h4>
+        <p>Hovering over a hidden card shows exactly why it was hidden: "Hidden because: Crypto (Work context, 87% confidence)".</p>
+      </div>
+    </div>
+
+    <!-- Color palette -->
+    <div>
+      <h3 style="margin-bottom:16px">Visual Design System</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+        <div style="background:#6366f1;border-radius:8px;padding:12px;font-size:12px;font-weight:600">Primary #6366f1<br><small style="opacity:.7">Indigo — primary actions</small></div>
+        <div style="background:#8b5cf6;border-radius:8px;padding:12px;font-size:12px;font-weight:600">Secondary #8b5cf6<br><small style="opacity:.7">Violet — intelligence</small></div>
+        <div style="background:#10b981;border-radius:8px;padding:12px;font-size:12px;font-weight:600">Success #10b981<br><small style="opacity:.7">Emerald — boost, like</small></div>
+        <div style="background:#ef4444;border-radius:8px;padding:12px;font-size:12px;font-weight:600">Danger #ef4444<br><small style="opacity:.7">Red — hide, block</small></div>
+        <div style="background:#f59e0b;border-radius:8px;padding:12px;font-size:12px;font-weight:600">Warning #f59e0b<br><small style="opacity:.7">Amber — fading memory</small></div>
+        <div style="background:#06b6d4;border-radius:8px;padding:12px;font-size:12px;font-weight:600">Info #06b6d4<br><small style="opacity:.7">Cyan — data, schema</small></div>
+      </div>
+      <div>
+        <h4>Typography</h4>
+        <p style="font-size:12px">Inter for UI text. Fira Code for data display. System font stack fallback. Minimum 14px for accessibility (WCAG 2.1 AA).</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Achievement system -->
+  <h3 style="margin-top:32px">Achievement System</h3>
+  <p>Subtle gamification encourages healthy usage. Achievements are displayed as small toast notifications, never as interrupting modals.</p>
+  <div class="grid grid-4" style="margin-top:16px">
+    <div class="card" style="text-align:center">
+      <div style="font-size:28px;margin-bottom:8px">🛡️</div>
+      <h4 style="font-size:13px">First Block</h4>
+      <p style="font-size:11px">Hid your first content. Your feed, your rules.</p>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:28px;margin-bottom:8px">✨</div>
+      <h4 style="font-size:13px">Clean Start</h4>
+      <p style="font-size:11px">30 days streak of cleaner browsing.</p>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:28px;margin-bottom:8px">🎓</div>
+      <h4 style="font-size:13px">Feed Master</h4>
+      <p style="font-size:11px">100 items filtered. Mnemosyne knows you well.</p>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:28px;margin-bottom:8px">🧠</div>
+      <h4 style="font-size:13px">Memory Palace</h4>
+      <p style="font-size:11px">5 distinct patterns auto-detected and active.</p>
+    </div>
+  </div>
+
+  <!-- Onboarding flow -->
+  <h3 style="margin-top:32px">Onboarding Flow</h3>
+  <div class="flow" style="justify-content:center;flex-wrap:wrap;gap:6px;margin-top:16px">
+    <div class="flow-step active" style="text-align:center">1. Welcome<br><small>What is RecoMe?</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step intel" style="text-align:center">2. Choose Platforms<br><small>Enable adapters</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step warn" style="text-align:center">3. Seed Preferences<br><small>Initial topics to filter</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step success" style="text-align:center">4. Set Aggressiveness<br><small>Conservative → Aggressive</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step data" style="text-align:center">5. Go Live<br><small>Extension active</small></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ TECH STACK -->
+<section id="tech">
+  <div class="section-label">11 — Tech Stack</div>
+  <h2>Technology Choices</h2>
+
+  <div class="grid grid-2" style="margin-top:24px">
+    <div>
+      <h3 style="margin-bottom:16px">Core Technologies</h3>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="tech-item">
+          <div class="dot" style="background:#3178c6"></div>
+          <div>
+            <strong>TypeScript 5</strong>
+            <div style="font-size:11px;color:var(--text-muted)">Full type safety across all layers. Discriminated unions for message types. Generics for repository pattern.</div>
+          </div>
+        </div>
+        <div class="tech-item">
+          <div class="dot" style="background:#61dafb"></div>
+          <div>
+            <strong>React 18</strong>
+            <div style="font-size:11px;color:var(--text-muted)">Popup UI only. Concurrent mode for smooth animations. React DevTools for debugging popup state.</div>
+          </div>
+        </div>
+        <div class="tech-item">
+          <div class="dot" style="background:#8dd6f9"></div>
+          <div>
+            <strong>Webpack 5</strong>
+            <div style="font-size:11px;color:var(--text-muted)">Multi-entry build (background, popup, each content script). Tree-shaking and code splitting. Source maps for debugging.</div>
+          </div>
+        </div>
+        <div class="tech-item">
+          <div class="dot" style="background:#c21325"></div>
+          <div>
+            <strong>Jest + Testing Library</strong>
+            <div style="font-size:11px;color:var(--text-muted)">Unit tests for all intelligence services. IDB mock for storage tests. Coverage targeting 80%+.</div>
+          </div>
+        </div>
+        <div class="tech-item">
+          <div class="dot" style="background:#f0db4f"></div>
+          <div>
+            <strong>IndexedDB (idb library)</strong>
+            <div style="font-size:11px;color:var(--text-muted)">Jake Archibald's idb wrapper. Promise-based API over raw IndexedDB. Version migration support built-in.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <h3 style="margin-bottom:16px">Chrome Extension APIs Used</h3>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="tech-item">
+          <div class="dot" style="background:var(--accent)"></div>
+          <div>
+            <strong>chrome.runtime</strong>
+            <div style="font-size:11px;color:var(--text-muted)">sendMessage, onMessage, onInstalled. Core communication backbone.</div>
+          </div>
+        </div>
+        <div class="tech-item">
+          <div class="dot" style="background:var(--accent2)"></div>
+          <div>
+            <strong>chrome.storage.sync</strong>
+            <div style="font-size:11px;color:var(--text-muted)">User settings only. Syncs across devices. 100KB limit — settings are tiny.</div>
+          </div>
+        </div>
+        <div class="tech-item">
+          <div class="dot" style="background:var(--accent3)"></div>
+          <div>
+            <strong>chrome.alarms</strong>
+            <div style="font-size:11px;color:var(--text-muted)">Schedule decay runs every 15min. Persist through browser restarts unlike setTimeout.</div>
+          </div>
+        </div>
+        <div class="tech-item">
+          <div class="dot" style="background:var(--accent4)"></div>
+          <div>
+            <strong>chrome.tabs</strong>
+            <div style="font-size:11px;color:var(--text-muted)">Active tab detection for context inference. Read-only tab metadata only.</div>
+          </div>
+        </div>
+        <div class="tech-item">
+          <div class="dot" style="background:var(--accent5)"></div>
+          <div>
+            <strong>MutationObserver API</strong>
+            <div style="font-size:11px;color:var(--text-muted)">Watch for new content cards injected into the feed DOM. More efficient than polling.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Architecture principles -->
+  <h3 style="margin-top:32px">Architecture Principles</h3>
+  <div class="grid grid-2" style="margin-top:16px">
+    <div class="principle">
+      <h4>Separation of Concerns</h4>
+      <p>UI knows nothing about scoring. Intelligence knows nothing about DOM. Data knows nothing about Chrome APIs. Clean boundaries enforced by TypeScript interfaces.</p>
+    </div>
+    <div class="principle" style="border-color:var(--accent2)">
+      <h4>Dependency Injection</h4>
+      <p>Services receive their dependencies via constructors. No module-level singletons. Makes unit testing trivial — inject mocks.</p>
+    </div>
+    <div class="principle" style="border-color:var(--accent3)">
+      <h4>Fail Gracefully</h4>
+      <p>IndexedDB errors should never crash content scripts. Circuit-breaker pattern: after 3 failures, return neutral score and log error. User experience is never broken.</p>
+    </div>
+    <div class="principle" style="border-color:var(--accent4)">
+      <h4>Privacy by Default</h4>
+      <p>No network requests. No analytics. No telemetry. All data is user-owned and user-deletable. GDPR-compliant by architecture, not policy.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ ROADMAP -->
+<section id="roadmap">
+  <div class="section-label">12 — Implementation Roadmap</div>
+  <h2>Phased Delivery Plan</h2>
+  <p>The implementation is broken into 5 sequential phases, each delivering a working increment. Each phase builds on the last — earlier phases intentionally use stubs that later phases replace with real implementations.</p>
+
+  <div class="timeline" style="margin-top:32px">
+    <div class="phase" data-phase="1">
+      <h4>Phase 1 — Foundation</h4>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px">Get the extension loading, communicating, and storing data. No intelligence yet — just scaffolding.</p>
+      <div class="phase-items">
+        <span class="phase-item">Manifest V3 setup</span>
+        <span class="phase-item">TypeScript + Webpack build</span>
+        <span class="phase-item">Service worker skeleton</span>
+        <span class="phase-item">Message broker</span>
+        <span class="phase-item">IndexedDB schema + migration</span>
+        <span class="phase-item">Repository interfaces</span>
+        <span class="phase-item">YouTube adapter (read-only)</span>
+        <span class="phase-item">Basic React popup</span>
+      </div>
+    </div>
+
+    <div class="phase" data-phase="2">
+      <h4>Phase 2 — Memory System (Mnemosyne)</h4>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px">The core innovation. Build the full memory system with context, lanes, and the forgetting lifecycle.</p>
+      <div class="phase-items">
+        <span class="phase-item">MemoryStore (IndexedDB)</span>
+        <span class="phase-item">MemoryService API</span>
+        <span class="phase-item">Context Detector</span>
+        <span class="phase-item">Decay Manager + alarms</span>
+        <span class="phase-item">Pattern Detector</span>
+        <span class="phase-item">Event Bus integration</span>
+        <span class="phase-item">Memory unit tests (80%+ coverage)</span>
+      </div>
+    </div>
+
+    <div class="phase" data-phase="3">
+      <h4>Phase 3 — Knowledge Graph</h4>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px">Build semantic understanding. Connect it to the memory system for feedback-driven graph updates.</p>
+      <div class="phase-items">
+        <span class="phase-item">Entity + Relation stores</span>
+        <span class="phase-item">KnowledgeGraph class</span>
+        <span class="phase-item">Affinity Calculator</span>
+        <span class="phase-item">Graph seed data</span>
+        <span class="phase-item">Affinity propagation</span>
+        <span class="phase-item">Graph ↔ Memory integration</span>
+        <span class="phase-item">LRU affinity cache</span>
+        <span class="phase-item">Graph unit tests</span>
+      </div>
+    </div>
+
+    <div class="phase" data-phase="4">
+      <h4>Phase 4 — Recommendation Engine + All Platforms</h4>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px">Plug graph and memory into the scoring pipeline. Expand adapters to all 6 platforms.</p>
+      <div class="phase-items">
+        <span class="phase-item">Multi-factor scoring pipeline</span>
+        <span class="phase-item">Hide/show/boost decision logic</span>
+        <span class="phase-item">Feedback loop (memory ← score)</span>
+        <span class="phase-item">Amazon adapter</span>
+        <span class="phase-item">Twitter adapter</span>
+        <span class="phase-item">Facebook adapter</span>
+        <span class="phase-item">eBay adapter</span>
+        <span class="phase-item">Walmart adapter</span>
+        <span class="phase-item">Overlay UI + animations</span>
+      </div>
+    </div>
+
+    <div class="phase" data-phase="5">
+      <h4>Phase 5 — Polish, UX &amp; Dashboard</h4>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px">Complete the popup dashboard, onboarding, achievements, and production readiness.</p>
+      <div class="phase-items">
+        <span class="phase-item">Full React popup dashboard</span>
+        <span class="phase-item">Onboarding flow</span>
+        <span class="phase-item">Memory visualisation</span>
+        <span class="phase-item">Graph visualisation</span>
+        <span class="phase-item">Achievement system</span>
+        <span class="phase-item">Settings (aggressiveness sliders)</span>
+        <span class="phase-item">Export / clear data</span>
+        <span class="phase-item">Accessibility (WCAG 2.1 AA)</span>
+        <span class="phase-item">Performance profiling</span>
+        <span class="phase-item">Chrome Web Store submission</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ DECISIONS -->
+<section>
+  <div class="section-label">13 — Key Design Decisions</div>
+  <h2>Architecture Decision Log</h2>
+
+  <div style="display:flex;flex-direction:column;gap:16px;margin-top:24px">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+        <div>
+          <h4 style="color:var(--accent)">Why Manifest V3 (not V2)?</h4>
+          <p style="font-size:13px">Google deprecated MV2. All new extensions and updates to existing ones must target MV3. While service workers are more complex than persistent background pages, they are the only supported option. We accept the complexity and design around the ephemeral service worker model by ensuring all state is persisted to IndexedDB before the worker sleeps.</p>
+        </div>
+        <span class="badge badge-core" style="flex-shrink:0">Decision</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+        <div>
+          <h4 style="color:var(--accent2)">Why IndexedDB over chrome.storage.local?</h4>
+          <p style="font-size:13px">chrome.storage.local has a 10MB quota (by default 5MB without unlimitedStorage permission). A user who browses for a year could easily have thousands of memory entries and thousands of graph nodes. IndexedDB has no practical size limit and crucially supports compound indexes — essential for efficient context-filtered queries like "all CORE memories in WORK context sorted by lastAccessedAt".</p>
+        </div>
+        <span class="badge badge-core" style="flex-shrink:0">Decision</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+        <div>
+          <h4 style="color:var(--accent3)">Why content scripts over a page-level SDK?</h4>
+          <p style="font-size:13px">Content scripts run in isolated contexts, cannot be blocked by the page's CSP, and do not pollute the page's JavaScript namespace. A page-level script would require website cooperation (impossible for third-party filtering) and could be blocked. Content scripts with MutationObserver are the only reliable way to monitor and modify live feed content.</p>
+        </div>
+        <span class="badge badge-core" style="flex-shrink:0">Decision</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+        <div>
+          <h4 style="color:var(--accent4)">Why local-only? No cloud sync?</h4>
+          <p style="font-size:13px">User browsing preferences and content interaction data is deeply personal. Sending it to a server — even encrypted — creates a privacy risk, requires user authentication, backend infrastructure, and ongoing maintenance costs. Local-only means zero operating costs, zero data breach risk, and a simple privacy story. A future encrypted cloud sync (E2E, zero-knowledge) is planned but intentionally deferred.</p>
+        </div>
+        <span class="badge badge-dream" style="flex-shrink:0">Future</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+        <div>
+          <h4 style="color:var(--accent5)">Why a knowledge graph instead of just keyword lists?</h4>
+          <p style="font-size:13px">"Bitcoin" and "BTC" are the same thing. A crypto creator's channel is related to crypto. If you dislike crypto you probably dislike NFTs. None of this semantic understanding is possible with keyword lists. The graph lets affinity propagate through semantic relationships, catching content that would slip through keyword filters while avoiding false positives (a "blockchain" article in a cybersecurity context is different from a "blockchain" crypto promotion).</p>
+        </div>
+        <span class="badge badge-core" style="flex-shrink:0">Decision</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <p style="margin-bottom:8px;font-size:16px;font-weight:600;color:var(--text-dim)">RecoMe — Architecture Document</p>
+  <p>Generated from source documentation · All intelligence runs locally, privately, on-device.</p>
+  <p style="margin-top:8px;color:var(--border)">Powered by Mnemosyne Memory System &amp; Semantic Knowledge Graph</p>
+</footer>
+
+<script>
+  // Animate score bars on scroll
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.querySelectorAll('.score-bar-fill').forEach(bar => {
+          bar.style.transition = 'width 1s ease';
+        });
+      }
+    });
+  }, { threshold: 0.3 });
+
+  document.querySelectorAll('.score-factor').forEach(el => observer.observe(el));
+
+  // Smooth scroll for nav links
+  document.querySelectorAll('nav a').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(link.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  // Highlight active nav section on scroll
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('nav a');
+  const scrollObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(link => link.style.color = '');
+        const active = document.querySelector(`nav a[href="#${entry.target.id}"]`);
+        if (active) { active.style.color = '#e2e8f0'; active.style.borderColor = '#6366f1'; }
+      }
+    });
+  }, { threshold: 0.3 });
+  sections.forEach(s => scrollObserver.observe(s));
+</script>
+
+</body>
+</html>

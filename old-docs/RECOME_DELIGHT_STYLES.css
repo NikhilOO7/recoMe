@@ -1,0 +1,1119 @@
+/**
+ * RecoMe Delight Styles
+ * Complete CSS implementation for the RecoMe browser extension
+ * 
+ * Sections:
+ * 1. CSS Variables & Tokens
+ * 2. Base Styles & Reset
+ * 3. Feedback Buttons
+ * 4. Hide Animation
+ * 5. Toast Notifications
+ * 6. Popup UI
+ * 7. Onboarding
+ * 8. Achievements
+ * 9. Accessibility
+ * 10. Animations & Keyframes
+ * 11. Dark Mode
+ */
+
+/* ============================================
+   1. CSS VARIABLES & TOKENS
+   ============================================ */
+
+:root {
+  /* Primary Colors (Deep Purple) */
+  --recome-primary-50: #f5f3ff;
+  --recome-primary-100: #ede9fe;
+  --recome-primary-200: #ddd6fe;
+  --recome-primary-300: #c4b5fd;
+  --recome-primary-400: #a78bfa;
+  --recome-primary-500: #8b5cf6;
+  --recome-primary-600: #7c3aed;
+  --recome-primary-700: #6d28d9;
+  --recome-primary-800: #5b21b6;
+  --recome-primary-900: #4c1d95;
+
+  /* Accent Colors (Teal) */
+  --recome-accent-50: #f0fdfa;
+  --recome-accent-100: #ccfbf1;
+  --recome-accent-200: #99f6e4;
+  --recome-accent-300: #5eead4;
+  --recome-accent-400: #2dd4bf;
+  --recome-accent-500: #14b8a6;
+  --recome-accent-600: #0d9488;
+  --recome-accent-700: #0f766e;
+  --recome-accent-800: #115e59;
+  --recome-accent-900: #134e4a;
+
+  /* Semantic Colors */
+  --recome-success: #10b981;
+  --recome-success-light: #d1fae5;
+  --recome-warning: #f59e0b;
+  --recome-warning-light: #fef3c7;
+  --recome-error: #ef4444;
+  --recome-error-light: #fee2e2;
+  --recome-info: #3b82f6;
+  --recome-info-light: #dbeafe;
+
+  /* Neutral Scale */
+  --recome-gray-50: #fafafa;
+  --recome-gray-100: #f4f4f5;
+  --recome-gray-200: #e4e4e7;
+  --recome-gray-300: #d4d4d8;
+  --recome-gray-400: #a1a1aa;
+  --recome-gray-500: #71717a;
+  --recome-gray-600: #52525b;
+  --recome-gray-700: #3f3f46;
+  --recome-gray-800: #27272a;
+  --recome-gray-900: #18181b;
+
+  /* Typography */
+  --recome-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --recome-font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+
+  --recome-text-xs: 0.75rem;
+  --recome-text-sm: 0.875rem;
+  --recome-text-base: 1rem;
+  --recome-text-lg: 1.125rem;
+  --recome-text-xl: 1.25rem;
+  --recome-text-2xl: 1.5rem;
+  --recome-text-3xl: 1.875rem;
+
+  /* Spacing */
+  --recome-space-1: 0.25rem;
+  --recome-space-2: 0.5rem;
+  --recome-space-3: 0.75rem;
+  --recome-space-4: 1rem;
+  --recome-space-5: 1.25rem;
+  --recome-space-6: 1.5rem;
+  --recome-space-8: 2rem;
+  --recome-space-10: 2.5rem;
+  --recome-space-12: 3rem;
+
+  /* Border Radius */
+  --recome-radius-sm: 0.25rem;
+  --recome-radius-md: 0.5rem;
+  --recome-radius-lg: 0.75rem;
+  --recome-radius-xl: 1rem;
+  --recome-radius-2xl: 1.5rem;
+  --recome-radius-full: 9999px;
+
+  /* Shadows */
+  --recome-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --recome-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --recome-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --recome-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+
+  /* Glows */
+  --recome-glow-primary: 0 0 20px rgba(139, 92, 246, 0.3);
+  --recome-glow-accent: 0 0 20px rgba(20, 184, 166, 0.3);
+  --recome-glow-success: 0 0 20px rgba(16, 185, 129, 0.3);
+
+  /* Transitions */
+  --recome-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --recome-transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --recome-transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  --recome-transition-bounce: 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Z-Index Scale */
+  --recome-z-tooltip: 1000;
+  --recome-z-popup: 2000;
+  --recome-z-toast: 3000;
+  --recome-z-modal: 4000;
+  --recome-z-overlay: 5000;
+}
+
+/* ============================================
+   2. BASE STYLES & RESET
+   ============================================ */
+
+.recome-reset,
+.recome-reset * {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.recome-container {
+  font-family: var(--recome-font-sans);
+  font-size: var(--recome-text-sm);
+  line-height: 1.5;
+  color: var(--recome-gray-900);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Screen reader only */
+.recome-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ============================================
+   3. FEEDBACK BUTTONS
+   ============================================ */
+
+.recome-feedback {
+  display: flex;
+  gap: var(--recome-space-2);
+  padding: var(--recome-space-2);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border-radius: var(--recome-radius-lg);
+  box-shadow: var(--recome-shadow-md);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: 
+    opacity var(--recome-transition-fast),
+    transform var(--recome-transition-fast);
+  pointer-events: none;
+}
+
+/* Show on hover */
+.recome-content-item:hover .recome-feedback,
+.recome-feedback:focus-within {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Button base */
+.recome-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  font-size: 18px;
+  background: transparent;
+  border: none;
+  border-radius: var(--recome-radius-md);
+  cursor: pointer;
+  transition: 
+    background-color var(--recome-transition-fast),
+    transform var(--recome-transition-fast),
+    box-shadow var(--recome-transition-fast);
+  user-select: none;
+}
+
+.recome-btn:hover {
+  background: var(--recome-gray-100);
+  transform: scale(1.1);
+}
+
+.recome-btn:active {
+  transform: scale(0.95);
+  background: var(--recome-gray-200);
+}
+
+.recome-btn:focus-visible {
+  outline: 2px solid var(--recome-primary-400);
+  outline-offset: 2px;
+}
+
+/* Button variants */
+.recome-btn-like:hover {
+  background: var(--recome-success-light);
+}
+
+.recome-btn-like.recome-btn-active {
+  background: var(--recome-success);
+  color: white;
+  box-shadow: var(--recome-glow-success);
+}
+
+.recome-btn-dislike:hover {
+  background: var(--recome-error-light);
+}
+
+.recome-btn-dislike.recome-btn-active {
+  background: var(--recome-error);
+  color: white;
+}
+
+.recome-btn-onetime:hover {
+  background: var(--recome-warning-light);
+}
+
+.recome-btn-onetime.recome-btn-active {
+  background: var(--recome-warning);
+  color: white;
+}
+
+/* Loading state */
+.recome-btn-loading {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.recome-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--recome-gray-200);
+  border-top-color: var(--recome-primary-600);
+  border-radius: 50%;
+  animation: recome-spin 0.8s linear infinite;
+}
+
+/* ============================================
+   4. HIDE ANIMATION
+   ============================================ */
+
+.recome-hiding {
+  animation: recome-hide 500ms ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes recome-hide {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+  30% {
+    opacity: 0.7;
+    transform: scale(0.98);
+    filter: blur(2px);
+  }
+  60% {
+    opacity: 0.3;
+    transform: scale(0.95);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.9);
+    filter: blur(8px);
+    height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+}
+
+/* Hidden placeholder */
+.recome-hidden-placeholder {
+  display: flex;
+  align-items: center;
+  gap: var(--recome-space-2);
+  padding: var(--recome-space-3) var(--recome-space-4);
+  background: var(--recome-gray-100);
+  border-radius: var(--recome-radius-md);
+  color: var(--recome-gray-500);
+  font-size: var(--recome-text-sm);
+  cursor: pointer;
+  transition: background-color var(--recome-transition-fast);
+}
+
+.recome-hidden-placeholder:hover {
+  background: var(--recome-gray-200);
+}
+
+.recome-hidden-placeholder::before {
+  content: '🚫';
+}
+
+/* Sparkle effect */
+.recome-sparkle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--recome-primary-400);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: recome-sparkle 600ms ease-out forwards;
+}
+
+@keyframes recome-sparkle {
+  0% {
+    opacity: 1;
+    transform: scale(0) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1) rotate(180deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0) rotate(360deg);
+  }
+}
+
+/* ============================================
+   5. TOAST NOTIFICATIONS
+   ============================================ */
+
+.recome-toast-container {
+  position: fixed;
+  bottom: var(--recome-space-4);
+  right: var(--recome-space-4);
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--recome-space-2);
+  z-index: var(--recome-z-toast);
+  pointer-events: none;
+}
+
+.recome-toast {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--recome-space-3);
+  padding: var(--recome-space-3) var(--recome-space-4);
+  background: white;
+  border-radius: var(--recome-radius-lg);
+  box-shadow: var(--recome-shadow-lg);
+  overflow: hidden;
+  pointer-events: auto;
+  animation: recome-toast-enter 300ms ease-out;
+  max-width: 400px;
+}
+
+.recome-toast.recome-toast-exit {
+  animation: recome-toast-exit 200ms ease-in forwards;
+}
+
+@keyframes recome-toast-enter {
+  from {
+    opacity: 0;
+    transform: translateX(100%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes recome-toast-exit {
+  to {
+    opacity: 0;
+    transform: translateX(100%) scale(0.9);
+  }
+}
+
+.recome-toast-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.recome-toast-message {
+  flex: 1;
+  font-size: var(--recome-text-sm);
+  color: var(--recome-gray-700);
+}
+
+.recome-toast-action {
+  padding: var(--recome-space-1) var(--recome-space-3);
+  font-size: var(--recome-text-sm);
+  font-weight: 500;
+  color: var(--recome-primary-600);
+  background: transparent;
+  border: 1px solid var(--recome-primary-200);
+  border-radius: var(--recome-radius-md);
+  cursor: pointer;
+  transition: all var(--recome-transition-fast);
+}
+
+.recome-toast-action:hover {
+  background: var(--recome-primary-50);
+  border-color: var(--recome-primary-300);
+}
+
+.recome-toast-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: var(--recome-primary-500);
+  transition: width 100ms linear;
+}
+
+/* Toast variants */
+.recome-toast-success {
+  border-left: 4px solid var(--recome-success);
+}
+
+.recome-toast-success .recome-toast-progress {
+  background: var(--recome-success);
+}
+
+.recome-toast-info {
+  border-left: 4px solid var(--recome-info);
+}
+
+.recome-toast-info .recome-toast-progress {
+  background: var(--recome-info);
+}
+
+.recome-toast-warning {
+  border-left: 4px solid var(--recome-warning);
+}
+
+.recome-toast-warning .recome-toast-progress {
+  background: var(--recome-warning);
+}
+
+.recome-toast-error {
+  border-left: 4px solid var(--recome-error);
+}
+
+.recome-toast-error .recome-toast-progress {
+  background: var(--recome-error);
+}
+
+/* ============================================
+   6. POPUP UI
+   ============================================ */
+
+.recome-popup {
+  width: 360px;
+  min-height: 400px;
+  max-height: 600px;
+  background: white;
+  font-family: var(--recome-font-sans);
+  overflow: hidden;
+}
+
+.recome-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--recome-space-4);
+  background: linear-gradient(135deg, var(--recome-primary-600), var(--recome-primary-700));
+  color: white;
+}
+
+.recome-popup-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--recome-space-2);
+  font-size: var(--recome-text-lg);
+  font-weight: 600;
+}
+
+.recome-popup-settings {
+  padding: var(--recome-space-2);
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: var(--recome-radius-md);
+  color: white;
+  cursor: pointer;
+  transition: background-color var(--recome-transition-fast);
+}
+
+.recome-popup-settings:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Stats section */
+.recome-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--recome-space-3);
+  padding: var(--recome-space-4);
+  background: var(--recome-gray-50);
+}
+
+.recome-stat-card {
+  text-align: center;
+  padding: var(--recome-space-3);
+  background: white;
+  border-radius: var(--recome-radius-lg);
+  box-shadow: var(--recome-shadow-sm);
+}
+
+.recome-stat-value {
+  font-size: var(--recome-text-2xl);
+  font-weight: 700;
+  color: var(--recome-primary-600);
+}
+
+.recome-stat-label {
+  font-size: var(--recome-text-xs);
+  color: var(--recome-gray-500);
+  margin-top: var(--recome-space-1);
+}
+
+/* Preferences list */
+.recome-preferences {
+  padding: var(--recome-space-4);
+}
+
+.recome-preferences-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--recome-space-3);
+}
+
+.recome-preferences-title {
+  font-size: var(--recome-text-base);
+  font-weight: 600;
+  color: var(--recome-gray-900);
+}
+
+.recome-preferences-add {
+  display: flex;
+  align-items: center;
+  gap: var(--recome-space-1);
+  padding: var(--recome-space-1) var(--recome-space-2);
+  font-size: var(--recome-text-sm);
+  color: var(--recome-primary-600);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.recome-preferences-add:hover {
+  text-decoration: underline;
+}
+
+.recome-preference-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--recome-space-2) var(--recome-space-3);
+  background: var(--recome-gray-50);
+  border-radius: var(--recome-radius-md);
+  margin-bottom: var(--recome-space-2);
+}
+
+.recome-preference-item:last-child {
+  margin-bottom: 0;
+}
+
+.recome-preference-name {
+  display: flex;
+  align-items: center;
+  gap: var(--recome-space-2);
+  font-size: var(--recome-text-sm);
+  color: var(--recome-gray-700);
+}
+
+.recome-preference-icon {
+  font-size: 16px;
+}
+
+.recome-preference-remove {
+  padding: var(--recome-space-1);
+  background: transparent;
+  border: none;
+  color: var(--recome-gray-400);
+  cursor: pointer;
+  transition: color var(--recome-transition-fast);
+}
+
+.recome-preference-remove:hover {
+  color: var(--recome-error);
+}
+
+/* Context switcher */
+.recome-context-switcher {
+  display: flex;
+  gap: var(--recome-space-2);
+  padding: var(--recome-space-4);
+  padding-top: 0;
+}
+
+.recome-context-btn {
+  flex: 1;
+  padding: var(--recome-space-2);
+  font-size: var(--recome-text-xs);
+  font-weight: 500;
+  color: var(--recome-gray-500);
+  background: var(--recome-gray-100);
+  border: 2px solid transparent;
+  border-radius: var(--recome-radius-md);
+  cursor: pointer;
+  transition: all var(--recome-transition-fast);
+}
+
+.recome-context-btn:hover {
+  background: var(--recome-gray-200);
+}
+
+.recome-context-btn.recome-context-active {
+  color: var(--recome-primary-700);
+  background: var(--recome-primary-50);
+  border-color: var(--recome-primary-200);
+}
+
+/* ============================================
+   7. ONBOARDING
+   ============================================ */
+
+.recome-onboarding {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: var(--recome-z-modal);
+}
+
+.recome-onboarding-card {
+  width: 90%;
+  max-width: 480px;
+  background: white;
+  border-radius: var(--recome-radius-2xl);
+  box-shadow: var(--recome-shadow-xl);
+  overflow: hidden;
+  animation: recome-modal-enter 300ms ease-out;
+}
+
+@keyframes recome-modal-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.recome-onboarding-header {
+  padding: var(--recome-space-8);
+  text-align: center;
+  background: linear-gradient(135deg, var(--recome-primary-500), var(--recome-primary-700));
+  color: white;
+}
+
+.recome-onboarding-icon {
+  font-size: 48px;
+  margin-bottom: var(--recome-space-4);
+}
+
+.recome-onboarding-title {
+  font-size: var(--recome-text-2xl);
+  font-weight: 700;
+  margin-bottom: var(--recome-space-2);
+}
+
+.recome-onboarding-subtitle {
+  font-size: var(--recome-text-base);
+  opacity: 0.9;
+}
+
+.recome-onboarding-content {
+  padding: var(--recome-space-6);
+}
+
+.recome-onboarding-list {
+  list-style: none;
+  margin-bottom: var(--recome-space-6);
+}
+
+.recome-onboarding-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--recome-space-3);
+  padding: var(--recome-space-2) 0;
+  font-size: var(--recome-text-sm);
+  color: var(--recome-gray-700);
+}
+
+.recome-onboarding-list li::before {
+  content: '✓';
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+  color: white;
+  background: var(--recome-success);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Topic chips */
+.recome-topic-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--recome-space-2);
+  margin-bottom: var(--recome-space-4);
+}
+
+.recome-topic-chip {
+  padding: var(--recome-space-2) var(--recome-space-3);
+  font-size: var(--recome-text-sm);
+  color: var(--recome-gray-700);
+  background: var(--recome-gray-100);
+  border: 2px solid transparent;
+  border-radius: var(--recome-radius-full);
+  cursor: pointer;
+  transition: all var(--recome-transition-fast);
+}
+
+.recome-topic-chip:hover {
+  background: var(--recome-gray-200);
+}
+
+.recome-topic-chip.recome-topic-selected {
+  color: var(--recome-primary-700);
+  background: var(--recome-primary-50);
+  border-color: var(--recome-primary-300);
+}
+
+/* Onboarding buttons */
+.recome-onboarding-actions {
+  display: flex;
+  gap: var(--recome-space-3);
+  padding: var(--recome-space-4) var(--recome-space-6);
+  background: var(--recome-gray-50);
+}
+
+.recome-btn-primary {
+  flex: 1;
+  padding: var(--recome-space-3) var(--recome-space-4);
+  font-size: var(--recome-text-sm);
+  font-weight: 600;
+  color: white;
+  background: var(--recome-primary-600);
+  border: none;
+  border-radius: var(--recome-radius-lg);
+  cursor: pointer;
+  transition: all var(--recome-transition-fast);
+}
+
+.recome-btn-primary:hover {
+  background: var(--recome-primary-700);
+  box-shadow: var(--recome-glow-primary);
+}
+
+.recome-btn-secondary {
+  padding: var(--recome-space-3) var(--recome-space-4);
+  font-size: var(--recome-text-sm);
+  font-weight: 500;
+  color: var(--recome-gray-600);
+  background: transparent;
+  border: 1px solid var(--recome-gray-300);
+  border-radius: var(--recome-radius-lg);
+  cursor: pointer;
+  transition: all var(--recome-transition-fast);
+}
+
+.recome-btn-secondary:hover {
+  background: var(--recome-gray-100);
+  border-color: var(--recome-gray-400);
+}
+
+/* ============================================
+   8. ACHIEVEMENTS
+   ============================================ */
+
+.recome-achievement {
+  display: flex;
+  align-items: center;
+  gap: var(--recome-space-3);
+  padding: var(--recome-space-3);
+  background: var(--recome-gray-50);
+  border-radius: var(--recome-radius-lg);
+  margin-bottom: var(--recome-space-2);
+}
+
+.recome-achievement-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+  background: white;
+  border-radius: var(--recome-radius-md);
+  box-shadow: var(--recome-shadow-sm);
+}
+
+.recome-achievement-info {
+  flex: 1;
+}
+
+.recome-achievement-name {
+  font-size: var(--recome-text-sm);
+  font-weight: 600;
+  color: var(--recome-gray-900);
+}
+
+.recome-achievement-description {
+  font-size: var(--recome-text-xs);
+  color: var(--recome-gray-500);
+}
+
+.recome-achievement-status {
+  font-size: var(--recome-text-xs);
+  font-weight: 500;
+  color: var(--recome-success);
+}
+
+.recome-achievement.recome-achievement-locked {
+  opacity: 0.5;
+}
+
+.recome-achievement.recome-achievement-locked .recome-achievement-status {
+  color: var(--recome-gray-400);
+}
+
+/* Progress bar */
+.recome-progress {
+  height: 8px;
+  background: var(--recome-gray-200);
+  border-radius: var(--recome-radius-full);
+  overflow: hidden;
+}
+
+.recome-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--recome-primary-500), var(--recome-accent-500));
+  border-radius: var(--recome-radius-full);
+  transition: width var(--recome-transition-slow);
+}
+
+/* Level display */
+.recome-level {
+  display: flex;
+  align-items: center;
+  gap: var(--recome-space-3);
+  padding: var(--recome-space-4);
+  background: linear-gradient(135deg, var(--recome-primary-50), var(--recome-accent-50));
+  border-radius: var(--recome-radius-xl);
+  margin-bottom: var(--recome-space-4);
+}
+
+.recome-level-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  font-size: var(--recome-text-xl);
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, var(--recome-primary-500), var(--recome-primary-700));
+  border-radius: var(--recome-radius-lg);
+  box-shadow: var(--recome-glow-primary);
+}
+
+.recome-level-info {
+  flex: 1;
+}
+
+.recome-level-title {
+  font-size: var(--recome-text-sm);
+  font-weight: 600;
+  color: var(--recome-gray-900);
+}
+
+.recome-level-xp {
+  font-size: var(--recome-text-xs);
+  color: var(--recome-gray-500);
+  margin-bottom: var(--recome-space-1);
+}
+
+/* ============================================
+   9. ACCESSIBILITY
+   ============================================ */
+
+/* Focus indicators */
+*:focus-visible {
+  outline: 2px solid var(--recome-primary-400);
+  outline-offset: 2px;
+}
+
+/* Skip link */
+.recome-skip-link {
+  position: absolute;
+  top: -100%;
+  left: var(--recome-space-4);
+  padding: var(--recome-space-2) var(--recome-space-4);
+  background: var(--recome-primary-600);
+  color: white;
+  text-decoration: none;
+  border-radius: var(--recome-radius-md);
+  z-index: var(--recome-z-overlay);
+  transition: top var(--recome-transition-fast);
+}
+
+.recome-skip-link:focus {
+  top: var(--recome-space-4);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .recome-hiding {
+    animation: none;
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* High contrast */
+@media (prefers-contrast: high) {
+  .recome-btn {
+    border: 2px solid currentColor;
+  }
+  
+  .recome-toast {
+    border: 2px solid var(--recome-gray-900);
+  }
+}
+
+/* ============================================
+   10. ANIMATIONS & KEYFRAMES
+   ============================================ */
+
+@keyframes recome-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes recome-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes recome-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10%);
+  }
+}
+
+@keyframes recome-shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-2px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(2px);
+  }
+}
+
+@keyframes recome-celebrate {
+  0% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.1);
+  }
+  50% {
+    transform: scale(0.95);
+  }
+  75% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.recome-celebrate {
+  animation: recome-celebrate 500ms ease-out;
+}
+
+/* Skeleton loading */
+.recome-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--recome-gray-200) 0%,
+    var(--recome-gray-100) 50%,
+    var(--recome-gray-200) 100%
+  );
+  background-size: 200% 100%;
+  animation: recome-skeleton-pulse 1.5s ease-in-out infinite;
+  border-radius: var(--recome-radius-md);
+}
+
+@keyframes recome-skeleton-pulse {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ============================================
+   11. DARK MODE
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --recome-gray-50: #18181b;
+    --recome-gray-100: #27272a;
+    --recome-gray-200: #3f3f46;
+    --recome-gray-300: #52525b;
+    --recome-gray-400: #71717a;
+    --recome-gray-500: #a1a1aa;
+    --recome-gray-600: #d4d4d8;
+    --recome-gray-700: #e4e4e7;
+    --recome-gray-800: #f4f4f5;
+    --recome-gray-900: #fafafa;
+    
+    --recome-success-light: rgba(16, 185, 129, 0.2);
+    --recome-warning-light: rgba(245, 158, 11, 0.2);
+    --recome-error-light: rgba(239, 68, 68, 0.2);
+    --recome-info-light: rgba(59, 130, 246, 0.2);
+  }
+  
+  .recome-feedback {
+    background: rgba(39, 39, 42, 0.95);
+  }
+  
+  .recome-toast {
+    background: var(--recome-gray-100);
+    color: var(--recome-gray-900);
+  }
+  
+  .recome-popup {
+    background: var(--recome-gray-50);
+  }
+  
+  .recome-hidden-placeholder {
+    background: var(--recome-gray-100);
+    color: var(--recome-gray-500);
+  }
+}
+
+/* ============================================
+   12. PRINT STYLES
+   ============================================ */
+
+@media print {
+  .recome-feedback,
+  .recome-toast-container,
+  .recome-onboarding {
+    display: none !important;
+  }
+}
