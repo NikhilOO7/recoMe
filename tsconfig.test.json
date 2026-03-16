@@ -4,7 +4,7 @@
     "module": "CommonJS",
     "moduleResolution": "node",
     "isolatedModules": false,
-    "types": ["chrome", "jest"]
+    "types": ["chrome", "jest", "node"]
   },
-  "include": ["src/**/*"]
+  "include": ["extension/src/**/*", "brain/src/**/*", "agent/src/**/*", "packages/**/*"]
 }

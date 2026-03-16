@@ -1,0 +1,596 @@
+/* ── RecoMe Content Script Styles ──────────────────────────────────────────────
+   All classes are scoped under .recome-* to avoid conflicts with host pages.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* ── Intent Trigger (always-visible pill) ────────────────────────────────── */
+.recome-intent {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  z-index: 9998;
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+*:hover > .recome-intent,
+.recome-intent:hover,
+.recome-intent.recome-open {
+  opacity: 1;
+}
+
+.recome-trigger {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  background: rgba(10, 14, 26, 0.88);
+  border: 1px solid rgba(99, 102, 241, 0.45);
+  border-radius: 11px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #a5b4fc;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  white-space: nowrap;
+  transition: all 150ms ease;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    system-ui,
+    sans-serif;
+  letter-spacing: 0.02em;
+}
+/* Invisible touch target expansion to 44px minimum */
+.recome-trigger::after {
+  content: '';
+  position: absolute;
+  inset: -11px -8px;
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.recome-trigger:hover {
+  background: rgba(99, 102, 241, 0.22);
+  border-color: rgba(99, 102, 241, 0.75);
+  color: #fff;
+  transform: scale(1.04);
+}
+
+/* ── Intent Menu Popup ────────────────────────────────────────────────────── */
+.recome-menu {
+  position: absolute; /* overridden to fixed by portal JS */
+  bottom: calc(100% + 6px);
+  right: 0;
+  min-width: 200px;
+  max-width: 260px;
+  background: rgba(8, 11, 22, 0.97);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 12px;
+  padding: 5px;
+  backdrop-filter: blur(20px);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+  animation: recome-menu-in 140ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: bottom right;
+}
+
+.recome-menu[hidden] {
+  display: none;
+}
+
+@keyframes recome-menu-in {
+  from {
+    opacity: 0;
+    transform: scale(0.88) translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.recome-menu-header {
+  font-size: 9px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 3px 8px 4px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+}
+
+.recome-menu-divider {
+  height: 1px;
+  background: rgba(99, 102, 241, 0.12);
+  margin: 3px 4px;
+}
+
+.recome-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 8px;
+  background: none;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #cbd5e1;
+  text-align: left;
+  transition:
+    background 100ms ease,
+    color 100ms ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+  min-height: 44px;
+}
+
+.recome-menu-item:hover {
+  background: rgba(99, 102, 241, 0.15);
+  color: #e2e8f0;
+}
+
+.recome-menu-icon {
+  font-size: 13px;
+  flex-shrink: 0;
+  width: 16px;
+  text-align: center;
+}
+
+.recome-menu-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recome-menu-item[data-variant='block'] {
+  color: #fca5a5;
+}
+.recome-menu-item[data-variant='block']:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #fda4af;
+}
+.recome-menu-item[data-variant='dim'] {
+  color: #94a3b8;
+}
+
+/* Sub-menu expand arrow */
+.recome-menu-expand {
+  margin-left: auto;
+  font-size: 14px;
+  color: #64748b;
+  transition: transform 200ms ease;
+}
+.recome-menu-item-expanded .recome-menu-expand {
+  transform: rotate(90deg);
+}
+
+/* Sub-menu panel (clarification options) */
+.recome-menu-sub {
+  padding-left: 8px;
+  border-left: 2px solid rgba(99, 102, 241, 0.25);
+  margin-left: 12px;
+}
+.recome-menu-sub[hidden] {
+  display: none;
+}
+.recome-menu-sub .recome-menu-item {
+  font-size: 11px;
+  padding: 5px 8px;
+  min-height: unset;
+}
+
+/* ── Hidden Badge ────────────────────────────────────────────────────────── */
+.recome-hidden-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(10, 14, 26, 0.88);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #94a3b8;
+  backdrop-filter: blur(8px);
+  cursor: default;
+  white-space: nowrap;
+}
+
+.recome-icon {
+  font-size: 14px;
+}
+.recome-hidden-text {
+  font-size: 11px;
+}
+
+.recome-reveal-btn {
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 10px;
+  color: #a5b4fc;
+  cursor: pointer;
+  transition: all 150ms;
+  font-family: inherit;
+}
+
+.recome-reveal-btn:hover {
+  background: rgba(99, 102, 241, 0.3);
+  color: #fff;
+}
+
+/* ── Hide Animation ──────────────────────────────────────────────────────── */
+.recome-hiding {
+  animation: recome-hide 400ms ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes recome-hide {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.97);
+  }
+  100% {
+    opacity: 0.12;
+    transform: scale(0.96);
+  }
+}
+
+/* ── Suppress State ──────────────────────────────────────────────────────── */
+[data-recome-suppress='true'] {
+  opacity: 0.42;
+  filter: grayscale(25%);
+  transition:
+    opacity 300ms ease,
+    filter 300ms ease;
+}
+[data-recome-suppress='true']:hover {
+  opacity: 1;
+  filter: none;
+}
+
+/* ── Boost Indicator ─────────────────────────────────────────────────────── */
+[data-recome-boost='true'] {
+  outline: 2px solid rgba(99, 102, 241, 0.6) !important;
+  outline-offset: 3px;
+  border-radius: 8px;
+  box-shadow: 0 0 18px rgba(99, 102, 241, 0.18) !important;
+}
+
+.recome-boost-badge {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.9), rgba(139, 92, 246, 0.9));
+  border-radius: 6px;
+  padding: 2px 7px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  backdrop-filter: blur(8px);
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+  pointer-events: none;
+  letter-spacing: 0.03em;
+  animation: recome-badge-in 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes recome-badge-in {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ── Confetti ─────────────────────────────────────────────────────────────── */
+@keyframes recome-confetti {
+  0% {
+    transform: translateY(0) translateX(0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-280px) translateX(var(--recome-tx, 0px)) rotate(720deg) scale(0.4);
+    opacity: 0;
+  }
+}
+
+/* ── Portal menu (fixed position, escapes overflow:hidden) ───────────────── */
+#recome-menu-portal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 2147483640;
+}
+
+/* When the menu is inside the portal it has inline fixed positioning set by JS */
+#recome-menu-portal .recome-menu {
+  /* Override the absolute positioning from the default stylesheet */
+  position: fixed !important;
+  bottom: auto;
+  right: auto;
+}
+
+/* ── Proactive Dwell Nudge ───────────────────────────────────────────────── */
+.recome-nudge {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2147483638;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(8, 11, 22, 0.97);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(20px);
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+  font-size: 13px;
+  color: #cbd5e1;
+  white-space: nowrap;
+  animation: recome-nudge-in 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes recome-nudge-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.recome-nudge strong {
+  color: #e2e8f0;
+}
+
+.recome-nudge-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.recome-nudge-btn {
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  background: rgba(99, 102, 241, 0.1);
+  color: #a5b4fc;
+  transition: all 150ms;
+}
+
+.recome-nudge-btn:hover {
+  background: rgba(99, 102, 241, 0.25);
+  color: #fff;
+}
+
+.recome-nudge-btn.yes {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.1);
+  color: #6ee7b7;
+}
+.recome-nudge-btn.yes:hover {
+  background: rgba(16, 185, 129, 0.25);
+  color: #fff;
+}
+
+.recome-nudge-close {
+  background: none;
+  border: none;
+  color: #475569;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 4px;
+  font-family: inherit;
+  line-height: 1;
+}
+.recome-nudge-close:hover {
+  color: #94a3b8;
+}
+
+/* ── Topic hint in menu footer ───────────────────────────────────────────── */
+.recome-menu-topics {
+  font-size: 9px;
+  color: #334155;
+  padding: 4px 8px 2px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-top: 1px solid rgba(99, 102, 241, 0.08);
+  margin-top: 2px;
+}
+
+/* ── Commerce Decision Badges ─────────────────────────────────────────── */
+.recome-decision-badge {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 6px;
+  padding: 2px 7px;
+  font-size: 10px;
+  font-weight: 700;
+  backdrop-filter: blur(8px);
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+  pointer-events: auto;
+  letter-spacing: 0.03em;
+  animation: recome-badge-in 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.recome-badge-boost {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.9), rgba(5, 150, 105, 0.9));
+  color: #fff;
+}
+
+.recome-badge-caution {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.9), rgba(217, 119, 6, 0.9));
+  color: #fff;
+}
+
+.recome-badge-suppress {
+  background: linear-gradient(135deg, rgba(107, 114, 128, 0.85), rgba(75, 85, 99, 0.85));
+  color: #e5e7eb;
+}
+
+.recome-badge-label {
+  white-space: nowrap;
+}
+
+.recome-badge-why {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.15);
+  color: inherit;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  font-family: inherit;
+  transition: background 150ms;
+}
+
+.recome-badge-why:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ── Caution State ───────────────────────────────────────────────────────── */
+[data-recome-caution='true'] {
+  outline: 2px solid rgba(245, 158, 11, 0.5) !important;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* ── Explanation Popover ─────────────────────────────────────────────────── */
+.recome-explanation-popover {
+  min-width: 220px;
+  max-width: 320px;
+  background: rgba(8, 11, 22, 0.97);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 10px;
+  padding: 10px 12px;
+  backdrop-filter: blur(20px);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+  animation: recome-menu-in 140ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+  z-index: 2147483641;
+  pointer-events: auto;
+}
+
+.recome-explanation-text {
+  font-size: 12px;
+  color: #e2e8f0;
+  line-height: 1.4;
+  margin-bottom: 6px;
+}
+
+.recome-explanation-factors {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 6px;
+}
+
+.recome-explanation-factors li {
+  font-size: 11px;
+  color: #94a3b8;
+  padding: 2px 0;
+  padding-left: 12px;
+  position: relative;
+}
+
+.recome-explanation-factors li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(99, 102, 241, 0.5);
+}
+
+.recome-explanation-meta {
+  font-size: 9px;
+  color: #475569;
+  padding-top: 4px;
+  border-top: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+/* ── Commerce Menu Icon (text-based) ─────────────────────────────────────── */
+.recome-icon-text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+  font-size: 9px;
+  font-weight: 700;
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+  flex-shrink: 0;
+}
+
+/* ── Accessibility ────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .recome-hiding,
+  .recome-boost-badge,
+  .recome-decision-badge,
+  .recome-explanation-popover,
+  .recome-menu,
+  .recome-trigger,
+  .recome-reveal-btn,
+  .recome-nudge,
+  .recome-menu-expand {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.recome-trigger:focus-visible,
+.recome-menu-item:focus-visible,
+.recome-reveal-btn:focus-visible,
+.recome-badge-why:focus-visible {
+  outline: 2px solid #a5b4fc;
+  outline-offset: 2px;
+}

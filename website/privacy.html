@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy — RecoMe</title>
+  <meta name="description" content="RecoMe Privacy Policy. 100% local, no servers, no tracking. Your data never leaves your device." />
+  <link rel="icon" href="favicon.ico" />
+  <link rel="icon" type="image/png" sizes="128x128" href="logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Privacy page specific styles */
+    .privacy-page-hero {
+      padding: 10rem 0 4rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .privacy-page-hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -20%;
+      width: 140%;
+      height: 200%;
+      background: radial-gradient(ellipse at 30% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 60%),
+                  radial-gradient(ellipse at 70% 60%, rgba(168, 85, 247, 0.06) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .privacy-page-hero .container {
+      position: relative;
+      z-index: 1;
+    }
+    .privacy-page-hero h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800;
+      margin-bottom: 1rem;
+      letter-spacing: -0.03em;
+    }
+    .privacy-page-hero .hero-subtitle {
+      max-width: 640px;
+      margin: 0 auto;
+      color: var(--text-muted);
+      font-size: 1.15rem;
+      line-height: 1.7;
+    }
+    .privacy-updated {
+      display: inline-block;
+      margin-top: 1.5rem;
+      padding: 0.4rem 1rem;
+      border-radius: 999px;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+    .policy-content {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 1.5rem 6rem;
+    }
+    .policy-section {
+      margin-bottom: 3rem;
+    }
+    .policy-section h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+    .policy-section h2 .section-number {
+      display: inline-block;
+      width: 2rem;
+      height: 2rem;
+      line-height: 2rem;
+      text-align: center;
+      border-radius: 0.5rem;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-right: 0.75rem;
+      vertical-align: middle;
+    }
+    .policy-section p,
+    .policy-section li {
+      color: var(--text-muted);
+      line-height: 1.8;
+      font-size: 1rem;
+    }
+    .policy-section p {
+      margin-bottom: 1rem;
+    }
+    .policy-section ul {
+      list-style: none;
+      padding: 0;
+      margin: 1rem 0;
+    }
+    .policy-section ul li {
+      padding: 0.4rem 0;
+      padding-left: 1.75rem;
+      position: relative;
+    }
+    .policy-section ul li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0.75rem;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--primary);
+      opacity: 0.7;
+    }
+    .policy-card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 1rem;
+      padding: 1.5rem 2rem;
+      margin: 1.5rem 0;
+    }
+    .policy-card h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      color: var(--text);
+    }
+    .permission-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    .permission-item {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 0.75rem;
+      padding: 1.25rem 1.5rem;
+    }
+    .permission-item code {
+      display: inline-block;
+      background: rgba(99, 102, 241, 0.12);
+      color: var(--primary);
+      padding: 0.15rem 0.5rem;
+      border-radius: 0.3rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+    .permission-item p {
+      margin: 0;
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+    .highlight-box {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(168, 85, 247, 0.08));
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      border-radius: 1rem;
+      padding: 1.5rem 2rem;
+      margin: 2rem 0;
+      text-align: center;
+    }
+    .highlight-box p {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text);
+      margin: 0;
+    }
+    .highlight-box p span {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.95rem;
+      margin-bottom: 2rem;
+      transition: opacity 0.2s;
+    }
+    .back-link:hover {
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="nav" id="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-brand">
+        <img class="nav-logo" src="logo.png" alt="RecoMe" />
+        <span class="nav-name">RecoMe</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html#features">Features</a>
+        <a href="index.html#how-it-works">How It Works</a>
+        <a href="index.html#agent">Agent</a>
+        <a href="manual.html">Manual</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="index.html#install" class="nav-cta">Install Free</a>
+      </div>
+      <button class="nav-mobile-btn" id="navToggle" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <div class="nav-mobile" id="navMobile">
+      <a href="index.html#features">Features</a>
+      <a href="index.html#how-it-works">How It Works</a>
+      <a href="index.html#agent">Agent</a>
+      <a href="manual.html">Manual</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="index.html#install" class="nav-cta">Install Free</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="privacy-page-hero">
+    <div class="container">
+      <h1>Privacy <span class="gradient-text">Policy</span></h1>
+      <p class="hero-subtitle">
+        RecoMe is built on a simple principle: your data belongs to you and only you.
+        Nothing is collected, nothing is transmitted, nothing leaves your device.
+      </p>
+      <span class="privacy-updated">Last updated: March 2026</span>
+    </div>
+  </section>
+
+  <!-- POLICY CONTENT -->
+  <div class="policy-content">
+
+    <a href="index.html" class="back-link">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Back to home
+    </a>
+
+    <!-- 1. Overview -->
+    <div class="policy-section">
+      <h2><span class="section-number">1</span> Overview</h2>
+      <p>
+        RecoMe is a Chrome extension (built on Manifest V3) that gives you intelligent control over recommendation feeds across the web. This privacy policy explains how RecoMe handles your data.
+      </p>
+      <div class="highlight-box">
+        <p>RecoMe operates <span>100% locally</span> on your device. We have no servers, no databases, no analytics, and no way to access your data. Period.</p>
+      </div>
+    </div>
+
+    <!-- 2. Data Collection -->
+    <div class="policy-section">
+      <h2><span class="section-number">2</span> Data Collection</h2>
+      <p>
+        <strong>RecoMe does not collect any data.</strong> There are no servers to send data to. There is no account system, no registration, and no sign-in. The extension operates entirely within your browser.
+      </p>
+      <p>We do not collect, store, or process:</p>
+      <ul>
+        <li>Personal information (name, email, address, or any identifiers)</li>
+        <li>Browsing history or the URLs you visit</li>
+        <li>Analytics, telemetry, or usage statistics</li>
+        <li>Tracking pixels, cookies, or fingerprinting data</li>
+        <li>Any data from the web pages you visit</li>
+      </ul>
+    </div>
+
+    <!-- 3. Data Stored Locally -->
+    <div class="policy-section">
+      <h2><span class="section-number">3</span> Data Stored Locally on Your Device</h2>
+      <p>
+        RecoMe stores the following data locally in your browser using IndexedDB and the Chrome Storage API (<code>chrome.storage.local</code>). This data never leaves your device.
+      </p>
+      <div class="policy-card">
+        <h3>Locally stored data includes:</h3>
+        <ul>
+          <li><strong>Blocked and liked topics</strong> &mdash; The topics and keywords you choose to block or boost in your feeds</li>
+          <li><strong>Interaction history</strong> &mdash; A record of your feedback actions (block, like, dismiss) so the extension can learn your preferences</li>
+          <li><strong>Knowledge graph</strong> &mdash; Topic relationships and patterns derived from your feedback to improve accuracy over time</li>
+          <li><strong>Extension settings</strong> &mdash; Your configuration choices such as theme, notification preferences, and feature toggles</li>
+          <li><strong>Achievement progress</strong> &mdash; Milestones and badges you have unlocked while using the extension</li>
+        </ul>
+      </div>
+      <p>
+        All of this data is stored in standard browser storage mechanisms. You can clear it at any time through the extension settings or by uninstalling the extension. No backup is kept anywhere.
+      </p>
+    </div>
+
+    <!-- 4. Third-Party Services -->
+    <div class="policy-section">
+      <h2><span class="section-number">4</span> Third-Party Services (Optional AI)</h2>
+      <p>
+        RecoMe includes an optional AI enhancement feature for smarter entity extraction and topic analysis. This feature is <strong>entirely opt-in</strong> and disabled by default.
+      </p>
+      <p>If you choose to enable it:</p>
+      <ul>
+        <li>You provide your own API key for your chosen AI provider (Anthropic Claude, OpenAI, or Google Gemini)</li>
+        <li>Your API key is stored locally on your device and is never transmitted to RecoMe</li>
+        <li>When AI features are used, data is sent directly from your browser to your chosen AI provider &mdash; RecoMe acts only as a pass-through</li>
+        <li>RecoMe never intercepts, logs, or stores the data exchanged with the AI provider</li>
+        <li>Your use of the AI provider is governed by that provider's own privacy policy and terms of service</li>
+      </ul>
+      <p>
+        If you do not configure an API key, no data is ever sent to any third-party service. The extension works fully offline.
+      </p>
+    </div>
+
+    <!-- 5. Permissions Explained -->
+    <div class="policy-section">
+      <h2><span class="section-number">5</span> Extension Permissions Explained</h2>
+      <p>
+        RecoMe requests the following browser permissions. Each is required for core functionality, and none are used to collect or transmit your data.
+      </p>
+      <div class="permission-grid">
+        <div class="permission-item">
+          <code>host_permissions: https://*/*</code>
+          <p>Required to inject content scripts on websites so RecoMe can detect and filter recommendation cards across all sites you visit.</p>
+        </div>
+        <div class="permission-item">
+          <code>storage</code>
+          <p>Used to save your preferences, blocked topics, interaction history, and settings locally in your browser using <code>chrome.storage.local</code>.</p>
+        </div>
+        <div class="permission-item">
+          <code>alarms</code>
+          <p>Used to schedule periodic background tasks such as cache cleanup and achievement progress checks. No network requests are made.</p>
+        </div>
+        <div class="permission-item">
+          <code>tabs</code>
+          <p>Used to detect when you navigate to a new page so RecoMe can apply your preferences to freshly loaded content.</p>
+        </div>
+        <div class="permission-item">
+          <code>activeTab</code>
+          <p>Used to interact with the currently active tab when you click the extension icon or use keyboard shortcuts.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. Data Sharing and Sale -->
+    <div class="policy-section">
+      <h2><span class="section-number">6</span> Data Sharing and Sale</h2>
+      <p>
+        <strong>RecoMe does not sell, rent, trade, or share your data with anyone.</strong> Since all data is stored locally on your device and we have no servers or infrastructure to receive it, sharing your data is technically impossible.
+      </p>
+      <p>We do not engage in:</p>
+      <ul>
+        <li>Selling data to third parties, advertisers, or data brokers</li>
+        <li>Sharing data with analytics or marketing services</li>
+        <li>Monetizing user data in any way</li>
+        <li>Transferring data to any external server or service</li>
+      </ul>
+    </div>
+
+    <!-- 7. Your Rights -->
+    <div class="policy-section">
+      <h2><span class="section-number">7</span> Your Rights and Control</h2>
+      <p>
+        Because your data is stored entirely on your device, you have complete control over it at all times.
+      </p>
+      <div class="policy-card">
+        <h3>You can:</h3>
+        <ul>
+          <li><strong>View your data</strong> &mdash; Access all stored preferences, topics, and history through the extension's dashboard and settings</li>
+          <li><strong>Modify your data</strong> &mdash; Edit or remove any blocked/liked topics, clear your interaction history, or reset your knowledge graph at any time</li>
+          <li><strong>Export your data</strong> &mdash; Use browser developer tools to inspect and export any data stored in IndexedDB or chrome.storage</li>
+          <li><strong>Delete all data</strong> &mdash; Use the extension's reset feature to clear everything, or simply uninstall the extension to remove all associated data from your browser</li>
+          <li><strong>Revoke AI access</strong> &mdash; Remove your API key at any time to instantly stop all communication with third-party AI providers</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 8. Children's Privacy -->
+    <div class="policy-section">
+      <h2><span class="section-number">8</span> Children's Privacy</h2>
+      <p>
+        RecoMe does not knowingly collect any personal information from anyone, including children under the age of 13. Since the extension collects no data at all, there is no risk of inadvertent collection of children's data.
+      </p>
+    </div>
+
+    <!-- 9. Changes to This Policy -->
+    <div class="policy-section">
+      <h2><span class="section-number">9</span> Changes to This Policy</h2>
+      <p>
+        We may update this privacy policy from time to time to reflect changes in the extension's features. Any updates will be posted on this page with a revised "Last updated" date. Our core commitment to local-only, privacy-first operation will not change.
+      </p>
+    </div>
+
+    <!-- 10. Contact -->
+    <div class="policy-section">
+      <h2><span class="section-number">10</span> Contact</h2>
+      <p>
+        If you have questions, concerns, or feedback about this privacy policy or the RecoMe extension, please reach out:
+      </p>
+      <ul>
+        <li><strong>GitHub Issues</strong> &mdash; Open an issue on the <a href="https://github.com/nicoo7/recoME" style="color: var(--primary);">RecoMe GitHub repository</a></li>
+        <li><strong>Chrome Web Store</strong> &mdash; Leave feedback on the extension's Chrome Web Store listing</li>
+      </ul>
+    </div>
+
+    <div class="highlight-box">
+      <p>RecoMe: <span>Zero servers. Zero tracking. 100% yours.</span></p>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <img src="logo.png" alt="RecoMe" class="footer-logo" />
+        <strong>RecoMe</strong>
+        <small>Your feed, your rules.</small>
+      </div>
+      <div class="footer-links">
+        <a href="index.html#features">Features</a>
+        <a href="index.html#how-it-works">How It Works</a>
+        <a href="index.html#agent">Agent</a>
+        <a href="manual.html">Manual</a>
+        <a href="privacy.html">Privacy Policy</a>
+      </div>
+      <div class="footer-copy">
+        <small>&copy; 2025 RecoMe. Built with care. No data leaves your device.</small>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

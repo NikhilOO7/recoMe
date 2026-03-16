@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RecoMe — User Manual</title>
+  <meta name="description" content="Complete interactive guide to using RecoMe. Learn how to control your recommendation feeds across YouTube, Amazon, Instagram, and every website." />
+  <link rel="icon" href="favicon.ico" />
+  <link rel="icon" type="image/png" sizes="128x128" href="logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="manual.css" />
+</head>
+<body>
+
+  <a class="sr-only sr-only-focusable" href="#manual-content">Skip to content</a>
+
+  <!-- ═══════════════════ NAV ═══════════════════ -->
+  <nav class="nav" id="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-brand">
+        <img class="nav-logo" src="logo.png" alt="RecoMe" />
+        <span class="nav-name">RecoMe</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html#features">Features</a>
+        <a href="index.html#how-it-works">How It Works</a>
+        <a href="manual.html" class="active">Manual</a>
+        <a href="index.html#privacy">Privacy</a>
+        <a href="https://chrome.google.com/webstore/detail/recome/PLACEHOLDER" class="nav-cta">Install Free</a>
+      </div>
+      <button class="nav-mobile-btn" id="navToggle" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <div class="nav-mobile" id="navMobile">
+      <a href="index.html#features">Features</a>
+      <a href="index.html#how-it-works">How It Works</a>
+      <a href="manual.html" class="active">Manual</a>
+      <a href="index.html#privacy">Privacy</a>
+      <a href="https://chrome.google.com/webstore/detail/recome/PLACEHOLDER" class="nav-cta">Install Free</a>
+    </div>
+  </nav>
+
+  <!-- ═══════════════════ MANUAL HERO ═══════════════════ -->
+  <header class="manual-hero">
+    <div class="container">
+      <span class="section-tag">Interactive Guide</span>
+      <h1>RecoMe <span class="gradient-text">User Manual</span></h1>
+      <p class="manual-hero-sub">Everything you need to master your feed. Click any section to explore.</p>
+      <div class="manual-search-wrap">
+        <svg class="manual-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" id="manualSearch" class="manual-search" placeholder="Search the manual... (e.g. &quot;block topic&quot;, &quot;keyboard&quot;, &quot;AI&quot;)" autocomplete="off" />
+        <div class="search-results" id="searchResults"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════════════════ MANUAL LAYOUT ═══════════════════ -->
+  <div class="manual-layout" id="manual-content">
+    <aside class="manual-sidebar" id="manualSidebar">
+      <nav class="sidebar-nav" aria-label="Manual sections">
+        <div class="sidebar-group">
+          <div class="sidebar-heading">Getting Started</div>
+          <a href="#installation" class="sidebar-link active" data-section="installation">Installation</a>
+          <a href="#onboarding" class="sidebar-link" data-section="onboarding">First-Time Setup</a>
+          <a href="#quick-tour" class="sidebar-link" data-section="quick-tour">Quick Tour</a>
+        </div>
+        <div class="sidebar-group">
+          <div class="sidebar-heading">Core Features</div>
+          <a href="#dashboard" class="sidebar-link" data-section="dashboard">Dashboard</a>
+          <a href="#blocking-boosting" class="sidebar-link" data-section="blocking-boosting">Blocking &amp; Boosting</a>
+          <a href="#feed-interaction" class="sidebar-link" data-section="feed-interaction">Feed Interaction</a>
+          <a href="#focus-mode" class="sidebar-link" data-section="focus-mode">Focus Mode</a>
+          <a href="#achievements" class="sidebar-link" data-section="achievements">Achievements</a>
+        </div>
+        <div class="sidebar-group">
+          <div class="sidebar-heading">Intelligence</div>
+          <a href="#smart-scoring" class="sidebar-link" data-section="smart-scoring">Smart Scoring</a>
+          <a href="#pattern-learning" class="sidebar-link" data-section="pattern-learning">Pattern Learning</a>
+          <a href="#knowledge-graph" class="sidebar-link" data-section="knowledge-graph">Knowledge Graph</a>
+          <a href="#context-detection" class="sidebar-link" data-section="context-detection">Context Detection</a>
+          <a href="#cross-platform" class="sidebar-link" data-section="cross-platform">Cross-Platform Sync</a>
+          <a href="#implicit-signals" class="sidebar-link" data-section="implicit-signals">Implicit Learning</a>
+        </div>
+        <div class="sidebar-group">
+          <div class="sidebar-heading">Agent &amp; AI</div>
+          <a href="#agent-chat" class="sidebar-link" data-section="agent-chat">Agent Chat</a>
+          <a href="#product-compare" class="sidebar-link" data-section="product-compare">Product Comparison</a>
+          <a href="#watchlist" class="sidebar-link" data-section="watchlist">Watchlist</a>
+          <a href="#ai-config" class="sidebar-link" data-section="ai-config">AI Configuration</a>
+          <a href="#proactive-insights" class="sidebar-link" data-section="proactive-insights">Proactive Insights</a>
+        </div>
+        <div class="sidebar-group">
+          <div class="sidebar-heading">Settings &amp; Data</div>
+          <a href="#settings" class="sidebar-link" data-section="settings">Settings Panel</a>
+          <a href="#platforms" class="sidebar-link" data-section="platforms">Platform Controls</a>
+          <a href="#keyboard-shortcuts" class="sidebar-link" data-section="keyboard-shortcuts">Keyboard Shortcuts</a>
+          <a href="#data-management" class="sidebar-link" data-section="data-management">Data Management</a>
+          <a href="#dark-mode" class="sidebar-link" data-section="dark-mode">Dark Mode</a>
+          <a href="#privacy-data" class="sidebar-link" data-section="privacy-data">Privacy &amp; Data</a>
+        </div>
+        <div class="sidebar-group">
+          <div class="sidebar-heading">Reference</div>
+          <a href="#supported-platforms" class="sidebar-link" data-section="supported-platforms">Supported Platforms</a>
+          <a href="#troubleshooting" class="sidebar-link" data-section="troubleshooting">Troubleshooting</a>
+          <a href="#faq" class="sidebar-link" data-section="faq">FAQ</a>
+        </div>
+      </nav>
+    </aside>
+
+    <main class="manual-content">
+
+      <!-- ════════ GETTING STARTED ════════ -->
+      <section class="manual-section" id="installation" data-search-keywords="install chrome extension add browser setup download">
+        <div class="section-badge">Getting Started</div>
+        <h2>Installation</h2>
+        <p>RecoMe works on Chrome, Edge, Brave, and any Chromium-based browser.</p>
+
+        <div class="steps-list">
+          <div class="manual-step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <h4>Visit the Chrome Web Store</h4>
+              <p>Search for "RecoMe" or use the direct install link from our website.</p>
+            </div>
+          </div>
+          <div class="manual-step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <h4>Click "Add to Chrome"</h4>
+              <p>Grant the requested permissions. RecoMe needs <strong>storage</strong> (to save your preferences locally), <strong>tabs</strong> (to detect which site you're on), and <strong>activeTab</strong> (to read page content for scoring).</p>
+            </div>
+          </div>
+          <div class="manual-step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <h4>Pin the Extension</h4>
+              <p>Click the puzzle icon in Chrome's toolbar, then pin RecoMe for quick access. The icon shows the RecoMe logo.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-icon">i</div>
+          <div>
+            <strong>System Requirements</strong>
+            <p>Chrome 109+, Edge 109+, Brave, or any Chromium-based browser. No account or server connection required.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="manual-section" id="onboarding" data-search-keywords="onboarding setup wizard first time welcome topics block like preferences">
+        <h2>First-Time Setup</h2>
+        <p>When you first install RecoMe, a quick onboarding wizard helps you configure your initial preferences.</p>
+
+        <div class="interactive-demo" id="onboarding-demo">
+          <div class="demo-window">
+            <div class="demo-header">
+              <img src="logo.png" alt="" class="demo-logo" />
+              <strong>RecoMe Onboarding</strong>
+            </div>
+            <div class="demo-body">
+              <div class="demo-slides" id="onboardingSlides">
+                <div class="demo-slide active" data-step="0">
+                  <div class="demo-illustration">
+                    <img src="logo.png" alt="RecoMe" style="width:48px;height:48px;border-radius:12px;margin:0 auto 12px;display:block;" />
+                  </div>
+                  <h4>Welcome to RecoMe</h4>
+                  <p>Your intelligent recommendation filter. Let's set up your preferences in under 30 seconds.</p>
+                </div>
+                <div class="demo-slide" data-step="1">
+                  <h4>What do you want to see less of?</h4>
+                  <p>Select topics to block, or type your own:</p>
+                  <div class="demo-chips">
+                    <button class="demo-chip" data-toggle>Crypto</button>
+                    <button class="demo-chip" data-toggle>Clickbait</button>
+                    <button class="demo-chip" data-toggle>Gambling</button>
+                    <button class="demo-chip" data-toggle>MLM / Scams</button>
+                    <button class="demo-chip" data-toggle>Celebrity Gossip</button>
+                    <button class="demo-chip" data-toggle>Rage Bait</button>
+                  </div>
+                </div>
+                <div class="demo-slide" data-step="2">
+                  <h4>What do you want to see more of?</h4>
+                  <p>Select topics to boost:</p>
+                  <div class="demo-chips">
+                    <button class="demo-chip positive" data-toggle>Technology</button>
+                    <button class="demo-chip positive" data-toggle>Science</button>
+                    <button class="demo-chip positive" data-toggle>Travel</button>
+                    <button class="demo-chip positive" data-toggle>Cooking</button>
+                    <button class="demo-chip positive" data-toggle>Music</button>
+                    <button class="demo-chip positive" data-toggle>Fitness</button>
+                  </div>
+                </div>
+                <div class="demo-slide" data-step="3">
+                  <h4>You're all set!</h4>
+                  <p>RecoMe will start filtering your feeds immediately. You can always adjust your preferences later.</p>
+                  <div class="demo-success-icon">&#10003;</div>
+                </div>
+              </div>
+            </div>
+            <div class="demo-footer">
+              <div class="demo-dots">
+                <span class="demo-dot active"></span>
+                <span class="demo-dot"></span>
+                <span class="demo-dot"></span>
+                <span class="demo-dot"></span>
+              </div>
+              <button class="demo-next-btn" id="onboardingNext">Next</button>
+            </div>
+          </div>
+          <p class="demo-caption">Try it! Click through the onboarding steps above.</p>
+        </div>
+      </section>
+
+      <section class="manual-section" id="quick-tour" data-search-keywords="tour overview popup tabs dashboard agent settings navigation">
+        <h2>Quick Tour</h2>
+        <p>The RecoMe popup has three main tabs. Click the extension icon in your toolbar to open it.</p>
+
+        <div class="tour-grid">
+          <div class="tour-card">
+            <div class="tour-card-icon">&#128202;</div>
+            <h4>Dashboard</h4>
+            <p>See your stats at a glance: items hidden today, total hidden, active blocks, memory entries. View achievements, active patterns, and manage your focus topic.</p>
+          </div>
+          <div class="tour-card">
+            <div class="tour-card-icon">&#129302;</div>
+            <h4>Agent</h4>
+            <p>Chat with your AI shopping companion. Ask about products, get comparisons, manage your watchlist, and understand why content was recommended or hidden.</p>
+          </div>
+          <div class="tour-card">
+            <div class="tour-card-icon">&#9881;</div>
+            <h4>Settings</h4>
+            <p>Manage blocked and liked topics, configure platform toggles, set aggressiveness, choose context mode, configure AI providers, and handle data import/export.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════ CORE FEATURES ════════ -->
+      <section class="manual-section" id="dashboard" data-search-keywords="dashboard stats metrics hidden blocked memory patterns statistics overview">
+        <div class="section-badge">Core Features</div>
+        <h2>Dashboard</h2>
+        <p>The Dashboard is your command center, showing real-time metrics about how RecoMe is working for you.</p>
+
+        <h3>Stats Cards</h3>
+        <div class="feature-detail-grid">
+          <div class="feature-detail">
+            <span class="feature-detail-icon">&#128584;</span>
+            <div>
+              <strong>Hidden Today</strong>
+              <p>Number of recommendation cards hidden in today's browsing session.</p>
+            </div>
+          </div>
+          <div class="feature-detail">
+            <span class="feature-detail-icon">&#128737;</span>
+            <div>
+              <strong>Total Hidden</strong>
+              <p>Cumulative count of all items RecoMe has ever hidden for you.</p>
+            </div>
+          </div>
+          <div class="feature-detail">
+            <span class="feature-detail-icon">&#128683;</span>
+            <div>
+              <strong>Active Blocks</strong>
+              <p>How many topics you currently have on your block list.</p>
+            </div>
+          </div>
+          <div class="feature-detail">
+            <span class="feature-detail-icon">&#129504;</span>
+            <div>
+              <strong>Memory Entries</strong>
+              <p>Total learned preferences stored in RecoMe's memory system.</p>
+            </div>
+          </div>
+        </div>
+
+        <h3>Active Patterns</h3>
+        <p>Below the stats, you'll see detected patterns. These are recurring preferences RecoMe has learned from your behavior, like "avoids clickbait" or "prefers tech content". The more you interact, the more patterns emerge.</p>
+
+        <h3>Quick Block &amp; Quick Like</h3>
+        <p>Type any topic in the Quick Block or Quick Like input fields to instantly add it to your block or boost list. A confirmation toast appears with the count of items affected.</p>
+      </section>
+
+      <section class="manual-section" id="blocking-boosting" data-search-keywords="block boost topic hide show more less filter quick block quick like unblock">
+        <h2>Blocking &amp; Boosting</h2>
+        <p>The core of RecoMe: tell it what you want to see less (or more) of.</p>
+
+        <div class="two-col">
+          <div class="manual-card red-accent">
+            <h4>&#128683; Blocking Topics</h4>
+            <p>Blocked topics are permanently hidden across all platforms. Content matching a blocked topic is immediately suppressed from your feed.</p>
+            <div class="how-to">
+              <strong>How to block:</strong>
+              <ul>
+                <li>Type a topic in the Dashboard's "Quick Block" field</li>
+                <li>Click the &#128683; button on any content card in your feed</li>
+                <li>Tell the agent: "Block crypto" in the chat</li>
+                <li>Use the keyboard shortcut (Ctrl+Shift+B / Cmd+Shift+B)</li>
+              </ul>
+            </div>
+          </div>
+          <div class="manual-card green-accent">
+            <h4>&#11088; Boosting Topics</h4>
+            <p>Boosted topics get priority visibility. Content matching a boosted topic is highlighted with a "Boosted" badge and surfaced more prominently.</p>
+            <div class="how-to">
+              <strong>How to boost:</strong>
+              <ul>
+                <li>Type a topic in the Dashboard's "Quick Like" field</li>
+                <li>Click the &#128077; button on any content card in your feed</li>
+                <li>Tell the agent: "I want to see more travel content"</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="tip-box">
+          <div class="tip-icon">&#128161;</div>
+          <div>
+            <strong>Tip:</strong> You can unblock or un-boost topics anytime from the Settings panel. Just click the X next to any topic in the Blocked or Liked lists.
+          </div>
+        </div>
+      </section>
+
+      <section class="manual-section" id="feed-interaction" data-search-keywords="feed cards badges floating menu thumbs up down block skip more less content interaction inline">
+        <h2>Feed Interaction</h2>
+        <p>When you browse supported platforms, RecoMe overlays decision badges and a floating action menu on recommendation cards.</p>
+
+        <h3>Decision Badges</h3>
+        <p>Each scored content card shows a small badge indicating RecoMe's assessment:</p>
+        <div class="badge-showcase">
+          <div class="showcase-badge good">Good fit</div>
+          <div class="showcase-badge caution">Caution</div>
+          <div class="showcase-badge lower">Lower priority</div>
+          <div class="showcase-badge boosted">Boosted</div>
+        </div>
+        <p>Badges appear on shopping sites (Amazon, eBay, Walmart) showing product relevance to your preferences.</p>
+
+        <h3>Floating Action Menu</h3>
+        <p>Hover over (or long-press on mobile) any recommendation card to reveal the action menu:</p>
+        <div class="action-demo">
+          <div class="action-btn-demo">&#128077; <span>More like this</span></div>
+          <div class="action-btn-demo">&#128078; <span>Less like this</span></div>
+          <div class="action-btn-demo">&#128683; <span>Block this topic</span></div>
+          <div class="action-btn-demo">&#9200; <span>Skip for now</span></div>
+        </div>
+        <p>Every action is recorded in memory and teaches RecoMe your preferences. A toast confirmation appears with an <strong>Undo</strong> option for 5 seconds.</p>
+
+        <h3>Intent Buttons (Shopping Sites)</h3>
+        <p>On commerce platforms, you'll also see intent buttons that let you declare specific preferences:</p>
+        <div class="intent-demo">
+          <span class="intent-demo-chip positive">Interested</span>
+          <span class="intent-demo-chip negative">Not for me</span>
+          <span class="intent-demo-chip neutral">Already bought</span>
+          <span class="intent-demo-chip neutral">Researching</span>
+          <span class="intent-demo-chip brand">Prefer this brand</span>
+          <span class="intent-demo-chip warn">Avoid this seller</span>
+        </div>
+        <p>These intents are remembered with appropriate expiration windows (7-30 days depending on type) and affect scoring across all platforms.</p>
+      </section>
+
+      <section class="manual-section" id="focus-mode" data-search-keywords="focus mode research topic boost temporary 7 days set clear">
+        <h2>Focus Mode</h2>
+        <p>Researching a specific topic? Focus Mode temporarily boosts related content across all platforms.</p>
+
+        <div class="how-to standalone">
+          <strong>How to use Focus Mode:</strong>
+          <ol>
+            <li>Open the Dashboard tab in the popup</li>
+            <li>Find the "Current Focus" section</li>
+            <li>Type your research topic (e.g., "noise-canceling headphones")</li>
+            <li>Click "Set Focus"</li>
+          </ol>
+        </div>
+
+        <div class="info-box">
+          <div class="info-icon">i</div>
+          <div>
+            <strong>Auto-Expiry</strong>
+            <p>Focus topics automatically expire after <strong>7 days</strong>. You can clear a focus at any time from the Dashboard, or set a new one to replace it.</p>
+          </div>
+        </div>
+
+        <p>While a focus is active, RecoMe boosts content related to your focus topic on every platform. A "Current Focus" indicator appears in the Dashboard showing the active topic and how long ago it was set.</p>
+      </section>
+
+      <section class="manual-section" id="achievements" data-search-keywords="achievements badges unlock milestones gamification first block clean sweep feed master unicorn party time">
+        <h2>Achievements</h2>
+        <p>RecoMe gamifies your feed curation with 13 achievements to unlock. Track your progress on the Dashboard.</p>
+
+        <div class="achievements-grid">
+          <div class="ach-card">
+            <span class="ach-emoji">&#127919;</span>
+            <strong>First Block</strong>
+            <p>Block your first topic</p>
+          </div>
+          <div class="ach-card">
+            <span class="ach-emoji">&#10024;</span>
+            <strong>Clean Start</strong>
+            <p>Complete the onboarding wizard</p>
+          </div>
+          <div class="ach-card">
+            <span class="ach-emoji">&#127891;</span>
+            <strong>Quick Learner</strong>
+            <p>Give feedback on 10 items</p>
+          </div>
+          <div class="ach-card">
+            <span class="ach-emoji">&#128175;</span>
+            <strong>Clean Sweep</strong>
+            <p>Hide 100 items</p>
+          </div>
+          <div class="ach-card">
+            <span class="ach-emoji">&#129504;</span>
+            <strong>Mind Reader</strong>
+            <p>Trigger 10 pattern detections</p>
+          </div>
+          <div class="ach-card">
+            <span class="ach-emoji">&#128269;</span>
+            <strong>Laser Focus</strong>
+            <p>Set 5 different focus topics</p>
+          </div>
+          <div class="ach-card">
+            <span class="ach-emoji">&#127942;</span>
+            <strong>Feed Master</strong>
+            <p>Hide 1,000 items</p>
+          </div>
+          <div class="ach-card">
+            <span class="ach-emoji">&#9889;</span>
+            <strong>Power User</strong>
+            <p>Use RecoMe for 30 active days</p>
+          </div>
+          <div class="ach-card">
+            <span class="ach-emoji">&#128722;</span>
+            <strong>Smart Shopper</strong>
+            <p>Score your first product</p>
+          </div>
+          <div class="ach-card">
+            <span class="ach-emoji">&#128184;</span>
+            <strong>Deal Hunter</strong>
+            <p>Score 50 products</p>
+          </div>
+          <div class="ach-card">
+            <span class="ach-emoji">&#128203;</span>
+            <strong>Curator</strong>
+            <p>Add 5 items to your watchlist</p>
+          </div>
+          <div class="ach-card secret">
+            <span class="ach-emoji">&#129412;</span>
+            <strong>Unicorn</strong>
+            <p>??? (Secret!)</p>
+          </div>
+          <div class="ach-card secret">
+            <span class="ach-emoji">&#127881;</span>
+            <strong>Party Time</strong>
+            <p>Block 10 topics in under 1 minute</p>
+          </div>
+        </div>
+
+        <p>Milestone toasts celebrate you at 10, 100, 500, and 1,000 items hidden.</p>
+      </section>
+
+      <!-- ════════ INTELLIGENCE ════════ -->
+      <section class="manual-section" id="smart-scoring" data-search-keywords="scoring recommendation engine factors block pattern graph affinity context recency multi-factor pipeline">
+        <div class="section-badge">Intelligence</div>
+        <h2>Smart Scoring</h2>
+        <p>Every piece of content goes through RecoMe's multi-factor scoring pipeline to determine what you see.</p>
+
+        <h3>Scoring Factors</h3>
+        <div class="factor-pipeline">
+          <div class="factor-card">
+            <div class="factor-num">1</div>
+            <strong>Direct Block Check</strong>
+            <p>Is this topic on your block list? If yes, hide immediately.</p>
+          </div>
+          <div class="factor-arrow">&#8594;</div>
+          <div class="factor-card">
+            <div class="factor-num">2</div>
+            <strong>Pattern Matching</strong>
+            <p>Does this match a learned behavior pattern (e.g., "avoids clickbait")?</p>
+          </div>
+          <div class="factor-arrow">&#8594;</div>
+          <div class="factor-card">
+            <div class="factor-num">3</div>
+            <strong>Graph Affinity</strong>
+            <p>How related is this topic to things you like or dislike in the knowledge graph?</p>
+          </div>
+          <div class="factor-arrow">&#8594;</div>
+          <div class="factor-card">
+            <div class="factor-num">4</div>
+            <strong>Context Fit</strong>
+            <p>Does this match your current context (time of day, platform, activity)?</p>
+          </div>
+          <div class="factor-arrow">&#8594;</div>
+          <div class="factor-card">
+            <div class="factor-num">5</div>
+            <strong>Recency</strong>
+            <p>Favor fresh content over stale recommendations.</p>
+          </div>
+        </div>
+
+        <h3>Score Actions</h3>
+        <p>All factors combine into a final score from -1 to +1, which maps to an action:</p>
+        <div class="score-scale">
+          <div class="scale-segment hide-segment">
+            <strong>Hide</strong>
+            <small>Strongly negative</small>
+          </div>
+          <div class="scale-segment suppress-segment">
+            <strong>Suppress</strong>
+            <small>Mildly negative</small>
+          </div>
+          <div class="scale-segment show-segment">
+            <strong>Show</strong>
+            <small>Neutral</small>
+          </div>
+          <div class="scale-segment boost-segment">
+            <strong>Boost</strong>
+            <small>Positive</small>
+          </div>
+        </div>
+        <p>The <strong>Aggressiveness</strong> slider in Settings controls where the hide/suppress thresholds sit. Higher aggressiveness means more content is hidden.</p>
+      </section>
+
+      <section class="manual-section" id="pattern-learning" data-search-keywords="pattern detection learning mid-term cards behavior memory automatic preferences">
+        <h2>Pattern Learning</h2>
+        <p>RecoMe automatically detects recurring patterns in your behavior and creates "mid-term cards" that influence future scoring.</p>
+
+        <div class="how-it-works-box">
+          <div class="hw-step">
+            <div class="hw-num">1</div>
+            <p>You interact with content (block, like, skip, dwell)</p>
+          </div>
+          <div class="hw-arrow">&#8595;</div>
+          <div class="hw-step">
+            <div class="hw-num">2</div>
+            <p>Events accumulate per topic</p>
+          </div>
+          <div class="hw-arrow">&#8595;</div>
+          <div class="hw-step">
+            <div class="hw-num">3</div>
+            <p>After 3 similar events, a pattern is detected</p>
+          </div>
+          <div class="hw-arrow">&#8595;</div>
+          <div class="hw-step">
+            <div class="hw-num">4</div>
+            <p>A mid-term card is created (e.g., "block_pattern: clickbait")</p>
+          </div>
+          <div class="hw-arrow">&#8595;</div>
+          <div class="hw-step">
+            <div class="hw-num">5</div>
+            <p>Future content is scored against these patterns</p>
+          </div>
+        </div>
+
+        <div class="tip-box">
+          <div class="tip-icon">&#128161;</div>
+          <div>
+            <strong>Memory Decay:</strong> Old patterns naturally fade over time with a 30-day half-life. This means RecoMe adapts as your interests change. Recent interactions always carry more weight than older ones.
+          </div>
+        </div>
+      </section>
+
+      <section class="manual-section" id="knowledge-graph" data-search-keywords="knowledge graph entities relations topics connections relationships">
+        <h2>Knowledge Graph</h2>
+        <p>Under the hood, RecoMe maintains a knowledge graph that maps relationships between topics, brands, categories, and entities. This is how it understands that blocking "spam" should also reduce "phishing" content, or that liking "Sony" is related to "electronics".</p>
+
+        <div class="graph-visual">
+          <div class="graph-node center-node">&#129504; You</div>
+          <div class="graph-connections">
+            <div class="graph-branch">
+              <div class="graph-line green-line"></div>
+              <div class="graph-node like-node">Travel</div>
+              <div class="graph-sub-nodes">
+                <span>Hiking</span>
+                <span>Photography</span>
+                <span>Asia</span>
+              </div>
+            </div>
+            <div class="graph-branch">
+              <div class="graph-line red-line"></div>
+              <div class="graph-node block-node">Crypto</div>
+              <div class="graph-sub-nodes">
+                <span>NFTs</span>
+                <span>Trading</span>
+              </div>
+            </div>
+            <div class="graph-branch">
+              <div class="graph-line blue-line"></div>
+              <div class="graph-node neutral-node">Tech</div>
+              <div class="graph-sub-nodes">
+                <span>AI</span>
+                <span>Programming</span>
+                <span>Gadgets</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p>The graph is pre-seeded with common topic relationships and grows as you use RecoMe. Cross-platform linking strengthens connections when you engage with the same topic on multiple platforms.</p>
+      </section>
+
+      <section class="manual-section" id="context-detection" data-search-keywords="context detection automatic work shopping entertainment learning social general time of day">
+        <h2>Context Detection</h2>
+        <p>RecoMe automatically detects your browsing context and adjusts scoring accordingly. What's relevant during work hours may differ from evening browsing.</p>
+
+        <div class="context-grid">
+          <div class="context-card">
+            <span>&#128188;</span>
+            <strong>Work</strong>
+            <p>Weekday mornings. Boosts productivity, tech, professional content.</p>
+          </div>
+          <div class="context-card">
+            <span>&#128722;</span>
+            <strong>Shopping</strong>
+            <p>On commerce sites. Enables product scoring and intent buttons.</p>
+          </div>
+          <div class="context-card">
+            <span>&#127916;</span>
+            <strong>Entertainment</strong>
+            <p>Evenings and weekends. More permissive toward fun content.</p>
+          </div>
+          <div class="context-card">
+            <span>&#128218;</span>
+            <strong>Learning</strong>
+            <p>On educational platforms. Boosts tutorials, courses, documentation.</p>
+          </div>
+          <div class="context-card">
+            <span>&#128172;</span>
+            <strong>Social</strong>
+            <p>On social platforms. Context-aware for feeds and timelines.</p>
+          </div>
+          <div class="context-card">
+            <span>&#127760;</span>
+            <strong>General</strong>
+            <p>Default mode. Balanced scoring across all content types.</p>
+          </div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-icon">i</div>
+          <div>
+            <strong>Manual Override</strong>
+            <p>You can override automatic context detection in Settings. Select a fixed context mode or leave it on "Auto" for intelligent detection.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="manual-section" id="cross-platform" data-search-keywords="cross-platform sync linking multi-site preferences universal amazon youtube twitter">
+        <h2>Cross-Platform Sync</h2>
+        <p>Your preferences carry across all platforms. Block "clickbait" once, and it's hidden on YouTube, Twitter, Facebook, and everywhere else.</p>
+
+        <div class="cross-platform-visual">
+          <div class="cp-hub">
+            <img src="logo.png" alt="RecoMe" style="width:32px;height:32px;border-radius:8px;" />
+            <strong>Your Preferences</strong>
+          </div>
+          <div class="cp-spokes">
+            <div class="cp-spoke"><span>&#9654;</span> YouTube</div>
+            <div class="cp-spoke"><span>&#128230;</span> Amazon</div>
+            <div class="cp-spoke"><span>&#128247;</span> Instagram</div>
+            <div class="cp-spoke"><span>&#120143;</span> Twitter/X</div>
+            <div class="cp-spoke"><span>&#120125;</span> Facebook</div>
+            <div class="cp-spoke"><span>&#128717;</span> eBay</div>
+            <div class="cp-spoke"><span>&#127980;</span> Walmart</div>
+            <div class="cp-spoke"><span>&#127760;</span> Every Site</div>
+          </div>
+        </div>
+
+        <p>The Cross-Platform Linker runs daily to strengthen connections between equivalent topics across platforms. For example, if you engage with "machine learning" on YouTube and "ML ops" on Twitter, RecoMe recognizes the relationship.</p>
+      </section>
+
+      <section class="manual-section" id="implicit-signals" data-search-keywords="implicit learning dwell time scroll click passive automatic signals behavior">
+        <h2>Implicit Learning</h2>
+        <p>RecoMe doesn't just learn from your explicit actions. It also picks up on subtle behavioral signals to refine your preferences.</p>
+
+        <div class="signal-table">
+          <div class="signal-row header">
+            <span>Signal</span>
+            <span>How it's detected</span>
+            <span>Strength</span>
+          </div>
+          <div class="signal-row">
+            <span><strong>Short Dwell</strong></span>
+            <span>Content visible for 7+ seconds</span>
+            <span class="strength mild">Mild interest</span>
+          </div>
+          <div class="signal-row">
+            <span><strong>Extended Dwell</strong></span>
+            <span>Content visible for 30+ seconds</span>
+            <span class="strength strong">Strong interest</span>
+          </div>
+          <div class="signal-row">
+            <span><strong>Click-through</strong></span>
+            <span>Clicked a recommendation link</span>
+            <span class="strength mild">Mild interest</span>
+          </div>
+          <div class="signal-row">
+            <span><strong>Scroll Past</strong></span>
+            <span>Quickly scrolled past content</span>
+            <span class="strength low">Low interest</span>
+          </div>
+          <div class="signal-row">
+            <span><strong>Revisit</strong></span>
+            <span>Returned to content within 24 hours</span>
+            <span class="strength strong">Strong interest</span>
+          </div>
+          <div class="signal-row">
+            <span><strong>Search Query</strong></span>
+            <span>Searched for a specific topic</span>
+            <span class="strength moderate">Moderate interest</span>
+          </div>
+        </div>
+
+        <p>Implicit signals have lower confidence (0.4-0.6) than explicit actions (1.0), so they gently influence scoring without overriding your stated preferences.</p>
+      </section>
+
+      <!-- ════════ AGENT & AI ════════ -->
+      <section class="manual-section" id="agent-chat" data-search-keywords="agent chat ai conversation shopping companion ask question recommend explain">
+        <div class="section-badge">Agent &amp; AI</div>
+        <h2>Agent Chat</h2>
+        <p>The Agent tab gives you a conversational interface to interact with RecoMe. It works in two modes:</p>
+
+        <div class="two-col">
+          <div class="manual-card blue-accent">
+            <h4>&#129302; AI Mode</h4>
+            <p>When an AI provider is configured, the agent uses LLM-powered conversations for natural, contextual responses. Shows provider name and "AI powered" badge.</p>
+            <div class="mode-features">
+              <span>Natural language understanding</span>
+              <span>Follow-up suggestions</span>
+              <span>Detailed explanations</span>
+              <span>Preference analysis</span>
+            </div>
+          </div>
+          <div class="manual-card gray-accent">
+            <h4>&#9889; Quick Mode</h4>
+            <p>Without an API key, the agent uses smart pattern matching. Fast, private, no external calls. Shows "Quick mode" badge.</p>
+            <div class="mode-features">
+              <span>Compare products</span>
+              <span>Watchlist management</span>
+              <span>Basic explanations</span>
+              <span>Topic blocking/boosting</span>
+            </div>
+          </div>
+        </div>
+
+        <h3>What You Can Ask</h3>
+        <div class="chat-examples">
+          <div class="chat-example">
+            <div class="chat-q">"Which headphones should I buy?"</div>
+            <div class="chat-a">Compares products in your browsing history based on your preferences</div>
+          </div>
+          <div class="chat-example">
+            <div class="chat-q">"Why was this hidden?"</div>
+            <div class="chat-a">Explains the scoring factors that led to a recommendation decision</div>
+          </div>
+          <div class="chat-example">
+            <div class="chat-q">"Show my watchlist"</div>
+            <div class="chat-a">Lists all saved products with notes and timestamps</div>
+          </div>
+          <div class="chat-example">
+            <div class="chat-q">"Block all crypto content"</div>
+            <div class="chat-a">Adds "crypto" to your block list and confirms</div>
+          </div>
+          <div class="chat-example">
+            <div class="chat-q">"What are my preferences?"</div>
+            <div class="chat-a">Summarizes your learned preferences, top topics, and patterns (AI mode)</div>
+          </div>
+        </div>
+
+        <div class="tip-box">
+          <div class="tip-icon">&#128161;</div>
+          <div>
+            <strong>Quick suggestions:</strong> The agent shows clickable suggestion buttons below the input. Use them for common actions like "Which should I buy?" or "Show my watchlist".
+          </div>
+        </div>
+      </section>
+
+      <section class="manual-section" id="product-compare" data-search-keywords="compare products ranking side by side tradeoff analysis best match alternatives">
+        <h2>Product Comparison</h2>
+        <p>Ask the agent to compare products you've been looking at. RecoMe scores each candidate against your preferences and presents a ranked comparison.</p>
+
+        <div class="compare-demo">
+          <div class="compare-item rank-1">
+            <div class="compare-rank">&#129351;</div>
+            <div class="compare-body">
+              <strong>Sony WH-1000XM5</strong>
+              <span class="compare-score good">Best match</span>
+              <p>Matches brand preference + quality-first mode. 4.8 stars, $348.</p>
+            </div>
+          </div>
+          <div class="compare-item rank-2">
+            <div class="compare-rank">&#129352;</div>
+            <div class="compare-body">
+              <strong>Bose QC Ultra</strong>
+              <span class="compare-score moderate">Strong alternative</span>
+              <p>Better call quality. $50 more. Brand not in preferences.</p>
+            </div>
+          </div>
+          <div class="compare-item rank-3">
+            <div class="compare-rank">&#129353;</div>
+            <div class="compare-body">
+              <strong>Beats Studio Pro</strong>
+              <span class="compare-score caution">Consider carefully</span>
+              <p>Mixed reviews on comfort. Lower durability rating.</p>
+            </div>
+          </div>
+        </div>
+
+        <p>In AI mode, the agent also generates a conversational narrative explaining the tradeoffs in plain language.</p>
+      </section>
+
+      <section class="manual-section" id="watchlist" data-search-keywords="watchlist save product later bookmark track monitor">
+        <h2>Watchlist</h2>
+        <p>Save products you're considering for later. Access your watchlist through the agent chat.</p>
+
+        <div class="how-to standalone">
+          <strong>Managing your watchlist:</strong>
+          <ul>
+            <li><strong>Add:</strong> Click "Add to watchlist" on any product card, or tell the agent</li>
+            <li><strong>View:</strong> Ask the agent "Show my watchlist"</li>
+            <li><strong>Remove:</strong> Ask the agent "Remove [product] from watchlist"</li>
+            <li><strong>Notes:</strong> Add optional notes when saving for context later</li>
+          </ul>
+        </div>
+
+        <p>Watchlist data is stored locally in IndexedDB and included when you export your data.</p>
+      </section>
+
+      <section class="manual-section" id="ai-config" data-search-keywords="ai configuration api key claude openai gpt gemini anthropic provider setup">
+        <h2>AI Configuration</h2>
+        <p>RecoMe works fully without AI. But for enhanced natural language understanding, you can optionally connect your own AI provider.</p>
+
+        <h3>Supported Providers</h3>
+        <div class="provider-grid">
+          <div class="provider-card">
+            <strong>Anthropic (Claude)</strong>
+            <small>Claude Haiku 4.5</small>
+            <p>Fast, accurate, cost-efficient. Recommended.</p>
+          </div>
+          <div class="provider-card">
+            <strong>OpenAI (GPT)</strong>
+            <small>GPT-5</small>
+            <p>Broad knowledge, good at comparisons.</p>
+          </div>
+          <div class="provider-card">
+            <strong>Google (Gemini)</strong>
+            <small>Gemini 2.5 Flash</small>
+            <p>Fast responses, integrated with Google ecosystem.</p>
+          </div>
+        </div>
+
+        <div class="how-to standalone">
+          <strong>How to configure:</strong>
+          <ol>
+            <li>Open RecoMe popup &rarr; Settings tab</li>
+            <li>Scroll to "AI Enhancement" section</li>
+            <li>Select your provider (Anthropic, OpenAI, or Google)</li>
+            <li>Paste your API key</li>
+            <li>Click "Save" &mdash; the agent will confirm the connection</li>
+          </ol>
+        </div>
+
+        <div class="info-box warning">
+          <div class="info-icon">!</div>
+          <div>
+            <strong>Your Key, Your Control</strong>
+            <p>Your API key is stored locally in your browser. API calls go directly from your browser to the provider. RecoMe never sees your key or your data. You can disable AI at any time.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="manual-section" id="proactive-insights" data-search-keywords="insights proactive notifications patterns research fatigue drift toast suggestions">
+        <h2>Proactive Insights</h2>
+        <p>RecoMe doesn't just wait for you to ask. It detects patterns and surfaces insights as notifications.</p>
+
+        <div class="insights-grid">
+          <div class="insight-card">
+            <div class="insight-icon">&#128269;</div>
+            <strong>Extended Research</strong>
+            <p>"You've been researching TVs for 3 days. Want me to compare your top picks?"</p>
+            <small>Triggered: 3+ events in same category over 3 days</small>
+          </div>
+          <div class="insight-card">
+            <div class="insight-icon">&#128555;</div>
+            <strong>Decision Fatigue</strong>
+            <p>"You've looked at 12 laptops. Want me to narrow it down?"</p>
+            <small>Triggered: 10+ products in same category, no action</small>
+          </div>
+          <div class="insight-card">
+            <div class="insight-icon">&#127760;</div>
+            <strong>Cross-Platform</strong>
+            <p>"You're watching Python tutorials and following Python devs. Boost Python everywhere?"</p>
+            <small>Triggered: Same topic on 2+ platforms</small>
+          </div>
+          <div class="insight-card">
+            <div class="insight-icon">&#128260;</div>
+            <strong>Preference Drift</strong>
+            <p>"You used to prefer Sony but lately you've been looking at Bose."</p>
+            <small>Triggered: Implicit signals contradicting stated preferences</small>
+          </div>
+        </div>
+
+        <p>Insights appear as toast notifications on supported pages and as banners in the Agent chat. You can dismiss them or start a conversation to act on them.</p>
+      </section>
+
+      <!-- ════════ SETTINGS & DATA ════════ -->
+      <section class="manual-section" id="settings" data-search-keywords="settings panel configuration preferences aggressiveness slider options">
+        <div class="section-badge">Settings &amp; Data</div>
+        <h2>Settings Panel</h2>
+        <p>The Settings tab in the popup gives you full control over RecoMe's behavior.</p>
+
+        <h3>Aggressiveness Slider</h3>
+        <div class="slider-demo">
+          <div class="slider-labels">
+            <span>Low</span>
+            <span>Medium</span>
+            <span>High</span>
+          </div>
+          <div class="slider-bar">
+            <div class="slider-fill"></div>
+            <div class="slider-thumb"></div>
+          </div>
+          <div class="slider-desc">
+            <span>Permissive. Only hides exact block matches.</span>
+            <span>Balanced. Hides strong mismatches.</span>
+            <span>Strict. Aggressively filters weak content.</span>
+          </div>
+        </div>
+
+        <h3>Topic Management</h3>
+        <p>View and manage all blocked and liked topics. Each shows as a chip with an X button to remove.</p>
+
+        <h3>Context Override</h3>
+        <p>Override automatic context detection by selecting a fixed mode: Auto, General, Work, Shopping, Entertainment, Learning, or Social.</p>
+      </section>
+
+      <section class="manual-section" id="platforms" data-search-keywords="platform controls toggle enable disable youtube amazon twitter facebook instagram ebay walmart">
+        <h2>Platform Controls</h2>
+        <p>Enable or disable RecoMe on a per-platform basis from the Settings panel.</p>
+
+        <div class="platform-toggles-demo">
+          <div class="toggle-row"><span>&#9654; YouTube</span> <span class="toggle on">ON</span></div>
+          <div class="toggle-row"><span>&#128230; Amazon</span> <span class="toggle on">ON</span></div>
+          <div class="toggle-row"><span>&#128247; Instagram</span> <span class="toggle on">ON</span></div>
+          <div class="toggle-row"><span>&#120143; Twitter/X</span> <span class="toggle on">ON</span></div>
+          <div class="toggle-row"><span>&#120125; Facebook</span> <span class="toggle on">ON</span></div>
+          <div class="toggle-row"><span>&#128717; eBay</span> <span class="toggle on">ON</span></div>
+          <div class="toggle-row"><span>&#127980; Walmart</span> <span class="toggle on">ON</span></div>
+        </div>
+
+        <p>When a platform is disabled, RecoMe won't run on that site. All other platforms and the generic adapter still work.</p>
+      </section>
+
+      <section class="manual-section" id="keyboard-shortcuts" data-search-keywords="keyboard shortcuts hotkeys commands ctrl shift quick block toggle extension popup">
+        <h2>Keyboard Shortcuts</h2>
+        <p>Power users can control RecoMe entirely from the keyboard.</p>
+
+        <div class="shortcuts-table">
+          <div class="shortcut-row header">
+            <span>Action</span>
+            <span>Windows / Linux</span>
+            <span>macOS</span>
+          </div>
+          <div class="shortcut-row">
+            <span>Open RecoMe popup</span>
+            <span><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd></span>
+            <span><kbd>&#8984;</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd></span>
+          </div>
+          <div class="shortcut-row">
+            <span>Quick Block current page topic</span>
+            <span><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd></span>
+            <span><kbd>&#8984;</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd></span>
+          </div>
+          <div class="shortcut-row">
+            <span>Toggle RecoMe on/off</span>
+            <span><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd></span>
+            <span><kbd>&#8984;</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd></span>
+          </div>
+        </div>
+
+        <div class="tip-box">
+          <div class="tip-icon">&#128161;</div>
+          <div>
+            <strong>Customizing shortcuts:</strong> Go to <code>chrome://extensions/shortcuts</code> to reassign RecoMe's keyboard shortcuts to your preferred key combinations.
+          </div>
+        </div>
+      </section>
+
+      <section class="manual-section" id="data-management" data-search-keywords="data export import backup restore clear reset json download upload">
+        <h2>Data Management</h2>
+        <p>Full control over your data. Everything is local, exportable, and deletable.</p>
+
+        <div class="data-actions-grid">
+          <div class="data-action-card">
+            <div class="data-action-icon">&#128190;</div>
+            <strong>Export Data</strong>
+            <p>Download all your preferences, memory, graph, and stats as a JSON file. Great for backups or transferring to another browser.</p>
+          </div>
+          <div class="data-action-card">
+            <div class="data-action-icon">&#128229;</div>
+            <strong>Import Data</strong>
+            <p>Upload a previously exported JSON file to merge with your current data. Useful when setting up a new browser.</p>
+          </div>
+          <div class="data-action-card">
+            <div class="data-action-icon">&#128465;</div>
+            <strong>Clear All Data</strong>
+            <p>Permanently delete all stored data and start fresh. This action is irreversible. A confirmation dialog protects against accidental clicks.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="manual-section" id="dark-mode" data-search-keywords="dark mode theme light toggle appearance">
+        <h2>Dark Mode</h2>
+        <p>Toggle between light and dark themes using the moon/sun icon in the popup header.</p>
+
+        <div class="theme-demo">
+          <div class="theme-card light-theme">
+            <div class="theme-header-mock">
+              <span>&#9728;&#65039;</span> Light Mode
+            </div>
+            <div class="theme-body-mock">
+              <div class="theme-line"></div>
+              <div class="theme-line short"></div>
+            </div>
+          </div>
+          <div class="theme-arrow">&#8596;</div>
+          <div class="theme-card dark-theme">
+            <div class="theme-header-mock">
+              <span>&#127769;</span> Dark Mode
+            </div>
+            <div class="theme-body-mock">
+              <div class="theme-line"></div>
+              <div class="theme-line short"></div>
+            </div>
+          </div>
+        </div>
+
+        <p>Your theme preference persists across sessions. The popup and all UI elements adapt to your chosen theme.</p>
+      </section>
+
+      <section class="manual-section" id="privacy-data" data-search-keywords="privacy data local storage no servers no tracking security">
+        <h2>Privacy &amp; Data</h2>
+        <p>RecoMe is designed with privacy as a core principle, not an afterthought.</p>
+
+        <div class="privacy-summary">
+          <div class="privacy-point green">
+            <span>&#10003;</span>
+            <p>All data stored locally in your browser (Chrome Storage + IndexedDB)</p>
+          </div>
+          <div class="privacy-point green">
+            <span>&#10003;</span>
+            <p>No accounts, no servers, no analytics, no telemetry</p>
+          </div>
+          <div class="privacy-point green">
+            <span>&#10003;</span>
+            <p>AI calls go directly from your browser to the provider (if configured)</p>
+          </div>
+          <div class="privacy-point green">
+            <span>&#10003;</span>
+            <p>Full data export/import/delete control</p>
+          </div>
+          <div class="privacy-point green">
+            <span>&#10003;</span>
+            <p>Open source &mdash; inspect the code yourself</p>
+          </div>
+          <div class="privacy-point red">
+            <span>&#10007;</span>
+            <p>No browsing history collected</p>
+          </div>
+          <div class="privacy-point red">
+            <span>&#10007;</span>
+            <p>No personal information stored</p>
+          </div>
+          <div class="privacy-point red">
+            <span>&#10007;</span>
+            <p>No data sold or shared with third parties</p>
+          </div>
+        </div>
+
+        <p>Read our full <a href="privacy.html">Privacy Policy</a> for complete details.</p>
+      </section>
+
+      <!-- ════════ REFERENCE ════════ -->
+      <section class="manual-section" id="supported-platforms" data-search-keywords="supported platforms websites list youtube amazon instagram twitter facebook ebay walmart generic">
+        <div class="section-badge">Reference</div>
+        <h2>Supported Platforms</h2>
+        <p>RecoMe has dedicated adapters for 7 major platforms, plus a generic adapter for every other website.</p>
+
+        <div class="platform-ref-grid">
+          <div class="platform-ref">
+            <strong>&#9654; YouTube</strong>
+            <p>Feed videos, search results, shorts, sidebar recommendations, playlists. Detects and flags ads.</p>
+          </div>
+          <div class="platform-ref">
+            <strong>&#128230; Amazon</strong>
+            <p>Search results, product recommendations, "Customers also bought", home page carousels, best sellers. 40+ CSS selectors for comprehensive coverage.</p>
+          </div>
+          <div class="platform-ref">
+            <strong>&#128247; Instagram</strong>
+            <p>Feed posts, explore page, reels, and story items.</p>
+          </div>
+          <div class="platform-ref">
+            <strong>&#120143; Twitter / X</strong>
+            <p>Timeline tweets, trending topics, "Who to follow" suggestions.</p>
+          </div>
+          <div class="platform-ref">
+            <strong>&#120125; Facebook</strong>
+            <p>News feed posts, marketplace items, reels.</p>
+          </div>
+          <div class="platform-ref">
+            <strong>&#128717; eBay</strong>
+            <p>Product listings, search results, recommendation carousels.</p>
+          </div>
+          <div class="platform-ref">
+            <strong>&#127980; Walmart</strong>
+            <p>Product listings, deals, suggestion carousels.</p>
+          </div>
+          <div class="platform-ref special">
+            <strong>&#127760; Every Other Website</strong>
+            <p>The generic adapter detects common card patterns (articles, product grids, list items) on any HTTPS site. Coverage depends on the site's HTML structure.</p>
+          </div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-icon">i</div>
+          <div>
+            <strong>Excluded Sites</strong>
+            <p>RecoMe automatically skips chat and communication apps: WhatsApp, Telegram, Discord, Slack, Teams, Google Meet, Zoom, Gmail, Outlook, Messenger, Signal, and Element.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="manual-section" id="troubleshooting" data-search-keywords="troubleshooting problems issues fix not working error debug">
+        <h2>Troubleshooting</h2>
+
+        <div class="faq-list">
+          <details class="faq-item">
+            <summary>RecoMe isn't hiding anything on a site</summary>
+            <div class="faq-answer">
+              <ol>
+                <li>Check that the platform is enabled in Settings</li>
+                <li>Make sure RecoMe isn't toggled off (check for "OFF" badge on the icon)</li>
+                <li>The site may not have recognizable recommendation patterns for the generic adapter</li>
+                <li>Try refreshing the page &mdash; RecoMe initializes on page load</li>
+              </ol>
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary>The Agent says "Quick mode" but I configured an API key</summary>
+            <div class="faq-answer">
+              <ol>
+                <li>Open Settings &rarr; AI Enhancement</li>
+                <li>Verify your API key is correct and saved</li>
+                <li>Check that you selected the right provider</li>
+                <li>Ensure you have API credits remaining with your provider</li>
+              </ol>
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary>Content is being hidden that I want to see</summary>
+            <div class="faq-answer">
+              <ul>
+                <li>Lower the Aggressiveness slider in Settings</li>
+                <li>Check your blocked topics list for overly broad topics</li>
+                <li>Use the &#128077; button on content you want to see more of</li>
+                <li>Boost specific topics you enjoy</li>
+              </ul>
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary>The extension feels slow</summary>
+            <div class="faq-answer">
+              <ul>
+                <li>RecoMe processes content in the background &mdash; initial page loads should not be affected</li>
+                <li>If the popup is slow, try clearing old data (Settings &rarr; Clear All Data)</li>
+                <li>Check the DevTools page (popup footer &rarr; "DevTools") for performance metrics</li>
+                <li>Disable platforms you don't use to reduce processing</li>
+              </ul>
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary>The popup shows "Background service restarting"</summary>
+            <div class="faq-answer">
+              <p>Chrome occasionally puts service workers to sleep. RecoMe detects this and shows a degraded-mode banner. The service worker will restart automatically within a few seconds. All your data is preserved.</p>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <section class="manual-section" id="faq" data-search-keywords="faq frequently asked questions help common">
+        <h2>Frequently Asked Questions</h2>
+
+        <div class="faq-list">
+          <details class="faq-item">
+            <summary>Is RecoMe really free?</summary>
+            <div class="faq-answer">
+              <p>Yes, completely free. There's no premium tier, no subscription, and no hidden costs. The optional AI features use <em>your own</em> API key with your own provider, so you control the costs directly.</p>
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary>Does RecoMe send my data anywhere?</summary>
+            <div class="faq-answer">
+              <p>No. All data stays in your browser. The only external calls happen if you configure an AI provider, and those go directly from your browser to the AI provider's API. RecoMe has no server.</p>
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary>Will blocking topics affect my actual platform accounts?</summary>
+            <div class="faq-answer">
+              <p>No. RecoMe works as a visual overlay. It hides content in your browser but doesn't interact with platform APIs or modify your account settings. Your YouTube subscriptions, Amazon orders, etc. are not affected.</p>
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary>How is RecoMe different from an ad blocker?</summary>
+            <div class="faq-answer">
+              <p>Ad blockers remove advertisements. RecoMe filters <em>recommendations</em> &mdash; the content the platform suggests based on its algorithms. RecoMe lets you control what recommendations you see, not just block ads.</p>
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary>Can I use RecoMe on Firefox?</summary>
+            <div class="faq-answer">
+              <p>RecoMe includes Firefox compatibility settings (Gecko ID configured), but the primary build target is Chromium browsers. Firefox support is experimental.</p>
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary>How do I reset everything and start fresh?</summary>
+            <div class="faq-answer">
+              <p>Go to Settings &rarr; scroll to the bottom &rarr; "Clear All Data". This removes all preferences, memory, achievements, and stats. You'll go through onboarding again. Consider exporting your data first as a backup.</p>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <div class="manual-footer">
+        <p>Have more questions? Visit our <a href="https://github.com/nikhiloo7/recoME/issues" target="_blank" rel="noopener noreferrer">GitHub Issues</a> page.</p>
+        <a href="index.html" class="btn btn-ghost btn-lg">&larr; Back to Home</a>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ═══════════════════ FOOTER ═══════════════════ -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <img src="logo.png" alt="RecoMe" class="footer-logo" />
+        <strong>RecoMe</strong>
+        <small>Your feed, your rules.</small>
+      </div>
+      <div class="footer-links" role="navigation" aria-label="Footer navigation">
+        <a href="index.html#features">Features</a>
+        <a href="index.html#how-it-works">How It Works</a>
+        <a href="manual.html">Manual</a>
+        <a href="privacy.html">Privacy Policy</a>
+      </div>
+      <div class="footer-copy">
+        <small>&copy; 2026 RecoMe. Built with care. No data leaves your device.</small>
+      </div>
+    </div>
+  </footer>
+
+  <script src="manual.js"></script>
+</body>
+</html>

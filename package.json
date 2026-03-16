@@ -13,7 +13,19 @@
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
-    "validate": "npm run typecheck && npm run lint && npm test"
+    "validate": "npm run typecheck && npm run lint && npm test",
+    "version": "node scripts/sync-version.js && git add extension/src/manifest.json",
+    "postbuild": "node scripts/sync-version.js",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,css}": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "idb": "^8.0.3",
@@ -35,8 +47,10 @@
     "css-loader": "^7.1.4",
     "eslint": "^9.24.0",
     "html-webpack-plugin": "^5.6.6",
+    "husky": "^9.1.7",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
+    "lint-staged": "^16.4.0",
     "mini-css-extract-plugin": "^2.10.1",
     "postcss-loader": "^8.2.1",
     "prettier": "^3.5.3",

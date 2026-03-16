@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RecoMe — Your Feed, Your Rules</title>
+  <meta name="description" content="Take back control of your recommendations. RecoMe is a privacy-first browser extension that learns what you love and hides what you don't. Works on YouTube, Amazon, Instagram, and every website." />
+  <link rel="icon" href="favicon.ico" />
+  <link rel="icon" type="image/png" sizes="128x128" href="logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- SEO Meta Tags -->
+  <meta property="og:title" content="RecoMe — Your Feed, Your Rules" />
+  <meta property="og:description" content="Take back control of your recommendations. RecoMe is a privacy-first browser extension that learns what you love and hides what you don't." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="logo-512.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="RecoMe — Your Feed, Your Rules" />
+  <meta name="twitter:description" content="Take back control of your recommendations. RecoMe is a privacy-first browser extension that learns what you love and hides what you don't." />
+  <meta name="theme-color" content="#6366f1" />
+  <link rel="canonical" href="https://recome.example.com/" />
+
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "RecoMe",
+    "description": "A privacy-first browser extension that learns what you love and hides what you don't. Works on YouTube, Amazon, Instagram, and every website.",
+    "applicationCategory": "BrowserApplication",
+    "operatingSystem": "Chrome, Edge, Brave, Chromium",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "permissions": "browser"
+  }
+  </script>
+</head>
+<body>
+
+  <a class="sr-only sr-only-focusable" href="#main-content">Skip to content</a>
+
+  <!-- ═══════════════════ NAV ═══════════════════ -->
+  <nav class="nav" id="nav">
+    <div class="nav-inner">
+      <a href="#" class="nav-brand">
+        <img class="nav-logo" src="logo.png" alt="RecoMe" />
+        <span class="nav-name">RecoMe</span>
+      </a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="#agent">Agent</a>
+        <a href="manual.html">Manual</a>
+        <a href="#privacy">Privacy</a>
+        <a href="https://chrome.google.com/webstore/detail/recome/PLACEHOLDER" class="nav-cta">Install Free</a>
+      </div>
+      <button class="nav-mobile-btn" id="navToggle" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <div class="nav-mobile" id="navMobile">
+      <a href="#features">Features</a>
+      <a href="#how-it-works">How It Works</a>
+      <a href="#agent">Agent</a>
+      <a href="manual.html">Manual</a>
+      <a href="#privacy">Privacy</a>
+      <a href="https://chrome.google.com/webstore/detail/recome/PLACEHOLDER" class="nav-cta">Install Free</a>
+    </div>
+  </nav>
+
+  <!-- ═══════════════════ HERO ═══════════════════ -->
+  <main id="main-content">
+  <section class="hero">
+    <div class="hero-bg-shapes">
+      <div class="shape shape-1"></div>
+      <div class="shape shape-2"></div>
+      <div class="shape shape-3"></div>
+    </div>
+    <div class="container hero-grid">
+      <div class="hero-text" data-animate="fade-up">
+        <span class="hero-badge">Privacy-First &middot; 100% Local</span>
+        <h1 class="hero-title">Your Feed,<br /><span class="gradient-text">Your Rules.</span></h1>
+        <p class="hero-subtitle">
+          RecoMe is a browser extension that learns what you love and hides what you don't &mdash;
+          across YouTube, Amazon, Instagram, and every website. No servers. No tracking. Just you.
+        </p>
+        <div class="hero-actions">
+          <a href="https://chrome.google.com/webstore/detail/recome/PLACEHOLDER" class="btn btn-primary btn-lg">
+            <span>Install for Free</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <a href="#how-it-works" class="btn btn-ghost btn-lg">See How It Works</a>
+        </div>
+        <div class="hero-platforms">
+          <span class="hero-platforms-label">Works on</span>
+          <div class="platform-icons">
+            <span title="YouTube">&#9654;</span>
+            <span title="Amazon">&#128230;</span>
+            <span title="Instagram">&#128247;</span>
+            <span title="Twitter/X">&#120143;</span>
+            <span title="Facebook">&#120125;</span>
+            <span title="eBay">&#128717;</span>
+            <span title="+ every website">+</span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-visual" data-animate="fade-up" data-delay="200">
+        <!-- Popup mockup -->
+        <div class="popup-mock">
+          <div class="popup-header-mock">
+            <div class="popup-brand">
+              <img src="logo.png" alt="" class="popup-brand-logo" />
+              <strong>RecoMe</strong>
+            </div>
+            <span class="popup-theme-icon">🌙</span>
+          </div>
+          <p class="popup-tagline">Your feed, your rules.</p>
+          <div class="popup-nav-mock">
+            <span class="active">Dashboard</span>
+            <span>Agent</span>
+            <span>Settings</span>
+          </div>
+          <div class="popup-stats-mock">
+            <div class="stat-card-mock">
+              <span class="stat-icon">🙈</span>
+              <strong>24</strong>
+              <small>Hidden today</small>
+            </div>
+            <div class="stat-card-mock">
+              <span class="stat-icon">🛡️</span>
+              <strong>1,847</strong>
+              <small>Total hidden</small>
+            </div>
+            <div class="stat-card-mock">
+              <span class="stat-icon">🚫</span>
+              <strong>12</strong>
+              <small>Active blocks</small>
+            </div>
+            <div class="stat-card-mock">
+              <span class="stat-icon">🧠</span>
+              <strong>156</strong>
+              <small>Memory entries</small>
+            </div>
+          </div>
+          <div class="popup-achievements-mock">
+            <small>Achievements 8/13</small>
+            <div class="badge-row">
+              <span class="badge-mock unlocked">🎯</span>
+              <span class="badge-mock unlocked">✨</span>
+              <span class="badge-mock unlocked">🎓</span>
+              <span class="badge-mock unlocked">💯</span>
+              <span class="badge-mock unlocked">🧠</span>
+              <span class="badge-mock unlocked">🔍</span>
+              <span class="badge-mock unlocked">🛒</span>
+              <span class="badge-mock unlocked">💸</span>
+              <span class="badge-mock locked">🏆</span>
+              <span class="badge-mock locked">⚡</span>
+              <span class="badge-mock locked">📋</span>
+              <span class="badge-mock locked">🦄</span>
+              <span class="badge-mock locked">🎉</span>
+            </div>
+          </div>
+        </div>
+        <div class="popup-glow"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ SOCIAL PROOF ═══════════════════ -->
+  <section class="social-proof">
+    <div class="container">
+      <div class="proof-stats">
+        <div class="proof-stat" data-animate="fade-up">
+          <strong>8</strong>
+          <span>Platform Adapters</span>
+        </div>
+        <div class="proof-divider"></div>
+        <div class="proof-stat" data-animate="fade-up" data-delay="100">
+          <strong>5</strong>
+          <span>Scoring Factors</span>
+        </div>
+        <div class="proof-divider"></div>
+        <div class="proof-stat" data-animate="fade-up" data-delay="200">
+          <strong>13</strong>
+          <span>Achievements</span>
+        </div>
+        <div class="proof-divider"></div>
+        <div class="proof-stat" data-animate="fade-up" data-delay="300">
+          <strong>100%</strong>
+          <span>Local &amp; Private</span>
+        </div>
+        <div class="proof-divider"></div>
+        <div class="proof-stat" data-animate="fade-up" data-delay="400">
+          <strong>0</strong>
+          <span>Servers. Zero.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ PROBLEM ═══════════════════ -->
+  <section class="problem" id="problem">
+    <div class="container">
+      <div class="section-header" data-animate="fade-up">
+        <span class="section-tag">The Problem</span>
+        <h2>Algorithms don't work <em>for</em> you.<br />They work <em>on</em> you.</h2>
+        <p>Every platform pushes content designed to maximize engagement &mdash; not your satisfaction. You scroll past the same clickbait, irrelevant products, and rage-inducing posts. It's exhausting.</p>
+      </div>
+      <div class="problem-grid">
+        <div class="problem-card" data-animate="fade-up" data-delay="0">
+          <div class="problem-icon">😤</div>
+          <h3>Irrelevant Recommendations</h3>
+          <p>"Because you watched one cooking video, here are 200 more you'll never click."</p>
+        </div>
+        <div class="problem-card" data-animate="fade-up" data-delay="100">
+          <div class="problem-icon">🛒</div>
+          <h3>Pushy Product Suggestions</h3>
+          <p>Bought running shoes once? Every site thinks you need 50 more pairs. Forever.</p>
+        </div>
+        <div class="problem-card" data-animate="fade-up" data-delay="200">
+          <div class="problem-icon">🕳️</div>
+          <h3>Rabbit Holes &amp; Time Drains</h3>
+          <p>Platforms profit when you can't stop scrolling. Your attention is the product.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ FEATURES ═══════════════════ -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-header" data-animate="fade-up">
+        <span class="section-tag">Features</span>
+        <h2>Everything you need to<br /><span class="gradient-text">take back control</span></h2>
+      </div>
+
+      <!-- Feature carousel -->
+      <div class="feature-carousel" role="region" aria-label="Feature carousel" aria-roledescription="carousel" data-animate="fade-up" data-delay="100">
+        <div class="carousel-track" id="carouselTrack" aria-live="polite">
+
+          <!-- Card 1 -->
+          <div class="feature-slide" aria-label="Slide 1 of 5: Block and Boost Topics">
+            <div class="feature-slide-visual">
+              <div class="mini-popup">
+                <div class="mini-popup-bar">Quick Block</div>
+                <div class="mini-popup-input">
+                  <span>crypto</span>
+                  <button>🚫 Block</button>
+                </div>
+                <div class="mini-popup-toast">✨ 10 items hidden &mdash; You're on a roll!</div>
+              </div>
+            </div>
+            <div class="feature-slide-text">
+              <h3>Block &amp; Boost Topics</h3>
+              <p>Type any topic to block or boost. "No more crypto" or "More travel content" &mdash; it's that simple. RecoMe learns and adapts instantly.</p>
+            </div>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="feature-slide" aria-label="Slide 2 of 5: Smart Product Scoring">
+            <div class="feature-slide-visual">
+              <div class="mini-popup">
+                <div class="mini-product">
+                  <div class="mini-product-row">
+                    <span class="product-thumb">🎧</span>
+                    <div>
+                      <strong>Sony WH-1000XM5</strong>
+                      <small>$348.00 &middot; Amazon</small>
+                    </div>
+                  </div>
+                  <div class="mini-badge good">Good fit</div>
+                  <small class="mini-explain">Matches your brand preference and quality-first mode.</small>
+                </div>
+                <div class="mini-product">
+                  <div class="mini-product-row">
+                    <span class="product-thumb">🎧</span>
+                    <div>
+                      <strong>SkullCandy Crusher</strong>
+                      <small>$89.99 &middot; Walmart</small>
+                    </div>
+                  </div>
+                  <div class="mini-badge caution">Consider with caution</div>
+                  <small class="mini-explain">Lower quality rating. Check reviews.</small>
+                </div>
+              </div>
+            </div>
+            <div class="feature-slide-text">
+              <h3>Smart Product Scoring</h3>
+              <p>Every product gets an instant score based on your preferences. "Good fit," "Consider with caution," or "Lower priority" &mdash; with a one-sentence explanation for every badge.</p>
+            </div>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="feature-slide" aria-label="Slide 3 of 5: Intent Memory">
+            <div class="feature-slide-visual">
+              <div class="mini-popup">
+                <div class="mini-intents">
+                  <div class="mini-intent-title">What do you think?</div>
+                  <div class="intent-btn-row">
+                    <span class="intent-chip positive">Interested</span>
+                    <span class="intent-chip negative">Not for me</span>
+                  </div>
+                  <div class="intent-btn-row">
+                    <span class="intent-chip neutral">Already bought</span>
+                    <span class="intent-chip neutral">Researching</span>
+                  </div>
+                  <div class="intent-btn-row">
+                    <span class="intent-chip brand">Prefer this brand</span>
+                    <span class="intent-chip warn">Avoid seller</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="feature-slide-text">
+              <h3>Intent Memory</h3>
+              <p>Tell RecoMe your preferences once &mdash; it remembers across sessions and sites. "Already bought headphones" automatically suppresses similar suggestions for 30 days.</p>
+            </div>
+          </div>
+
+          <!-- Card 4 -->
+          <div class="feature-slide" aria-label="Slide 4 of 5: Achievements and Milestones">
+            <div class="feature-slide-visual">
+              <div class="mini-popup">
+                <div class="mini-achievements">
+                  <div class="ach-title">Achievements 8/13</div>
+                  <div class="ach-grid">
+                    <div class="ach-item unlocked"><span>🎯</span><small>First Block</small></div>
+                    <div class="ach-item unlocked"><span>✨</span><small>Clean Start</small></div>
+                    <div class="ach-item unlocked"><span>💯</span><small>Clean Sweep</small></div>
+                    <div class="ach-item locked"><span>🏆</span><small>Feed Master</small></div>
+                    <div class="ach-item locked"><span>🦄</span><small>Unicorn</small></div>
+                    <div class="ach-item unlocked"><span>🛒</span><small>Smart Shopper</small></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="feature-slide-text">
+              <h3>Achievements &amp; Milestones</h3>
+              <p>Unlock 13 achievements as you train RecoMe. From "First Block" to "Feed Master" at 1,000 items hidden. Can you find the secret Unicorn?</p>
+            </div>
+          </div>
+
+          <!-- Card 5 -->
+          <div class="feature-slide" aria-label="Slide 5 of 5: Focus Mode">
+            <div class="feature-slide-visual">
+              <div class="mini-popup">
+                <div class="mini-focus">
+                  <div class="focus-header-mock">Current Focus</div>
+                  <div class="focus-active-mock">
+                    <span>🔬</span>
+                    <strong>Noise-canceling headphones</strong>
+                    <small>today</small>
+                  </div>
+                  <div class="focus-desc">RecoMe is boosting related content for your research.</div>
+                </div>
+              </div>
+            </div>
+            <div class="feature-slide-text">
+              <h3>Focus Mode</h3>
+              <p>Researching something specific? Set a focus topic and RecoMe will temporarily boost related content across all sites. Auto-expires after 7 days.</p>
+            </div>
+          </div>
+
+          <!-- Card 6 -->
+          <div class="feature-slide" aria-label="Slide 6 of 8: Implicit Learning">
+            <div class="feature-slide-visual">
+              <div class="mini-popup">
+                <div class="mini-signals">
+                  <div class="signal-header-mock">Implicit Signals</div>
+                  <div class="signal-item-mock"><span class="signal-dot green-dot"></span> Dwell 30s on "OLED TVs" <em>strong</em></div>
+                  <div class="signal-item-mock"><span class="signal-dot yellow-dot"></span> Clicked "Best headphones 2026" <em>mild</em></div>
+                  <div class="signal-item-mock"><span class="signal-dot green-dot"></span> Revisited "Sony WH-1000XM5" <em>strong</em></div>
+                  <div class="signal-item-mock"><span class="signal-dot gray-dot"></span> Scrolled past "Crypto picks" <em>low</em></div>
+                </div>
+              </div>
+            </div>
+            <div class="feature-slide-text">
+              <h3>Implicit Learning</h3>
+              <p>RecoMe learns from how you browse &mdash; not just what you click. Dwell time, scroll behavior, revisits, and click-throughs all feed into your preference profile automatically.</p>
+            </div>
+          </div>
+
+          <!-- Card 7 -->
+          <div class="feature-slide" aria-label="Slide 7 of 8: Context Detection">
+            <div class="feature-slide-visual">
+              <div class="mini-popup">
+                <div class="mini-context">
+                  <div class="context-header-mock">Active Context</div>
+                  <div class="context-auto-mock">
+                    <span>&#128161;</span>
+                    <strong>Auto-detected: Shopping</strong>
+                    <small>Amazon.com</small>
+                  </div>
+                  <div class="context-modes-mock">
+                    <span class="ctx-mode">General</span>
+                    <span class="ctx-mode">Work</span>
+                    <span class="ctx-mode active-ctx">Shopping</span>
+                    <span class="ctx-mode">Learning</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="feature-slide-text">
+              <h3>Context Detection</h3>
+              <p>RecoMe automatically detects whether you're working, shopping, learning, or relaxing &mdash; and adjusts its scoring accordingly. Override manually anytime from Settings.</p>
+            </div>
+          </div>
+
+          <!-- Card 8 -->
+          <div class="feature-slide" aria-label="Slide 8 of 8: Dark Mode &amp; Keyboard Shortcuts">
+            <div class="feature-slide-visual">
+              <div class="mini-popup dark-mock-card">
+                <div class="dark-header-mock">
+                  <span>&#127769;</span> <strong>Dark Mode</strong>
+                </div>
+                <div class="dark-body-mock">
+                  <div class="kbd-row-mock">
+                    <span class="kbd-mock">&#8984;+&#8679;+R</span>
+                    <small>Open popup</small>
+                  </div>
+                  <div class="kbd-row-mock">
+                    <span class="kbd-mock">&#8984;+&#8679;+B</span>
+                    <small>Quick block</small>
+                  </div>
+                  <div class="kbd-row-mock">
+                    <span class="kbd-mock">&#8984;+&#8679;+E</span>
+                    <small>Toggle on/off</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="feature-slide-text">
+              <h3>Dark Mode &amp; Shortcuts</h3>
+              <p>Toggle between light and dark themes with one click. Power users can control everything from the keyboard: open the popup, quick-block, or toggle RecoMe on/off instantly.</p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Carousel controls -->
+        <div class="carousel-controls">
+          <button class="carousel-btn prev" id="carouselPrev" aria-label="Previous">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <div class="carousel-dots" id="carouselDots"></div>
+          <button class="carousel-btn next" id="carouselNext" aria-label="Next">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════════════════ HOW IT WORKS ═══════════════════ -->
+  <section class="how-it-works" id="how-it-works">
+    <div class="container">
+      <div class="section-header" data-animate="fade-up">
+        <span class="section-tag">How It Works</span>
+        <h2>Three simple steps to a<br /><span class="gradient-text">cleaner feed</span></h2>
+      </div>
+      <div class="steps-grid">
+        <div class="step" data-animate="fade-up" data-delay="0">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h3>Install &amp; Set Up</h3>
+            <p>Add RecoMe to Chrome. A quick onboarding lets you block annoying topics and boost what you love &mdash; in under 30 seconds.</p>
+          </div>
+          <div class="step-visual">
+            <div class="step-mock">
+              <div class="onboard-mock">
+                <img class="onboard-hero" src="logo.png" alt="RecoMe" />
+                <strong>Welcome to RecoMe</strong>
+                <p>Your intelligent recommendation filter</p>
+                <div class="onboard-btn">Get Started</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="step" data-animate="fade-up" data-delay="150">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h3>Browse Normally</h3>
+            <p>RecoMe works silently in the background. It detects recommendation cards on every website and applies your preferences in real-time.</p>
+          </div>
+          <div class="step-visual">
+            <div class="step-mock">
+              <div class="browse-mock">
+                <div class="feed-card-mock visible">
+                  <span>🏔️</span> Travel: Best Hikes in Patagonia
+                  <span class="boost-badge">Boosted ✦</span>
+                </div>
+                <div class="feed-card-mock hidden">
+                  <span>💰</span> <s>Top 10 Crypto Picks for 2025</s>
+                  <span class="hide-badge">Hidden 🙈</span>
+                </div>
+                <div class="feed-card-mock visible">
+                  <span>🎵</span> New Album: Midnight Jazz Sessions
+                  <span class="boost-badge">Boosted ✦</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="step" data-animate="fade-up" data-delay="300">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h3>RecoMe Gets Smarter</h3>
+            <p>Every interaction teaches RecoMe. It detects patterns, builds memory, and gets more accurate over time. Your preferences carry across all platforms.</p>
+          </div>
+          <div class="step-visual">
+            <div class="step-mock">
+              <div class="learn-mock">
+                <div class="brain-line"><span>🧠</span> Pattern detected: <em>avoids clickbait</em></div>
+                <div class="brain-line"><span>📊</span> 12 active patterns</div>
+                <div class="brain-line"><span>🎯</span> 94% accuracy rate</div>
+                <div class="brain-line"><span>⚡</span> Cross-platform sync</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ INTELLIGENCE ═══════════════════ -->
+  <section class="intelligence-section" id="intelligence">
+    <div class="container">
+      <div class="section-header" data-animate="fade-up">
+        <span class="section-tag">Under the Hood</span>
+        <h2>Powered by a<br /><span class="gradient-text">learning brain</span></h2>
+        <p>RecoMe doesn't just follow rules. It builds a memory, detects patterns, maps knowledge, and gets smarter with every interaction.</p>
+      </div>
+      <div class="intel-grid">
+        <div class="intel-card" data-animate="fade-up" data-delay="0">
+          <div class="intel-icon">&#129504;</div>
+          <h3>Memory System</h3>
+          <p>Records your feedback, searches, and implicit signals. Patterns fade naturally with a 30-day half-life, so RecoMe adapts as your interests evolve.</p>
+        </div>
+        <div class="intel-card" data-animate="fade-up" data-delay="80">
+          <div class="intel-icon">&#128200;</div>
+          <h3>Pattern Detection</h3>
+          <p>After 3 similar events, RecoMe creates mid-term cards that influence future scoring. "Avoids clickbait" or "prefers Sony" emerge automatically from your behavior.</p>
+        </div>
+        <div class="intel-card" data-animate="fade-up" data-delay="160">
+          <div class="intel-icon">&#127760;</div>
+          <h3>Knowledge Graph</h3>
+          <p>Maps relationships between topics, brands, and categories. Blocking "spam" reduces "phishing" too. Pre-seeded and grows with use.</p>
+        </div>
+        <div class="intel-card" data-animate="fade-up" data-delay="240">
+          <div class="intel-icon">&#128065;</div>
+          <h3>Implicit Learning</h3>
+          <p>Learns from how you browse &mdash; dwell time, scroll patterns, revisits, click-throughs. No buttons needed; your behavior is the signal.</p>
+        </div>
+        <div class="intel-card" data-animate="fade-up" data-delay="320">
+          <div class="intel-icon">&#128161;</div>
+          <h3>Proactive Insights</h3>
+          <p>Detects research fatigue, preference drift, and cross-platform patterns. Surfaces suggestions before you ask &mdash; "You've looked at 12 laptops. Want me to narrow it down?"</p>
+        </div>
+        <div class="intel-card" data-animate="fade-up" data-delay="400">
+          <div class="intel-icon">&#128279;</div>
+          <h3>Cross-Platform Sync</h3>
+          <p>Your preferences carry everywhere. Block a topic once and it's hidden on YouTube, Amazon, Twitter, and every other site. The linker strengthens connections daily.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ AGENT ═══════════════════ -->
+  <section class="agent-section" id="agent">
+    <div class="container agent-grid">
+      <div class="agent-text" data-animate="fade-up">
+        <span class="section-tag">Shopping Companion</span>
+        <h2>Meet your AI<br /><span class="gradient-text">shopping agent</span></h2>
+        <p>Chat with RecoMe about products, comparisons, and preferences. It knows what you like, what you've bought, and what to avoid &mdash; so you don't have to explain every time.</p>
+        <ul class="agent-features">
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+            Compare products across retailers with ranked scoring
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+            Explain why something was recommended or hidden
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+            Save to watchlist &amp; manage saved items
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+            Block, boost, or manage preferences via chat
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+            Works with or without AI (Claude, GPT, or Gemini)
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+            Proactive insights when it detects patterns
+          </li>
+        </ul>
+      </div>
+      <div class="agent-visual" data-animate="fade-up" data-delay="200">
+        <div class="chat-mock">
+          <div class="chat-header-mock">
+            <span>🤖</span> <strong>RecoMe Agent</strong>
+          </div>
+          <div class="chat-messages-mock">
+            <div class="chat-msg user">Which noise-canceling headphones should I get?</div>
+            <div class="chat-msg agent">
+              Based on your preferences, I'd recommend the <strong>Sony WH-1000XM5</strong>. You prefer this brand (saved 2 weeks ago), and it matches your quality-first mode.
+              <div class="chat-actions">
+                <span class="chat-action">Add to watchlist</span>
+                <span class="chat-action">Compare alternatives</span>
+              </div>
+            </div>
+            <div class="chat-msg user">What about the Bose 700?</div>
+            <div class="chat-msg agent">
+              Great option! Slightly better call quality, but the Sony has longer battery life (30h vs 20h). Both score high on your preferences.
+            </div>
+          </div>
+          <div class="chat-input-mock">
+            <span>Ask about products...</span>
+            <button>Send</button>
+          </div>
+        </div>
+        <div class="chat-glow"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ PLATFORMS ═══════════════════ -->
+  <section class="platforms-section">
+    <div class="container">
+      <div class="section-header" data-animate="fade-up">
+        <span class="section-tag">Universal</span>
+        <h2>Works on <span class="gradient-text">every website</span></h2>
+        <p>Purpose-built adapters for major platforms, plus a smart generic adapter that works on any site with recommendation-style content.</p>
+      </div>
+      <div class="platforms-grid" data-animate="fade-up" data-delay="100">
+        <div class="platform-card">
+          <span class="platform-card-icon">▶</span>
+          <strong>YouTube</strong>
+          <small>Videos, shorts, recommendations</small>
+        </div>
+        <div class="platform-card">
+          <span class="platform-card-icon">📦</span>
+          <strong>Amazon</strong>
+          <small>Products, search, suggestions</small>
+        </div>
+        <div class="platform-card">
+          <span class="platform-card-icon">📸</span>
+          <strong>Instagram</strong>
+          <small>Feed, explore, reels, stories</small>
+        </div>
+        <div class="platform-card">
+          <span class="platform-card-icon">𝕏</span>
+          <strong>Twitter / X</strong>
+          <small>Timeline, trends, suggestions</small>
+        </div>
+        <div class="platform-card">
+          <span class="platform-card-icon">𝔽</span>
+          <strong>Facebook</strong>
+          <small>Feed, marketplace, reels</small>
+        </div>
+        <div class="platform-card">
+          <span class="platform-card-icon">🛍</span>
+          <strong>eBay</strong>
+          <small>Listings, recommendations</small>
+        </div>
+        <div class="platform-card">
+          <span class="platform-card-icon">🏬</span>
+          <strong>Walmart</strong>
+          <small>Products, deals, suggestions</small>
+        </div>
+        <div class="platform-card special">
+          <span class="platform-card-icon">🌐</span>
+          <strong>Every Website</strong>
+          <small>Generic adapter for all HTTPS sites</small>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ PRIVACY ═══════════════════ -->
+  <section class="privacy-section" id="privacy">
+    <div class="container">
+      <div class="section-header" data-animate="fade-up">
+        <span class="section-tag">Privacy First</span>
+        <h2>Your data stays <span class="gradient-text">on your device</span></h2>
+        <p>RecoMe has no servers, no analytics, no tracking. Everything runs locally in your browser.</p>
+      </div>
+      <div class="privacy-grid">
+        <div class="privacy-card yes" data-animate="fade-up" data-delay="0">
+          <h3>What we store locally</h3>
+          <ul>
+            <li><span class="check">&#10003;</span> Your blocked &amp; liked topics</li>
+            <li><span class="check">&#10003;</span> Interaction history (your feedback)</li>
+            <li><span class="check">&#10003;</span> Knowledge graph (topic relationships)</li>
+            <li><span class="check">&#10003;</span> Extension settings</li>
+            <li><span class="check">&#10003;</span> Achievement progress</li>
+          </ul>
+        </div>
+        <div class="privacy-card no" data-animate="fade-up" data-delay="150">
+          <h3>What we never collect</h3>
+          <ul>
+            <li><span class="cross">&#10007;</span> Personal information</li>
+            <li><span class="cross">&#10007;</span> Browsing history</li>
+            <li><span class="cross">&#10007;</span> Analytics or telemetry</li>
+            <li><span class="cross">&#10007;</span> Tracking pixels</li>
+            <li><span class="cross">&#10007;</span> Data sold to third parties</li>
+          </ul>
+        </div>
+      </div>
+      <div class="privacy-note" data-animate="fade-up" data-delay="200">
+        <div class="privacy-note-icon">🔐</div>
+        <div>
+          <strong>Optional AI Enhancement</strong>
+          <p>You can optionally add your own API key (Claude, GPT, or Gemini) for smarter topic extraction. Your key stays local. Data goes directly to your chosen provider. We never see it.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ CTA ═══════════════════ -->
+  <section class="cta-section" id="install">
+    <div class="container">
+      <div class="cta-card" data-animate="fade-up">
+        <h2>Ready to take back your feed?</h2>
+        <p>Install RecoMe in seconds. No account needed. No data leaves your device.</p>
+        <div class="cta-actions">
+          <a href="https://chrome.google.com/webstore/detail/recome/PLACEHOLDER" class="btn btn-primary btn-xl">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12l4 4 4-4"/></svg>
+            <span>Install for Chrome</span>
+          </a>
+          <div class="cta-browsers">
+            <small>Also works on Edge, Brave, and other Chromium browsers</small>
+          </div>
+        </div>
+        <div class="cta-features">
+          <span>✦ Free forever</span>
+          <span>✦ No account required</span>
+          <span>✦ Uninstall anytime</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  </main>
+
+  <!-- ═══════════════════ FOOTER ═══════════════════ -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <img src="logo.png" alt="RecoMe" class="footer-logo" />
+        <strong>RecoMe</strong>
+        <small>Your feed, your rules.</small>
+      </div>
+      <div class="footer-links" role="navigation" aria-label="Footer navigation">
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="#agent">Agent</a>
+        <a href="manual.html">Manual</a>
+        <a href="privacy.html">Privacy Policy</a>
+      </div>
+      <div class="footer-copy">
+        <small>&copy; 2026 RecoMe. Built with care. No data leaves your device.</small>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

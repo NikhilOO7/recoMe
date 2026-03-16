@@ -11,10 +11,10 @@ module.exports = {
   devtool: isDev ? 'cheap-module-source-map' : false,
 
   entry: {
-    background: './src/background/index.ts',
-    content: './src/content/index.ts',
-    popup: './src/popup/index.tsx',
-    devtools: './src/devtools/index.tsx',
+    background: './extension/src/background/index.ts',
+    content: './extension/src/content/index.ts',
+    popup: './extension/src/popup/index.tsx',
+    devtools: './extension/src/devtools/index.tsx',
   },
 
   output: {
@@ -26,13 +26,27 @@ module.exports = {
   resolve: {
     extensions: ['.ts', '.tsx', '.js'],
     alias: {
-      '@shared': path.resolve(__dirname, 'src/shared'),
-      '@intelligence': path.resolve(__dirname, 'src/intelligence'),
-      '@data': path.resolve(__dirname, 'src/data'),
-      '@background': path.resolve(__dirname, 'src/background'),
-      '@content': path.resolve(__dirname, 'src/content'),
-      '@popup': path.resolve(__dirname, 'src/popup'),
-      '@devtools': path.resolve(__dirname, 'src/devtools'),
+      // Shared packages
+      '@schema': path.resolve(__dirname, 'packages/schema'),
+      '@utils': path.resolve(__dirname, 'packages/utils'),
+      '@ui': path.resolve(__dirname, 'packages/ui'),
+
+      // Extension
+      '@shared': path.resolve(__dirname, 'extension/src/shared'),
+      '@background': path.resolve(__dirname, 'extension/src/background'),
+      '@content': path.resolve(__dirname, 'extension/src/content'),
+      '@popup': path.resolve(__dirname, 'extension/src/popup'),
+      '@devtools': path.resolve(__dirname, 'extension/src/devtools'),
+
+      // Brain
+      '@brain': path.resolve(__dirname, 'brain/src'),
+      '@intelligence': path.resolve(__dirname, 'brain/src'),
+
+      // Agent
+      '@agent': path.resolve(__dirname, 'agent/src'),
+
+      // Data (now inside brain/src/storage)
+      '@data': path.resolve(__dirname, 'brain/src/storage'),
     },
   },
 
@@ -58,7 +72,7 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './public/popup.html',
       filename: 'popup.html',
-      chunks: ['popup'],
+      chunks: ['vendor', 'popup'],
     }),
 
     new HtmlWebpackPlugin({
@@ -69,13 +83,27 @@ module.exports = {
 
     new CopyWebpackPlugin({
       patterns: [
-        { from: 'src/manifest.json', to: 'manifest.json' },
+        { from: 'extension/src/manifest.json', to: 'manifest.json' },
         { from: 'public/icons', to: 'icons', noErrorOnMissing: true },
       ],
     }),
   ],
 
   optimization: {
-    splitChunks: false,
+    splitChunks: {
+      cacheGroups: {
+        vendor: {
+          test: /[\\/]node_modules[\\/](react|react-dom)[\\/]/,
+          name: 'vendor',
+          chunks: (chunk) => chunk.name === 'popup',
+        },
+      },
+    },
+  },
+
+  performance: {
+    hints: 'warning',
+    maxEntrypointSize: 300000,
+    maxAssetSize: 250000,
   },
 };
