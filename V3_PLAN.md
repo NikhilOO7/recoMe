@@ -6,6 +6,187 @@ Transform RecoMe from a browser extension into a standalone product — a person
 
 ---
 
+## Agent Architecture Evolution (V2 → V3)
+
+V2 established a powerful multi-agent system running entirely inside the browser extension: a central Brain orchestrating six specialized agents (FilterAgent, ScoutAgent, AdvisorAgent, ShopperAgent, SocialAgent, GuardianAgent) via a ToolExecutor framework. V3 fundamentally evolves this architecture for a cloud-first, multi-surface world.
+
+### Cloud-Hosted Brain
+
+The Brain now runs server-side as a persistent service, enabling richer orchestration, longer context, and cross-device continuity. A lightweight client-side Brain in the extension handles latency-sensitive operations (content filtering, dwell-based signals) and syncs state with the cloud Brain.
+
+```
+Extension (Client Brain)                    Cloud (Primary Brain)
+┌──────────────────────┐              ┌──────────────────────────────┐
+│ FilterAgent (local)  │              │ Brain Orchestrator           │
+│ GuardianAgent (local)│──sync/RPC──▶ │   ├── TaskRouter             │
+│ Lightweight context  │              │   ├── ContextAssembler       │
+│ On-device taste model│◀──sync────── │   ├── ResponseMerger         │
+│                      │              │   └── AgentMemory (shared)   │
+└──────────────────────┘              │                              │
+                                      │ All 9 Agents available       │
+Web App                               │ Full knowledge graph access  │
+┌──────────────────────┐              │ Persistent conversation      │
+│ Agent Chat UI        │──WebSocket──▶│ Event Bus for agent mesh     │
+│ Feed UI              │              │                              │
+│ Dashboard            │◀──SSE─────── │                              │
+└──────────────────────┘              └──────────────────────────────┘
+```
+
+**Dual-brain sync protocol:**
+
+- Extension Brain handles: real-time content scoring, DOM-based filtering, dwell signal processing, privacy-sensitive operations that should never leave the device
+- Cloud Brain handles: feed curation, cross-platform reasoning, conversational AI, predictive recommendations, multi-agent collaboration
+- Sync: Agent state, user context, and tool results synchronize via the existing WebSocket sync hub (Phase 1B)
+- Fallback: Extension Brain can operate fully offline using cached context and the on-device taste model
+
+### New Agents for V3
+
+V2's six agents (FilterAgent, ScoutAgent, AdvisorAgent, ShopperAgent, SocialAgent, GuardianAgent) are retained and enhanced. V3 adds three new agents:
+
+#### Feed Curator Agent
+
+**New file (cloud):** `cloud/src/brain/agents/FeedCuratorAgent.ts`
+
+**Role:** Dedicated agent for the personalized discovery feed (Phase 2). Combines signals from all other agents to rank and diversify content. The Feed Curator is the primary consumer of other agents' outputs — it subscribes to FilterAgent scores, ScoutAgent discoveries, SocialAgent trends, and ShopperAgent deals to compose the final feed.
+
+**Tools:**
+
+| Tool                 | What it does                                                       | Example use                                                    |
+| -------------------- | ------------------------------------------------------------------ | -------------------------------------------------------------- |
+| `aggregate_sources`  | Pull and normalize content from all connected feed sources         | Combine YouTube, Reddit, RSS, Product Hunt into unified stream |
+| `rank_content`       | Score feed items using the 5-factor model + agent signals          | Rank 500 candidate items down to top 50                        |
+| `diversify_feed`     | Apply anti-filter-bubble rules (category caps, diversity slots)    | Ensure no category exceeds 40% of feed                         |
+| `inject_serendipity` | Insert unexpected-but-relevant items at graph distance 2-3         | "You like espresso — here's an article on tea ceremonies"      |
+| `explain_ranking`    | Generate human-readable explanation for why an item is in the feed | Powers the "Why this?" button on feed cards                    |
+
+#### Ingest Agent
+
+**New file (cloud):** `cloud/src/brain/agents/IngestAgent.ts`
+
+**Role:** Handles data ingestion from any source (Phase 3) — OAuth platform imports, email newsletters, file uploads, bookmarklets. The Ingest Agent is the gateway through which all external data enters the RecoMe system.
+
+**Tools:**
+
+| Tool                | What it does                                                               | Example use                                            |
+| ------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `parse_oauth_data`  | Process data from OAuth-connected platforms into unified schema            | Import 6 months of YouTube watch history               |
+| `scrape_dom`        | Extract structured data from a web page via bookmarklet/clipper            | User saves a page from Safari via bookmarklet          |
+| `parse_export_file` | Parse uploaded files (CSV bookmarks, Goodreads exports, Spotify playlists) | "Upload your Letterboxd ratings"                       |
+| `parse_email`       | Extract content, links, products from forwarded newsletters                | Newsletter forwarded to `user@inbox.recome.ai`         |
+| `extract_entities`  | Identify products, topics, people, brands from raw ingested data           | "This YouTube history mentions Sony, Bose, Sennheiser" |
+| `deduplicate`       | Cross-source deduplication of entities and content                         | Same product found on Amazon and eBay → single entity  |
+
+**Ingest flow:**
+
+```
+Data Source (any) → IngestAgent
+  → parse_* tool (source-specific)
+  → extract_entities
+  → deduplicate
+  → Update knowledge graph
+  → Emit events: ENTITIES_IMPORTED, PREFERENCES_UPDATED
+  → FeedCuratorAgent, ScoutAgent, FilterAgent react to events
+```
+
+#### Creator Agent
+
+**New file (cloud):** `cloud/src/brain/agents/CreatorAgent.ts`
+
+**Role:** Powers creator and publisher tools (Phase 6). Provides anonymized, aggregated audience insights and content suggestions for creators who opt into the RecoMe for Creators program.
+
+**Tools:**
+
+| Tool                | What it does                                                 | Example use                                                            |
+| ------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| `analyze_audience`  | Generate anonymized audience interest breakdown              | "62% of your followers are into audio gear, 34% into photography"      |
+| `suggest_content`   | Recommend content topics based on audience interest gaps     | "Your audience would engage with content about lens adapters"          |
+| `track_performance` | Track how creator's content performs within RecoMe ecosystem | "Your last video was saved by 847 users"                               |
+| `identify_trends`   | Spot emerging trends within the creator's audience segment   | "Interest in mirrorless cameras is up 40% in your audience this month" |
+
+### Agent Mesh — Event-Driven Collaboration
+
+V2 agents communicated only through the Brain (hub-and-spoke). V3 introduces an Agent Mesh where agents communicate via an event bus, enabling reactive, decoupled collaboration.
+
+```
+┌────────────────────────────────────────────────────────────┐
+│                       Event Bus                             │
+│                                                             │
+│  ENTITIES_IMPORTED ──▶ FeedCuratorAgent, ScoutAgent         │
+│  PRICE_DROP ──────────▶ ShopperAgent, FeedCuratorAgent      │
+│  NEW_TREND ───────────▶ SocialAgent, FeedCuratorAgent       │
+│  PREFERENCE_CHANGED ──▶ FilterAgent, FeedCuratorAgent,      │
+│                         ScoutAgent                          │
+│  PRIVACY_VIOLATION ───▶ GuardianAgent (blocks + alerts)     │
+│  FEED_GENERATED ──────▶ GuardianAgent (audit)               │
+└────────────────────────────────────────────────────────────┘
+```
+
+**Examples:**
+
+- When IngestAgent imports YouTube history, it emits `ENTITIES_IMPORTED` — FeedCuratorAgent re-ranks the feed with new signals, ScoutAgent scans for opportunities related to new interests
+- When ShopperAgent detects a price drop, it emits `PRICE_DROP` — FeedCuratorAgent boosts the item in the feed, the notification system alerts the user
+- The Brain still orchestrates complex multi-agent tasks (like answering a chat question), but routine inter-agent communication happens via events without Brain involvement
+
+### Agent Context Protocol (ACP)
+
+Standardized context format so agents work identically whether running in the extension (local) or cloud (remote). This is critical for the dual-brain architecture.
+
+```typescript
+interface AgentContext {
+  // Identity — same regardless of runtime
+  user_id: string;
+  session_id: string;
+
+  // Environment — differs between local and cloud
+  runtime: 'extension' | 'cloud' | 'web-app';
+  capabilities: RuntimeCapabilities; // What tools/data are available
+
+  // User state — synced across runtimes
+  profile: UserProfile;
+  interest_graph: GraphSnapshot;
+  active_goals: UserGoal[];
+  recent_actions: UserAction[];
+
+  // Task-specific — provided by Brain or event
+  task: BrainTask;
+  event?: AgentEvent;
+
+  // Model — reference to taste model endpoint
+  taste_model: TasteModelEndpoint; // Local ONNX or cloud inference
+}
+
+interface RuntimeCapabilities {
+  has_dom_access: boolean; // true in extension, false in cloud
+  has_full_graph: boolean; // true in cloud, partial in extension
+  has_taste_model: boolean; // true if on-device model is loaded
+  has_realtime_sync: boolean; // true if WebSocket connected
+  max_llm_context_tokens: number; // Higher in cloud
+}
+```
+
+Agents check `context.runtime` and `context.capabilities` to adapt behavior — e.g., FilterAgent uses `scrape_dom` locally but `query_cached_content` in cloud. The ACP ensures agent logic is write-once, run-anywhere.
+
+### Personal Taste Model Integration
+
+Each agent gets access to a local inference endpoint from the fine-tuned personal taste model (Phase 5A). This replaces many LLM API calls with instant on-device inference.
+
+**Before (V2):** Agent calls LLM API for "Would user like this?" → 500ms+ latency, $0.001/call
+**After (V3):** Agent calls taste model → 5ms latency, $0 cost
+
+**Agent-specific taste model use:**
+
+| Agent            | LLM call replaced                         | Taste model alternative                  |
+| ---------------- | ----------------------------------------- | ---------------------------------------- |
+| FilterAgent      | `score_content` sent to LLM for relevance | Taste model instant classification       |
+| FeedCuratorAgent | `rank_content` batch scoring via LLM      | Taste model batch inference in <50ms     |
+| ScoutAgent       | `cross_reference` opportunity matching    | Taste model embedding similarity         |
+| ShopperAgent     | `find_alternatives` product matching      | Taste model preference vector comparison |
+| AdvisorAgent     | Simple preference lookups                 | Taste model direct query                 |
+
+LLM calls are reserved for complex reasoning, natural language generation, and multi-step analysis where the taste model alone is insufficient.
+
+---
+
 ## Phase 1: Web App — RecoMe Dashboard
 
 **Goal:** RecoMe works without the extension installed. Any browser, any device, always accessible.
@@ -143,6 +324,42 @@ The agent becomes a proper tool-using AI:
 | `update_preference` | Modify a preference                  | "I'm done with Sony, remove that preference" |
 | `search_web`        | Web search for reviews/info          | "Find reviews for this laptop"               |
 
+### 1D. Cloud Brain Hosting & Multi-Agent Chat
+
+The web app is where the cloud Brain lives. The agent chat (1C) is not a single chatbot — it is the Brain orchestrating multiple specialized agents with full tool visibility in the UI.
+
+**Multi-agent chat experience:**
+
+- When the user asks a question, the UI shows which agents are active: "ShopperAgent is comparing prices... AdvisorAgent is checking your preferences..."
+- Tool calls are visible in a collapsible panel: users can see `compare_prices` running, `query_knowledge_graph` returning results
+- Agent attribution: each part of a response is tagged with the agent that produced it (e.g., price analysis from ShopperAgent, personal fit from AdvisorAgent)
+- GuardianAgent runs silently alongside every conversation, auditing data access and redacting PII
+
+**Cloud Brain deployment:**
+
+```
+cloud/src/brain/
+├── Brain.ts                    # Cloud Brain orchestrator (evolved from V2)
+├── AgentRegistry.ts            # All 9 agents registered and available
+├── TaskRouter.ts               # Routes chat messages to agent(s)
+├── ContextAssembler.ts         # Full context: graph, memory, connections
+├── ResponseMerger.ts           # Merges multi-agent outputs for chat
+├── EventBus.ts                 # Agent mesh event system
+├── agents/
+│   ├── FilterAgent.ts          # V2 agent, cloud-enhanced
+│   ├── ScoutAgent.ts           # V2 agent, cloud-enhanced
+│   ├── AdvisorAgent.ts         # V2 agent, cloud-enhanced
+│   ├── ShopperAgent.ts         # V2 agent, cloud-enhanced
+│   ├── SocialAgent.ts          # V2 agent, cloud-enhanced
+│   ├── GuardianAgent.ts        # V2 agent, cloud-enhanced
+│   ├── FeedCuratorAgent.ts     # NEW: V3 feed agent
+│   ├── IngestAgent.ts          # NEW: V3 ingestion agent
+│   └── CreatorAgent.ts         # NEW: V3 creator tools agent
+└── tools/
+    ├── ToolExecutor.ts         # Unified tool execution (evolved from V2)
+    └── ToolRegistry.ts         # All agent tools registered here
+```
+
 ---
 
 ## Phase 2: RecoMe Feed — The Personalized Discovery Engine
@@ -197,12 +414,14 @@ Feed Score = weighted sum of:
   └── Social Signal (0.10)       — Collaborative filtering strength
 ```
 
-**Anti-filter-bubble mechanisms:**
+**Agent-powered ranking:** The entire feed ranking pipeline is orchestrated by the **FeedCuratorAgent**. Rather than a standalone `FeedRanker.ts` service, the agent calls its tools in sequence: `aggregate_sources` → `rank_content` → `diversify_feed` → `inject_serendipity`. This means the ranking is contextual and adaptive — the FeedCuratorAgent can adjust weights based on time of day, user mood signals, or recent agent conversations (e.g., if the user just asked AdvisorAgent about cameras, camera content gets a temporary boost).
 
-- **Diversity slots** — Every 10th item is deliberately outside the user's usual interests but adjacent (graph distance = 2-3)
-- **Serendipity score** — Items get a bonus for being unexpected but potentially relevant
-- **Category caps** — No single category can dominate >40% of the feed
-- **Exploration mode** — User can toggle "Surprise me" to maximize diversity
+**Anti-filter-bubble mechanisms (FeedCuratorAgent tools):**
+
+- **Diversity slots** (`diversify_feed` tool) — Every 10th item is deliberately outside the user's usual interests but adjacent (graph distance = 2-3)
+- **Serendipity score** (`inject_serendipity` tool) — Items get a bonus for being unexpected but potentially relevant
+- **Category caps** (`diversify_feed` tool) — No single category can dominate >40% of the feed
+- **Exploration mode** — User can toggle "Surprise me" which tells FeedCuratorAgent to maximize the `inject_serendipity` weight
 
 ### 2C. Feed UI
 
@@ -222,7 +441,7 @@ Feed Score = weighted sum of:
 - **Save** — adds to watchlist/reading list
 - **Block** — "Don't show me this" (feeds back to preferences)
 - **More like this** — boosts similar content
-- **Why this?** — agent explains the recommendation
+- **Why this?** — triggers FeedCuratorAgent's `explain_ranking` tool, showing which agents contributed signals and why
 - **Share** — share with note, or save to preference pack
 
 ---
@@ -257,13 +476,19 @@ connections/
     └── UnifiedContent.ts      # Normalize platform data to common schema
 ```
 
-**Connected platform experience:**
+**Connected platform experience (IngestAgent-orchestrated):**
 
 1. User clicks "Connect YouTube" in web app settings
 2. OAuth flow → user grants read access to watch history, likes, subscriptions
-3. Initial import: pull last 6 months of activity
-4. Ongoing sync: every 6 hours (or via webhooks where available)
-5. Data feeds into preference learning + knowledge graph + feed
+3. IngestAgent receives `CONNECTION_ESTABLISHED` event and begins import:
+   - `parse_oauth_data` — pulls last 6 months of activity into unified schema
+   - `extract_entities` — identifies products, topics, creators, brands from watch history
+   - `deduplicate` — merges with existing knowledge graph entities
+4. IngestAgent emits `ENTITIES_IMPORTED` event → triggers downstream agents:
+   - FeedCuratorAgent re-ranks feed with new interest signals
+   - ScoutAgent scans for opportunities matching newly discovered interests
+   - FilterAgent updates content scoring weights
+5. Ongoing sync: every 6 hours IngestAgent re-runs `parse_oauth_data` for incremental updates (or via webhooks where available)
 
 ### 3B. Email Newsletter Parsing
 
@@ -277,12 +502,13 @@ email/
 └── SubjectClassifier.ts      # Categorize newsletter content
 ```
 
-**How it works:**
+**How it works (IngestAgent pipeline):**
 
 - User gets a unique RecoMe email: `username@inbox.recome.ai`
 - Forward newsletters to this address, or set up auto-forward rules
-- Parser extracts: links, products mentioned, topics discussed
-- Content feeds into preference learning and feed
+- IngestAgent's `parse_email` tool extracts: links, products mentioned, topics discussed
+- IngestAgent's `extract_entities` tool identifies entities → `deduplicate` merges with knowledge graph
+- Emits `ENTITIES_IMPORTED` event → FeedCuratorAgent incorporates newsletter content into feed
 
 ### 3C. Manual Curation & Bookmarklet
 
@@ -342,6 +568,15 @@ webpack.config.js
 └── target: 'safari'     → dist/safari/    (Xcode conversion via safari-web-extension-converter)
 ```
 
+### 4A-1. Agent System: Browser-Agnostic by Design
+
+The agent architecture is inherently browser-agnostic thanks to the Agent Context Protocol (ACP). The same Brain logic, same agents, same tools — only the content script adapters differ per browser.
+
+- **Same client Brain** runs in Chrome, Firefox, Safari, Edge — agents check `context.capabilities` to adapt (e.g., Firefox lacks side panel → FilterAgent uses overlay instead)
+- **Content script adapters** are the only browser-specific code — they feed data to the client Brain in a normalized format via ACP
+- **Cloud Brain is completely browser-independent** — it receives data via the sync hub regardless of which browser sent it
+- **Extension build pipeline** bundles the same `brain/` code into each browser target, with only manifest and polyfill differences
+
 ### 4B. Safari Extension
 
 - Use Apple's `safari-web-extension-converter` tool to convert the WebExtension
@@ -392,6 +627,8 @@ Cloud (training)                    Device (inference)
   - Embedding generation for similarity search
   - Preference prediction for feed ranking
 
+**Agent integration:** The taste model replaces LLM calls for the most frequent agent operations. FilterAgent's `score_content`, FeedCuratorAgent's `rank_content`, and ScoutAgent's `cross_reference` all use the taste model for instant inference (<5ms) instead of LLM API calls (500ms+). LLM calls are reserved for complex reasoning tasks like AdvisorAgent's `generate_insight` or ShopperAgent's `analyze_reviews`. This cuts per-user AI costs by an estimated 80% while improving latency.
+
 **Cost:** Fine-tuning runs once per week, takes ~2 minutes on a single GPU. Per-user cost: ~$0.01/week.
 
 ### 5B. Conversational Memory
@@ -408,12 +645,13 @@ memory/
 └── MemoryCompressor.ts       # Summarize old conversations to save space
 ```
 
-**How it works:**
+**How it works (shared AgentMemory):**
 
-- Every agent conversation is stored (encrypted)
+- Every agent conversation is stored (encrypted) in a shared AgentMemory layer accessible to all agents
 - Conversations older than 30 days are summarized (compressed)
 - When user asks a question, RAG retrieves relevant past conversations
 - Agent can reference: "Last month you were comparing TVs and liked the LG C3 — want me to check if the price dropped?"
+- **Cross-agent memory:** AgentMemory is not per-agent — it is shared. When ShopperAgent tracks a price, AdvisorAgent can reference that in a later conversation. When ScoutAgent discovers an opportunity, FeedCuratorAgent remembers the user's reaction to similar past suggestions. This shared memory is the connective tissue that makes the multi-agent system feel like one coherent AI personality.
 
 ### 5C. Predictive Recommendations
 
@@ -429,11 +667,13 @@ Move from reactive ("you liked X, here's similar Y") to predictive ("you'll need
 | Holiday season approaching + gift-giving history   | Will shop for gifts     | Surface: gift guides in preference categories |
 | Reading about a topic every morning                | Routine forming         | Pin relevant content to top of feed           |
 
-**Implementation:**
+**Implementation (ScoutAgent + FeedCuratorAgent collaboration):**
 
-- Rule-based pattern detection (like V1 insights, but forward-looking)
-- LLM-assisted prediction: send compressed preference timeline to LLM, ask "What might this user need next?"
-- Predictions shown as a dedicated feed section: "Coming Up" — things RecoMe thinks you'll want soon
+- **ScoutAgent** detects predictive patterns using rule-based detection and LLM-assisted reasoning. It emits `PREDICTION_GENERATED` events with predicted needs and confidence scores
+- **FeedCuratorAgent** subscribes to `PREDICTION_GENERATED` events and creates the "Coming Up" feed section — a dedicated area showing things RecoMe predicts the user will want soon
+- **ShopperAgent** enriches predictions with pricing data (e.g., "You'll probably want running shoes — here are the best deals right now")
+- **SocialAgent** adds social timing signals (e.g., "Holiday season approaching" from `content_calendar` tool)
+- The taste model handles simple predictions (next-item inference from browsing patterns) while LLM handles complex temporal reasoning ("user is training for a marathon → will need gear in 3 weeks")
 
 ### 5D. Multi-Modal Understanding
 
@@ -463,8 +703,10 @@ When RecoMe recommends a product and the user buys it, RecoMe earns a commission
 - Track: click → purchase attribution
 - Revenue share with user (optional): "You saved $X using RecoMe this month" — builds loyalty
 
-**Affiliate link injection (ethical approach):**
+**Affiliate link injection (ShopperAgent-managed, ethical approach):**
 
+- ShopperAgent's tools (`compare_prices`, `find_alternatives`, `assess_deal`) automatically append affiliate tags to product links they surface
+- GuardianAgent audits all affiliate link injection to ensure compliance with disclosure rules
 - Only on links RecoMe actively surfaces (feed, agent, overlay)
 - Never on organic browsing (extension doesn't modify existing page links)
 - Clear disclosure: "RecoMe may earn a commission" in settings
@@ -486,12 +728,13 @@ Beyond Pro/Premium tiers, offer à la carte AI features:
 
 Content creators and small businesses get audience insights.
 
-**New page:** Web app → `/creators`
+**New page:** Web app → `/creators` (powered by CreatorAgent)
 
-- Anonymous, aggregated insights about what their audience cares about
-- "X% of users who follow you are also interested in Y"
-- Content suggestions: "Your audience would engage with content about Z"
-- Pricing: free tier (basic insights), $19.99/mo (detailed analytics)
+- **CreatorAgent's `analyze_audience`** — anonymous, aggregated insights about what their audience cares about: "X% of users who follow you are also interested in Y"
+- **CreatorAgent's `suggest_content`** — content suggestions based on audience interest gaps: "Your audience would engage with content about Z"
+- **CreatorAgent's `track_performance`** — how creator's content performs within RecoMe: saves, shares, feed appearances
+- **CreatorAgent's `identify_trends`** — emerging trends within the creator's specific audience segment
+- Pricing: free tier (basic insights via `analyze_audience`), $19.99/mo (full CreatorAgent access with all tools)
 
 ---
 
@@ -597,12 +840,12 @@ CREATE TABLE conversation_embeddings (
 ## V3 Execution Order
 
 ```
-Phase 1: Web App Dashboard              → RecoMe accessible everywhere
-Phase 2: Personalized Feed              → RecoMe becomes a destination
-Phase 3: Browser-Agnostic Ingestion     → Learn from any source
-Phase 4: Multi-Browser Extensions       → Full browser coverage
-Phase 5: Advanced AI                    → Best-in-class intelligence
-Phase 6: Monetization Expansion         → Sustainable business
+Phase 1: Web App Dashboard              → Cloud Brain + 9 agents deployed, multi-agent chat UI
+Phase 2: Personalized Feed              → FeedCuratorAgent powers the discovery engine
+Phase 3: Browser-Agnostic Ingestion     → IngestAgent orchestrates all imports via event mesh
+Phase 4: Multi-Browser Extensions       → Same Brain, different adapters (ACP)
+Phase 5: Advanced AI                    → Taste model replaces LLM calls, shared AgentMemory
+Phase 6: Monetization Expansion         → ShopperAgent affiliates + CreatorAgent B2B tools
 ```
 
 ## V3 Success Metrics

@@ -150,6 +150,767 @@ DwellTracker detects trigger
 
 ---
 
+## Phase 1.5A: AI Brain & Multi-Agent Architecture
+
+**Goal:** Build a modular AI brain with specialized agents and precision tools that orchestrate all intelligence — from feed filtering to proactive recommendations to conversational assistance. Every feature in V2+ is powered by this agent system.
+
+### The Brain — Central Orchestrator
+
+**New directory:** `brain/src/orchestrator/`
+
+```
+orchestrator/
+├── Brain.ts                        # Central orchestrator — routes tasks to agents
+├── AgentRegistry.ts                # Registers and manages all available agents
+├── TaskRouter.ts                   # Determines which agent(s) handle a given task
+├── ContextAssembler.ts             # Builds rich context for agents from all sources
+├── ResponseMerger.ts               # Combines multi-agent outputs into coherent results
+├── AgentMemory.ts                  # Shared memory layer agents can read/write
+└── FeedbackLoop.ts                 # User actions feed back to improve routing & ranking
+```
+
+**Brain architecture:**
+
+```
+                         ┌──────────────────────┐
+                         │      THE BRAIN        │
+                         │   (Orchestrator)       │
+                         │                        │
+                         │  ┌──────────────────┐  │
+                         │  │  Task Router     │  │
+                         │  │  "What kind of   │  │
+                         │  │   task is this?"  │  │
+                         │  └────────┬─────────┘  │
+                         │           │             │
+                         │  ┌────────┴─────────┐  │
+                         │  │ Context Assembler │  │
+                         │  │ "What do we know  │  │
+                         │  │  about this user  │  │
+                         │  │  right now?"      │  │
+                         │  └────────┬─────────┘  │
+                         └───────────┼────────────┘
+                                     │
+              ┌──────────┬───────────┼───────────┬──────────┐
+              │          │           │           │          │
+         ┌────┴───┐ ┌───┴────┐ ┌───┴────┐ ┌───┴────┐ ┌──┴─────┐
+         │ Filter │ │ Scout  │ │ Advisor│ │ Shopper│ │ Social │
+         │ Agent  │ │ Agent  │ │ Agent  │ │ Agent  │ │ Agent  │
+         └────┬───┘ └───┬────┘ └───┬────┘ └───┬────┘ └──┬─────┘
+              │         │          │          │         │
+         ┌────┴───┐ ┌──┴────┐ ┌──┴────┐ ┌──┴────┐ ┌──┴────┐
+         │ Tools  │ │ Tools │ │ Tools │ │ Tools │ │ Tools │
+         └────────┘ └───────┘ └───────┘ └───────┘ └───────┘
+```
+
+**Brain decision flow:**
+
+```typescript
+interface BrainTask {
+  id: string;
+  type: 'filter' | 'discover' | 'advise' | 'shop' | 'social' | 'chat' | 'analyze';
+  trigger: 'page_load' | 'user_action' | 'chat_message' | 'scheduled' | 'signal';
+  context: TaskContext;
+  priority: 'immediate' | 'background' | 'deferred';
+}
+
+interface TaskContext {
+  platform: Platform;
+  page_url: string;
+  page_content: PageContext; // DOM-extracted content
+  user_profile: UserProfile; // From knowledge graph
+  interest_graph: GraphSnapshot; // Relevant subgraph
+  recent_actions: UserAction[]; // Last N actions across platforms
+  active_goals: UserGoal[]; // "Looking for headphones", "Learning React"
+  conversation_history?: Message[]; // If triggered from chat
+}
+
+// Brain routing logic
+class Brain {
+  async process(task: BrainTask): Promise<BrainResult> {
+    // 1. Assemble full context
+    const context = await this.contextAssembler.build(task);
+
+    // 2. Route to appropriate agent(s) — may invoke multiple in parallel
+    const agents = this.taskRouter.selectAgents(task, context);
+
+    // 3. Execute agents with their tools
+    const results = await Promise.all(agents.map((a) => a.execute(context, task)));
+
+    // 4. Merge results into coherent output
+    const merged = this.responseMerger.merge(results, task);
+
+    // 5. Feed back to improve future routing
+    this.feedbackLoop.record(task, merged);
+
+    return merged;
+  }
+}
+```
+
+### Specialized Agents
+
+Each agent is an expert in one domain, equipped with specific tools for its job.
+
+#### 1. Filter Agent — Feed Quality Control
+
+**New file:** `brain/src/agents/FilterAgent.ts`
+
+**Role:** Decides what content to show, dim, or hide. Replaces V1's simple scoring with intelligent, context-aware filtering.
+
+**Tools:**
+
+| Tool                | What it does                                              | Example use                                                                 |
+| ------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `score_content`     | Run 5-factor scoring on a content item                    | Score each card in the feed                                                 |
+| `match_topics`      | Match content text against interest graph                 | "Is this product related to user's blocked topics?"                         |
+| `check_history`     | Query if user has seen similar content before             | "User already saw 5 robot vacuum listings today"                            |
+| `analyze_sentiment` | Determine if content is positive/negative for user        | "This review mentions issues with a product user owns"                      |
+| `apply_rules`       | Execute user-defined filter rules                         | "Hide all sponsored content on YouTube"                                     |
+| `explain_decision`  | Generate human-readable explanation for a filter decision | "Hidden because: matches blocked topic 'crypto' + low relevance score 0.12" |
+
+**Decision model:**
+
+```typescript
+interface FilterDecision {
+  action: 'show' | 'dim' | 'hide' | 'boost';
+  confidence: number;
+  reasons: string[]; // Human-readable
+  scoring_factors: ScoringBreakdown; // Detailed scores
+  reversible: true; // User can always override
+}
+```
+
+#### 2. Scout Agent — Opportunity Discovery
+
+**New file:** `brain/src/agents/ScoutAgent.ts`
+
+**Role:** Proactively finds opportunities, events, courses, and content the user would benefit from. This is the engine behind Phase 1.5B's platform intelligence.
+
+**Tools:**
+
+| Tool                     | What it does                                                  | Example use                                                  |
+| ------------------------ | ------------------------------------------------------------- | ------------------------------------------------------------ |
+| `scan_page`              | Deep-scan current page for opportunities beyond the main feed | Find event links, course promotions, trending sections       |
+| `cross_reference`        | Check an opportunity against user's full interest graph       | "Does this AWS course match user's career trajectory?"       |
+| `assess_benefit`         | Evaluate and articulate concrete benefit to the user          | "This certification has a 40% salary premium in user's area" |
+| `check_timeliness`       | Determine if opportunity is time-sensitive                    | "Event registration closes in 3 days"                        |
+| `find_similar`           | Find similar opportunities the user might have missed         | "3 other React conferences happening this quarter"           |
+| `research_topic`         | Use LLM to research a topic for deeper context                | "What's the job market outlook for MLOps engineers?"         |
+| `generate_learning_path` | Create a structured learning sequence from available content  | "React beginner → intermediate: 12 videos in order"          |
+
+**Scout behavior:**
+
+```
+On page load:
+  1. scan_page → identify all potential opportunities on this page
+  2. For each opportunity:
+     a. cross_reference → does this match user's interests?
+     b. assess_benefit → can we explain why this matters?
+     c. check_timeliness → is this urgent?
+  3. Rank by OpportunityRanker score
+  4. Surface top 2-3 via InsightRenderer
+
+On user browsing pattern detection:
+  1. "User has viewed 5 similar items" → find_similar for alternatives
+  2. "User keeps returning to learning content" → generate_learning_path
+  3. "User's interest graph shows a skill gap" → research_topic → suggest courses
+```
+
+#### 3. Advisor Agent — Personal Intelligence
+
+**New file:** `brain/src/agents/AdvisorAgent.ts`
+
+**Role:** The user's personal advisor — handles chat conversations, answers questions about preferences, provides career/learning guidance, and makes cross-platform connections.
+
+**Tools:**
+
+| Tool                     | What it does                                                      | Example use                                                                                     |
+| ------------------------ | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `query_knowledge_graph`  | Search user's interest graph for patterns and connections         | "What are my top interests this month?"                                                         |
+| `analyze_preferences`    | Deep analysis of preference patterns and trends                   | "Your interest in photography is growing — up 60% in 3 weeks"                                   |
+| `compare_items`          | Side-by-side comparison of products/content using user's criteria | "Compare AirPods Pro vs Galaxy Buds based on what matters to you"                               |
+| `explain_recommendation` | Explain why something was recommended or hidden                   | "This was hidden because it matches 3 blocked topics"                                           |
+| `suggest_actions`        | Recommend next steps based on current context                     | "Based on your research, you might want to set a price alert"                                   |
+| `update_preferences`     | Modify user preferences based on conversation                     | "Okay, I've boosted 'mechanical keyboards' and blocked 'membrane keyboards'"                    |
+| `generate_insight`       | Create a personalized insight from accumulated data               | "You've been researching cameras for 2 weeks — here's what I've learned about your preferences" |
+| `search_memory`          | Search across all stored memories and interactions                | "Last week you mentioned liking Sony — here's what else we know about your audio preferences"   |
+
+**Advisor personality:**
+
+```
+The Advisor Agent is:
+- Proactive but not pushy — surfaces insights when relevant, stays quiet otherwise
+- Opinionated but transparent — "I'd recommend X because..." not just "Here are options"
+- Memory-aware — references past conversations and evolving preferences
+- Benefit-focused — always explains WHY something matters to this specific user
+- Cross-platform aware — connects dots between YouTube viewing and Amazon shopping
+```
+
+#### 4. Shopper Agent — Commerce Intelligence
+
+**New file:** `brain/src/agents/ShopperAgent.ts`
+
+**Role:** Expert in shopping behavior — price tracking, deal finding, purchase timing, product research, and cross-platform price comparison.
+
+**Tools:**
+
+| Tool                  | What it does                                                      | Example use                                                         |
+| --------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `track_price`         | Add a product to price tracking with alert rules                  | "Track Sony WH-1000XM5 and alert if < $300"                         |
+| `get_price_history`   | Retrieve price history for a tracked product                      | Show sparkline of price over last 30 days                           |
+| `compare_prices`      | Compare same product across platforms (Amazon, eBay, Walmart)     | "This is $30 cheaper on eBay right now"                             |
+| `analyze_reviews`     | Extract key themes from product reviews                           | "87% mention great noise cancellation, 12% report Bluetooth issues" |
+| `find_alternatives`   | Find similar products at different price points                   | "Here are 3 alternatives under $200 with similar specs"             |
+| `assess_deal`         | Evaluate if a current price is actually a good deal               | "This 'sale' price is the same as last month — not a real deal"     |
+| `predict_price`       | Estimate future price movement based on history                   | "Prices for this category typically drop 20% during Prime Day"      |
+| `check_compatibility` | Verify product compatibility with user's existing items           | "This lens is compatible with your Canon R6"                        |
+| `calculate_value`     | Compute cost-per-use or value score based on user's usage pattern | "At $349 and your daily use pattern, that's $0.48/day for 2 years"  |
+
+#### 5. Social Agent — Community & Trend Intelligence
+
+**New file:** `brain/src/agents/SocialAgent.ts`
+
+**Role:** Understands social signals — trending topics, community dynamics, influential voices, and social proof relevant to the user's interests.
+
+**Tools:**
+
+| Tool                 | What it does                                                      | Example use                                                       |
+| -------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `detect_trends`      | Identify trending topics in user's interest areas                 | "AI agents is trending in your tech circle this week"             |
+| `find_communities`   | Discover groups/communities matching user's interests             | "15k-member espresso enthusiasts group on Facebook"               |
+| `identify_voices`    | Find influential/relevant accounts in a topic area                | "Top 5 accounts for ML engineering content on Twitter"            |
+| `analyze_discussion` | Summarize key points from a trending discussion                   | "The debate about X boils down to: team A says... team B says..." |
+| `find_events`        | Discover events (online/local) matching interests + location      | "3 AI meetups this week within 10 miles"                          |
+| `social_proof`       | Find social signals for a product/content (who liked it, reviews) | "4 people in your interest cluster rated this 5 stars"            |
+| `content_calendar`   | Detect upcoming launches, releases, events in interest areas      | "New iPhone launches Tuesday — matches your tech interest"        |
+
+#### 6. Guardian Agent — Privacy & Safety
+
+**New file:** `brain/src/agents/GuardianAgent.ts`
+
+**Role:** Runs alongside all other agents to ensure privacy, safety, and user trust. Audits what data is being accessed, blocks overreach, and maintains transparency.
+
+**Tools:**
+
+| Tool                | What it does                                               | Example use                                                          |
+| ------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------- |
+| `audit_data_access` | Log what DOM data each agent is reading                    | Ensure no agent reads sensitive form fields                          |
+| `check_consent`     | Verify user has opted in before agent accesses data        | "User disabled profile reading on LinkedIn — block ProfileExtractor" |
+| `sanitize_output`   | Strip any PII from agent outputs before display or storage | Remove email addresses from scraped content                          |
+| `enforce_limits`    | Enforce frequency limits, rate limits, data caps           | "Scout Agent already surfaced 3 insights — block until tomorrow"     |
+| `explain_privacy`   | Generate clear explanation of what data was used           | "This recommendation used: your interest in React + your location"   |
+| `redact_for_llm`    | Sanitize data before sending to external LLM provider      | Strip personal details from the prompt sent to Claude/GPT            |
+
+### Tool Execution Framework
+
+**New file:** `brain/src/tools/ToolExecutor.ts`
+
+All agent tools follow a unified execution pattern:
+
+```typescript
+interface Tool {
+  name: string;
+  description: string; // Used by LLM for tool selection
+  parameters: JSONSchema; // Input schema
+  requires_consent?: string[]; // Permissions needed
+  data_sources: ('dom' | 'graph' | 'memory' | 'llm' | 'storage')[];
+  max_latency_ms: number; // Performance budget
+  cacheable: boolean; // Can results be cached?
+  cache_ttl_ms?: number; // Cache duration
+}
+
+interface ToolResult {
+  success: boolean;
+  data: unknown;
+  metadata: {
+    latency_ms: number;
+    data_sources_used: string[];
+    cache_hit: boolean;
+    consent_checked: boolean;
+  };
+}
+```
+
+**Tool execution pipeline:**
+
+```
+Agent requests tool execution
+  → GuardianAgent.check_consent(tool.requires_consent)
+  → ToolExecutor.checkCache(tool, params)
+  → If cache miss: ToolExecutor.execute(tool, params)
+      → If tool needs LLM: GuardianAgent.redact_for_llm(params)
+      → Execute tool logic
+      → GuardianAgent.sanitize_output(result)
+      → ToolExecutor.cacheResult(tool, params, result)
+  → GuardianAgent.audit_data_access(tool, params, result)
+  → Return result to agent
+```
+
+### Agent Collaboration
+
+Agents work together, not in isolation. The Brain orchestrates multi-agent tasks:
+
+```
+Example: User asks "Should I buy these headphones?"
+
+Brain routes to:
+  1. ShopperAgent.analyze_reviews()         → "Reviews are 87% positive, Bluetooth issues noted"
+  2. ShopperAgent.compare_prices()          → "Cheapest on Amazon, $20 more on eBay"
+  3. ShopperAgent.get_price_history()        → "Price has been stable, unlikely to drop soon"
+  4. AdvisorAgent.query_knowledge_graph()    → "You prefer Sony, these are Bose — but you've been exploring"
+  5. SocialAgent.social_proof()              → "3 accounts you follow recommend these"
+  6. GuardianAgent.sanitize_output()         → Clean and merge
+
+Brain.ResponseMerger combines into:
+  "These Bose QC Ultra get strong reviews (87% positive). They're cheapest on Amazon right now
+   at $329 — price has been stable so no point waiting. You usually prefer Sony, but the noise
+   cancellation benchmarks are nearly identical. 3 audio accounts you follow rate these highly.
+   One thing to watch: 12% of reviews mention Bluetooth connectivity issues.
+
+   Want me to track the price or compare with the Sony XM5 instead?"
+```
+
+### Agent-LLM Integration
+
+Agents use LLMs as a reasoning layer, not as the entire agent:
+
+```
+Agent logic:
+  1. Gather data using tools (deterministic, fast, no LLM needed)
+  2. Structure the gathered data into a clear context
+  3. Ask LLM to reason over the structured data (if needed)
+  4. Parse LLM response into structured output
+  5. Validate and sanitize before returning
+
+This means:
+  - Most tool calls DON'T need an LLM (DOM scraping, graph queries, price lookups)
+  - LLM is used for: natural language generation, complex reasoning, pattern synthesis
+  - Agents work WITHOUT an LLM (regex/heuristic fallback) — LLM enhances, not enables
+  - Cost is minimized: LLM calls only when reasoning is genuinely needed
+```
+
+**New file:** `brain/src/agents/AgentLLMBridge.ts`
+
+```typescript
+interface AgentLLMRequest {
+  agent: string; // Which agent is asking
+  task: string; // What reasoning is needed
+  structured_context: Record<string, unknown>; // Pre-gathered tool data
+  output_schema: JSONSchema; // Expected response format
+  fallback: () => unknown; // What to return if LLM unavailable
+  max_tokens: number; // Budget per call
+}
+
+// LLM call budget per agent per user per day
+const LLM_BUDGETS: Record<string, { free: number; pro: number; premium: number }> = {
+  filter: { free: 20, pro: 100, premium: 500 },
+  scout: { free: 10, pro: 50, premium: 200 },
+  advisor: { free: 10, pro: 100, premium: -1 }, // -1 = unlimited
+  shopper: { free: 10, pro: 50, premium: 200 },
+  social: { free: 5, pro: 30, premium: 100 },
+  guardian: { free: -1, pro: -1, premium: -1 }, // Always available
+};
+```
+
+### Brain State & Learning
+
+The Brain gets smarter over time by learning from user behavior:
+
+**New file:** `brain/src/orchestrator/BrainState.ts`
+
+```typescript
+interface BrainState {
+  // Which agents produce results the user actually acts on?
+  agent_effectiveness: Record<
+    string,
+    {
+      insights_surfaced: number;
+      insights_acted_on: number;
+      insights_dismissed: number;
+      effectiveness_rate: number; // acted / surfaced
+    }
+  >;
+
+  // Which tools produce the most useful data?
+  tool_effectiveness: Record<
+    string,
+    {
+      calls: number;
+      contributed_to_action: number; // Result was part of an insight user acted on
+    }
+  >;
+
+  // User's active goals (inferred from behavior + explicit statements)
+  active_goals: Array<{
+    description: string; // "Looking for noise-cancelling headphones"
+    confidence: number;
+    first_signal: number; // Timestamp
+    supporting_signals: string[]; // What evidence supports this goal
+    status: 'active' | 'completed' | 'abandoned';
+  }>;
+
+  // Cross-platform context
+  platform_visit_patterns: Record<
+    Platform,
+    {
+      avg_visit_duration_ms: number;
+      peak_hours: number[]; // Hours of day user is most active
+      common_actions: string[]; // What user typically does on this platform
+    }
+  >;
+}
+```
+
+**Learning loop:**
+
+```
+User acts on an insight → Brain records:
+  - Which agent produced it
+  - Which tools were used
+  - What context was available
+  - Time from insight to action
+
+User dismisses an insight → Brain records:
+  - Same metadata
+  - Reduces agent confidence for similar future insights
+
+Over time:
+  - Brain routes more tasks to high-performing agents
+  - Agents prioritize tools with high contribution rates
+  - Scout focuses on insight types user acts on most
+  - Filter calibrates aggressiveness to user's actual block/show ratio
+```
+
+### Modify existing files
+
+**Modify:** `brain/src/recommendation/RecommendationEngine.ts`
+
+- Replace direct scoring with FilterAgent-powered decisions
+- FilterAgent uses existing 5-factor scoring as one of its tools
+- Adds context-aware overrides (e.g., "user is in shopping mode, relax entertainment filters")
+
+**Modify:** `extension/src/background/messageHandler.ts`
+
+- Route `AGENT_CHAT` messages through Brain → AdvisorAgent (instead of direct LLM call)
+- Route `PROCESS_CONTENT` through Brain → FilterAgent
+- New message types: `BRAIN_INSIGHT` (proactive insight from Scout), `BRAIN_STATUS` (agent activity for UI)
+
+**Modify:** `extension/src/popup/components/AgentChat.tsx`
+
+- Show which agent is handling the user's query (subtle indicator)
+- Show tool usage in real-time: "Checking prices... Analyzing reviews... Querying your preferences..."
+- Agent can proactively start conversations: "I noticed you've been researching cameras — want help deciding?"
+
+**Modify:** `extension/manifest.json`
+
+- No new permissions needed — agents operate within existing content script and storage access
+
+### Agent System Performance Budgets
+
+| Operation                     | Budget | Notes                                        |
+| ----------------------------- | ------ | -------------------------------------------- |
+| Brain task routing            | <10ms  | Must be instant — user shouldn't feel delay  |
+| FilterAgent per card          | <15ms  | Runs on every card in feed (50-100 per page) |
+| ScoutAgent full scan          | <500ms | Runs once per page load, background          |
+| AdvisorAgent chat response    | <3s    | Includes LLM call if needed                  |
+| ShopperAgent price comparison | <2s    | May need to query stored data                |
+| SocialAgent trend detection   | <200ms | Mostly graph queries                         |
+| GuardianAgent audit           | <5ms   | Runs on every tool call — must be invisible  |
+| Total brain boot time         | <100ms | Time from page load to agents ready          |
+
+---
+
+## Phase 1.5B: Proactive Platform Intelligence
+
+**Goal:** Transform RecoMe from a passive filter into an active discovery engine — surfacing opportunities, events, courses, deals, and connections tailored to each platform's unique strengths and the user's interest graph. **Powered by the Scout Agent, Shopper Agent, and Social Agent working together.**
+
+### Core Architecture
+
+**New directory:** `extension/src/content/intelligence/`
+
+```
+intelligence/
+├── PlatformIntelligenceEngine.ts    # Orchestrates per-platform recommendations
+├── ProfileExtractor.ts              # Reads user's profile/context from the current page
+├── OpportunityRanker.ts             # Scores opportunities against interest graph
+├── InsightRenderer.ts               # Renders proactive cards in overlay or toast
+├── platforms/
+│   ├── LinkedInIntelligence.ts
+│   ├── YouTubeIntelligence.ts
+│   ├── AmazonIntelligence.ts
+│   ├── TwitterIntelligence.ts
+│   ├── InstagramIntelligence.ts
+│   ├── eBayIntelligence.ts
+│   ├── WalmartIntelligence.ts
+│   └── FacebookIntelligence.ts
+└── sources/
+    ├── PageContextSource.ts         # Extract context from current page DOM
+    ├── InterestGraphSource.ts       # Query user's knowledge graph
+    └── ExternalEnrichment.ts        # Optional LLM enrichment for deeper insights
+```
+
+### How It Works (Agent-Powered)
+
+```
+User lands on a supported platform
+  → Brain receives PAGE_LOAD task
+  → Brain.ContextAssembler builds full context:
+      - DOM context via ProfileExtractor (page content, profile data)
+      - Interest graph via AdvisorAgent.query_knowledge_graph()
+      - Active goals from BrainState
+  → Brain.TaskRouter dispatches to agents in parallel:
+      - ScoutAgent.scan_page()         → finds opportunities on this page
+      - ShopperAgent (if commerce)     → finds deals, price drops, alternatives
+      - SocialAgent (if social)        → finds trending topics, events, communities
+  → Each agent uses its tools to gather + analyze data
+  → GuardianAgent audits all data access in parallel
+  → Brain.ResponseMerger combines agent outputs
+  → OpportunityRanker scores each insight:
+      - Interest match (0.35) — alignment with known preferences
+      - Benefit clarity (0.25) — can we explain *why* this helps?
+      - Timeliness (0.20) — is this urgent or time-sensitive?
+      - Novelty (0.20) — is this something they haven't seen?
+  → InsightRenderer shows top 2-3 recommendations via overlay or toast
+  → User can act (open link, save, dismiss) or ask the Advisor Agent for more detail
+  → Brain.FeedbackLoop records user action to improve future routing
+```
+
+### Platform-Specific Intelligence
+
+#### LinkedIn — Career & Learning Intelligence
+
+**New file:** `extension/src/content/intelligence/platforms/LinkedInIntelligence.ts`
+
+**Profile extraction (from DOM):**
+
+- Current role, company, industry (from profile page or sidebar)
+- Skills and endorsements
+- Location
+- Education background
+- Connection count and engagement patterns
+
+**Proactive recommendations:**
+
+| Signal                    | Insight Type             | Example                                                                                                     |
+| ------------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| Role + skills + interests | Courses & certifications | "AWS Solutions Architect certification is trending among Cloud Engineers in Bangalore — 40% salary premium" |
+| Location + industry       | Local events             | "TechCrunch Disrupt Bangalore is in 3 weeks — matches your AI/startup interests"                            |
+| Skills gap detection      | Skill development        | "You have Python + ML skills but no MLOps — this free Coursera course bridges that gap"                     |
+| Network analysis          | Connection suggestions   | "15 people in your network just joined the 'AI Product Managers' group — relevant to your interests"        |
+| Job market signals        | Career insights          | "Demand for your skill set is up 23% this quarter in your area"                                             |
+| Content engagement        | Content strategy         | "Posts about [topic] get 3x engagement in your network — you have expertise here"                           |
+
+**Data sources:**
+
+- DOM extraction from LinkedIn profile, feed, and sidebar
+- RecoMe interest graph for cross-platform context
+- LLM enrichment (optional) for deeper career path analysis
+
+#### YouTube — Learning & Discovery Intelligence
+
+**New file:** `extension/src/content/intelligence/platforms/YouTubeIntelligence.ts`
+
+**Context extraction:**
+
+- Current video topic, channel, category
+- Watch history patterns (from RecoMe memory, not YouTube API)
+- Subscription overlap with interest categories
+
+**Proactive recommendations:**
+
+| Signal                          | Insight Type        | Example                                                                                                         |
+| ------------------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Watching learning content       | Learning paths      | "You've watched 8 React videos this week — here's a structured learning path from beginner to advanced"         |
+| Repeated topic viewing          | Deep-dive playlists | "You keep coming back to music production — this 20-part series covers everything from DAW basics to mastering" |
+| Interest in a creator's niche   | Similar creators    | "You love TechReviewer's audio content — AudioScienceReview does deeper technical analysis"                     |
+| Watching event/conference talks | Live events         | "React Conf 2026 is streaming live next week — matches your frontend interests"                                 |
+| Entertainment pattern detection | Curated collections | "You watch cooking + travel content on weekends — here's a series combining both"                               |
+
+#### Amazon — Shopping Intelligence
+
+**New file:** `extension/src/content/intelligence/platforms/AmazonIntelligence.ts`
+
+**Context extraction:**
+
+- Current product category, price range, brand
+- Browsing pattern (researching vs. impulse)
+- Cart/wishlist signals from RecoMe memory
+
+**Proactive recommendations:**
+
+| Signal                        | Insight Type              | Example                                                                                                          |
+| ----------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Browsing a product category   | Best-value picks          | "Based on your preference for audio quality over brand, the Moondrop Chu II outperforms headphones 3x its price" |
+| Repeat visits to same product | Price & review analysis   | "This product dropped $30 since you first viewed it — reviews mention durability issues though"                  |
+| Purchased a main product      | Accessories & complements | "You bought a DSLR last month — these memory cards have the fastest write speeds for your model"                 |
+| Seasonal patterns             | Restock reminders         | "You buy protein powder every 6 weeks — your preferred brand is 15% off today"                                   |
+| Comparison shopping behavior  | Decision helper           | "You've viewed 5 robot vacuums — want me to compare them side by side?"                                          |
+
+#### Twitter/X — Conversation & Trend Intelligence
+
+**New file:** `extension/src/content/intelligence/platforms/TwitterIntelligence.ts`
+
+**Context extraction:**
+
+- Topics in current feed/timeline
+- Trending topics in user's interest areas
+- Engagement patterns from RecoMe memory
+
+**Proactive recommendations:**
+
+| Signal                        | Insight Type            | Example                                                                                                         |
+| ----------------------------- | ----------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Interest in a trending topic  | Spaces & discussions    | "There's a live Space right now on 'AI in Healthcare' with 2.3k listeners — matches your AI + health interests" |
+| Following people in a niche   | Community discovery     | "12 accounts you follow are in the 'IndieHackers' community — you'd probably enjoy these 5 accounts too"        |
+| Reading about current events  | Context & threads       | "You're reading about the new EU AI Act — here's the best explanatory thread with 50k+ likes"                   |
+| Interest overlap detection    | Cross-topic connections | "Your interest in both cooking and chemistry — this food science account bridges both"                          |
+| Professional interest signals | Industry voices         | "These 3 accounts are the most cited in your field this week"                                                   |
+
+#### Instagram — Creator & Experience Intelligence
+
+**New file:** `extension/src/content/intelligence/platforms/InstagramIntelligence.ts`
+
+**Proactive recommendations:**
+
+| Signal                       | Insight Type           | Example                                                                                                 |
+| ---------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------- |
+| Engaging with travel content | Experience suggestions | "You've saved 15 Japan travel posts — cherry blossom season starts in 2 weeks, here's a planning guide" |
+| Following fitness creators   | Program discovery      | "Based on your interest in calisthenics, this creator just launched a free 30-day program"              |
+| Engaging with food content   | Local discovery        | "3 restaurants you'd love just opened in your area — they match your sushi and ramen interests"         |
+| Shopping engagement          | Creator drops & sales  | "A creator you follow is launching a collab collection tomorrow — aligns with your streetwear interest" |
+
+#### eBay — Deal & Collector Intelligence
+
+**New file:** `extension/src/content/intelligence/platforms/eBayIntelligence.ts`
+
+**Proactive recommendations:**
+
+| Signal                       | Insight Type        | Example                                                                                                        |
+| ---------------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Searching for specific items | Rare finds alert    | "A vintage 1978 Fender Stratocaster just listed — matches your guitar interest and is priced 20% below market" |
+| Watching auctions            | Bidding strategy    | "This auction ends in 2 hours — similar items sold for $50-$80, current bid is $35"                            |
+| Repeat category browsing     | Price trend insight | "Prices for mechanical keyboards have dropped 15% this month — good time to buy"                               |
+| Purchase history patterns    | Complementary deals | "You collect vinyl — this seller has a lot of 50 jazz records ending today at $0.99 start"                     |
+
+#### Walmart — Value & Household Intelligence
+
+**New file:** `extension/src/content/intelligence/platforms/WalmartIntelligence.ts`
+
+**Proactive recommendations:**
+
+| Signal                   | Insight Type         | Example                                                                                      |
+| ------------------------ | -------------------- | -------------------------------------------------------------------------------------------- |
+| Regular grocery patterns | Weekly deals         | "5 items on your regular list are on rollback this week — save $12"                          |
+| Browsing home categories | Seasonal suggestions | "Spring cleaning deals start tomorrow — based on your home improvement interests"            |
+| Price-sensitive browsing | Store comparison     | "This item is $8 cheaper at Walmart than where you saw it on Amazon last week"               |
+| Interest in a brand      | New arrivals         | "Great Value just launched an organic line — matches your interest in budget healthy eating" |
+
+#### Facebook — Community & Event Intelligence
+
+**New file:** `extension/src/content/intelligence/platforms/FacebookIntelligence.ts`
+
+**Proactive recommendations:**
+
+| Signal                      | Insight Type              | Example                                                                                                    |
+| --------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Interest graph + location   | Local events              | "3 tech meetups this week in your city match your AI and startup interests"                                |
+| Group engagement patterns   | Community discovery       | "There's a 15k-member group for 'Home Espresso Enthusiasts' — matches your coffee interest"                |
+| Marketplace browsing        | Deal alerts               | "A Herman Miller chair just listed in your area for $200 — these usually go for $400+"                     |
+| Interest in specific topics | Fundraiser/cause matching | "A local coding bootcamp for underrepresented groups is fundraising — aligns with your education interest" |
+
+### Insight Delivery System
+
+**New file:** `extension/src/content/intelligence/InsightRenderer.ts`
+
+Insights are delivered through multiple channels:
+
+| Channel                 | When                             | Format                                                   |
+| ----------------------- | -------------------------------- | -------------------------------------------------------- |
+| Overlay card            | User opens floating overlay      | Ranked list of top insights                              |
+| Contextual toast        | Highly relevant + time-sensitive | Non-intrusive bottom-right toast, auto-dismiss 8s        |
+| Agent proactive message | High-value insight detected      | Agent initiates: "I noticed something you might like..." |
+| Badge on overlay pill   | New insights available           | Small dot/count badge on the floating pill               |
+
+**Insight card structure:**
+
+```typescript
+interface ProactiveInsight {
+  id: string;
+  platform: Platform;
+  type: 'event' | 'course' | 'deal' | 'connection' | 'content' | 'trend' | 'alert';
+  title: string; // "AWS Certification trending in your area"
+  body: string; // Brief description
+  benefit: string; // "40% salary premium for certified engineers"
+  relevance_score: number; // 0-1, from OpportunityRanker
+  source_signals: string[]; // What user interests triggered this
+  action_url?: string; // Direct link to the opportunity
+  action_label?: string; // "View course" / "Join event" / "See deal"
+  expires_at?: number; // Time-sensitive insights expire
+  platform_context: Record<string, unknown>; // Platform-specific metadata
+}
+```
+
+**Frequency controls:**
+
+- Max 3 proactive insights per platform visit
+- Max 8 insights per day across all platforms
+- User can snooze per-platform or globally
+- Insights must score > 0.6 relevance to surface
+- Exponential backoff if user dismisses repeatedly
+
+### Privacy Considerations
+
+```
+CRITICAL: Profile data extraction is READ-ONLY and LOCAL-ONLY
+
+- ProfileExtractor reads DOM elements that are already visible to the user
+- No data is sent to any server (unless user has AI enhancement enabled — then
+  only the insight generation prompt goes to the chosen LLM provider)
+- Profile signals are stored in the local knowledge graph alongside other preferences
+- Users can disable profile extraction per-platform in settings
+- Users can disable proactive insights entirely
+- Clear "Why this recommendation?" explanation on every insight
+```
+
+**Modify:** `extension/src/popup/components/SettingsPanel.tsx`
+
+- Add "Proactive Insights" toggle (global on/off)
+- Per-platform insight toggles
+- Insight frequency control (low / medium / high)
+- "Profile reading" toggle with explanation of what data is read
+
+**Modify:** `extension/manifest.json`
+
+- No new permissions needed — content scripts already have DOM access on supported sites
+
+### Implementation Priority
+
+```
+Phase 1.5A:  Brain + Agent framework + Tool executor + Guardian Agent
+             (foundation — everything else depends on this)
+
+Phase 1.5B-a: FilterAgent + ScoutAgent + LinkedIn + YouTube + Amazon
+              (highest value platforms, core agents)
+
+Phase 1.5B-b: ShopperAgent + AdvisorAgent + Twitter + Instagram
+              (commerce intelligence, social platforms)
+
+Phase 1.5B-c: SocialAgent + eBay + Walmart + Facebook
+              (community/marketplace, full agent suite)
+```
+
+**Why this order:**
+
+1. Brain + Agent framework first — it's the foundation for everything in V2+
+2. FilterAgent replaces V1's scoring with smarter, context-aware filtering
+3. ScoutAgent powers proactive insights on the highest-value platforms (LinkedIn, YouTube, Amazon)
+4. ShopperAgent + AdvisorAgent unlock the "personal assistant" experience
+5. SocialAgent completes the suite for community platforms
+
+LinkedIn is first for platform intelligence because the profile data is richest and the recommendations (career, courses, events) have the clearest ROI. YouTube and Amazon follow because they have the most active user bases.
+
+---
+
 ## Phase 2: Cloud Sync + Tiered Pricing
 
 **Goal:** Enable cross-device continuity and establish a sustainable revenue model.

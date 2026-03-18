@@ -38,9 +38,214 @@ RecoMe V4 becomes the **universal preference graph** — a portable, user-owned 
 
 ---
 
+## Agent Architecture Evolution (V3 → V4)
+
+V2 introduced 6 core agents: **FilterAgent**, **ScoutAgent**, **AdvisorAgent**, **ShopperAgent**, **SocialAgent**, **GuardianAgent**. V3 expanded with **FeedCuratorAgent**, **IngestAgent**, **CreatorAgent**, a cloud-hosted **Brain**, and an **Agent Mesh** for inter-agent communication.
+
+In V4, the agent system becomes the platform itself. Agents are no longer internal implementation details — they are the product. Every platform capability is an agent, every API endpoint maps to an agent tool, and third parties can invoke, extend, and build on the agent system.
+
+### 1. Agent-as-a-Service
+
+Third-party developers can invoke RecoMe agents directly via API. A developer building a music app can call `ShopperAgent.find_alternatives()` or `AdvisorAgent.compare_items()` for their users. Agents become composable, callable services.
+
+```
+Developer's Music App                     RecoMe Agent Platform
+┌──────────────────┐                     ┌──────────────────────────┐
+│                  │  API call            │                          │
+│  "Find cheaper   │ ──────────────────▶ │  ShopperAgent            │
+│   alternatives   │                     │    .find_alternatives()  │
+│   to AirPods     │                     │                          │
+│   Max"           │ ◀────────────────── │  Returns: 5 alternatives │
+│                  │  structured response │  with scores, reasons,   │
+└──────────────────┘                     │  and price comparisons   │
+                                         └──────────────────────────┘
+```
+
+**API pattern:** Every agent exposes its tools as REST endpoints.
+
+```
+POST /api/v2/agents/{agent_name}/{tool_name}
+Authorization: Bearer <user_token>
+X-App-Key: <app_key>
+
+{
+  "params": { ... },
+  "user_context": true   // include user's taste identity (if scoped)
+}
+```
+
+### 2. New Agents for V4
+
+| Agent                 | Purpose                                                           | Tools                                                                                                    |
+| --------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| **PlatformAgent**     | Manages third-party app permissions, rate limits, and data access | `validate_scope`, `meter_usage`, `enforce_quota`, `audit_access`                                         |
+| **IdentityAgent**     | Manages the user's Taste Identity across services                 | `export_identity`, `selective_share`, `verify_consent`, `revoke_access`, `merge_identities`              |
+| **CommunityAgent**    | Powers taste-based communities and social features                | `find_taste_matches`, `detect_communities`, `mix_social_feed`, `compute_compatibility`                   |
+| **IntelligenceAgent** | Powers B2B analytics and the Global Taste Graph                   | `aggregate_anonymized`, `detect_trends`, `compute_correlations`, `generate_report`, `predict_trajectory` |
+| **FederationAgent**   | Manages communication between federated RecoMe nodes              | `sync_with_node`, `validate_protocol`, `route_request`, `merge_distributed_state`                        |
+
+**Full V4 Agent Roster (14 agents):**
+
+```
+V2 Agents (core):
+  FilterAgent       — Content filtering and blocking
+  ScoutAgent        — Content discovery across platforms
+  AdvisorAgent      — Comparison and decision support
+  ShopperAgent      — Purchase optimization and deal-finding
+  SocialAgent       — Social signal processing
+  GuardianAgent     — Privacy enforcement and data protection (veto power)
+
+V3 Agents (intelligence layer):
+  FeedCuratorAgent  — Personalized feed curation
+  IngestAgent       — Multi-platform content ingestion
+  CreatorAgent      — Content creation assistance
+
+V4 Agents (platform layer):
+  PlatformAgent     — Third-party app management
+  IdentityAgent     — Taste identity and portable preferences
+  CommunityAgent    — Social taste communities
+  IntelligenceAgent — B2B analytics and taste graph
+  FederationAgent   — Decentralized node communication
+```
+
+**Agent hierarchy in V4:**
+
+```
+                    ┌──────────────┐
+                    │    Brain     │  (orchestrator — routes all requests)
+                    └──────┬───────┘
+                           │
+              ┌────────────┼────────────┐
+              │            │            │
+      ┌───────┴──────┐    │    ┌───────┴──────┐
+      │ GuardianAgent│    │    │ PlatformAgent│
+      │ (veto power) │    │    │ (gate all    │
+      │              │    │    │  3rd-party)  │
+      └───────┬──────┘    │    └───────┬──────┘
+              │            │            │
+              └────────────┼────────────┘
+                           │
+         ┌─────────┬───────┼───────┬──────────┐
+         │         │       │       │          │
+    ┌────┴───┐ ┌───┴──┐ ┌──┴──┐ ┌──┴───┐ ┌───┴────┐
+    │Identity│ │Commu-│ │Intel│ │Feder-│ │ V2/V3  │
+    │ Agent  │ │nity  │ │lig. │ │ation │ │ Agents │
+    └────────┘ └──────┘ └─────┘ └──────┘ └────────┘
+```
+
+### 3. Agent Marketplace
+
+Third parties can build and publish custom agents that plug into the Brain. Custom agents compose on top of existing agent tools and add domain-specific knowledge.
+
+**Example: Wine Sommelier Agent**
+
+```
+WineSommelierAgent (third-party):
+  inherits: AdvisorAgent tools (compare_items, rank_by_criteria)
+  adds:     custom wine knowledge graph (10k+ wines, regions, pairings)
+  tools:
+    - pair_with_meal(meal_description) → wine recommendations
+    - find_similar_wines(wine, budget) → alternatives
+    - build_cellar_plan(preferences, budget, timeline) → collection plan
+
+  Revenue: $2.99/mo subscription, 70/30 split (developer/RecoMe)
+```
+
+**Marketplace rules:**
+
+- Custom agents run in a sandboxed environment
+- All data access goes through PlatformAgent (scope enforcement)
+- GuardianAgent monitors all third-party agent behavior
+- Revenue share: 70% to developer, 30% to RecoMe
+- Community rating and review system for agents
+- RecoMe certifies high-quality agents with a "Verified" badge
+
+### 4. Federated Agent Network
+
+In Phase 5 (Decentralization), agents can run on any node in the federation. The Brain becomes a distributed orchestrator.
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  RecoMe Cloud   │    │  Corp Node      │    │  Self-hosted    │
+│  (all agents)   │◄──►│  (subset)       │◄──►│  (personal)     │
+│                 │    │                 │    │                 │
+│  Brain routes   │    │  Brain routes   │    │  Brain routes   │
+│  to nearest/    │    │  local-first,   │    │  all local,     │
+│  fastest node   │    │  cloud fallback │    │  cloud opt-in   │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                      │                      │
+         └──────────────────────┴──────────────────────┘
+                    FederationAgent (on each node)
+                    syncs state, routes requests,
+                    validates protocol compliance
+```
+
+- Brain routes each request to the nearest/fastest node that has the required agent
+- User's GuardianAgent ensures data never leaves approved nodes
+- FederationAgent handles node discovery, health checks, and state synchronization
+- Latency-sensitive operations (FilterAgent, FeedCuratorAgent) run on-device or nearest node
+- Heavy computation (IntelligenceAgent, trend detection) routes to cloud
+
+### 5. Agent Governance
+
+As agents become more powerful and accessible to third parties, governance becomes critical.
+
+**Governance framework:**
+
+- **Audit trail:** Every agent action is logged with timestamp, initiator, input/output hash, and decision rationale. Users can inspect the full trail via `/identity/agent-log`.
+- **Decision transparency:** Users can inspect any agent decision. "Why did AdvisorAgent recommend X?" returns the full reasoning chain.
+- **Rate limiting:** PlatformAgent enforces per-agent, per-third-party-app rate limits. Prevents abuse and ensures fair resource allocation.
+- **GuardianAgent veto power:** GuardianAgent can veto any action by any other agent — including third-party agents. If a third-party agent tries to access data outside its scope, GuardianAgent blocks it before execution.
+- **Community flagging:** Users and developers can flag misbehaving third-party agents. Flagged agents are reviewed; repeated violations result in suspension from the marketplace.
+- **Agent sandboxing:** Third-party agents cannot access raw user data, other agents' internal state, or network resources outside the approved API surface.
+
+```
+Third-party agent request flow:
+
+  Developer App → PlatformAgent (validate scope, check quota)
+                → GuardianAgent (verify consent, check privacy rules)
+                → Brain (route to target agent)
+                → Target Agent (execute tool)
+                → GuardianAgent (audit response, redact if needed)
+                → PlatformAgent (meter usage, log)
+                → Developer App (return result)
+```
+
+---
+
 ## Phase 1: Platform API & Developer Ecosystem
 
 **Goal:** Open RecoMe's intelligence to third-party developers and services.
+
+> **Agent integration:** The API IS the agent system. Every API endpoint maps to an agent + tool invocation. PlatformAgent gates all third-party access. GuardianAgent audits every call.
+
+**API-to-Agent Mapping:**
+
+| API Endpoint                           | Agent                         | Tool(s)                             |
+| -------------------------------------- | ----------------------------- | ----------------------------------- |
+| `GET /api/v2/taste/preferences`        | ScoutAgent                    | `get_preferences`                   |
+| `POST /api/v2/taste/signals`           | IngestAgent                   | `process_signal`                    |
+| `GET /api/v2/taste/graph`              | Brain (KnowledgeGraph)        | `query_graph`                       |
+| `GET /api/v2/taste/embeddings`         | Brain (AffinityCalculator)    | `compute_embedding`                 |
+| `GET /api/v2/recommendations/content`  | AdvisorAgent                  | `recommend_content`                 |
+| `GET /api/v2/recommendations/products` | ShopperAgent                  | `find_products`                     |
+| `GET /api/v2/recommendations/similar`  | ScoutAgent                    | `find_similar`                      |
+| `GET /api/v2/recommendations/explain`  | AdvisorAgent                  | `explain_recommendation`            |
+| `GET /api/v2/identity/profile`         | IdentityAgent                 | `get_profile`                       |
+| `GET /api/v2/identity/portable`        | IdentityAgent                 | `export_identity`                   |
+| `POST /api/v2/identity/permissions`    | IdentityAgent + GuardianAgent | `selective_share`, `verify_consent` |
+| `GET /api/v2/social/similar-users`     | CommunityAgent                | `find_taste_matches`                |
+| `GET /api/v2/social/recommendations`   | SocialAgent + CommunityAgent  | `mix_social_feed`                   |
+| `GET /api/v2/social/trending`          | FeedCuratorAgent              | `get_trending`                      |
+| `GET /api/v2/analytics/audience`       | IntelligenceAgent             | `aggregate_anonymized`              |
+| `GET /api/v2/analytics/trends`         | IntelligenceAgent             | `detect_trends`                     |
+| `GET /api/v2/analytics/segments`       | IntelligenceAgent             | `compute_correlations`              |
+
+**Middleware is agent-powered:**
+
+- `scopeValidator.ts` → PlatformAgent.`validate_scope`
+- `rateLimiter.ts` → PlatformAgent.`enforce_quota`
+- `usageTracker.ts` → PlatformAgent.`meter_usage`
 
 ### 1A. Platform API (v2)
 
@@ -205,13 +410,13 @@ Third-party developers build apps that enhance RecoMe.
 
 **App types:**
 
-| Type            | Example                  | Revenue Model          |
-| --------------- | ------------------------ | ---------------------- |
-| Data connectors | "Import from Letterboxd" | Free (user growth)     |
-| Feed sources    | "Hacker News for RecoMe" | Free or paid           |
-| AI agents       | "Wine Sommelier Agent"   | Subscription ($1-5/mo) |
-| Visualization   | "Taste Map 3D"           | One-time purchase      |
-| Integrations    | "RecoMe for Notion"      | Subscription           |
+| Type            | Example                  | Revenue Model                                                   |
+| --------------- | ------------------------ | --------------------------------------------------------------- |
+| Data connectors | "Import from Letterboxd" | Free (user growth)                                              |
+| Feed sources    | "Hacker News for RecoMe" | Free or paid                                                    |
+| AI agents       | "Wine Sommelier Agent"   | Subscription ($1-5/mo) — plugs into Brain via Agent Marketplace |
+| Visualization   | "Taste Map 3D"           | One-time purchase                                               |
+| Integrations    | "RecoMe for Notion"      | Subscription                                                    |
 
 **Marketplace infrastructure:**
 
@@ -229,6 +434,19 @@ cloud/src/marketplace/
 ## Phase 2: Taste Identity — Portable Preference Protocol
 
 **Goal:** Users own their taste data and can take it anywhere. RecoMe becomes the "Sign in with Google" for preferences.
+
+> **Agent integration:** IdentityAgent manages all taste identity operations — export, import, selective sharing, and identity merging. GuardianAgent enforces consent at every step, verifying that no data leaves without explicit user approval. Every "Sign in with RecoMe" flow passes through both agents.
+
+**Agent flow for taste identity operations:**
+
+```
+User action: "Share my music taste with NewApp"
+  → IdentityAgent.selective_share(categories=["music"], target="newapp")
+  → GuardianAgent.verify_consent(user, scope="music", target="newapp")
+  → GuardianAgent approves → IdentityAgent packages selective export
+  → GuardianAgent.audit_access(log the share event)
+  → PlatformAgent.meter_usage(newapp, "identity:read")
+```
 
 ### 2A. Taste Identity Standard
 
@@ -326,6 +544,19 @@ Users manage their taste identity like a digital wallet.
 
 **Goal:** Connect people through shared taste. Make discovery social.
 
+> **Agent integration:** CommunityAgent + SocialAgent power all social features. Taste compatibility is computed by CommunityAgent.`compute_compatibility`. Community detection uses CommunityAgent.`detect_communities` to automatically cluster users by taste. SocialAgent processes social signals (follows, endorsements, shared discoveries) and feeds them into the Brain. FeedCuratorAgent mixes social signals into the personal feed via CommunityAgent.`mix_social_feed`.
+
+**Agent-powered social features:**
+
+| Feature                     | Agent(s)                          | Tool(s)                 |
+| --------------------------- | --------------------------------- | ----------------------- |
+| Taste compatibility score   | CommunityAgent                    | `compute_compatibility` |
+| "People like you" discovery | CommunityAgent                    | `find_taste_matches`    |
+| Auto-detected communities   | CommunityAgent                    | `detect_communities`    |
+| Social feed mixing          | CommunityAgent + FeedCuratorAgent | `mix_social_feed`       |
+| Social signal processing    | SocialAgent                       | `process_social_signal` |
+| Endorsement validation      | SocialAgent + GuardianAgent       | `validate_endorsement`  |
+
 ### 3A. Public Taste Profiles
 
 **Web app section:** `/profile/{username}`
@@ -408,6 +639,31 @@ Feed item enrichment:
 ## Phase 4: Taste Intelligence for Business (B2B Platform)
 
 **Goal:** Businesses pay for anonymized taste intelligence to improve their products and marketing.
+
+> **Agent integration:** IntelligenceAgent powers all B2B analytics — audience insights, trend detection, correlation analysis, and report generation. Every aggregation request passes through GuardianAgent first, which enforces privacy rules: minimum cluster sizes, anonymization, and opt-out checks. No data reaches a business without GuardianAgent approval.
+
+**Agent flow for B2B analytics:**
+
+```
+Business requests: "Audience taste composition for headphone buyers"
+  → PlatformAgent.validate_scope(app="biz_123", scope="analytics:read")
+  → PlatformAgent.enforce_quota(app="biz_123", endpoint="audience")
+  → GuardianAgent verifies: cluster_size >= 100, all users opted in
+  → IntelligenceAgent.aggregate_anonymized(category="headphones", metric="composition")
+  → GuardianAgent.audit_access(log the query, verify no PII in response)
+  → IntelligenceAgent returns anonymized, aggregated result
+```
+
+**B2B product-to-agent mapping:**
+
+| B2B Product              | Agent                       | Tool(s)                                        |
+| ------------------------ | --------------------------- | ---------------------------------------------- |
+| Audience Insights        | IntelligenceAgent           | `aggregate_anonymized`                         |
+| Trend Radar              | IntelligenceAgent           | `detect_trends`, `predict_trajectory`          |
+| Recommendation Widget    | AdvisorAgent + ShopperAgent | `recommend_content`, `find_products`           |
+| Product-Market Fit Score | IntelligenceAgent           | `compute_correlations`                         |
+| Campaign Targeting       | IntelligenceAgent           | `aggregate_anonymized`, `compute_correlations` |
+| Custom Reports           | IntelligenceAgent           | `generate_report`                              |
 
 ### 4A. RecoMe for Business
 
@@ -498,6 +754,35 @@ For bloggers, YouTubers, newsletter writers:
 
 **Goal:** Make RecoMe resilient, trustless, and truly user-owned.
 
+> **Agent integration:** FederationAgent manages all node-to-node communication — discovery, sync, health checks, and protocol compliance. The Brain becomes a distributed orchestrator that routes requests across federated nodes. GuardianAgent on each node enforces data sovereignty: user data never leaves approved nodes.
+
+**How the Brain routes across federated nodes:**
+
+```
+User on Corp Node requests a recommendation:
+
+  1. Brain (local) receives request
+  2. Brain checks: does this node have the required agent?
+     - FilterAgent, FeedCuratorAgent → YES (latency-sensitive, run local)
+     - IntelligenceAgent → NO (heavy compute, only on cloud)
+  3. FederationAgent.route_request(target="cloud", agent="IntelligenceAgent")
+  4. GuardianAgent (local) checks: is "cloud" an approved node for this user?
+     - YES → FederationAgent sends request (encrypted, no raw user data)
+     - NO → request blocked, user notified
+  5. FederationAgent on cloud node receives, validates protocol
+  6. Cloud Brain executes IntelligenceAgent tool
+  7. Response returns via FederationAgent (encrypted)
+  8. Local Brain assembles final result
+```
+
+**FederationAgent responsibilities per node type:**
+
+| Node Type        | FederationAgent Behavior                                                                   |
+| ---------------- | ------------------------------------------------------------------------------------------ |
+| RecoMe Cloud     | Full agent roster. Accepts routed requests. Syncs anonymized graph data.                   |
+| Corporate Node   | Runs subset of agents. Routes overflow to cloud. Keeps employee data local.                |
+| Self-hosted Node | Runs all agents locally. Cloud opt-in only. FederationAgent syncs only what user approves. |
+
 ### 5A. Decentralized Taste Identity (DID)
 
 Move taste identity from RecoMe's servers to a decentralized system.
@@ -571,6 +856,45 @@ Multiple organizations can run RecoMe-compatible recommendation nodes.
 ## Phase 6: Global Taste Graph
 
 **Goal:** Build the world's most comprehensive map of human preferences — a new kind of knowledge base.
+
+> **Agent integration:** IntelligenceAgent maintains the Global Taste Graph — computing correlations, detecting trends, and predicting trajectories. The graph is maintained by an **agent swarm architecture**: distributed IntelligenceAgent instances across federated nodes each maintain local graph partitions, with FederationAgent synchronizing updates. GuardianAgent enforces that only anonymized, aggregated data enters the global graph.
+
+**Agent swarm for distributed graph computation:**
+
+```
+┌─────────────────────────────────────────────────────┐
+│                 Global Taste Graph                    │
+│            (assembled from all nodes)                │
+└─────────────────────┬───────────────────────────────┘
+                      │
+        ┌─────────────┼─────────────┐
+        │             │             │
+  ┌─────┴─────┐ ┌─────┴─────┐ ┌─────┴─────┐
+  │ Node A    │ │ Node B    │ │ Node C    │
+  │           │ │           │ │           │
+  │ Intel.    │ │ Intel.    │ │ Intel.    │
+  │ Agent     │ │ Agent     │ │ Agent     │
+  │ (local    │ │ (local    │ │ (local    │
+  │  graph    │ │  graph    │ │  graph    │
+  │  partition│ │  partition│ │  partition│
+  │  100k     │ │  50k      │ │  200k    │
+  │  entities)│ │  entities)│ │  entities)│
+  └─────┬─────┘ └─────┬─────┘ └─────┬─────┘
+        │             │             │
+        └──────FederationAgent──────┘
+          syncs anonymized graph deltas
+          (entity correlations, trend signals,
+           NOT individual user data)
+```
+
+**Swarm computation model:**
+
+- Each node's IntelligenceAgent computes local correlations and trends from its user base
+- FederationAgent periodically syncs anonymized graph deltas between nodes
+- GuardianAgent on each node verifies that outgoing deltas contain no PII (minimum cluster size enforced)
+- The global graph is a merge of all node partitions — no single node holds the complete graph
+- IntelligenceAgent.`predict_trajectory` uses the global graph for cross-node trend prediction
+- IntelligenceAgent.`generate_report` can query the distributed graph via FederationAgent routing
 
 ### 6A. The Taste Graph
 
@@ -673,12 +997,12 @@ Enterprise-grade access to the global taste graph.
 ## V4 Execution Order
 
 ```
-Phase 1: Platform API + Developer Ecosystem    → Open the platform to builders
-Phase 2: Taste Identity Protocol               → Users own their data, portable preferences
-Phase 3: Social Taste Network                  → Network effects, social discovery
-Phase 4: B2B Platform                          → Enterprise revenue
-Phase 5: Decentralization                      → Trust, resilience, open standard
-Phase 6: Global Taste Graph                    → The ultimate data asset
+Phase 1: Platform API + Developer Ecosystem    → Agents become the API (PlatformAgent gates access)
+Phase 2: Taste Identity Protocol               → IdentityAgent + GuardianAgent manage portable data
+Phase 3: Social Taste Network                  → CommunityAgent + SocialAgent power social discovery
+Phase 4: B2B Platform                          → IntelligenceAgent powers analytics (GuardianAgent enforces privacy)
+Phase 5: Decentralization                      → FederationAgent manages node-to-node, Brain routes distributed
+Phase 6: Global Taste Graph                    → Agent swarm (IntelligenceAgent) maintains distributed graph
 ```
 
 ---
