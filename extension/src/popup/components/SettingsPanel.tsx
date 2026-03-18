@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { Platform } from '@shared/types';
 
 type LLMProvider = 'anthropic' | 'openai' | 'gemini';
@@ -247,55 +247,22 @@ export function SettingsPanel() {
   return (
     <div className="settings">
       {/* Blocked Topics */}
-      <div className="setting-group">
-        <h3 className="setting-title">
-          Blocked Topics{' '}
-          {blockedTopics.length > 0 && (
-            <span className="setting-badge">{blockedTopics.length}</span>
-          )}
-        </h3>
-        {blockedTopics.length === 0 ? (
-          <p className="setting-text">
-            No topics blocked yet. Use Quick Block on the dashboard or the 🚫 button on any post.
-          </p>
-        ) : (
-          <div className="blocked-list">
-            {blockedTopics.map((t) => (
-              <div key={t} className="blocked-chip">
-                <span className="blocked-chip-label">{t}</span>
-                <button className="blocked-chip-remove" onClick={() => unblock(t)} title="Unblock">
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <TopicList
+        title="Blocked Topics"
+        topics={blockedTopics}
+        variant="blocked"
+        emptyText="No topics blocked yet. Use Quick Block on the dashboard or the 🚫 button on any post."
+        onRemove={unblock}
+      />
 
       {/* Liked Topics */}
-      <div className="setting-group">
-        <h3 className="setting-title">
-          Liked Topics{' '}
-          {likedTopics.length > 0 && (
-            <span className="setting-badge setting-badge-green">{likedTopics.length}</span>
-          )}
-        </h3>
-        <p className="setting-text">
-          Topics you want to see more of. RecoMe will boost matching content.
-        </p>
-        {likedTopics.length > 0 && (
-          <div className="blocked-list" style={{ marginTop: 8 }}>
-            {likedTopics.map((t) => (
-              <div key={t} className="blocked-chip liked-chip">
-                <span className="blocked-chip-label">✦ {t}</span>
-                <button className="blocked-chip-remove" onClick={() => unlike(t)} title="Remove">
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <TopicList
+        title="Liked Topics"
+        topics={likedTopics}
+        variant="liked"
+        subtitle="Topics you want to see more of. RecoMe will boost matching content."
+        onRemove={unlike}
+      />
 
       {/* Platform Toggles */}
       <div className="setting-group">
@@ -457,6 +424,92 @@ export function SettingsPanel() {
           All data is stored locally on your device. Nothing is sent to any server.
         </p>
       </div>
+    </div>
+  );
+}
+
+// ── Collapsible Topic List ───────────────────────────────────────────────────
+
+const COLLAPSED_LIMIT = 8;
+
+interface TopicListProps {
+  title: string;
+  topics: string[];
+  variant: 'blocked' | 'liked';
+  emptyText?: string;
+  subtitle?: string;
+  onRemove: (topic: string) => void;
+}
+
+function TopicList({ title, topics, variant, emptyText, subtitle, onRemove }: TopicListProps) {
+  const [expanded, setExpanded] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const isLiked = variant === 'liked';
+  const badgeClass = isLiked ? 'setting-badge setting-badge-green' : 'setting-badge';
+  const chipClass = isLiked ? 'blocked-chip liked-chip' : 'blocked-chip';
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return topics;
+    const q = search.toLowerCase();
+    return topics.filter((t) => t.toLowerCase().includes(q));
+  }, [topics, search]);
+
+  const showSearch = topics.length > COLLAPSED_LIMIT;
+  const isCollapsed = !expanded && !search.trim();
+  const visible = isCollapsed ? filtered.slice(0, COLLAPSED_LIMIT) : filtered;
+  const hiddenCount = filtered.length - visible.length;
+
+  return (
+    <div className="setting-group">
+      <h3 className="setting-title">
+        {title} {topics.length > 0 && <span className={badgeClass}>{topics.length}</span>}
+      </h3>
+      {subtitle && <p className="setting-text">{subtitle}</p>}
+      {topics.length === 0 && emptyText ? (
+        <p className="setting-text">{emptyText}</p>
+      ) : (
+        <>
+          {showSearch && (
+            <input
+              type="text"
+              className="topic-search-input"
+              placeholder={`Search ${topics.length} topics...`}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          )}
+          <div className="blocked-list" style={{ marginTop: showSearch ? 6 : 6 }}>
+            {visible.map((t) => (
+              <div key={t} className={chipClass}>
+                <span className="blocked-chip-label">{isLiked ? `✦ ${t}` : t}</span>
+                <button
+                  className="blocked-chip-remove"
+                  onClick={() => onRemove(t)}
+                  title={isLiked ? 'Remove' : 'Unblock'}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+          {hiddenCount > 0 && !search.trim() && (
+            <button className="topic-show-more" onClick={() => setExpanded(true)}>
+              Show {hiddenCount} more
+            </button>
+          )}
+          {expanded && topics.length > COLLAPSED_LIMIT && !search.trim() && (
+            <button className="topic-show-more" onClick={() => setExpanded(false)}>
+              Show less
+            </button>
+          )}
+          {search.trim() && filtered.length === 0 && (
+            <p className="setting-text" style={{ marginTop: 6 }}>
+              No matching topics.
+            </p>
+          )}
+        </>
+      )}
     </div>
   );
 }

@@ -317,10 +317,21 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
     }
 
     case 'AGENT_CHAT': {
-      const agent = getAgent();
-      const { message: userMsg, candidates, pageContext } = message.payload;
-      const response = await agent.chat_message(userMsg, candidates, pageContext);
-      return ok(response);
+      try {
+        const agent = getAgent();
+        const { message: userMsg, candidates, pageContext } = message.payload;
+        const response = await agent.chat_message(userMsg, candidates, pageContext);
+        return ok(response);
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : '';
+        if (/401|403|invalid.*key|authentication|unauthorized/i.test(msg)) {
+          return { success: false, error: 'invalid_api_key' } as MessageResponse;
+        }
+        if (/429|rate.?limit/i.test(msg)) {
+          return { success: false, error: 'rate_limited' } as MessageResponse;
+        }
+        throw e;
+      }
     }
 
     case 'AGENT_AI_STATUS': {

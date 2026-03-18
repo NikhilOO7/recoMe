@@ -114,6 +114,9 @@ async function bootstrap(): Promise<void> {
 
   await initAdapter(adapter);
 
+  // First-action nudge — show a welcome toast on first page where RecoMe activates
+  showFirstActionNudge();
+
   // Run a GenericAdapter as a supplement on known platforms to catch widgets,
   // carousels, video overlays, and other elements the specific adapter misses.
   // We share the same platform label so blocks/likes still apply.
@@ -307,4 +310,22 @@ async function showInsightToast(): Promise<void> {
   } catch {
     // Extension context invalidated or no insights
   }
+}
+
+function showFirstActionNudge(): void {
+  chrome.storage.local
+    .get('recome_first_action_done')
+    .then((r) => {
+      if (r['recome_first_action_done']) return;
+      // Delay so it doesn't compete with page load
+      setTimeout(() => {
+        showToast(
+          'RecoMe is active! Click the RecoMe button on any card to start training your feed.',
+          'info',
+        );
+        // Set the flag so we only show this once
+        chrome.storage.local.set({ recome_first_action_done: true }).catch(() => undefined);
+      }, 3000);
+    })
+    .catch(() => undefined);
 }

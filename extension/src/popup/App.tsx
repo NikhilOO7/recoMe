@@ -136,7 +136,9 @@ export function App() {
         aria-label={`${activeTab} panel`}
       >
         {activeTab === 'dashboard' && <Dashboard />}
-        {activeTab === 'agent' && <AgentChat />}
+        {activeTab === 'agent' && (
+          <AgentChat onNavigateToSettings={() => setActiveTab('settings')} />
+        )}
         {activeTab === 'settings' && <SettingsPanel />}
       </main>
 

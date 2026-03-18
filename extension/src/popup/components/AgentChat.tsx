@@ -17,7 +17,11 @@ interface ChatMessage {
   aiPowered?: boolean;
 }
 
-export function AgentChat() {
+interface AgentChatProps {
+  onNavigateToSettings?: () => void;
+}
+
+export function AgentChat({ onNavigateToSettings }: AgentChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -66,11 +70,20 @@ export function AgentChat() {
         const agentMsg = response.data as ChatMessage;
         setMessages((prev) => [...prev, agentMsg]);
       } else {
+        const errorCode = response?.error as string | undefined;
+        let errorContent = 'Sorry, something went wrong. Please try again.';
+        if (errorCode === 'invalid_api_key') {
+          errorContent =
+            'Your API key appears to be invalid or expired. Check your key in Settings and try again.';
+        } else if (errorCode === 'rate_limited') {
+          errorContent =
+            "You've been rate limited by the AI provider. Wait a moment and try again.";
+        }
         setMessages((prev) => [
           ...prev,
           {
             role: 'agent',
-            content: 'Sorry, something went wrong. Please try again.',
+            content: errorContent,
             timestamp: new Date().toISOString(),
           },
         ]);
@@ -147,8 +160,50 @@ export function AgentChat() {
             <p className="agent-welcome-hint">
               {aiMode
                 ? 'I can have real conversations about products, compare options, explain recommendations, and learn your preferences.'
-                : 'Ask me to compare products, explain recommendations, manage your watchlist, or declare preferences.'}
+                : 'Ask me to compare products, explain recommendations, manage your watchlist, or declare preferences. I use pattern matching to respond.'}
             </p>
+
+            {/* Quick mode setup prompt */}
+            {!aiMode && (
+              <div className="agent-setup-card">
+                <p className="agent-setup-title">Want smarter, conversational responses?</p>
+                <p className="agent-setup-body">
+                  Add an API key from any supported provider to unlock AI-powered chat.
+                </p>
+                <div className="agent-setup-providers">
+                  <a
+                    href="https://console.anthropic.com/settings/keys"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="agent-provider-link"
+                  >
+                    Anthropic (Claude)
+                  </a>
+                  <a
+                    href="https://platform.openai.com/api-keys"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="agent-provider-link"
+                  >
+                    OpenAI (GPT)
+                  </a>
+                  <a
+                    href="https://aistudio.google.com/app/apikey"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="agent-provider-link"
+                  >
+                    Google (Gemini)
+                  </a>
+                </div>
+                {onNavigateToSettings && (
+                  <button className="agent-setup-btn" onClick={onNavigateToSettings}>
+                    Set up in Settings
+                  </button>
+                )}
+              </div>
+            )}
+
             <div className="agent-suggestions">
               {[
                 'Which should I buy?',

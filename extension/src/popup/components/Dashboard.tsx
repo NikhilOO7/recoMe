@@ -90,27 +90,70 @@ export function Dashboard() {
     );
 
   const blockedCount = dbStats?.blocked.length ?? 0;
+  const likedCount = dbStats?.liked?.length ?? 0;
   const memoryCount = dbStats?.indexeddb.memory_entries ?? stats?.memory_entries ?? 0;
   const patternCount = stats?.active_patterns ?? 0;
+  const hiddenToday = stats?.hidden_today ?? 0;
+  const totalHidden = stats?.total_hidden ?? 0;
 
   // suppress unused variable warning for context — it's stored for future use
   void context;
 
+  const isColdStart =
+    hiddenToday === 0 && totalHidden === 0 && memoryCount === 0 && patternCount === 0;
+
   return (
     <div className="dashboard">
+      {/* Cold-start Getting Started card */}
+      {isColdStart && (
+        <div className="getting-started-card">
+          <h3 className="getting-started-title">
+            {blockedCount > 0 || likedCount > 0
+              ? "You're set up — time to browse!"
+              : 'Welcome to RecoMe'}
+          </h3>
+          {(blockedCount > 0 || likedCount > 0) && (
+            <p className="getting-started-prefs">
+              {[
+                blockedCount > 0 && `${blockedCount} topic${blockedCount !== 1 ? 's' : ''} blocked`,
+                likedCount > 0 && `${likedCount} topic${likedCount !== 1 ? 's' : ''} boosted`,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </p>
+          )}
+          <div className="getting-started-steps">
+            <div className="getting-started-step done">
+              <span className="step-icon">1</span>
+              <span className="step-label">Install RecoMe</span>
+            </div>
+            <div
+              className={`getting-started-step ${blockedCount > 0 || likedCount > 0 ? 'done' : 'current'}`}
+            >
+              <span className="step-icon">2</span>
+              <span className="step-label">Set preferences</span>
+            </div>
+            <div className="getting-started-step current">
+              <span className="step-icon">3</span>
+              <span className="step-label">Browse a site</span>
+            </div>
+          </div>
+          <p className="getting-started-hint">
+            Visit Amazon, YouTube, or any supported site. RecoMe will score content and show badges
+            on cards automatically.
+          </p>
+          <button
+            className="getting-started-btn"
+            onClick={() => chrome.tabs.create({ url: 'https://www.amazon.com' })}
+          >
+            Try it on Amazon
+          </button>
+        </div>
+      )}
+
       <div className="stats-grid">
-        <StatsCard
-          label="Hidden today"
-          value={stats?.hidden_today ?? 0}
-          icon="🙈"
-          color="#ef4444"
-        />
-        <StatsCard
-          label="Total hidden"
-          value={stats?.total_hidden ?? 0}
-          icon="🛡️"
-          color="#6366f1"
-        />
+        <StatsCard label="Hidden today" value={hiddenToday} icon="🙈" color="#ef4444" />
+        <StatsCard label="Total hidden" value={totalHidden} icon="🛡️" color="#6366f1" />
         <StatsCard label="Active blocks" value={blockedCount} icon="🚫" color="#f59e0b" />
         <StatsCard label="Memory entries" value={memoryCount} icon="🧠" color="#06b6d4" />
       </div>

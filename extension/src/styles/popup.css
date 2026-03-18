@@ -179,6 +179,106 @@ body {
   max-height: 460px;
 }
 
+/* ── Getting Started (cold-start) ───────────────────────────────────────────── */
+.getting-started-card {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.08));
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.getting-started-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.getting-started-prefs {
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+.getting-started-steps {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.getting-started-step {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.getting-started-step.done {
+  color: var(--accent4);
+}
+
+.getting-started-step.done .step-icon {
+  background: var(--accent4);
+  color: #fff;
+}
+
+.getting-started-step.current {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.getting-started-step.current .step-icon {
+  background: var(--accent);
+  color: #fff;
+}
+
+.step-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--surface2);
+  color: var(--text-muted);
+}
+
+.step-label {
+  font-size: 11px;
+}
+
+.getting-started-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin: 8px 0;
+}
+
+.getting-started-btn {
+  background: var(--gradient-primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s;
+  margin-top: 4px;
+}
+
+.getting-started-btn:hover {
+  opacity: 0.9;
+}
+
 /* ── Stats Grid ──────────────────────────────────────────────────────────────── */
 .stats-grid {
   display: grid;
@@ -575,6 +675,49 @@ body {
 }
 .liked-chip .blocked-chip-remove:hover {
   color: var(--accent-hover);
+}
+
+/* ── Topic list search + collapse ──────────────────────────────────────────── */
+.topic-search-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 11px;
+  font-family: inherit;
+  outline: none;
+  margin-top: 6px;
+  transition: border-color 0.15s;
+}
+
+.topic-search-input:focus {
+  border-color: var(--accent);
+}
+
+.topic-search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.topic-show-more {
+  display: block;
+  width: 100%;
+  padding: 5px 0;
+  margin-top: 4px;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: center;
+  transition: opacity 0.15s;
+}
+
+.topic-show-more:hover {
+  opacity: 0.8;
 }
 
 /* ── Platform Toggles ─────────────────────────────────────────────────────────── */
@@ -1228,6 +1371,70 @@ body {
   font-size: 12px;
   color: var(--text-muted);
   line-height: 1.4;
+}
+
+/* ── Agent setup card (Quick mode) ──────────────────────────────────────────── */
+.agent-setup-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 8px 0;
+  text-align: left;
+  width: 100%;
+}
+
+.agent-setup-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.agent-setup-body {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.agent-setup-providers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.agent-provider-link {
+  font-size: 10px;
+  color: var(--accent);
+  text-decoration: none;
+  background: rgba(99, 102, 241, 0.08);
+  padding: 3px 8px;
+  border-radius: 10px;
+  transition: background 0.15s;
+}
+
+.agent-provider-link:hover {
+  background: rgba(99, 102, 241, 0.16);
+}
+
+.agent-setup-btn {
+  background: var(--gradient-primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s;
+  width: 100%;
+}
+
+.agent-setup-btn:hover {
+  opacity: 0.9;
 }
 
 .agent-suggestions {
