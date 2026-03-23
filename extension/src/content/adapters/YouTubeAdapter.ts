@@ -1,5 +1,6 @@
 import { BaseAdapter } from './BaseAdapter';
 import { extractTextContent } from '@shared/utils';
+import { heuristicTitle, heuristicCreator, heuristicUrl } from './MetadataHeuristics';
 import type { ContentMetadata } from '@shared/types';
 
 export class YouTubeAdapter extends BaseAdapter {
@@ -48,7 +49,8 @@ export class YouTubeAdapter extends BaseAdapter {
         element.querySelector('h3 span') ??
         element.querySelector('[title]:not([title=""])');
 
-      const title = titleEl ? titleEl.getAttribute('title') || extractTextContent(titleEl) : '';
+      let title = titleEl ? titleEl.getAttribute('title') || extractTextContent(titleEl) : '';
+      if (!title) title = heuristicTitle(element) ?? '';
       if (!title) return null;
 
       // Channel name
@@ -60,19 +62,27 @@ export class YouTubeAdapter extends BaseAdapter {
         element.querySelector('.ytd-channel-name') ??
         element.querySelector('a.yt-simple-endpoint[href^="/@"]') ??
         element.querySelector('a.yt-simple-endpoint[href^="/channel/"]');
-      const creator = channelEl ? extractTextContent(channelEl).trim() || undefined : undefined;
+      let creator = channelEl ? extractTextContent(channelEl).trim() || undefined : undefined;
+      if (!creator) creator = heuristicCreator(element) ?? undefined;
 
       // Video ID from watch link
       const linkEl = element.querySelector('a[href*="/watch"]') as HTMLAnchorElement | null;
-      const href = linkEl?.href ?? '';
+      let href = linkEl?.href ?? '';
+      if (!href) href = heuristicUrl(element) ?? '';
       const videoIdMatch = href.match(/[?&]v=([^&]+)/);
       const videoId = videoIdMatch?.[1] ?? this.computeContentHash(element);
 
-      // Detect ads
+      // Detect ads — covers promoted videos, overlay ads, and sponsored shelves
       const isAd =
         !!element.querySelector('.ytd-promoted-sparkles-web-renderer') ||
         !!element.querySelector('[aria-label="Ad"]') ||
-        element.textContent?.includes('Sponsored') === true;
+        !!element.querySelector('.ytd-ad-slot-renderer') ||
+        !!element.querySelector('ytd-promoted-video-renderer') ||
+        !!element.querySelector('[id^="ad-slot"]') ||
+        !!element.querySelector('.badge-style-type-ad') ||
+        !!element.closest('ytd-ad-slot-renderer') ||
+        element.textContent?.includes('Sponsored') === true ||
+        element.textContent?.includes('Contains paid promotion') === true;
 
       // Extract topics from title keywords
       const topics = extractKeywordsFromText(title);

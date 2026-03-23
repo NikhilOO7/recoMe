@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
-
 // ── Chrome API mock ──────────────────────────────────────────────────────────
 
 globalThis.chrome = {
@@ -50,16 +48,14 @@ jest.mock('../../compare', () => ({
 
 jest.mock('../../watchlist', () => ({
   WatchlistService: jest.fn().mockImplementation(() => ({
-    add: jest
-      .fn()
-      .mockResolvedValue({
-        itemId: 'w1',
-        entityType: 'product',
-        entityId: 'prod-1',
-        note: 'Test',
-        addedAt: '',
-        updatedAt: '',
-      }),
+    add: jest.fn().mockResolvedValue({
+      itemId: 'w1',
+      entityType: 'product',
+      entityId: 'prod-1',
+      note: 'Test',
+      addedAt: '',
+      updatedAt: '',
+    }),
     getAll: jest.fn().mockResolvedValue([]),
   })),
 }));

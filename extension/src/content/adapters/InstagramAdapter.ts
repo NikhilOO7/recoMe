@@ -1,5 +1,6 @@
 import { BaseAdapter } from './BaseAdapter';
 import { extractTextContent } from '@shared/utils';
+import { heuristicTitle, heuristicCreator, heuristicUrl } from './MetadataHeuristics';
 import type { ContentMetadata } from '@shared/types';
 
 export class InstagramAdapter extends BaseAdapter {
@@ -59,6 +60,7 @@ export class InstagramAdapter extends BaseAdapter {
           card.querySelector('a[href^="/"][role="link"]');
         creator = creatorEl?.textContent?.trim() || undefined;
       }
+      if (!creator) creator = heuristicCreator(card) ?? undefined;
 
       // Caption text — Instagram uses dir="auto" for user-generated text
       const captionEl =
@@ -66,9 +68,7 @@ export class InstagramAdapter extends BaseAdapter {
         card.querySelector('h1[dir="auto"]') ??
         card.querySelector('div[dir="auto"]');
       let captionText = '';
-      if (captionEl instanceof HTMLImageElement) {
-        captionText = captionEl.alt;
-      } else if (captionEl) {
+      if (captionEl) {
         captionText = extractTextContent(captionEl);
       }
 
@@ -84,21 +84,31 @@ export class InstagramAdapter extends BaseAdapter {
       }
 
       const caption = captionText.slice(0, 200).trim();
-      const title = caption || (creator ? `Post by @${creator}` : 'Instagram post');
+      let title = caption || (creator ? `Post by @${creator}` : '');
+      if (!title)
+        title = heuristicTitle(card) ?? (creator ? `Post by @${creator}` : 'Instagram post');
 
       // Stable ID from the post/reel link
       const linkEl = card.querySelector(
         'a[href*="/p/"], a[href*="/reel/"]',
       ) as HTMLAnchorElement | null;
-      const href = linkEl?.href ?? '';
+      let href = linkEl?.href ?? '';
+      if (!href) href = heuristicUrl(card) ?? '';
       const idMatch = href.match(/\/(p|reel)\/([A-Za-z0-9_-]+)/);
       const id = idMatch?.[2] ?? this.computeContentHash(card);
 
-      // Detect sponsored posts
+      // Detect sponsored posts and branded/partnership content
       const allSpans = Array.from(card.querySelectorAll('span'));
       const isAd =
-        allSpans.some((s) => s.textContent?.trim() === 'Sponsored') ||
-        !!card.querySelector('a[href*="/ads/"]');
+        allSpans.some(
+          (s) =>
+            s.textContent?.trim() === 'Sponsored' ||
+            s.textContent?.trim() === 'Paid partnership' ||
+            s.textContent?.trim() === 'Branded content',
+        ) ||
+        !!card.querySelector('a[href*="/ads/"]') ||
+        !!card.querySelector('[aria-label*="Sponsored"]') ||
+        !!card.querySelector('[aria-label*="Paid partnership"]');
 
       // Extract hashtags as topics
       const hashtags = [...captionText.matchAll(/#(\w+)/g)].map((m) => m[1]!.toLowerCase());

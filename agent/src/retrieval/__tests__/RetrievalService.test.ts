@@ -75,6 +75,7 @@ jest.mock('@brain/storage/CommerceRepo', () => ({
   })),
   BrandRepo: jest.fn().mockImplementation(() => ({
     get: jest.fn().mockResolvedValue(null),
+    getAll: jest.fn().mockResolvedValue([]),
   })),
 }));
 

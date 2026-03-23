@@ -1,5 +1,5 @@
 import { DEFAULT_USER_ID, SHORT_TERM_MAX, IMPLICIT_SIGNAL_WEIGHTS } from '@shared/constants';
-import { generateId, buildTopicKey, normalizeTopicKey, now } from '@shared/utils';
+import { buildTopicKey, normalizeTopicKey, now } from '@shared/utils';
 import { createLogger } from '@shared/Logger';
 import { MemoryStore } from './storage/MemoryStore';
 import { ContextDetector } from './ContextDetector';
@@ -153,6 +153,17 @@ export class MemoryService {
    * so it boosts matching content across ALL contexts.
    */
   async likeForever(topic: string): Promise<MemoryEntry> {
+    // Reject price-like, numeric, or too-short topics
+    const cleaned = topic.replace(/[_$€£¥,]/g, '');
+    if (
+      /^\d+(\.\d+)?(%|k|m|gb|tb|mb|lbs?|kg|oz|in|cm|mm|px)?$/i.test(cleaned) ||
+      cleaned.length <= 1
+    ) {
+      throw new Error(
+        `Invalid topic: "${topic}" looks like a price or number, not a meaningful topic`,
+      );
+    }
+
     const topicKey = buildTopicKey('interested', topic);
 
     const existing = await this.store.getEntryByTopic(this.userId, topicKey);

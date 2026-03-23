@@ -1,8 +1,8 @@
 import { SCORE_THRESHOLDS } from '@shared/constants';
 import { weightedAverage } from '@shared/utils';
 import { createLogger } from '@shared/Logger';
-import { FactorCalculators } from './FactorCalculators';
-import { Explainer } from './Explainer';
+import type { FactorCalculators } from './FactorCalculators';
+import type { Explainer } from './Explainer';
 import type {
   ContentMetadata,
   ContentAction,

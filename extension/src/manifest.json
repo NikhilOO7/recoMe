@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "Intelligent recommendation feed control. Your feed, your rules.",
 
-  "permissions": ["storage", "alarms", "tabs", "activeTab"],
+  "permissions": ["storage", "alarms", "tabs", "activeTab", "notifications"],
 
   "host_permissions": [
     "https://api.anthropic.com/*",
@@ -43,6 +43,13 @@
     "128": "icons/recome_logo_128.png"
   },
 
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/*"],
+      "matches": ["https://*/*"]
+    }
+  ],
+
   "content_security_policy": {
     "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self' https://api.anthropic.com https://api.openai.com https://generativelanguage.googleapis.com; object-src 'none'"
   },
@@ -68,6 +75,13 @@
         "mac": "Command+Shift+E"
       },
       "description": "Toggle RecoMe on/off"
+    },
+    "toggle_overlay": {
+      "suggested_key": {
+        "default": "Alt+R",
+        "mac": "Alt+R"
+      },
+      "description": "Toggle RecoMe floating overlay"
     }
   },
 

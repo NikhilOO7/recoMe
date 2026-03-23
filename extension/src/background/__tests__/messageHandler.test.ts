@@ -283,6 +283,7 @@ describe('messageHandler', () => {
           instagram: true,
           ebay: true,
           walmart: true,
+          linkedin: true,
         },
       });
     });

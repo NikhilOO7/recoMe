@@ -2,7 +2,7 @@ import { PATTERN_THRESHOLD } from '@shared/constants';
 import { generateId, now } from '@shared/utils';
 import { createLogger } from '@shared/Logger';
 import type { MemoryStore } from './storage/MemoryStore';
-import type { MemoryEvent, MidTermCard, ContextBucket, Platform } from '@shared/types';
+import type { MemoryEvent, MidTermCard, ContextBucket } from '@shared/types';
 
 const log = createLogger('PatternDetector');
 

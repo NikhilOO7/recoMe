@@ -100,6 +100,7 @@ export const PLATFORM_CONTEXT_MAP: Record<Platform, ContextBucket> = {
   instagram: 'social',
   ebay: 'shopping',
   walmart: 'shopping',
+  linkedin: 'work',
   unknown: 'general',
 };
 
@@ -124,6 +125,9 @@ export const ALARM_NAMES = {
   stats: 'recome_stats_aggregate',
   preference_synthesis: 'recome_preference_synthesis',
   insight_check: 'recome_insight_check',
+  selector_health: 'recome_selector_health',
+  price_check: 'recome_price_check',
+  import_check: 'recome_import_check',
 } as const;
 
 export const ALARM_INTERVALS = {
@@ -131,6 +135,9 @@ export const ALARM_INTERVALS = {
   stats_minutes: 60,
   preference_synthesis_minutes: 24 * 60, // once per day
   insight_check_minutes: 30,
+  selector_health_minutes: 60,
+  price_check_minutes: 6 * 60, // every 6 hours
+  import_check_minutes: 60, // check import schedules hourly
 } as const;
 
 // ── UI ────────────────────────────────────────────────────────────────────────
@@ -146,3 +153,17 @@ export const STORAGE_KEYS = {
   context_state: 'recome_context_state',
   stats_cache: 'recome_stats_cache',
 } as const;
+
+// ── Selector Discovery ────────────────────────────────────────────────────────
+
+export const SELECTOR_CACHE_PREFIX = 'recome_selectors_';
+export const SELECTOR_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+// ── Selector Health (V2) ─────────────────────────────────────────────────────
+
+export const SELECTOR_CACHE_V2_PREFIX = 'recome_sel_v2_';
+export const SELECTOR_HEALTH_CHECK_INTERVAL_MS = 30_000; // 30 seconds
+export const SELECTOR_HEALTH_THRESHOLD = 0.3; // below this = unhealthy
+export const SELECTOR_HEALTH_MAX_FAILURES = 3; // consecutive zeros → re-discover
+export const SELECTOR_HEALTH_PRUNE_TTL_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
+export const SELECTOR_HEALTH_HISTORY_MAX = 20; // max match history entries

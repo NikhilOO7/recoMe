@@ -30,6 +30,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
       recome_settings: {
         enabled: true,
         aggressiveness: 0.5,
+        train_platform_algo: false,
         platforms: {
           youtube: true,
           amazon: true,
@@ -37,6 +38,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
           facebook: true,
           ebay: true,
           walmart: true,
+          linkedin: true,
         },
       },
     });
@@ -71,6 +73,11 @@ chrome.alarms.onAlarm.addListener(handleAlarm);
 
 registerEventListeners();
 
+// ── Monitoring (QA Tool) ─────────────────────────────────────────────────────
+
+import { registerMonitoring } from './monitoring/MonitoringCollector';
+registerMonitoring();
+
 // ── Keyboard Shortcuts ──────────────────────────────────────────────────────
 
 chrome.commands.onCommand.addListener(async (command) => {
@@ -80,6 +87,13 @@ chrome.commands.onCommand.addListener(async (command) => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tab?.id) {
       chrome.tabs.sendMessage(tab.id, { type: 'RECOME_QUICK_BLOCK' });
+    }
+  }
+
+  if (command === 'toggle_overlay') {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab?.id) {
+      chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_OVERLAY' }).catch(() => undefined);
     }
   }
 

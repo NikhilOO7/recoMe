@@ -16,6 +16,7 @@ export type Platform =
   | 'instagram'
   | 'ebay'
   | 'walmart'
+  | 'linkedin'
   | 'unknown';
 
 /** Browsing context state (auto-detected or manual override). */

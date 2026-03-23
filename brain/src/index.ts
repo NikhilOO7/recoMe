@@ -1,4 +1,5 @@
-import { createMemoryService, MemoryService } from './memory/MemoryService';
+import type { MemoryService } from './memory/MemoryService';
+import { createMemoryService } from './memory/MemoryService';
 import { KnowledgeGraph } from './graph/KnowledgeGraph';
 import { AffinityCalculator } from './graph/AffinityCalculator';
 import { EntityExtractor } from './extraction/EntityExtractor';

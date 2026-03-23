@@ -144,7 +144,7 @@ export function Dashboard() {
           </p>
           <button
             className="getting-started-btn"
-            onClick={() => chrome.tabs.create({ url: 'https://www.amazon.com' })}
+            onClick={() => window.open('https://www.amazon.com', '_blank')}
           >
             Try it on Amazon
           </button>

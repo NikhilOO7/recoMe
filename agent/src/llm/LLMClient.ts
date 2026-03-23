@@ -73,6 +73,9 @@ export class LLMClient {
   invalidateConfig(): void {
     this.configLoaded = false;
     this.config = null;
+    // Reset circuit breaker so new config gets a fresh start
+    this.consecutiveFailures = 0;
+    this.circuitOpenUntil = 0;
   }
 
   /**
@@ -311,13 +314,18 @@ export class LLMClient {
   }
 
   private buildCacheKey(prompt: string, options: LLMCallOptions): string {
-    // Simple hash: truncated prompt + system + messages count
-    const parts = [
-      prompt.slice(0, 200),
-      options.system?.slice(0, 100) ?? '',
+    // DJB2 hash to avoid collision from truncation
+    const raw = [
+      prompt,
+      options.system ?? '',
       String(options.messages?.length ?? 0),
-    ];
-    return parts.join('|');
+      options.messages?.map((m) => m.content).join('|') ?? '',
+    ].join('\x00');
+    let hash = 5381;
+    for (let i = 0; i < raw.length; i++) {
+      hash = ((hash << 5) + hash + raw.charCodeAt(i)) | 0; // hash * 33 + c
+    }
+    return `llm:${hash >>> 0}`;
   }
 
   private cacheResponse(key: string, response: string): void {

@@ -1,10 +1,28 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { DecisionLogEntry } from '@background/decisionLog';
 import type { MemoryEntry, GraphEntity, GraphRelation, ContextBucket } from '@shared/types';
+import type { SelectorHealthRecord } from '../content/adapters/SelectorHealth';
+import { HealthTab } from './tabs/HealthTab';
+import { TimelineTab } from './tabs/TimelineTab';
+import { ValidatorsTab } from './tabs/ValidatorsTab';
+import { SimulatorTab } from './tabs/SimulatorTab';
+import { AgentsTab } from './tabs/AgentsTab';
+import { FlowsTab } from './tabs/FlowsTab';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type Tab = 'decisions' | 'memory' | 'graph' | 'storage';
+type Tab =
+  | 'decisions'
+  | 'memory'
+  | 'graph'
+  | 'selectors'
+  | 'storage'
+  | 'health'
+  | 'timeline'
+  | 'validators'
+  | 'simulator'
+  | 'agents'
+  | 'flows';
 
 const CONTEXTS: ContextBucket[] = [
   'general',
@@ -57,7 +75,7 @@ export function DevToolsApp() {
         <span className="dt-badge">developer only</span>
       </header>
       <nav className="dt-nav">
-        {(['decisions', 'memory', 'graph', 'storage'] as Tab[]).map((t) => (
+        {(['decisions', 'memory', 'graph', 'selectors', 'storage'] as Tab[]).map((t) => (
           <button
             key={t}
             className={`dt-nav-btn ${tab === t ? 'active' : ''}`}
@@ -66,12 +84,31 @@ export function DevToolsApp() {
             {t === 'decisions' ? 'Decision Log' : t.charAt(0).toUpperCase() + t.slice(1)}
           </button>
         ))}
+        <div className="dt-nav-divider" />
+        {(['health', 'timeline', 'validators', 'simulator', 'agents', 'flows'] as Tab[]).map(
+          (t) => (
+            <button
+              key={t}
+              className={`dt-nav-btn ${tab === t ? 'active' : ''}`}
+              onClick={() => setTab(t)}
+            >
+              {t.charAt(0).toUpperCase() + t.slice(1)}
+            </button>
+          ),
+        )}
       </nav>
       <div className="dt-body">
         {tab === 'decisions' && <DecisionLogTab />}
         {tab === 'memory' && <MemoryTab />}
         {tab === 'graph' && <GraphTab />}
+        {tab === 'selectors' && <SelectorsTab />}
         {tab === 'storage' && <StorageTab />}
+        {tab === 'health' && <HealthTab />}
+        {tab === 'timeline' && <TimelineTab />}
+        {tab === 'validators' && <ValidatorsTab />}
+        {tab === 'simulator' && <SimulatorTab />}
+        {tab === 'agents' && <AgentsTab />}
+        {tab === 'flows' && <FlowsTab />}
       </div>
     </div>
   );
@@ -954,12 +991,174 @@ function GraphVisual({
   );
 }
 
+// ── Selectors Tab ─────────────────────────────────────────────────────────
+
+function healthColor(score: number): string {
+  if (score >= 0.7) return '#4caf7d';
+  if (score >= 0.3) return '#ff9800';
+  return '#ef5350';
+}
+
+function SelectorsTab() {
+  const [entries, setEntries] = useState<Record<string, SelectorHealthRecord>>({});
+  const [loading, setLoading] = useState(false);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    send<Record<string, SelectorHealthRecord>>('GET_SELECTOR_HEALTH')
+      .then(setEntries)
+      .catch(() => undefined)
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const keys = Object.keys(entries).sort();
+
+  return (
+    <>
+      <div className="dt-toolbar">
+        <button className="dt-btn" onClick={load}>
+          Refresh
+        </button>
+        <span className="dt-info">{keys.length} cached selectors</span>
+        {loading && <span className="dt-info">loading…</span>}
+      </div>
+      <div className="dt-scroll">
+        {keys.length === 0 ? (
+          <div className="dt-empty">
+            <span className="dt-empty-icon">🎯</span>
+            <span>No cached selectors yet — browse a site to trigger discovery</span>
+          </div>
+        ) : (
+          <table className="dt-table">
+            <thead>
+              <tr>
+                <th>Domain</th>
+                <th style={{ width: 90 }}>Path</th>
+                <th>Card Selector</th>
+                <th style={{ width: 110 }}>Health</th>
+                <th style={{ width: 70 }}>Matches</th>
+                <th style={{ width: 60 }}>Fails</th>
+                <th style={{ width: 100 }}>Discovered</th>
+                <th style={{ width: 90 }}>Last Check</th>
+              </tr>
+            </thead>
+            <tbody>
+              {keys.map((key) => {
+                const record = entries[key]!;
+                const [domain, ...pathParts] = key.split(':');
+                const path = pathParts.join(':') || 'home';
+                const lastMatch =
+                  record.matchHistory.length > 0
+                    ? record.matchHistory[record.matchHistory.length - 1]!.count
+                    : 0;
+                return (
+                  <tr key={key}>
+                    <td style={{ color: 'var(--text0)' }}>{domain}</td>
+                    <td>
+                      <span
+                        style={{
+                          fontSize: 10,
+                          padding: '1px 6px',
+                          borderRadius: 3,
+                          background: 'var(--border)',
+                          color: 'var(--text1)',
+                          fontFamily: 'var(--mono)',
+                        }}
+                      >
+                        {path}
+                      </span>
+                    </td>
+                    <td
+                      style={{
+                        fontFamily: 'var(--mono)',
+                        fontSize: 10,
+                        color: 'var(--text1)',
+                        maxWidth: 200,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                      title={record.cardSelector}
+                    >
+                      {record.cardSelector}
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <div
+                          style={{
+                            flex: 1,
+                            height: 6,
+                            borderRadius: 3,
+                            background: 'var(--bg2)',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: `${Math.round(record.healthScore * 100)}%`,
+                              height: '100%',
+                              borderRadius: 3,
+                              background: healthColor(record.healthScore),
+                              transition: 'width 300ms',
+                            }}
+                          />
+                        </div>
+                        <span
+                          style={{
+                            fontSize: 10,
+                            fontFamily: 'var(--mono)',
+                            color: healthColor(record.healthScore),
+                            minWidth: 30,
+                          }}
+                        >
+                          {(record.healthScore * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                    </td>
+                    <td
+                      style={{
+                        fontFamily: 'var(--mono)',
+                        color: 'var(--text1)',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {lastMatch}
+                    </td>
+                    <td
+                      style={{
+                        fontFamily: 'var(--mono)',
+                        textAlign: 'center',
+                        color: record.consecutiveFailures > 0 ? '#ef5350' : 'var(--text2)',
+                      }}
+                    >
+                      {record.consecutiveFailures}
+                    </td>
+                    <td style={{ color: 'var(--text2)', fontSize: 11 }}>
+                      {new Date(record.discoveredAt).toLocaleDateString()}
+                    </td>
+                    <td style={{ color: 'var(--text2)', fontSize: 11 }}>
+                      {relativeTime(record.lastChecked)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </>
+  );
+}
+
 // ── Storage Tab ───────────────────────────────────────────────────────────────
 
 interface DbStats {
   indexeddb: Record<string, number>;
   blocked: string[];
-  active_entries: import('@shared/types').MemoryEntry[];
+  active_entries: MemoryEntry[];
 }
 
 function StorageTab() {

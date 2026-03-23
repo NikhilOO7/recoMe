@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Users & Auth ─────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String?
+  displayName   String?
+  avatarUrl     String?
+
+  // OAuth
+  googleId      String?   @unique
+  githubId      String?   @unique
+
+  // Subscription
+  tier          Tier      @default(FREE)
+  stripeCustomerId   String?  @unique
+  stripeSubscriptionId String?
+
+  // Sync
+  syncStates    SyncState[]
+  devices       Device[]
+
+  // Timestamps
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastSyncAt    DateTime?
+
+  @@index([email])
+}
+
+model Device {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  fingerprint   String    @unique
+  lastSeenAt    DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model RefreshToken {
+  id            String    @id @default(cuid())
+  userId        String
+  tokenHash     String    @unique
+  deviceId      String?
+  expiresAt     DateTime
+  createdAt     DateTime  @default(now())
+  revokedAt     DateTime?
+
+  @@index([userId])
+  @@index([tokenHash])
+}
+
+// ── Sync ─────────────────────────────────────────────────────────────────────
+
+model SyncState {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dataType      SyncDataType
+  version       Int       @default(0)
+  checksum      String?
+
+  // E2E encrypted blob (AES-256-GCM)
+  encryptedData Bytes?
+  iv            Bytes?
+  authTag       Bytes?
+
+  lastModified  DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+
+  @@unique([userId, dataType])
+  @@index([userId])
+}
+
+// ── Billing ──────────────────────────────────────────────────────────────────
+
+model BillingEvent {
+  id            String    @id @default(cuid())
+  userId        String
+  eventType     String
+  stripeEventId String?   @unique
+  amount        Int?
+  currency      String?
+  metadata      Json?
+  createdAt     DateTime  @default(now())
+
+  @@index([userId])
+  @@index([stripeEventId])
+}
+
+// ── Usage Tracking ───────────────────────────────────────────────────────────
+
+model UsageRecord {
+  id            String    @id @default(cuid())
+  userId        String
+  feature       String
+  count         Int       @default(1)
+  periodStart   DateTime
+  periodEnd     DateTime
+  createdAt     DateTime  @default(now())
+
+  @@unique([userId, feature, periodStart])
+  @@index([userId])
+}
+
+// ── Enums ────────────────────────────────────────────────────────────────────
+
+enum Tier {
+  FREE
+  PRO
+  PREMIUM
+}
+
+enum SyncDataType {
+  PREFERENCES
+  INTEREST_GRAPH
+  FILTER_RULES
+  DECISION_HISTORY
+  PLATFORM_SETTINGS
+}

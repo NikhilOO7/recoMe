@@ -4,7 +4,7 @@ import { MemoryStore } from '@intelligence/memory/storage/MemoryStore';
 import { KnowledgeGraph } from '@brain/graph/KnowledgeGraph';
 import { CrossPlatformLinker, type CrossPlatformTopic } from '@brain/graph/CrossPlatformLinker';
 import type { IntentEvent, IntentType } from '@schema/intent';
-import type { Product, Brand, Seller, CandidateEntity } from '@schema/entities';
+import type { Product } from '@schema/entities';
 import type { WatchlistItem } from '@schema/watchlist';
 import type { DecisionRecord } from '@schema/decisions';
 import { DecisionRepo, ProductRepo, BrandRepo } from '@brain/storage/CommerceRepo';
@@ -163,9 +163,13 @@ export class RetrievalService {
       }
     }
 
+    // Batch-load all brands in one DB call to avoid N+1 queries
+    const allBrands = await this.brands.getAll();
+    const brandLookup = new Map(allBrands.map((b) => [b.brandId, b]));
+
     const prefs: UserContext['brandPreferences'] = [];
     for (const [brandId, sentiment] of brandMap) {
-      const brand = await this.brands.get(brandId);
+      const brand = brandLookup.get(brandId);
       prefs.push({
         brandId,
         displayName: brand?.displayName ?? brandId.replace('brand:', '').replace(/_/g, ' '),

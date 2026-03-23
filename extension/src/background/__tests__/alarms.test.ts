@@ -98,7 +98,7 @@ describe('alarms', () => {
     it('creates all expected alarms', () => {
       registerAlarms();
 
-      expect(chrome.alarms.create).toHaveBeenCalledTimes(4);
+      expect(chrome.alarms.create).toHaveBeenCalledTimes(7);
       expect(chrome.alarms.create).toHaveBeenCalledWith(ALARM_NAMES.decay, {
         periodInMinutes: ALARM_INTERVALS.decay_minutes,
         delayInMinutes: 1,
@@ -114,6 +114,10 @@ describe('alarms', () => {
       expect(chrome.alarms.create).toHaveBeenCalledWith(ALARM_NAMES.insight_check, {
         periodInMinutes: ALARM_INTERVALS.insight_check_minutes,
         delayInMinutes: 5,
+      });
+      expect(chrome.alarms.create).toHaveBeenCalledWith(ALARM_NAMES.selector_health, {
+        periodInMinutes: ALARM_INTERVALS.selector_health_minutes,
+        delayInMinutes: 15,
       });
     });
   });

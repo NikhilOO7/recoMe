@@ -1,5 +1,6 @@
 import { BaseAdapter } from './BaseAdapter';
 import { extractTextContent } from '@shared/utils';
+import { heuristicCreator, heuristicUrl } from './MetadataHeuristics';
 import type { ContentMetadata } from '@shared/types';
 
 export class TwitterAdapter extends BaseAdapter {
@@ -27,7 +28,7 @@ export class TwitterAdapter extends BaseAdapter {
   extractMetadata(element: Element): ContentMetadata | null {
     try {
       // Normalize — Spaces/trend cards are different shapes
-      const isTweet = element.matches('article[data-testid="tweet"]');
+      const _isTweet = element.matches('article[data-testid="tweet"]');
       const isSpaces = element.matches('[data-testid="audioSpacesCard"]');
       const isTrend = element.matches('[data-testid="trend"]');
 
@@ -63,17 +64,23 @@ export class TwitterAdapter extends BaseAdapter {
       const text = textEl ? extractTextContent(textEl) : '';
 
       const userEl = element.querySelector('[data-testid="User-Name"]');
-      const creator = userEl ? extractTextContent(userEl).split('\n')[0]?.trim() : undefined;
+      let creator = userEl ? extractTextContent(userEl).split('\n')[0]?.trim() : undefined;
+      if (!creator) creator = heuristicCreator(element) ?? undefined;
 
       const linkEl = element.querySelector('a[href*="/status/"]') as HTMLAnchorElement | null;
-      const href = linkEl?.href ?? location.href;
+      let href = linkEl?.href ?? '';
+      if (!href) href = heuristicUrl(element) ?? location.href;
       const statusMatch = href.match(/\/status\/(\d+)/);
       const id = statusMatch?.[1] ?? this.computeContentHash(element);
 
       const isAd =
         !!element.querySelector('[data-testid="placementTracking"]') ||
-        Array.from(element.querySelectorAll('[role="button"]')).some((b) =>
-          b.textContent?.includes('Promoted'),
+        !!element.querySelector('[data-testid="promotedIndicator"]') ||
+        Array.from(element.querySelectorAll('span')).some(
+          (s) =>
+            s.textContent?.trim() === 'Promoted' ||
+            s.textContent?.trim() === 'Sponsored' ||
+            s.textContent?.trim() === 'Ad',
         );
 
       const title = text.slice(0, 140) || (creator ? `Post by ${creator}` : 'Tweet');

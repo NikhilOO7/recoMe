@@ -1,5 +1,6 @@
 import { BaseAdapter } from './BaseAdapter';
 import { extractTextContent } from '@shared/utils';
+import { findRepeatedSiblings } from './SelectorDiscovery';
 import type { ContentMetadata, Platform } from '@shared/types';
 
 // ── Zones where RecoMe should never inject ──────────────────────────────────
@@ -270,32 +271,7 @@ export class GenericAdapter extends BaseAdapter {
       // Skip containers inside excluded zones
       if (container.closest(EXCLUDED_ANCESTOR_SELECTORS)) continue;
 
-      const children = Array.from(container.children).filter(
-        (c) =>
-          c instanceof HTMLElement &&
-          !['script', 'style', 'br', 'hr', 'nav', 'header', 'footer', 'aside', 'form'].includes(
-            c.tagName.toLowerCase(),
-          ),
-      ) as HTMLElement[];
-
-      // Raised from 3 to 4 to reduce false positives
-      if (children.length < 4) continue;
-
-      // Group by structural fingerprint (tagName + first 2 classes)
-      const groups = new Map<string, HTMLElement[]>();
-      for (const child of children) {
-        const classes = Array.from(child.classList).slice(0, 2).sort().join('.');
-        const key = `${child.tagName}.${classes}`;
-        const arr = groups.get(key) ?? [];
-        arr.push(child);
-        groups.set(key, arr);
-      }
-
-      let bestGroup: HTMLElement[] = [];
-      for (const g of groups.values()) {
-        if (g.length > bestGroup.length) bestGroup = g;
-      }
-
+      const bestGroup = findRepeatedSiblings(container, 4);
       if (bestGroup.length < 4) continue;
 
       // Validate: each sibling should have substantive content

@@ -1,5 +1,6 @@
 import { BaseAdapter } from './BaseAdapter';
 import { extractTextContent } from '@shared/utils';
+import { heuristicTitle, heuristicCreator, heuristicUrl } from './MetadataHeuristics';
 import type { ContentMetadata } from '@shared/types';
 
 export class WalmartAdapter extends BaseAdapter {
@@ -35,17 +36,20 @@ export class WalmartAdapter extends BaseAdapter {
         element.querySelector('[data-automation-id="product-title"]') ??
         element.querySelector('span[data-automation-id="product-title-link"]') ??
         element.querySelector('.product-title');
-      const title = titleEl ? extractTextContent(titleEl) : '';
+      let title = titleEl ? extractTextContent(titleEl) : '';
+      if (!title) title = heuristicTitle(element) ?? '';
       if (!title) return null;
 
       const linkEl = element.querySelector('a') as HTMLAnchorElement | null;
-      const href = linkEl?.href ?? '';
+      let href = linkEl?.href ?? '';
+      if (!href) href = heuristicUrl(element) ?? '';
       const itemId =
         element.getAttribute('data-item-id') ??
         href.match(/\/ip\/[^/]+\/(\d+)/)?.[1] ??
         this.computeContentHash(element);
 
-      const brand = element.querySelector('[data-automation-id="brand-name"]')?.textContent?.trim();
+      let brand = element.querySelector('[data-automation-id="brand-name"]')?.textContent?.trim();
+      if (!brand) brand = heuristicCreator(element) ?? undefined;
 
       return {
         id: itemId,

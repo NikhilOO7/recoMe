@@ -1,5 +1,6 @@
 import { BaseAdapter } from './BaseAdapter';
 import { extractTextContent } from '@shared/utils';
+import { heuristicTitle, heuristicCreator, heuristicUrl } from './MetadataHeuristics';
 import type { ContentMetadata } from '@shared/types';
 
 export class EbayAdapter extends BaseAdapter {
@@ -31,18 +32,21 @@ export class EbayAdapter extends BaseAdapter {
         element.querySelector('.s-item__title') ??
         element.querySelector('h3.s-item__title') ??
         element.querySelector('[class*="item__title"]');
-      const title = titleEl ? extractTextContent(titleEl) : '';
+      let title = titleEl ? extractTextContent(titleEl) : '';
+      if (!title) title = heuristicTitle(element) ?? '';
       if (!title || title === 'Shop on eBay' || title === 'New Listing') return null;
 
       const linkEl = (element.querySelector('a.s-item__link') ??
         element.querySelector('a[href*="/itm/"]')) as HTMLAnchorElement | null;
-      const href = linkEl?.href ?? '';
+      let href = linkEl?.href ?? '';
+      if (!href) href = heuristicUrl(element) ?? '';
       const itemMatch = href.match(/\/itm\/(\d+)/);
       const id = itemMatch?.[1] ?? this.computeContentHash(element);
 
-      const seller =
+      let seller =
         element.querySelector('.s-item__seller-info-text')?.textContent?.trim() ??
         element.querySelector('[class*="seller"]')?.textContent?.trim();
+      if (!seller) seller = heuristicCreator(element) ?? undefined;
 
       const isSponsored =
         element.classList.contains('s-item--sponsored') ||

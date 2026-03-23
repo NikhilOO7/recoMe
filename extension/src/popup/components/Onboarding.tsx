@@ -82,7 +82,11 @@ export function Onboarding({ onComplete }: OnboardingProps) {
       {/* Step 0: Welcome */}
       {step === 0 && (
         <div className="onboarding-step">
-          <img className="onboarding-hero-img" src="icons/recome_logo_128.png" alt="RecoMe" />
+          <img
+            className="onboarding-hero-img"
+            src={chrome.runtime.getURL('icons/recome_logo_128.png')}
+            alt="RecoMe"
+          />
           <h2 className="onboarding-title">Welcome to RecoMe</h2>
           <p className="onboarding-body">
             Your feed, your rules. RecoMe quietly learns what you want — and filters out everything
@@ -211,7 +215,12 @@ export function Onboarding({ onComplete }: OnboardingProps) {
                 <div className="onboarding-demo-creator">@someone</div>
               </div>
               <div className="onboarding-demo-trigger">
-                <img src="icons/recome_logo_16.png" alt="" className="inline-logo" /> RecoMe
+                <img
+                  src={chrome.runtime.getURL('icons/recome_logo_16.png')}
+                  alt=""
+                  className="inline-logo"
+                />{' '}
+                RecoMe
               </div>
             </div>
             <ul className="onboarding-how-list">

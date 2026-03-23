@@ -105,7 +105,7 @@ export function AgentChat({ onNavigateToSettings }: AgentChatProps) {
 
   function handleAction(action: AgentAction) {
     if (action.action === 'open_product' && action.metadata?.['url']) {
-      chrome.tabs.create({ url: action.metadata['url'] as string });
+      window.open(action.metadata['url'] as string, '_blank');
     } else if (action.action === 'save_watchlist' && action.candidateIds?.[0]) {
       chrome.runtime.sendMessage({
         type: 'AGENT_WATCHLIST_ADD',

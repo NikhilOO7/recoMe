@@ -1,0 +1,28 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: recome
+      POSTGRES_PASSWORD: recome
+      POSTGRES_DB: recome
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api:
+    build: .
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgresql://recome:recome@db:5432/recome?schema=public
+      JWT_SECRET: dev-secret-change-in-production-min-32-chars
+      NODE_ENV: development
+      PORT: "3001"
+    depends_on:
+      - db
+    command: >
+      sh -c "npx prisma migrate deploy && node dist/index.js"
+
+volumes:
+  pgdata:

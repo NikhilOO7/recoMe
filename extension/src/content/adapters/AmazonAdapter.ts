@@ -1,5 +1,6 @@
 import { BaseAdapter } from './BaseAdapter';
 import { extractTextContent } from '@shared/utils';
+import { heuristicTitle, heuristicCreator, heuristicUrl } from './MetadataHeuristics';
 import type { ContentMetadata } from '@shared/types';
 import type { CandidateEntity } from '@schema/entities';
 import type { PageContext } from '@schema/decisions';
@@ -105,12 +106,15 @@ export class AmazonAdapter extends BaseAdapter {
   extractMetadata(element: Element): ContentMetadata | null {
     try {
       const asin = this.extractAsin(element);
-      const title = this.extractTitle(element) || this.extractHomepageCardTitle(element);
+      let title = this.extractTitle(element) || this.extractHomepageCardTitle(element);
+      if (!title) title = heuristicTitle(element) ?? '';
       if (!title) return null;
 
       const id = asin || `amz-${title.slice(0, 40).replace(/\W+/g, '_').toLowerCase()}`;
-      const href = this.extractHref(element);
-      const brand = this.extractBrand(element);
+      let href = this.extractHref(element);
+      if (!href) href = heuristicUrl(element) ?? '';
+      let brand = this.extractBrand(element);
+      if (!brand) brand = heuristicCreator(element) ?? undefined;
 
       return {
         id,
@@ -302,7 +306,7 @@ export class AmazonAdapter extends BaseAdapter {
   }
 
   private extractPrice(element: Element): number | undefined {
-    // Whole price + fraction
+    // Whole price + fraction (structured elements — locale-independent)
     const wholeEl = element.querySelector('.a-price .a-price-whole');
     const fracEl = element.querySelector('.a-price .a-price-fraction');
     if (wholeEl) {
@@ -310,15 +314,35 @@ export class AmazonAdapter extends BaseAdapter {
       const frac = fracEl?.textContent?.replace(/[^0-9]/g, '') ?? '00';
       return parseFloat(`${whole}.${frac}`);
     }
-    // Offscreen or text price
+    // Offscreen or text price — handle US ($1,299.99) and EU (€1.299,99 / €278,50)
     const priceText =
       element.querySelector('.a-price .a-offscreen')?.textContent?.trim() ??
       element.querySelector('.a-color-price')?.textContent?.trim();
     if (priceText) {
-      const match = priceText.match(/[\d,]+\.?\d*/);
-      if (match) return parseFloat(match[0].replace(/,/g, ''));
+      return this.parseLocalizedPrice(priceText);
     }
     return undefined;
+  }
+
+  /** Parse a price string in any common locale format to a float. */
+  private parseLocalizedPrice(text: string): number | undefined {
+    // Strip currency symbols and whitespace, keep digits and separators
+    const cleaned = text.replace(/[^\d.,]/g, '').trim();
+    if (!cleaned) return undefined;
+
+    // Detect format by last separator position
+    const lastDot = cleaned.lastIndexOf('.');
+    const lastComma = cleaned.lastIndexOf(',');
+
+    let result: number;
+    if (lastComma > lastDot) {
+      // EU format: 1.299,99 or 278,50 — comma is decimal separator
+      result = parseFloat(cleaned.replace(/\./g, '').replace(',', '.'));
+    } else {
+      // US format: 1,299.99 — dot is decimal separator (or no decimal)
+      result = parseFloat(cleaned.replace(/,/g, ''));
+    }
+    return isNaN(result) ? undefined : result;
   }
 
   private extractRating(element: Element): number | undefined {

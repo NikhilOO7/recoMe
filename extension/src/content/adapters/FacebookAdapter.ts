@@ -1,5 +1,6 @@
 import { BaseAdapter } from './BaseAdapter';
 import { extractTextContent } from '@shared/utils';
+import { heuristicTitle, heuristicCreator } from './MetadataHeuristics';
 import type { ContentMetadata } from '@shared/types';
 
 export class FacebookAdapter extends BaseAdapter {
@@ -42,7 +43,8 @@ export class FacebookAdapter extends BaseAdapter {
         element.querySelector('a[role="link"] strong') ??
         // Page posts have the page name here
         element.querySelector('a[href*="facebook.com"][aria-label]');
-      const creator = nameEl ? extractTextContent(nameEl).trim() : undefined;
+      let creator = nameEl ? extractTextContent(nameEl).trim() : undefined;
+      if (!creator) creator = heuristicCreator(element) ?? undefined;
 
       // ── Post text ─────────────────────────────────────────────────────────
       const textEl =
@@ -65,13 +67,20 @@ export class FacebookAdapter extends BaseAdapter {
       // ── Ad detection ──────────────────────────────────────────────────────
       const isAd =
         !!element.querySelector('[aria-label="Sponsored"]') ||
+        !!element.querySelector('[aria-label*="Sponsored"]') ||
         !!element.querySelector('a[href*="facebook.com/ads"]') ||
-        Array.from(element.querySelectorAll('span')).some(
-          (s) => s.textContent?.trim() === 'Sponsored',
+        !!element.querySelector('a[href*="/ads/about"]') ||
+        Array.from(element.querySelectorAll('span, a')).some(
+          (s) =>
+            s.textContent?.trim() === 'Sponsored' ||
+            s.textContent?.trim() === 'Paid partnership' ||
+            s.textContent?.trim() === 'Active ad',
         );
 
       const rawTitle = videoTitle.slice(0, 140) || text.slice(0, 140);
-      const title = rawTitle || (creator ? `Post by ${creator}` : 'Facebook post');
+      let title = rawTitle || (creator ? `Post by ${creator}` : '');
+      if (!title)
+        title = heuristicTitle(element) ?? (creator ? `Post by ${creator}` : 'Facebook post');
       if (!title) return null;
 
       // Extract hashtags from text

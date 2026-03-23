@@ -9,12 +9,16 @@ import { InstagramAdapter } from './adapters/InstagramAdapter';
 import { EbayAdapter } from './adapters/EbayAdapter';
 import { WalmartAdapter } from './adapters/WalmartAdapter';
 import { GenericAdapter } from './adapters/GenericAdapter';
-import { createProactiveDwellTracker } from './DwellTracker';
+import { createProactiveDwellTracker, createSmartPromptTrackers } from './DwellTracker';
+import { PlatformIntelligenceEngine } from './intelligence/PlatformIntelligenceEngine';
+import { migrateLegacyCache } from './adapters/SelectorDiscovery';
+import { buildPathPattern, loadPathAwareCache } from './adapters/PathPatternCache';
 import { createLogger } from '@shared/Logger';
 import { showToast } from './ui/Toast';
 import { showConfetti } from './ui/Confetti';
+import { FloatingOverlay } from './overlay/FloatingOverlay';
 import type { BaseAdapter } from './adapters/BaseAdapter';
-import type { Platform } from '@shared/types';
+import type { Platform, ContentMetadata } from '@shared/types';
 
 const log = createLogger('Content');
 
@@ -58,6 +62,9 @@ async function getSettings(): Promise<Settings> {
   }
 }
 
+// ── Overlay reference (for toggle command) ──────────────────────────────────
+let overlayInstance: import('./overlay/FloatingOverlay').FloatingOverlay | null = null;
+
 async function bootstrap(): Promise<void> {
   // Never run on pure chat/messaging sites
   if (isChatOnlySite()) {
@@ -99,6 +106,9 @@ async function bootstrap(): Promise<void> {
     case 'walmart':
       adapter = new WalmartAdapter();
       break;
+    case 'linkedin':
+      adapter = new GenericAdapter('linkedin');
+      break;
     default: {
       // Unknown platform — use generic adapter so RecoMe works everywhere
       adapter = new GenericAdapter('unknown');
@@ -111,6 +121,14 @@ async function bootstrap(): Promise<void> {
     log.info(`Platform ${platform} disabled in settings`);
     return;
   }
+
+  // Pre-load cached discovered selectors before init (V2: path-aware)
+  const domain = location.hostname.replace(/^www\./, '');
+  const pathPattern = buildPathPattern(new URL(location.href));
+  let cached = await loadPathAwareCache(domain, pathPattern);
+  // One-time V1 -> V2 migration
+  if (!cached) cached = await migrateLegacyCache(domain);
+  if (cached) adapter.applyCachedSelectors(cached);
 
   await initAdapter(adapter);
 
@@ -129,18 +147,33 @@ async function bootstrap(): Promise<void> {
     }, 2000);
   }
 
+  const resolvedPlatform: Platform = platform === 'unknown' ? 'unknown' : platform;
+  const extractMeta = (el: Element): ContentMetadata | null =>
+    (
+      adapter as unknown as { extractMetadata: (e: Element) => ContentMetadata | null }
+    ).extractMetadata(el);
+
   // Proactive dwell tracking — observe cards the user lingers on
-  setupDwellTracking(adapter, platform === 'unknown' ? 'unknown' : platform);
+  setupDwellTracking(adapter, resolvedPlatform);
+
+  // Smart prompt tracking — scroll-back, comparison, cart hover detection
+  setupSmartPromptTracking(adapter, resolvedPlatform, extractMeta);
 
   // Search query monitoring — learn from what the user searches for
-  setupSearchTracking(platform === 'unknown' ? 'unknown' : platform);
+  setupSearchTracking(resolvedPlatform);
+
+  // Floating overlay — inject after everything else is ready
+  injectOverlay(resolvedPlatform, adapter);
+
+  // Platform intelligence — proactive insights (runs in background after page settles)
+  setupPlatformIntelligence(resolvedPlatform);
 }
 
 function setupDwellTracking(adapter: BaseAdapter, platform: Platform): void {
   const dwellTracker = createProactiveDwellTracker(platform, (el) =>
     (
       adapter as unknown as {
-        extractMetadata: (e: Element) => import('@shared/types').ContentMetadata | null;
+        extractMetadata: (e: Element) => ContentMetadata | null;
       }
     ).extractMetadata(el),
   );
@@ -164,6 +197,105 @@ function setupDwellTracking(adapter: BaseAdapter, platform: Platform): void {
 
   // Also observe any cards already processed at init time
   document.querySelectorAll('[data-recome-id]').forEach((el) => dwellTracker.observe(el));
+}
+
+function setupSmartPromptTracking(
+  adapter: BaseAdapter,
+  platform: Platform,
+  extractMeta: (el: Element) => ContentMetadata | null,
+): void {
+  const { scrollBackTracker, comparisonDetector, cartHoverDetector } = createSmartPromptTrackers(
+    platform,
+    extractMeta,
+  );
+
+  // Watch for processed cards and wire up smart prompt trackers
+  const smartObserver = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      if (mutation.type === 'attributes' && mutation.attributeName === 'data-recome-id') {
+        const el = mutation.target as Element;
+        if (el.hasAttribute('data-recome-id')) {
+          scrollBackTracker.observe(el);
+          cartHoverDetector.watch(el);
+
+          // Record view for comparison detection
+          const meta = extractMeta(el);
+          if (meta) {
+            comparisonDetector.recordView(el, meta);
+          }
+        }
+      }
+    }
+  });
+  smartObserver.observe(document.body, {
+    attributes: true,
+    subtree: true,
+    attributeFilter: ['data-recome-id'],
+  });
+
+  // Also process already-existing cards
+  document.querySelectorAll('[data-recome-id]').forEach((el) => {
+    scrollBackTracker.observe(el);
+    cartHoverDetector.watch(el);
+    const meta = extractMeta(el);
+    if (meta) comparisonDetector.recordView(el, meta);
+  });
+}
+
+async function injectOverlay(platform: Platform, adapter: BaseAdapter): Promise<void> {
+  try {
+    const overlay = new FloatingOverlay(platform);
+    overlayInstance = overlay;
+
+    // Give the overlay access to extract product candidates from the page
+    overlay.setGetCandidates(() => {
+      const candidates: unknown[] = [];
+
+      // Try PDP extraction first (e.g., Amazon product page)
+      const pdpMethod = (adapter as unknown as Record<string, unknown>)['extractPdpCandidate'];
+      if (typeof pdpMethod === 'function') {
+        const pdp = pdpMethod.call(adapter) as unknown;
+        if (pdp) candidates.push(pdp);
+      }
+
+      // If no PDP candidate, try extracting from visible cards on the page
+      if (candidates.length === 0) {
+        const sel = adapter.getCardSelector();
+        const cards = document.querySelectorAll(sel);
+        for (const card of Array.from(cards).slice(0, 5)) {
+          const candidate = adapter.extractCandidate(card);
+          if (candidate) candidates.push(candidate);
+        }
+      }
+
+      return candidates;
+    });
+
+    await overlay.inject();
+    log.info('Floating overlay injected');
+  } catch (e) {
+    log.error('Failed to inject overlay', e);
+  }
+}
+
+// ── Platform Intelligence ───────────────────────────────────────────────────
+
+function setupPlatformIntelligence(platform: Platform): void {
+  // Delay to let the page finish loading and the adapter settle
+  setTimeout(async () => {
+    try {
+      const engine = new PlatformIntelligenceEngine(platform);
+
+      // Wire badge updates to the overlay
+      engine.onBadgeUpdate((count) => {
+        overlayInstance?.setInsightCount(count);
+      });
+
+      await engine.analyze();
+    } catch (e) {
+      log.error('Platform intelligence failed', e);
+    }
+  }, 3000);
 }
 
 // ── Search query monitoring ─────────────────────────────────────────────────
@@ -278,6 +410,11 @@ chrome.runtime.onMessage.addListener(
         showInsightToast();
       }
     }
+
+    // Toggle overlay from keyboard command
+    if (message.type === 'TOGGLE_OVERLAY') {
+      overlayInstance?.toggle();
+    }
   },
 );
 
@@ -294,7 +431,7 @@ async function showInsightToast(): Promise<void> {
 
     // Show the most recent insight as a toast
     const insight = insights[0]!;
-    showToast(`💡 ${insight.message}`, 'info', {
+    showToast(`${insight.message}`, 'info', {
       onUndo: () => {
         // "Undo" here means dismiss — don't show this insight again
         chrome.runtime

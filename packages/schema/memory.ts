@@ -1,6 +1,7 @@
 // ── Memory types ─────────────────────────────────────────────────────────────
 
 import type { ContextBucket, Platform } from './context';
+import type { ContentEntityType } from './graph';
 
 export type MemoryType = 'short_term' | 'mid_term' | 'working_set' | 'facts_prefs' | 'long_term';
 
@@ -31,7 +32,7 @@ export interface MemoryEntry {
 export interface MemoryValue {
   sentiment?: 'positive' | 'negative' | 'neutral';
   strength?: number;
-  entity_type?: import('./graph').ContentEntityType;
+  entity_type?: ContentEntityType;
   entity_name?: string;
   related_entities?: string[];
   source_type?: 'explicit' | 'inferred' | 'search' | 'implicit';

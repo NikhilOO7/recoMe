@@ -147,9 +147,8 @@ export async function checkAchievements(params: {
 
 export async function unlockFirstBlock(): Promise<void> {
   const state = await getState();
-  let changed = false;
 
-  if (await unlock(state, 'first_block')) changed = true;
+  await unlock(state, 'first_block');
 
   // ── Party Time — 10 blocks in 1 minute ──────────────────────────────────
   const now = Date.now();
@@ -157,9 +156,8 @@ export async function unlockFirstBlock(): Promise<void> {
   state.recent_blocks = state.recent_blocks.filter((t) => now - t < 60_000);
   state.recent_blocks.push(now);
   if (state.recent_blocks.length >= 10) {
-    if (await unlock(state, 'party_time')) changed = true;
+    await unlock(state, 'party_time');
   }
-  changed = true; // recent_blocks always mutated
 
   await setState(state);
 }

@@ -6,6 +6,7 @@ type LLMProvider = 'anthropic' | 'openai' | 'gemini';
 interface Settings {
   enabled: boolean;
   aggressiveness: number;
+  train_platform_algo?: boolean;
   platforms: Partial<Record<Platform, boolean>>;
   context_override?: string | null;
   llm_provider?: LLMProvider | null;
@@ -22,6 +23,7 @@ const ALL_PLATFORMS: Platform[] = [
   'instagram',
   'ebay',
   'walmart',
+  'linkedin',
 ];
 const PLATFORM_ICONS: Record<Platform, string> = {
   youtube: '▶',
@@ -31,6 +33,7 @@ const PLATFORM_ICONS: Record<Platform, string> = {
   instagram: '📸',
   ebay: '🛍',
   walmart: 'W',
+  linkedin: 'in',
   unknown: '?',
 };
 
@@ -308,6 +311,27 @@ export function SettingsPanel() {
             onChange={(e) => saveSettings({ aggressiveness: parseFloat(e.target.value) })}
           />
           <span className="slider-label">High</span>
+        </div>
+      </div>
+
+      {/* Train Platform Algorithm */}
+      <div className="setting-group">
+        <div className="train-algo-row">
+          <div>
+            <h3 className="setting-title">Train platform algorithm</h3>
+            <p className="setting-text">
+              When RecoMe hides content, also click the platform's native "Not interested" button
+              (YouTube, Instagram, Twitter, Facebook) to train their recommendation algorithm.
+            </p>
+          </div>
+          <label className="toggle-switch">
+            <input
+              type="checkbox"
+              checked={settings.train_platform_algo === true}
+              onChange={() => saveSettings({ train_platform_algo: !settings.train_platform_algo })}
+            />
+            <span className="toggle-slider" />
+          </label>
         </div>
       </div>
 

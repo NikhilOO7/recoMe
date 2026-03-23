@@ -19,8 +19,6 @@ import {
   ALARM_NAMES,
   ALARM_INTERVALS,
   TOAST_DURATION_MS,
-  HIDE_ANIMATION_MS,
-  FEEDBACK_ICON_SIZE,
   STORAGE_KEYS,
 } from '../constants';
 
@@ -176,7 +174,7 @@ describe('PLATFORM_CONTEXT_MAP', () => {
   ];
 
   it('all values are valid ContextBucket types', () => {
-    for (const [platform, bucket] of Object.entries(PLATFORM_CONTEXT_MAP)) {
+    for (const [_platform, bucket] of Object.entries(PLATFORM_CONTEXT_MAP)) {
       expect(validBuckets).toContain(bucket);
     }
   });

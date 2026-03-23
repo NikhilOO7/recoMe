@@ -5,7 +5,7 @@ export class Explainer {
     action: ContentAction,
     score: number,
     factors: ScoringFactor[],
-    contentTitle: string,
+    _contentTitle: string,
   ): Pick<RecommendationResult, 'explanation' | 'hide_reason' | 'boost_reason'> {
     const topFactor = factors.reduce(
       (max, f) => (Math.abs(f.score * f.weight) > Math.abs(max.score * max.weight) ? f : max),

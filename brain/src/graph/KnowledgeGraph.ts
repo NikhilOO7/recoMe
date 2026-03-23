@@ -202,7 +202,7 @@ export class KnowledgeGraph {
     sourceId: string,
     targetId: string,
     weight: number,
-    platforms: string[],
+    _platforms: string[],
   ): Promise<GraphRelation> {
     const db = await getDB();
 

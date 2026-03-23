@@ -9,6 +9,16 @@ import { readStats } from './stats';
 import { appendDecision, getDecisionLog, clearDecisionLog } from './decisionLog';
 import { eventBus } from '@shared/EventBus';
 import { trackProductsScored, trackWatchlistAdd } from './achievements';
+import { bootBrain } from '@brain/orchestrator/index';
+import { getDB } from '@data/db';
+import { MemoryStore } from '@intelligence/memory/storage/MemoryStore';
+import { getAllCacheEntries } from '../content/adapters/PathPatternCache';
+import { ImportScheduler } from '../importers/ImportScheduler';
+import { PriceTracker } from '@brain/commerce/tracking/PriceTracker';
+import { PriceAlertEngine } from '@brain/commerce/tracking/PriceAlertEngine';
+import { getMonitoringCollector } from './monitoring/MonitoringCollector';
+import { handleMonitoringMessage } from './monitoring/monitoringHandlers';
+import type { Platform } from '@schema/context';
 import type { RecoMeMessage, MessageResponse } from '@shared/messages';
 
 const log = createLogger('MessageHandler');
@@ -22,12 +32,23 @@ export function handleMessage(
     .then(sendResponse)
     .catch((e: unknown) => {
       log.error('Message handler error', e);
+      getMonitoringCollector().recordError(
+        'messageHandler',
+        e instanceof Error ? e.message : String(e),
+      );
       sendResponse(err(e instanceof Error ? e.message : 'Unknown error'));
     });
   return true;
 }
 
 async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
+  // Monitoring messages handled separately to avoid touching the type-checked switch
+  const monResult = handleMonitoringMessage(
+    message.type,
+    (message as unknown as Record<string, unknown>).payload,
+  );
+  if (monResult) return monResult;
+
   const svc = getIntelligenceService();
 
   switch (message.type) {
@@ -36,9 +57,13 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
     }
 
     case 'PROCESS_CONTENT': {
+      const t0 = performance.now();
       const result = await svc.processContent(message.payload);
+      const durationMs = performance.now() - t0;
       // Capture into decision log for devtools
       appendDecision(message.payload, result);
+      // Record to monitoring collector
+      getMonitoringCollector().recordPipelineEvent(message.payload, result, durationMs);
       // Emit domain events — listeners handle stats & achievements
       if (result.action === 'hide') {
         eventBus.emit('CONTENT_HIDDEN', {
@@ -56,6 +81,7 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
 
     case 'LEARN_FEEDBACK': {
       await svc.learnFeedback(message.payload.content, message.payload.feedback);
+      getMonitoringCollector().recordFeedback(message.payload.content, message.payload.feedback);
       return ok(undefined);
     }
 
@@ -148,8 +174,13 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
     }
 
     case 'LIKE_TOPIC': {
-      await svc.getMemoryService().likeForever(message.payload.topic);
-      eventBus.emit('TOPIC_LIKED', { topic: message.payload.topic });
+      try {
+        await svc.getMemoryService().likeForever(message.payload.topic);
+        eventBus.emit('TOPIC_LIKED', { topic: message.payload.topic });
+      } catch (e) {
+        log.warn('Rejected topic like', e);
+        return err(e instanceof Error ? e.message : 'Invalid topic');
+      }
       return ok(undefined);
     }
 
@@ -233,7 +264,6 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
     }
 
     case 'IMPORT_DATA': {
-      const { getDB } = await import('@data/db');
       const db = await getDB();
       const importData = message.payload;
 
@@ -393,7 +423,6 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
     }
 
     case 'GET_DB_STATS': {
-      const { getDB } = await import('@data/db');
       const db = await getDB();
       const [memEntries, memEvents, cards, entities, relations] = await Promise.all([
         db.count('memory_entries'),
@@ -402,7 +431,6 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
         db.count('entities'),
         db.count('relations'),
       ]);
-      const { MemoryStore } = await import('@intelligence/memory/storage/MemoryStore');
       const store = new MemoryStore();
       const DEFAULT_USER = 'local_user';
       const allEntries = await store.getAllActiveEntries(DEFAULT_USER);
@@ -429,6 +457,189 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
       return ok(averages);
     }
 
+    case 'GET_SELECTOR_HEALTH': {
+      // Health records live in chrome.storage.local — read all V2 entries
+      const entries = await getAllCacheEntries();
+      return ok(entries);
+    }
+
+    case 'SMART_PROMPT_RESPONSE': {
+      const { action, platform } = message.payload;
+      log.info(`Smart prompt response: ${action} on ${platform}`);
+      // Prompt responses are handled client-side; this is for logging/analytics
+      return ok(undefined);
+    }
+
+    case 'OVERLAY_POSITION_SAVE': {
+      const { domain, x, y } = message.payload;
+      await chrome.storage.local.set({ [`recome_pill_pos_${domain}`]: { x, y } });
+      return ok(undefined);
+    }
+
+    case 'BRAIN_PROCESS': {
+      const brain = bootBrain();
+      const {
+        taskType,
+        trigger,
+        platform,
+        pageUrl,
+        content,
+        message: msg,
+        aggressiveness,
+      } = message.payload;
+      const task = brain.createTask(taskType, trigger, {
+        platform: platform as Platform,
+        pageUrl,
+        content: content ?? undefined,
+        aggressiveness,
+        conversationHistory: msg
+          ? [{ role: 'user', content: msg, timestamp: Date.now() }]
+          : undefined,
+      });
+      const brainResult = await brain.process(task);
+      return ok(brainResult);
+    }
+
+    case 'BRAIN_STATUS': {
+      const brain = bootBrain();
+      const stats = brain.getAgentStats();
+      const agents = brain.registry.getNames();
+      return ok({ agents, stats });
+    }
+
+    case 'BRAIN_FEEDBACK': {
+      const brain = bootBrain();
+      brain.recordFeedback(message.payload.taskId, message.payload.action);
+      return ok(undefined);
+    }
+
+    case 'BRAIN_INSIGHT': {
+      // Insight messages are typically sent FROM the background TO content scripts.
+      // When received here, just log and acknowledge.
+      log.info(`Brain insight received: ${message.payload.insight}`);
+      return ok(undefined);
+    }
+
+    // ── Platform Imports (Phase 3A) ──────────────────────────────────────────
+
+    case 'IMPORT_START': {
+      log.info(`Import requested: ${message.payload.platform} via ${message.payload.method}`);
+      return ok(undefined);
+    }
+
+    case 'IMPORT_PROGRESS': {
+      return ok(undefined);
+    }
+
+    case 'IMPORT_HISTORY': {
+      try {
+        const key = 'recome_import_history';
+        const stored = await chrome.storage.local.get(key);
+        return ok(stored[key] ?? []);
+      } catch {
+        return ok([]);
+      }
+    }
+
+    case 'IMPORT_SCHEDULES': {
+      try {
+        const key = 'recome_import_schedules';
+        const stored = await chrome.storage.local.get(key);
+        return ok(stored[key] ?? []);
+      } catch {
+        return ok([]);
+      }
+    }
+
+    case 'IMPORT_SET_SCHEDULE': {
+      const scheduler = new ImportScheduler();
+      await scheduler.setSchedule(message.payload.platform, message.payload.frequency);
+      return ok(undefined);
+    }
+
+    // ── Price Tracking (Phase 3B) ────────────────────────────────────────────
+
+    case 'PRICE_RECORD': {
+      const tracker = new PriceTracker();
+      const { url, platform, title, price, currency, imageUrl } = message.payload;
+      const change = await tracker.recordPrice(url, platform, title, price, currency, imageUrl);
+      if (change) {
+        const alertEngine = new PriceAlertEngine();
+        const alerts = await alertEngine.evaluatePriceChange(change);
+        for (const alert of alerts) {
+          await alertEngine.sendNotification(alert);
+        }
+      }
+      return ok(change);
+    }
+
+    case 'PRICE_TRACK': {
+      const tracker = new PriceTracker();
+      const { url, platform, title, price, currency, imageUrl } = message.payload;
+      const productId = await tracker.trackProduct(url, platform, title, price, currency, imageUrl);
+      return ok({ productId });
+    }
+
+    case 'PRICE_UNTRACK': {
+      const tracker = new PriceTracker();
+      await tracker.untrackProduct(message.payload.productId);
+      return ok(undefined);
+    }
+
+    case 'PRICE_GET_TRACKED': {
+      const tracker = new PriceTracker();
+      const products = await tracker.getTrackedProducts();
+      return ok(products);
+    }
+
+    case 'PRICE_GET_HISTORY': {
+      const tracker = new PriceTracker();
+      const history = await tracker.getPriceHistory(message.payload.productId);
+      return ok(history);
+    }
+
+    case 'PRICE_ADD_RULE': {
+      const engine = new PriceAlertEngine();
+      const rule = await engine.addRule({
+        productId: message.payload.productId,
+        type: message.payload.type,
+        thresholdPrice: message.payload.thresholdPrice,
+        percentDrop: message.payload.percentDrop,
+        enabled: true,
+      });
+      return ok(rule);
+    }
+
+    case 'PRICE_REMOVE_RULE': {
+      const engine = new PriceAlertEngine();
+      await engine.removeRule(message.payload.ruleId);
+      return ok(undefined);
+    }
+
+    case 'PRICE_GET_ALERTS': {
+      const engine = new PriceAlertEngine();
+      const alerts = await engine.getAlertHistory();
+      return ok(alerts);
+    }
+
+    case 'PRICE_DISMISS_ALERT': {
+      const engine = new PriceAlertEngine();
+      await engine.dismissAlert(message.payload.alertId);
+      return ok(undefined);
+    }
+
+    // Monitoring messages are handled before the switch via handleMonitoringMessage()
+    case 'GET_MONITOR_TIMELINE':
+    case 'GET_MONITOR_HEALTH':
+    case 'GET_MONITOR_TRACE':
+    case 'GET_MONITOR_TRACES':
+    case 'GET_MONITOR_AGENTS':
+    case 'RUN_VALIDATORS':
+    case 'SIMULATE_CONTENT':
+    case 'SIMULATE_FLOW':
+    case 'MONITOR_CLEAR':
+      return err('Monitoring message not handled');
+
     default: {
       const _exhaustive: never = message;
       return err(`Unknown message type: ${JSON.stringify(_exhaustive)}`);
@@ -448,6 +659,7 @@ function defaultSettings() {
       instagram: true,
       ebay: true,
       walmart: true,
+      linkedin: true,
     },
   };
 }

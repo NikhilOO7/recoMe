@@ -6,7 +6,10 @@ import { MemoryStore } from '@intelligence/memory/storage/MemoryStore';
 import { KnowledgeGraph } from '@brain/graph/KnowledgeGraph';
 import { CrossPlatformLinker } from '@brain/graph/CrossPlatformLinker';
 import { InsightDetector } from '@agent/insights';
+import { PriceStore } from '@brain/commerce/tracking/PriceStore';
+import { ImportScheduler } from '../importers/ImportScheduler';
 import { eventBus } from '@shared/EventBus';
+import { getMonitoringCollector } from './monitoring/MonitoringCollector';
 
 const log = createLogger('Alarms');
 
@@ -31,10 +34,27 @@ export function registerAlarms(): void {
     delayInMinutes: 5, // first run 5 min after startup
   });
 
+  chrome.alarms.create(ALARM_NAMES.selector_health, {
+    periodInMinutes: ALARM_INTERVALS.selector_health_minutes,
+    delayInMinutes: 15, // first run 15 min after startup
+  });
+
+  chrome.alarms.create(ALARM_NAMES.price_check, {
+    periodInMinutes: ALARM_INTERVALS.price_check_minutes,
+    delayInMinutes: 30, // first run 30 min after startup
+  });
+
+  chrome.alarms.create(ALARM_NAMES.import_check, {
+    periodInMinutes: ALARM_INTERVALS.import_check_minutes,
+    delayInMinutes: 10, // first run 10 min after startup
+  });
+
   log.info('Alarms registered');
 }
 
 export function handleAlarm(alarm: chrome.alarms.Alarm): void {
+  getMonitoringCollector().recordAlarmFired(alarm.name);
+
   switch (alarm.name) {
     case ALARM_NAMES.decay:
       runDecay();
@@ -47,6 +67,15 @@ export function handleAlarm(alarm: chrome.alarms.Alarm): void {
       break;
     case ALARM_NAMES.insight_check:
       runInsightCheck();
+      break;
+    case ALARM_NAMES.selector_health:
+      broadcastSelectorHealthCheck();
+      break;
+    case ALARM_NAMES.price_check:
+      runPriceCheck();
+      break;
+    case ALARM_NAMES.import_check:
+      runImportCheck();
       break;
     default:
       log.warn(`Unknown alarm: ${alarm.name}`);
@@ -103,6 +132,20 @@ async function runCrossPlatformLinking(store: MemoryStore): Promise<void> {
   }
 }
 
+async function broadcastSelectorHealthCheck(): Promise<void> {
+  try {
+    const tabs = await chrome.tabs.query({});
+    for (const tab of tabs) {
+      if (tab.id) {
+        chrome.tabs.sendMessage(tab.id, { type: 'SELECTOR_HEALTH_CHECK' }).catch(() => undefined); // tab may not have content script
+      }
+    }
+    log.debug('Selector health check broadcast sent');
+  } catch (err) {
+    log.error('Selector health broadcast failed', err);
+  }
+}
+
 async function runInsightCheck(): Promise<void> {
   try {
     const detector = new InsightDetector();
@@ -124,5 +167,58 @@ async function runInsightCheck(): Promise<void> {
     }
   } catch (err) {
     log.error('Insight check failed', err);
+  }
+}
+
+async function runPriceCheck(): Promise<void> {
+  try {
+    const store = new PriceStore();
+
+    const staleProducts = await store.getStaleProducts(6 * 60 * 60 * 1000);
+    if (staleProducts.length === 0) return;
+
+    log.debug(`Price check: ${staleProducts.length} stale product(s) to check`);
+
+    // Broadcast to active tabs to check prices on matching platforms
+    const tabs = await chrome.tabs.query({});
+    for (const product of staleProducts) {
+      for (const tab of tabs) {
+        if (tab.id && tab.url?.includes(new URL(product.url).hostname)) {
+          chrome.tabs
+            .sendMessage(tab.id, {
+              type: 'PRICE_CHECK_REQUEST',
+              payload: { productId: product.id, url: product.url },
+            })
+            .catch(() => undefined);
+        }
+      }
+    }
+  } catch (err) {
+    log.error('Price check failed', err);
+  }
+}
+
+async function runImportCheck(): Promise<void> {
+  try {
+    const scheduler = new ImportScheduler();
+    const due = await scheduler.onAlarm();
+
+    if (due.length > 0) {
+      log.info(`Imports due: ${due.join(', ')}`);
+      // Notify active tabs to run the imports
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      for (const tab of tabs) {
+        if (tab.id) {
+          chrome.tabs
+            .sendMessage(tab.id, {
+              type: 'IMPORT_DUE',
+              payload: { platforms: due },
+            })
+            .catch(() => undefined);
+        }
+      }
+    }
+  } catch (err) {
+    log.error('Import check failed', err);
   }
 }

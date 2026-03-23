@@ -14,6 +14,7 @@ export function detectPlatform(): Platform {
   if (host.includes('instagram.com')) return 'instagram';
   if (host.includes('ebay.com')) return 'ebay';
   if (host.includes('walmart.com')) return 'walmart';
+  if (host.includes('linkedin.com')) return 'linkedin';
   return 'unknown';
 }
 

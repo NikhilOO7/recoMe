@@ -5,6 +5,13 @@ import type { IntentType } from '@schema/intent';
 import type { ScoreResponseItem } from '@brain/scoring/CommerceScorer';
 import { showToast } from '../ui/Toast';
 import type { IntentResolution } from '@brain/intent/IntentService';
+import { getContentSignature } from './ContentSignatures';
+import { discoverCardSelector, discoverFeedSelector } from './SelectorDiscovery';
+import { SelectorHealthMonitor, type SelectorHealthRecord } from './SelectorHealth';
+import { buildPathPattern, loadPathAwareCache, savePathAwareCache } from './PathPatternCache';
+import { SELECTOR_HEALTH_CHECK_INTERVAL_MS } from '@shared/constants';
+import { triggerPlatformDismiss } from './PlatformFeedback';
+import { createLogger } from '@shared/Logger';
 
 export interface AdapterConfig {
   platform: Platform;
@@ -29,7 +36,19 @@ interface CommerceDecision {
 // Shared portal element used by all adapters for the floating menu
 let sharedMenuPortal: HTMLDivElement | null = null;
 function getMenuPortal(): HTMLDivElement {
-  if (!sharedMenuPortal || !document.contains(sharedMenuPortal)) {
+  if (
+    !sharedMenuPortal ||
+    !document.contains(sharedMenuPortal) ||
+    !document.body.contains(sharedMenuPortal)
+  ) {
+    // Clean up stale reference
+    if (sharedMenuPortal) {
+      try {
+        sharedMenuPortal.remove();
+      } catch {
+        /* already detached */
+      }
+    }
     const portal = document.createElement('div');
     portal.id = 'recome-menu-portal';
     portal.style.cssText =
@@ -54,8 +73,13 @@ const DECISION_BADGE: Record<DecisionType, { label: string; className: string }>
  * Subclasses only need to implement extractMetadata().
  * Commerce-aware adapters can also implement extractCandidate() and buildPageContext().
  */
+const log = createLogger('BaseAdapter');
+
 export abstract class BaseAdapter {
   protected readonly config: AdapterConfig;
+  /** Mutable selectors — updated by discovery when hardcoded ones fail */
+  protected activeCardSelector: string;
+  protected activeFeedSelector: string;
   /** Narrowed observer — watches the feed container once found */
   private observer: MutationObserver | null = null;
   /** Permanent body-level observer — always running; catches modals, overlays, lazy sections */
@@ -72,15 +96,34 @@ export abstract class BaseAdapter {
   private commerceBatchTimer: ReturnType<typeof setTimeout> | null = null;
   // Commerce decisions stored per candidateId for explanation popovers
   private readonly commerceDecisions = new Map<string, CommerceDecision>();
+  // V2: Selector health monitoring
+  private readonly healthMonitor = new SelectorHealthMonitor();
+  private pathPattern = 'home';
+  private healthCheckInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(config: AdapterConfig) {
     this.config = config;
+    this.activeCardSelector = config.cardSelector;
+    this.activeFeedSelector = config.feedSelector;
+    this.pathPattern = buildPathPattern(new URL(location.href));
+  }
+
+  /** Get the current card selector for querying visible cards */
+  getCardSelector(): string {
+    return this.activeCardSelector;
   }
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   init(): void {
-    this.observeExistingCards();
+    this.pathPattern = buildPathPattern(new URL(location.href));
+    const count = this.observeExistingCards();
+    this.healthMonitor.recordCheck(this.pathPattern, this.activeCardSelector, count);
+    if (count === 0) {
+      this.scheduleDiscovery();
+    } else {
+      this.startHealthCheck();
+    }
     this.startObserver();
   }
 
@@ -100,6 +143,10 @@ export abstract class BaseAdapter {
     if (this.commerceBatchTimer) {
       clearTimeout(this.commerceBatchTimer);
       this.commerceBatchTimer = null;
+    }
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval);
+      this.healthCheckInterval = null;
     }
     this.scoreBatch = [];
     this.commerceBatch = [];
@@ -276,10 +323,12 @@ export abstract class BaseAdapter {
     element.querySelector('.recome-intent')?.remove();
     element.classList.add('recome-hiding');
 
+    // Train the platform's own algorithm by clicking native "Not interested"
+    triggerPlatformDismiss(this.config.platform, element).catch(() => undefined);
+
     setTimeout(() => {
-      const parent = element.parentElement;
-      if (!parent || parent.querySelector('.recome-hidden-badge')) return;
-      if (getComputedStyle(parent).position === 'static') parent.style.position = 'relative';
+      // Collapse the card so it doesn't block scroll on virtualized feeds (Instagram, etc.)
+      element.classList.add('recome-collapsed');
 
       const badge = document.createElement('div');
       badge.className = 'recome-hidden-badge';
@@ -288,8 +337,9 @@ export abstract class BaseAdapter {
         <span class="recome-hidden-text">Hidden${reason ? ` · ${reason}` : ''}</span>
         <button class="recome-reveal-btn" type="button" aria-label="Show hidden content">Show anyway</button>
       `;
-      badge.style.cssText = 'position:absolute;top:4px;right:4px;z-index:9999;pointer-events:auto;';
-      parent.appendChild(badge);
+      badge.style.cssText =
+        'position:relative;display:flex;align-items:center;z-index:9999;pointer-events:auto;padding:8px;';
+      element.appendChild(badge);
       badge.querySelector('.recome-reveal-btn')?.addEventListener('click', (e) => {
         e.stopPropagation();
         this.reveal(element, badge);
@@ -316,17 +366,20 @@ export abstract class BaseAdapter {
   }
 
   protected reveal(element: HTMLElement, badge: HTMLElement): void {
-    element.classList.remove('recome-hiding');
+    element.classList.remove('recome-hiding', 'recome-collapsed');
     element.style.opacity = '';
     element.style.transform = '';
     element.style.pointerEvents = '';
+    element.style.maxHeight = '';
+    element.style.minHeight = '';
+    element.style.overflow = '';
     badge.remove();
     this.injectFeedbackButtons(element);
   }
 
   // ── Commerce Intent Menu (9 actions) ────────────────────────────────────────
 
-  protected injectCommerceMenu(element: HTMLElement, decision: CommerceDecision): void {
+  protected injectCommerceMenu(element: HTMLElement, _decision: CommerceDecision): void {
     if (element.querySelector('.recome-intent')) return;
 
     const candidate = this.extractCandidate(element);
@@ -1065,7 +1118,7 @@ export abstract class BaseAdapter {
 
   protected onCardFound(element: Element): void {
     // Skip nested matches (e.g. CSA widget inside search result)
-    if (element.parentElement?.closest(this.config.cardSelector)) return;
+    if (element.parentElement?.closest(this.activeCardSelector)) return;
 
     // Cross-adapter dedup: skip if another adapter already processed this element
     if (element.hasAttribute('data-recome-id')) return;
@@ -1155,7 +1208,7 @@ export abstract class BaseAdapter {
     // Fire all score requests concurrently
     for (const { element, metadata } of batch) {
       this.requestScore(metadata).then((result) => {
-        if (result) this.injectOverlay(element, result);
+        if (result && document.contains(element)) this.injectOverlay(element, result);
       });
     }
   }
@@ -1193,7 +1246,7 @@ export abstract class BaseAdapter {
       if (!items) return;
       for (const item of items) {
         const element = elementMap.get(item.candidateId);
-        if (element) {
+        if (element && document.contains(element)) {
           this.injectCommerceOverlay(element, item);
         }
       }
@@ -1249,8 +1302,10 @@ export abstract class BaseAdapter {
 
   // ── Observer ───────────────────────────────────────────────────────────────
 
-  private observeExistingCards(): void {
-    document.querySelectorAll(this.config.cardSelector).forEach((card) => this.onCardFound(card));
+  private observeExistingCards(): number {
+    const cards = document.querySelectorAll(this.activeCardSelector);
+    cards.forEach((card) => this.onCardFound(card));
+    return cards.length;
   }
 
   /** Build a MutationObserver callback that calls onCardFound for matching nodes */
@@ -1259,8 +1314,8 @@ export abstract class BaseAdapter {
       for (const mutation of mutations) {
         for (const node of mutation.addedNodes) {
           if (!(node instanceof Element)) continue;
-          if (node.matches(this.config.cardSelector)) this.onCardFound(node);
-          node.querySelectorAll(this.config.cardSelector).forEach((card) => this.onCardFound(card));
+          if (node.matches(this.activeCardSelector)) this.onCardFound(node);
+          node.querySelectorAll(this.activeCardSelector).forEach((card) => this.onCardFound(card));
         }
       }
     };
@@ -1284,7 +1339,7 @@ export abstract class BaseAdapter {
 
     // Narrow observer on the feed container once available (more efficient for
     // re-checking already-visible cards when new items virtualise in).
-    const feedEl = document.querySelector(this.config.feedSelector);
+    const feedEl = document.querySelector(this.activeFeedSelector);
     if (feedEl) {
       this.attachObserver(feedEl);
     } else {
@@ -1294,10 +1349,14 @@ export abstract class BaseAdapter {
 
   private retryFeedSelector(attempt: number): void {
     const delays = [1000, 2000, 4000, 8000];
-    if (attempt >= delays.length) return;
+    if (attempt >= delays.length) {
+      // All retries exhausted — try discovering the feed container
+      this.discoverFeedContainer();
+      return;
+    }
 
     const timer = setTimeout(() => {
-      const feedEl = document.querySelector(this.config.feedSelector);
+      const feedEl = document.querySelector(this.activeFeedSelector);
       if (feedEl) {
         this.attachObserver(feedEl);
         this.observeExistingCards();
@@ -1306,5 +1365,132 @@ export abstract class BaseAdapter {
       }
     }, delays[attempt]!);
     this.retryTimers.push(timer);
+  }
+
+  // ── Adaptive Selector Discovery (V2: Health + Path-Aware Cache) ─────────
+
+  /**
+   * Apply cached selectors before init() — called from content/index.ts
+   * so cached discovery results are available immediately.
+   */
+  applyCachedSelectors(cached: SelectorHealthRecord): void {
+    this.activeCardSelector = cached.cardSelector;
+    if (cached.feedSelector) {
+      this.activeFeedSelector = cached.feedSelector;
+    }
+    this.healthMonitor.loadRecord(cached);
+    log.info(
+      `Applied cached selectors: card="${cached.cardSelector}", path="${cached.pathPattern}"`,
+    );
+  }
+
+  /**
+   * Periodic health check — monitors whether active selectors still find cards.
+   * If health degrades, triggers re-discovery.
+   */
+  private startHealthCheck(): void {
+    if (this.healthCheckInterval) return;
+
+    this.healthCheckInterval = setInterval(() => {
+      const count = document.querySelectorAll(this.activeCardSelector).length;
+      const record = this.healthMonitor.recordCheck(
+        this.pathPattern,
+        this.activeCardSelector,
+        count,
+      );
+
+      if (!this.healthMonitor.isHealthy(this.pathPattern)) {
+        log.info(`Selector health degraded for ${this.pathPattern} — triggering re-discovery`);
+        clearInterval(this.healthCheckInterval!);
+        this.healthCheckInterval = null;
+        this.scheduleDiscovery();
+      } else {
+        // Persist updated health data periodically
+        const domain = location.hostname.replace(/^www\./, '');
+        savePathAwareCache(domain, this.pathPattern, record).catch(() => {});
+      }
+    }, SELECTOR_HEALTH_CHECK_INTERVAL_MS);
+  }
+
+  /**
+   * Schedule live DOM discovery after a short delay.
+   * Runs when hardcoded selectors find 0 cards on init, or when health degrades.
+   */
+  private scheduleDiscovery(): void {
+    const timer = setTimeout(async () => {
+      const domain = location.hostname.replace(/^www\./, '');
+
+      // First try path-aware V2 cache
+      const cached = await loadPathAwareCache(domain, this.pathPattern);
+      if (cached) {
+        this.activeCardSelector = cached.cardSelector;
+        if (cached.feedSelector) this.activeFeedSelector = cached.feedSelector;
+        this.healthMonitor.loadRecord(cached);
+        const count = this.observeExistingCards();
+        if (count > 0) {
+          log.info(`V2 cached selectors found ${count} cards for ${this.pathPattern}`);
+          this.healthMonitor.recordCheck(this.pathPattern, this.activeCardSelector, count);
+          this.startHealthCheck();
+          return;
+        }
+      }
+
+      // Live discovery
+      const signature = getContentSignature(this.config.platform);
+      if (!signature) {
+        log.debug(
+          `No content signature for platform "${this.config.platform}" — skipping discovery`,
+        );
+        return;
+      }
+
+      const result = discoverCardSelector(this.config.platform, signature);
+      if (!result) {
+        log.debug('Live discovery found no cards');
+        return;
+      }
+
+      log.info(`Discovery found ${result.count} cards with selector "${result.selector}"`);
+      this.activeCardSelector = result.selector;
+      if (result.feedSelector) this.activeFeedSelector = result.feedSelector;
+
+      // Re-scan with discovered selectors
+      const count = this.observeExistingCards();
+
+      // Attach observer to discovered feed
+      if (result.feedSelector) {
+        const feedEl = document.querySelector(result.feedSelector);
+        if (feedEl) this.attachObserver(feedEl);
+      }
+
+      // Create health record and start monitoring
+      const record = this.healthMonitor.resetHealth(this.pathPattern, result.selector, count);
+      record.feedSelector = result.feedSelector;
+      this.startHealthCheck();
+
+      // Cache for next page load
+      await savePathAwareCache(domain, this.pathPattern, record);
+    }, 1500);
+    this.retryTimers.push(timer);
+  }
+
+  /**
+   * Discover the feed container from already-found card elements.
+   * Called when retryFeedSelector exhausts all attempts.
+   */
+  private discoverFeedContainer(): void {
+    const cards = Array.from(document.querySelectorAll(this.activeCardSelector));
+    if (cards.length < 2) return;
+
+    const feedSel = discoverFeedSelector(cards);
+    if (!feedSel) return;
+
+    this.activeFeedSelector = feedSel;
+    this.healthMonitor.setFeedSelector(this.pathPattern, feedSel);
+    const feedEl = document.querySelector(feedSel);
+    if (feedEl) {
+      this.attachObserver(feedEl);
+      log.info(`Discovered feed container: "${feedSel}"`);
+    }
   }
 }

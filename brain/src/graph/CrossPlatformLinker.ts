@@ -1,6 +1,6 @@
 import { createLogger } from '@shared/Logger';
-import { MemoryStore } from '../memory/storage/MemoryStore';
-import { KnowledgeGraph } from './KnowledgeGraph';
+import type { MemoryStore } from '../memory/storage/MemoryStore';
+import type { KnowledgeGraph } from './KnowledgeGraph';
 import { getLLMClient } from '@agent/llm/LLMClient';
 import type { Platform } from '@shared/types';
 

@@ -1,5 +1,4 @@
 import { createLogger } from '@utils/Logger';
-import { DEFAULT_USER_ID } from '@shared/constants';
 import { MemoryStore } from '@intelligence/memory/storage/MemoryStore';
 import { RetrievalService } from '../retrieval';
 import { InsightStore, type InsightType } from './InsightStore';

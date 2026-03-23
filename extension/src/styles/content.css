@@ -230,20 +230,28 @@
 .recome-hiding {
   animation: recome-hide 400ms ease-out forwards;
   pointer-events: none;
+  overflow: hidden;
+}
+
+/* Collapsed state after animation — shrinks the element so scroll isn't blocked */
+.recome-hiding.recome-collapsed {
+  max-height: 48px !important;
+  min-height: 0 !important;
+  overflow: hidden;
+  margin-top: 0 !important;
+  margin-bottom: 4px !important;
+  position: relative;
 }
 
 @keyframes recome-hide {
   0% {
     opacity: 1;
-    transform: scale(1);
   }
   50% {
     opacity: 0.5;
-    transform: scale(0.97);
   }
   100% {
     opacity: 0.12;
-    transform: scale(0.96);
   }
 }
 

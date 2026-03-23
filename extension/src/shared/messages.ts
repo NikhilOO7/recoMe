@@ -9,7 +9,6 @@ import type {
 import type { CandidateEntity } from '@schema/entities';
 import type { PageContext } from '@schema/decisions';
 import type { IntentType } from '@schema/intent';
-import type { Insight } from '@agent/insights';
 
 // ── Outbound message types (content/popup → background) ──────────────────────
 
@@ -58,7 +57,44 @@ export type MessageType =
   // Health check
   | 'PING'
   // Performance monitoring
-  | 'GET_PERF_METRICS';
+  | 'GET_PERF_METRICS'
+  // Selector health (V2)
+  | 'GET_SELECTOR_HEALTH'
+  // Smart prompts (V2 Phase 1)
+  | 'SMART_PROMPT_RESPONSE'
+  // Overlay (V2 Phase 1)
+  | 'OVERLAY_POSITION_SAVE'
+  // Brain orchestrator (V2 Phase 1.5A)
+  | 'BRAIN_PROCESS'
+  | 'BRAIN_INSIGHT'
+  | 'BRAIN_STATUS'
+  | 'BRAIN_FEEDBACK'
+  // Platform imports (Phase 3A)
+  | 'IMPORT_START'
+  | 'IMPORT_PROGRESS'
+  | 'IMPORT_HISTORY'
+  | 'IMPORT_SCHEDULES'
+  | 'IMPORT_SET_SCHEDULE'
+  // Price tracking (Phase 3B)
+  | 'PRICE_RECORD'
+  | 'PRICE_TRACK'
+  | 'PRICE_UNTRACK'
+  | 'PRICE_GET_TRACKED'
+  | 'PRICE_GET_HISTORY'
+  | 'PRICE_ADD_RULE'
+  | 'PRICE_REMOVE_RULE'
+  | 'PRICE_GET_ALERTS'
+  | 'PRICE_DISMISS_ALERT'
+  // Monitoring (QA Tool)
+  | 'GET_MONITOR_TIMELINE'
+  | 'GET_MONITOR_HEALTH'
+  | 'GET_MONITOR_TRACE'
+  | 'GET_MONITOR_TRACES'
+  | 'GET_MONITOR_AGENTS'
+  | 'RUN_VALIDATORS'
+  | 'SIMULATE_CONTENT'
+  | 'SIMULATE_FLOW'
+  | 'MONITOR_CLEAR';
 
 // ── Individual message shapes ─────────────────────────────────────────────────
 
@@ -305,6 +341,215 @@ export interface GetPerfMetricsMessage {
   payload: null;
 }
 
+export interface GetSelectorHealthMessage {
+  type: 'GET_SELECTOR_HEALTH';
+}
+
+export interface SmartPromptResponseMessage {
+  type: 'SMART_PROMPT_RESPONSE';
+  payload: {
+    action: string;
+    platform: string;
+  };
+}
+
+export interface OverlayPositionSaveMessage {
+  type: 'OVERLAY_POSITION_SAVE';
+  payload: {
+    domain: string;
+    x: number;
+    y: number;
+  };
+}
+
+export interface BrainProcessMessage {
+  type: 'BRAIN_PROCESS';
+  payload: {
+    taskType: 'filter' | 'discover' | 'advise' | 'shop' | 'social' | 'chat' | 'analyze';
+    trigger: 'page_load' | 'user_action' | 'chat_message' | 'scheduled' | 'signal';
+    platform: string;
+    pageUrl: string;
+    content?: ContentMetadata;
+    message?: string;
+    aggressiveness?: number;
+  };
+}
+
+export interface BrainInsightMessage {
+  type: 'BRAIN_INSIGHT';
+  payload: {
+    taskId: string;
+    insight: string;
+    agentName: string;
+    confidence: number;
+  };
+}
+
+export interface BrainStatusMessage {
+  type: 'BRAIN_STATUS';
+  payload: null;
+}
+
+export interface BrainFeedbackMessage {
+  type: 'BRAIN_FEEDBACK';
+  payload: {
+    taskId: string;
+    action: 'acted' | 'dismissed' | 'ignored';
+  };
+}
+
+// ── Import messages (Phase 3A) ──────────────────────────────────────────────
+
+export interface ImportStartMessage {
+  type: 'IMPORT_START';
+  payload: {
+    platform: string;
+    method: 'dom' | 'file' | 'api';
+  };
+}
+
+export interface ImportProgressMessage {
+  type: 'IMPORT_PROGRESS';
+  payload: null;
+}
+
+export interface ImportHistoryMessage {
+  type: 'IMPORT_HISTORY';
+  payload: null;
+}
+
+export interface ImportSchedulesMessage {
+  type: 'IMPORT_SCHEDULES';
+  payload: null;
+}
+
+export interface ImportSetScheduleMessage {
+  type: 'IMPORT_SET_SCHEDULE';
+  payload: {
+    platform: string;
+    frequency: 'daily' | 'weekly' | 'manual';
+  };
+}
+
+// ── Price tracking messages (Phase 3B) ──────────────────────────────────────
+
+export interface PriceRecordMessage {
+  type: 'PRICE_RECORD';
+  payload: {
+    url: string;
+    platform: string;
+    title: string;
+    price: number;
+    currency: string;
+    imageUrl?: string;
+  };
+}
+
+export interface PriceTrackMessage {
+  type: 'PRICE_TRACK';
+  payload: {
+    url: string;
+    platform: string;
+    title: string;
+    price: number;
+    currency: string;
+    imageUrl?: string;
+  };
+}
+
+export interface PriceUntrackMessage {
+  type: 'PRICE_UNTRACK';
+  payload: { productId: string };
+}
+
+export interface PriceGetTrackedMessage {
+  type: 'PRICE_GET_TRACKED';
+  payload: null;
+}
+
+export interface PriceGetHistoryMessage {
+  type: 'PRICE_GET_HISTORY';
+  payload: { productId: string };
+}
+
+export interface PriceAddRuleMessage {
+  type: 'PRICE_ADD_RULE';
+  payload: {
+    productId: string;
+    type: 'below_threshold' | 'percent_drop' | 'all_time_low' | 'price_increase';
+    thresholdPrice?: number;
+    percentDrop?: number;
+  };
+}
+
+export interface PriceRemoveRuleMessage {
+  type: 'PRICE_REMOVE_RULE';
+  payload: { ruleId: string };
+}
+
+export interface PriceGetAlertsMessage {
+  type: 'PRICE_GET_ALERTS';
+  payload: null;
+}
+
+export interface PriceDismissAlertMessage {
+  type: 'PRICE_DISMISS_ALERT';
+  payload: { alertId: string };
+}
+
+// ── Monitoring messages (QA Tool) ─────────────────────────────────────────────
+
+export interface GetMonitorTimelineMessage {
+  type: 'GET_MONITOR_TIMELINE';
+  payload: {
+    categories?: string[];
+    types?: string[];
+    traceId?: string;
+    since?: number;
+    limit?: number;
+  } | null;
+}
+
+export interface GetMonitorHealthMessage {
+  type: 'GET_MONITOR_HEALTH';
+  payload: null;
+}
+
+export interface GetMonitorTraceMessage {
+  type: 'GET_MONITOR_TRACE';
+  payload: { traceId: string };
+}
+
+export interface GetMonitorTracesMessage {
+  type: 'GET_MONITOR_TRACES';
+  payload: null;
+}
+
+export interface GetMonitorAgentsMessage {
+  type: 'GET_MONITOR_AGENTS';
+  payload: null;
+}
+
+export interface RunValidatorsMessage {
+  type: 'RUN_VALIDATORS';
+  payload: { category?: string } | null;
+}
+
+export interface SimulateContentMessage {
+  type: 'SIMULATE_CONTENT';
+  payload: ContentMetadata;
+}
+
+export interface SimulateFlowMessage {
+  type: 'SIMULATE_FLOW';
+  payload: { flowId: string };
+}
+
+export interface MonitorClearMessage {
+  type: 'MONITOR_CLEAR';
+  payload: null;
+}
+
 // ── Union type for all messages ───────────────────────────────────────────────
 
 export type RecoMeMessage =
@@ -346,7 +591,37 @@ export type RecoMeMessage =
   | ClearFocusMessage
   | ImportDataMessage
   | PingMessage
-  | GetPerfMetricsMessage;
+  | GetPerfMetricsMessage
+  | GetSelectorHealthMessage
+  | SmartPromptResponseMessage
+  | OverlayPositionSaveMessage
+  | BrainProcessMessage
+  | BrainInsightMessage
+  | BrainStatusMessage
+  | BrainFeedbackMessage
+  | ImportStartMessage
+  | ImportProgressMessage
+  | ImportHistoryMessage
+  | ImportSchedulesMessage
+  | ImportSetScheduleMessage
+  | PriceRecordMessage
+  | PriceTrackMessage
+  | PriceUntrackMessage
+  | PriceGetTrackedMessage
+  | PriceGetHistoryMessage
+  | PriceAddRuleMessage
+  | PriceRemoveRuleMessage
+  | PriceGetAlertsMessage
+  | PriceDismissAlertMessage
+  | GetMonitorTimelineMessage
+  | GetMonitorHealthMessage
+  | GetMonitorTraceMessage
+  | GetMonitorTracesMessage
+  | GetMonitorAgentsMessage
+  | RunValidatorsMessage
+  | SimulateContentMessage
+  | SimulateFlowMessage
+  | MonitorClearMessage;
 
 // ── Response wrapper ──────────────────────────────────────────────────────────
 
