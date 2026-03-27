@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RecoMe SDK — Business Model 2026</title>
+  <style>
+    :root {
+      --ink:       #0b1120;
+      --ink-2:     #1e293b;
+      --ink-3:     #334155;
+      --muted:     #64748b;
+      --faint:     #94a3b8;
+      --line:      #e2e8f0;
+      --surface:   #f8fafc;
+      --white:     #ffffff;
+
+      --brand:     #2563eb;
+      --brand-dk:  #1d4ed8;
+      --brand-lt:  #eff6ff;
+      --brand-mid: #bfdbfe;
+
+      --teal:      #0d9488;
+      --teal-lt:   #f0fdfa;
+      --teal-mid:  #99f6e4;
+
+      --purple:    #7c3aed;
+      --purple-lt: #faf5ff;
+      --purple-mid:#ddd6fe;
+
+      --green:     #16a34a;
+      --green-lt:  #f0fdf4;
+      --green-mid: #bbf7d0;
+
+      --amber:     #d97706;
+      --amber-lt:  #fffbeb;
+      --amber-mid: #fde68a;
+
+      --red:       #dc2626;
+      --red-lt:    #fef2f2;
+      --red-mid:   #fecaca;
+
+      --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      --mono: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: var(--surface);
+      color: var(--ink-2);
+      line-height: 1.65;
+      font-size: 15px;
+    }
+
+    /* ── HERO ─────────────────────── */
+    .hero {
+      background: var(--ink);
+      color: #fff;
+      padding: 80px 40px 72px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content:'';
+      position:absolute; inset:0;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(37,99,235,0.35) 0%, transparent 70%),
+                  radial-gradient(ellipse 50% 40% at 80% 80%, rgba(13,148,136,0.2) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-eyebrow {
+      display:inline-flex; align-items:center; gap:8px;
+      background:rgba(255,255,255,0.08);
+      border:1px solid rgba(255,255,255,0.15);
+      border-radius:999px;
+      padding:5px 16px;
+      font-size:12px; letter-spacing:1.5px; text-transform:uppercase;
+      margin-bottom:24px;
+    }
+    .hero-eyebrow span { color:#93c5fd; }
+    .hero h1 {
+      font-size: clamp(32px,5vw,58px);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 20px;
+      letter-spacing: -1px;
+    }
+    .hero h1 em { font-style:normal; color:#5eead4; }
+    .hero h1 strong { font-style:normal; color:#93c5fd; }
+    .hero-sub {
+      font-size: 18px; color:rgba(255,255,255,0.65);
+      max-width: 640px; margin: 0 auto 36px;
+    }
+    .hero-stats {
+      display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+      margin-bottom: 40px;
+    }
+    .hero-stat {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      padding: 14px 22px;
+      text-align: center;
+    }
+    .hero-stat .n { font-size: 26px; font-weight: 800; color: #5eead4; line-height:1; }
+    .hero-stat .l { font-size: 12px; color: rgba(255,255,255,0.5); margin-top:4px; }
+
+    /* ── LAYOUT ───────────────────── */
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 28px; }
+    section { padding: 72px 0; }
+    section + section { border-top: 1px solid var(--line); }
+
+    .sec-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--brand);
+      margin-bottom: 8px;
+    }
+    h2 {
+      font-size: clamp(22px,3vw,32px);
+      font-weight: 800; color: var(--ink);
+      line-height: 1.2; margin-bottom: 10px;
+      letter-spacing: -0.5px;
+    }
+    .sec-sub {
+      color: var(--muted); font-size: 16px;
+      max-width: 680px; margin-bottom: 48px;
+    }
+
+    /* ── GRID ─────────────────────── */
+    .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .g3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+    .g4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
+    @media(max-width:800px) { .g2,.g3,.g4 { grid-template-columns:1fr; } }
+    @media(min-width:601px) and (max-width:800px) { .g2 { grid-template-columns:1fr 1fr; } .g3,.g4 { grid-template-columns:1fr 1fr; } }
+
+    /* ── CARD ─────────────────────── */
+    .card {
+      background: var(--white);
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      padding: 26px;
+      box-shadow: 0 1px 8px rgba(0,0,0,0.04);
+    }
+    .card-ico {
+      width:48px; height:48px; border-radius:12px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:22px; margin-bottom:16px;
+    }
+    .card h4 { font-size:16px; font-weight:700; color:var(--ink); margin-bottom:8px; }
+    .card p  { font-size:14px; color:var(--muted); line-height:1.65; }
+
+    /* ── ACCENT CARD ──────────────── */
+    .acard {
+      border-radius:14px; padding:28px;
+      border:1px solid transparent;
+    }
+    .acard h4 { font-size:15px; font-weight:700; margin-bottom:6px; }
+    .acard p  { font-size:14px; line-height:1.65; }
+    .acard.blue   { background:var(--brand-lt); border-color:var(--brand-mid); color:var(--brand-dk); }
+    .acard.teal   { background:var(--teal-lt);  border-color:var(--teal-mid);  color:var(--teal); }
+    .acard.purple { background:var(--purple-lt);border-color:var(--purple-mid);color:var(--purple); }
+    .acard.green  { background:var(--green-lt); border-color:var(--green-mid); color:var(--green); }
+    .acard.amber  { background:var(--amber-lt); border-color:var(--amber-mid); color:var(--amber); }
+    .acard.red    { background:var(--red-lt);   border-color:var(--red-mid);   color:var(--red); }
+    .acard h4, .acard p { color:inherit; }
+
+    /* ── TAG ──────────────────────── */
+    .tag {
+      display:inline-block; border-radius:999px;
+      padding:3px 12px; font-size:12px; font-weight:600;
+    }
+    .tag.blue   { background:var(--brand-lt); color:var(--brand); border:1px solid var(--brand-mid); }
+    .tag.teal   { background:var(--teal-lt);  color:var(--teal);  border:1px solid var(--teal-mid); }
+    .tag.purple { background:var(--purple-lt);color:var(--purple);border:1px solid var(--purple-mid); }
+    .tag.green  { background:var(--green-lt); color:var(--green); border:1px solid var(--green-mid); }
+    .tag.amber  { background:var(--amber-lt); color:var(--amber); border:1px solid var(--amber-mid); }
+    .tag.red    { background:var(--red-lt);   color:var(--red);   border:1px solid var(--red-mid); }
+    .tag.gray   { background:var(--surface);  color:var(--muted); border:1px solid var(--line); }
+
+    /* ── TABLE ────────────────────── */
+    .tbl { width:100%; border-collapse:collapse; font-size:14px; }
+    .tbl th {
+      background:var(--surface); padding:12px 16px;
+      text-align:left; font-size:12px; font-weight:700;
+      text-transform:uppercase; letter-spacing:.8px;
+      color:var(--muted); border-bottom:2px solid var(--line);
+    }
+    .tbl td { padding:14px 16px; border-bottom:1px solid var(--line); vertical-align:middle; }
+    .tbl tr:last-child td { border-bottom:none; }
+    .tbl tr:hover td { background:var(--surface); }
+    .yes { color:var(--green); font-weight:700; }
+    .no  { color:var(--red);   font-weight:700; }
+    .partial { color:var(--amber); font-weight:700; }
+
+    /* ── COMPARISON HEADER ────────── */
+    .tbl .col-us { background:#eff6ff; color:var(--brand-dk); font-weight:700; }
+
+    /* ── PRICING CARDS ────────────── */
+    .pricing-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+    @media(max-width:800px) { .pricing-grid { grid-template-columns:1fr; } }
+
+    .price-card {
+      background:var(--white);
+      border:2px solid var(--line);
+      border-radius:16px;
+      padding:30px 28px;
+      position:relative;
+    }
+    .price-card.featured {
+      border-color:var(--brand);
+      box-shadow: 0 0 0 4px rgba(37,99,235,0.08);
+    }
+    .price-badge {
+      position:absolute; top:-13px; left:50%; transform:translateX(-50%);
+      background:var(--brand); color:#fff;
+      border-radius:999px; padding:4px 16px;
+      font-size:12px; font-weight:700; white-space:nowrap;
+    }
+    .price-name { font-size:14px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+    .price-amount { font-size:40px; font-weight:800; color:var(--ink); line-height:1; }
+    .price-amount sup { font-size:20px; font-weight:600; vertical-align:super; }
+    .price-period { font-size:13px; color:var(--muted); margin-bottom:6px; }
+    .price-desc { font-size:13px; color:var(--muted); margin-bottom:24px; padding-bottom:24px; border-bottom:1px solid var(--line); }
+    .price-features { list-style:none; display:flex; flex-direction:column; gap:10px; }
+    .price-features li { font-size:13px; color:var(--ink-3); display:flex; gap:8px; align-items:flex-start; }
+    .price-features li::before { content:'✓'; color:var(--green); font-weight:700; flex-shrink:0; margin-top:1px; }
+    .price-features li.off { color:var(--faint); }
+    .price-features li.off::before { content:'–'; color:var(--faint); }
+
+    /* ── REVENUE STACK ────────────── */
+    .rev-row {
+      display:flex; align-items:center; gap:16px;
+      background:var(--white); border:1px solid var(--line);
+      border-radius:10px; padding:18px 22px; margin-bottom:12px;
+    }
+    .rev-label { flex:1; }
+    .rev-label h5 { font-size:15px; font-weight:700; color:var(--ink); margin-bottom:2px; }
+    .rev-label p  { font-size:13px; color:var(--muted); }
+    .rev-bar-wrap { flex:2; }
+    .rev-bar { height:10px; border-radius:5px; }
+    .rev-pct { font-size:14px; font-weight:700; min-width:40px; text-align:right; }
+
+    /* ── TIMELINE ─────────────────── */
+    .timeline { position:relative; padding-left:44px; }
+    .timeline::before {
+      content:''; position:absolute; left:15px; top:0; bottom:0;
+      width:2px; background:var(--line);
+    }
+    .tl-item { position:relative; margin-bottom:32px; }
+    .tl-dot {
+      position:absolute; left:-37px; top:4px;
+      width:20px; height:20px; border-radius:50%;
+      border:3px solid var(--white);
+      box-shadow:0 0 0 2px var(--brand);
+      background:var(--brand);
+    }
+    .tl-item h4 { font-size:16px; font-weight:700; color:var(--ink); margin-bottom:6px; }
+    .tl-item .tl-meta { font-size:12px; color:var(--brand); font-weight:600; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+    .tl-item p { font-size:14px; color:var(--muted); }
+
+    /* ── CALLOUT ──────────────────── */
+    .callout {
+      border-radius:12px; padding:20px 24px;
+      display:flex; gap:14px; align-items:flex-start;
+      margin: 28px 0;
+    }
+    .callout.blue   { background:var(--brand-lt);  border:1px solid var(--brand-mid); }
+    .callout.green  { background:var(--green-lt);  border:1px solid var(--green-mid); }
+    .callout.amber  { background:var(--amber-lt);  border:1px solid var(--amber-mid); }
+    .callout.red    { background:var(--red-lt);    border:1px solid var(--red-mid);   }
+    .callout-ico { font-size:22px; flex-shrink:0; margin-top:1px; }
+    .callout h4 { font-size:15px; font-weight:700; margin-bottom:3px; }
+    .callout p  { font-size:14px; opacity:.85; }
+
+    /* ── MOAT ITEM ────────────────── */
+    .moat-item {
+      display:flex; gap:20px;
+      background:var(--white); border:1px solid var(--line);
+      border-radius:14px; padding:24px;
+      margin-bottom:16px;
+      align-items:flex-start;
+    }
+    .moat-num {
+      width:44px; height:44px; border-radius:12px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:18px; font-weight:800; color:#fff;
+      flex-shrink:0;
+    }
+    .moat-item h4 { font-size:16px; font-weight:700; color:var(--ink); margin-bottom:6px; }
+    .moat-item p  { font-size:14px; color:var(--muted); }
+
+    /* ── MARKET FUNNEL ────────────── */
+    .funnel { display:flex; flex-direction:column; align-items:center; gap:0; }
+    .funnel-step {
+      border-radius:6px; color:#fff; font-weight:700;
+      padding:14px 24px; text-align:center;
+      margin-bottom:4px;
+    }
+    .funnel-step .fs-label { font-size:13px; opacity:.8; }
+    .funnel-step .fs-num   { font-size:22px; line-height:1; }
+    .funnel-step .fs-desc  { font-size:12px; opacity:.7; margin-top:2px; }
+
+    /* ── FINANCIAL TABLE ──────────── */
+    .fin-table { width:100%; border-collapse:collapse; font-size:14px; }
+    .fin-table th {
+      background:var(--ink); color:#fff; padding:13px 18px;
+      text-align:right; font-size:13px;
+    }
+    .fin-table th:first-child { text-align:left; }
+    .fin-table td { padding:12px 18px; border-bottom:1px solid var(--line); text-align:right; }
+    .fin-table td:first-child { text-align:left; font-weight:600; color:var(--ink-3); }
+    .fin-table tr.subtotal td { background:var(--surface); font-weight:700; }
+    .fin-table tr.total td { background:var(--brand-lt); font-weight:800; font-size:15px; color:var(--brand-dk); }
+    .fin-table tr.cost td { color:var(--red); }
+    .fin-table tr.profit td { color:var(--green); font-weight:800; }
+    .fin-table .yr { color:var(--brand); font-weight:700; }
+
+    /* ── VERTICAL CARD ────────────── */
+    .vert-card {
+      background:var(--white); border:1px solid var(--line);
+      border-radius:14px; overflow:hidden;
+      box-shadow:0 1px 6px rgba(0,0,0,0.04);
+    }
+    .vert-header {
+      padding:18px 22px;
+      display:flex; justify-content:space-between; align-items:center;
+    }
+    .vert-header h4 { font-size:16px; font-weight:700; }
+    .vert-body { padding:0 22px 20px; }
+    .vert-body p { font-size:13px; color:var(--muted); margin-bottom:10px; }
+    .vert-tags { display:flex; flex-wrap:wrap; gap:6px; }
+
+    /* ── HIGHLIGHT BOX ────────────── */
+    .highlight-box {
+      background: linear-gradient(135deg, var(--ink) 0%, #1e3a5f 100%);
+      border-radius:16px; padding:40px 44px;
+      color:#fff; text-align:center;
+    }
+    .highlight-box h3 { font-size:clamp(20px,2.5vw,28px); font-weight:800; margin-bottom:12px; }
+    .highlight-box p  { font-size:16px; opacity:.75; max-width:600px; margin:0 auto; }
+
+    /* ── GTM STEP ─────────────────── */
+    .gtm-step {
+      display:grid; grid-template-columns:48px 1fr;
+      gap:16px; margin-bottom:28px;
+    }
+    .gtm-step-num {
+      width:48px; height:48px; border-radius:14px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:20px; font-weight:800; color:#fff; flex-shrink:0;
+    }
+    .gtm-step h4 { font-size:16px; font-weight:700; color:var(--ink); margin-bottom:4px; }
+    .gtm-step p  { font-size:14px; color:var(--muted); }
+
+    /* ── SEPARATOR ────────────────── */
+    .divider {
+      height:1px; background:var(--line);
+      margin:32px 0;
+    }
+
+    /* ── FOOTER ───────────────────── */
+    footer {
+      background:var(--ink);
+      color:rgba(255,255,255,0.45);
+      text-align:center; padding:36px 24px;
+      font-size:13px;
+    }
+    footer strong { color:rgba(255,255,255,0.8); }
+  </style>
+</head>
+<body>
+
+<!-- ══ HERO ══════════════════════════════════════════════════════ -->
+<div class="hero">
+  <div class="hero-eyebrow">
+    <span>RecoMe SDK</span> · Business Model · 2026
+  </div>
+  <h1>The <em>Preference Graph</em> Infrastructure<br>No One Else Is <strong>Selling</strong></h1>
+  <p class="hero-sub">A B2B SDK that gives any software product a persistent, ranked, compounding user intelligence layer — without hiring a team of ML engineers.</p>
+
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="n">$38B</div>
+      <div class="l">Recommendation Engine Market by 2030</div>
+    </div>
+    <div class="hero-stat">
+      <div class="n">0</div>
+      <div class="l">Competitors selling an Interest Graph SDK</div>
+    </div>
+    <div class="hero-stat">
+      <div class="n">202%</div>
+      <div class="l">Avg B2B conversion lift from personalization</div>
+    </div>
+    <div class="hero-stat">
+      <div class="n">33%</div>
+      <div class="l">CAGR — Personalization Engine Market</div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<!-- ══ 1. THE GAP ══════════════════════════════════════════════════ -->
+<section>
+  <div class="sec-label">The Market Gap</div>
+  <h2>Every Company Needs Personalization.<br>Nobody Sells the Right Infrastructure.</h2>
+  <p class="sec-sub">In 2026, personalization tools exist in two camps — both are wrong for what most companies actually need. RecoMe SDK is the first to fill the gap between them.</p>
+
+  <div class="g3" style="margin-bottom:32px">
+    <div class="card">
+      <div class="card-ico" style="background:#fef2f2">🏋️</div>
+      <h4>Too Heavy</h4>
+      <p>AWS Personalize, Google Recommendations AI. Need 1,000+ interaction events to cold-start. Require ML ops expertise. Built for Netflix-scale item recommendation, not document or content intelligence.</p>
+      <div style="margin-top:12px"><span class="tag red">$50k+ setup cost</span> <span class="tag gray">Months to integrate</span></div>
+    </div>
+    <div class="card">
+      <div class="card-ico" style="background:#fffbeb">📊</div>
+      <h4>Wrong Layer</h4>
+      <p>Segment, Amplitude, Braze. These track behaviour and run campaigns. They have no concept of per-user content ranking, interest graphs, or "what changed since this user last saw this content."</p>
+      <div style="margin-top:12px"><span class="tag amber">Marketing layer only</span> <span class="tag gray">No content ranking</span></div>
+    </div>
+    <div class="card" style="border-color:var(--brand); box-shadow:0 0 0 3px rgba(37,99,235,0.08)">
+      <div class="card-ico" style="background:var(--brand-lt)">⚡</div>
+      <h4 style="color:var(--brand)">The Gap — RecoMe SDK</h4>
+      <p>A lightweight, developer-first SDK that gives any app a <strong>per-user interest graph + ranked content scoring + cross-session memory</strong> — starting from session one. No ML team required.</p>
+      <div style="margin-top:12px"><span class="tag blue">Works from day 1</span> <span class="tag teal">Any vertical</span></div>
+    </div>
+  </div>
+
+  <div class="callout blue">
+    <div class="callout-ico">🔍</div>
+    <div>
+      <h4>Verified gap as of 2026</h4>
+      <p>Research across AWS, Google Cloud, OpenAI, Anthropic, Braze, Segment, Amplitude, and emerging AI startups finds <strong>zero products</strong> that sell a per-user interest graph with typed weighted edges and a content opportunity ranker as a standalone B2B SDK. This space is open.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 2. WHAT WE DO DIFFERENTLY ═══════════════════════════════════ -->
+<section>
+  <div class="sec-label">Unique Differentiation</div>
+  <h2>What RecoMe SDK Does That No One<br>Else Does in 2026</h2>
+  <p class="sec-sub">Six specific capabilities that are either absent from or inadequately handled by every competing product on the market today.</p>
+
+  <div class="g2">
+
+    <div class="moat-item">
+      <div class="moat-num" style="background:var(--brand)">1</div>
+      <div>
+        <h4>User-to-Content Matching, Not Item-to-Item</h4>
+        <p>Every major recommendation engine (AWS Personalize, Spotify, Netflix) does collaborative filtering — it finds content similar to other content, or users similar to other users. RecoMe SDK builds a model of <em>this specific user</em> and scores content against it. That's structurally different. It works for any content type, not just products or media.</p>
+      </div>
+    </div>
+
+    <div class="moat-item">
+      <div class="moat-num" style="background:var(--teal)">2</div>
+      <div>
+        <h4>Typed, Weighted Graph Edges — Not Vector Similarity</h4>
+        <p>RAG and embedding-based personalization finds "semantically similar" content. RecoMe SDK stores <em>typed relationships</em> with weights: <code style="background:var(--surface);padding:1px 5px;border-radius:3px;font-family:var(--mono);font-size:12px">user → [interested_in, w:0.95] → CA 19-9</code>. That distinction captures degree of interest, relationship type, and temporal decay — three things cosine similarity cannot express.</p>
+      </div>
+    </div>
+
+    <div class="moat-item">
+      <div class="moat-num" style="background:var(--purple)">3</div>
+      <div>
+        <h4>Delta Detection Across Sessions</h4>
+        <p>No tool in 2026 answers "what changed for this user since they last interacted with this content type?" The Memory Pack + graph history combination detects not just what's present but what's new, what worsened, and what can now be skipped because the user already understands it.</p>
+      </div>
+    </div>
+
+    <div class="moat-item">
+      <div class="moat-num" style="background:var(--amber)">4</div>
+      <div>
+        <h4>4-Signal Composite Scorer</h4>
+        <p>The OpportunityRanker scores every content item across interest match (35%), benefit clarity (25%), timeliness (20%), and novelty (20%). Competitors either have no scoring model or use a single signal. Four weighted signals produce dramatically more accurate prioritization — especially for high-stakes content like medical reports, legal documents, and financial filings.</p>
+      </div>
+    </div>
+
+    <div class="moat-item">
+      <div class="moat-num" style="background:var(--green)">5</div>
+      <div>
+        <h4>Domain-Agnostic Core With Pluggable Specialty Modules</h4>
+        <p>The ProfileExtractor uses a module registry pattern — one SDK, infinite domains. An oncology module, a contract module, a financial module each know their document structure. They all feed the same graph and ranker. No competitor offers this architecture. It means one integration, multiple verticals — a major enterprise sales advantage.</p>
+      </div>
+    </div>
+
+    <div class="moat-item">
+      <div class="moat-num" style="background:var(--red)">6</div>
+      <div>
+        <h4>Compounding Value Without Model Retraining</h4>
+        <p>Every LLM-based tool resets on each request. AWS Personalize requires batch retraining. RecoMe's graph updates incrementally in real time — each user interaction adjusts edge weights, and the next ranking call is immediately smarter. The product improves continuously without any ML operations work from the customer.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══ 3. COMPETITIVE LANDSCAPE ════════════════════════════════════ -->
+<section>
+  <div class="sec-label">Competitive Landscape</div>
+  <h2>How RecoMe SDK Stacks Up Against<br>Every Relevant Category in 2026</h2>
+  <p class="sec-sub">No single competitor covers the combination of capabilities the SDK provides. Each fills a different quadrant.</p>
+
+  <div style="background:var(--white);border-radius:16px;border:1px solid var(--line);overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.05)">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>Capability</th>
+          <th>AWS Personalize</th>
+          <th>OpenAI Memory</th>
+          <th>Segment / Amplitude</th>
+          <th>Braze AI</th>
+          <th class="col-us">RecoMe SDK</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Per-user interest graph with typed edges</strong></td>
+          <td class="no">No</td>
+          <td class="no">No</td>
+          <td class="no">No</td>
+          <td class="no">No</td>
+          <td class="yes col-us">Yes</td>
+        </tr>
+        <tr>
+          <td><strong>Content ranked against this specific user</strong></td>
+          <td class="partial">Partial (item-item)</td>
+          <td class="no">No</td>
+          <td class="no">No</td>
+          <td class="partial">Partial (campaigns)</td>
+          <td class="yes col-us">Yes</td>
+        </tr>
+        <tr>
+          <td><strong>Works from session 1 (no cold-start delay)</strong></td>
+          <td class="no">No (needs 1k+ events)</td>
+          <td class="partial">Partial</td>
+          <td class="no">No</td>
+          <td class="no">No</td>
+          <td class="yes col-us">Yes</td>
+        </tr>
+        <tr>
+          <td><strong>Cross-session memory of explained content</strong></td>
+          <td class="no">No</td>
+          <td class="partial">Limited (chat only)</td>
+          <td class="no">No</td>
+          <td class="no">No</td>
+          <td class="yes col-us">Yes</td>
+        </tr>
+        <tr>
+          <td><strong>Delta detection (what changed for this user)</strong></td>
+          <td class="no">No</td>
+          <td class="no">No</td>
+          <td class="no">No</td>
+          <td class="no">No</td>
+          <td class="yes col-us">Yes</td>
+        </tr>
+        <tr>
+          <td><strong>Timeliness + novelty signals in scoring</strong></td>
+          <td class="no">No</td>
+          <td class="no">No</td>
+          <td class="no">No</td>
+          <td class="no">No</td>
+          <td class="yes col-us">Yes</td>
+        </tr>
+        <tr>
+          <td><strong>Pluggable domain specialty modules</strong></td>
+          <td class="no">No</td>
+          <td class="no">No</td>
+          <td class="no">No</td>
+          <td class="no">No</td>
+          <td class="yes col-us">Yes</td>
+        </tr>
+        <tr>
+          <td><strong>No ML ops required by customer</strong></td>
+          <td class="no">No</td>
+          <td class="yes">Yes</td>
+          <td class="yes">Yes</td>
+          <td class="yes">Yes</td>
+          <td class="yes col-us">Yes</td>
+        </tr>
+        <tr>
+          <td><strong>HIPAA / GDPR compliance path</strong></td>
+          <td class="yes">Yes</td>
+          <td class="partial">Partial</td>
+          <td class="yes">Yes</td>
+          <td class="yes">Yes</td>
+          <td class="yes col-us">Yes (on-prem tier)</td>
+        </tr>
+        <tr>
+          <td><strong>Developer SDK (not just API)</strong></td>
+          <td class="partial">API only</td>
+          <td class="partial">API only</td>
+          <td class="yes">Yes</td>
+          <td class="partial">Limited</td>
+          <td class="yes col-us">Yes</td>
+        </tr>
+        <tr>
+          <td><strong>Starting price for small teams</strong></td>
+          <td>~$2,000/mo</td>
+          <td>Per-token</td>
+          <td>$120/mo</td>
+          <td>$500/mo</td>
+          <td class="col-us" style="color:var(--green);font-weight:700">$49/mo</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout green" style="margin-top:28px">
+    <div class="callout-ico">🏆</div>
+    <div>
+      <h4>The white space</h4>
+      <p>The top 7 rows in the table are all unique to RecoMe SDK. No competitor has a single one of those capabilities. This is not a "better than" story — it's a "does things that don't exist elsewhere" story. That's the strongest possible competitive position for a developer tool in 2026.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 4. TARGET VERTICALS ══════════════════════════════════════════ -->
+<section>
+  <div class="sec-label">Target Markets</div>
+  <h2>Six Verticals Where the SDK Solves<br>a Real, Funded, Immediate Problem</h2>
+  <p class="sec-sub">Each vertical shares the same core profile: repeat users + complex content + high stakes. The SDK's value compounds in every one of them.</p>
+
+  <div class="g3">
+
+    <div class="vert-card">
+      <div class="vert-header" style="background:linear-gradient(135deg,#eff6ff,#dbeafe)">
+        <h4 style="color:var(--brand)">Healthcare</h4>
+        <span style="font-size:24px">🏥</span>
+      </div>
+      <div class="vert-body">
+        <p>Medical report simplification (Pantory), patient portals, discharge summary tools. Patients upload the same report types repeatedly — lab work, CT scans, oncology follow-ups.</p>
+        <p><strong style="color:var(--ink)">Why SDK fits:</strong> HIPAA-compliant on-premise tier. Memory prevents re-explaining known terms. Timeliness signal flags critical values immediately.</p>
+        <div class="vert-tags">
+          <span class="tag blue">Market: $45B (2025)</span>
+          <span class="tag green">First customer: Pantory</span>
+          <span class="tag amber">HIPAA on-prem tier</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="vert-card">
+      <div class="vert-header" style="background:linear-gradient(135deg,#faf5ff,#ede9fe)">
+        <h4 style="color:var(--purple)">Legal Tech</h4>
+        <span style="font-size:24px">⚖️</span>
+      </div>
+      <div class="vert-body">
+        <p>Contract review platforms, litigation support tools, regulatory compliance trackers. Lawyers and clients revisit the same contracts with amendments. What changed clause by clause is the entire job.</p>
+        <p><strong style="color:var(--ink)">Why SDK fits:</strong> Delta detection is the killer feature. "What changed in this contract vs. the version I reviewed last month" is exactly what the graph + Memory Pack delivers.</p>
+        <div class="vert-tags">
+          <span class="tag purple">Market: $37B by 2030</span>
+          <span class="tag amber">SOC2 + on-prem needed</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="vert-card">
+      <div class="vert-header" style="background:linear-gradient(135deg,#fffbeb,#fef3c7)">
+        <h4 style="color:var(--amber)">Financial Services</h4>
+        <span style="font-size:24px">📈</span>
+      </div>
+      <div class="vert-body">
+        <p>Earnings report platforms, investment research tools, personal finance apps, loan document portals. Retail and professional investors review the same companies' filings quarterly.</p>
+        <p><strong style="color:var(--ink)">Why SDK fits:</strong> Interest graph tracks which metrics each user cares about (revenue, EBITDA, guidance). Ranker surfaces only what changed in the metrics they track.</p>
+        <div class="vert-tags">
+          <span class="tag amber">Market: $26B FinTech AI (2025)</span>
+          <span class="tag blue">High willingness to pay</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="vert-card">
+      <div class="vert-header" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7)">
+        <h4 style="color:var(--green)">EdTech</h4>
+        <span style="font-size:24px">📚</span>
+      </div>
+      <div class="vert-body">
+        <p>Personalized learning platforms, textbook intelligence tools, corporate training software. Students revisit complex material repeatedly. The platform rarely knows what they already understand.</p>
+        <p><strong style="color:var(--ink)">Why SDK fits:</strong> Memory Pack tracks mastered concepts. Ranker skips re-explaining understood material and surfaces what still needs work. Zero LLM re-explanation cost.</p>
+        <div class="vert-tags">
+          <span class="tag green">Market: $404B EdTech (2025)</span>
+          <span class="tag gray">High volume, lower ACV</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="vert-card">
+      <div class="vert-header" style="background:linear-gradient(135deg,#fef2f2,#fee2e2)">
+        <h4 style="color:var(--red)">Insurance</h4>
+        <span style="font-size:24px">🛡️</span>
+      </div>
+      <div class="vert-body">
+        <p>Policy document explainers, claims status tools, renewal portals. Policyholders contact support constantly because they can't find what's relevant to their specific claim in a 40-page policy.</p>
+        <p><strong style="color:var(--ink)">Why SDK fits:</strong> Interest graph knows the user's specific policy type and claim context. Ranker surfaces only the clauses that apply to their situation — not the whole document.</p>
+        <div class="vert-tags">
+          <span class="tag red">Market: $10B InsurTech</span>
+          <span class="tag amber">Support cost reduction angle</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="vert-card">
+      <div class="vert-header" style="background:linear-gradient(135deg,#f0fdfa,#ccfbf1)">
+        <h4 style="color:var(--teal)">RegTech / Compliance</h4>
+        <span style="font-size:24px">📋</span>
+      </div>
+      <div class="vert-body">
+        <p>Regulatory update trackers, audit tools, compliance management platforms. Teams need to read large regulatory documents and find exactly what changed and what applies to their specific business context.</p>
+        <p><strong style="color:var(--ink)">Why SDK fits:</strong> Graph stores the company's regulatory profile. Delta detection across document versions is the entire value proposition for compliance teams.</p>
+        <div class="vert-tags">
+          <span class="tag teal">Market: $19B RegTech</span>
+          <span class="tag blue">Enterprise ACV potential</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Market funnel -->
+  <div style="margin-top:48px">
+    <h3 style="font-size:18px;font-weight:700;text-align:center;margin-bottom:28px;color:var(--ink)">Total Addressable → Serviceable → Initial Target</h3>
+    <div class="funnel">
+      <div class="funnel-step" style="background:var(--ink);width:100%;max-width:600px">
+        <div class="fs-label">Total Addressable Market (TAM)</div>
+        <div class="fs-num">$73B+</div>
+        <div class="fs-desc">All personalization, recommendation, and content intelligence software globally by 2033</div>
+      </div>
+      <div style="font-size:20px;color:var(--muted);margin:2px 0">▼</div>
+      <div class="funnel-step" style="background:#1e3a5f;width:80%;max-width:480px">
+        <div class="fs-label">Serviceable Addressable Market (SAM)</div>
+        <div class="fs-num">$12B</div>
+        <div class="fs-desc">B2B companies in Healthcare, Legal, Finance, EdTech needing document personalization SDKs</div>
+      </div>
+      <div style="font-size:20px;color:var(--muted);margin:2px 0">▼</div>
+      <div class="funnel-step" style="background:var(--brand);width:60%;max-width:360px">
+        <div class="fs-label">Serviceable Obtainable Market (SOM) — Year 3</div>
+        <div class="fs-num">$180M</div>
+        <div class="fs-desc">1,500 B2B customers at $10k avg ACV across healthcare, legal, and fintech verticals</div>
+      </div>
+      <div style="font-size:20px;color:var(--muted);margin:2px 0">▼</div>
+      <div class="funnel-step" style="background:var(--teal);width:40%;max-width:240px">
+        <div class="fs-label">Year 1 Target</div>
+        <div class="fs-num">$600K</div>
+        <div class="fs-desc">50 paying customers · Healthcare-first · Pantory as reference</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 5. BUSINESS MODEL ════════════════════════════════════════════ -->
+<section>
+  <div class="sec-label">Business Model</div>
+  <h2>How the SDK Works as a Business —<br>Four Compounding Revenue Streams</h2>
+  <p class="sec-sub">The model is designed so that each revenue stream reinforces the others. More customers → richer aggregated signals → better base modules → easier sales → more customers.</p>
+
+  <!-- Revenue streams -->
+  <div style="margin-bottom:36px">
+    <div class="rev-row">
+      <div style="width:44px;height:44px;border-radius:12px;background:var(--brand-lt);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">📦</div>
+      <div class="rev-label">
+        <h5>Stream 1 — SDK Licensing (SaaS Subscription)</h5>
+        <p>Monthly/annual subscription per customer. Tiered by monthly active users, graph size, and API call volume. Predictable ARR. Primary revenue stream.</p>
+      </div>
+      <div class="rev-bar-wrap">
+        <div class="rev-bar" style="background:var(--brand-lt)"><div class="rev-bar" style="width:65%;background:var(--brand)"></div></div>
+      </div>
+      <div class="rev-pct" style="color:var(--brand)">65%</div>
+    </div>
+
+    <div class="rev-row">
+      <div style="width:44px;height:44px;border-radius:12px;background:var(--teal-lt);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🔌</div>
+      <div class="rev-label">
+        <h5>Stream 2 — Specialty Module Marketplace</h5>
+        <p>Third parties (domain experts, vertical SaaS companies) build and sell specialty modules (oncology, contract law, GAAP financials). RecoMe takes 30% rev-share. Network effect increases module quality.</p>
+      </div>
+      <div class="rev-bar-wrap">
+        <div class="rev-bar" style="background:var(--teal-lt)"><div class="rev-bar" style="width:15%;background:var(--teal)"></div></div>
+      </div>
+      <div class="rev-pct" style="color:var(--teal)">15%</div>
+    </div>
+
+    <div class="rev-row">
+      <div style="width:44px;height:44px;border-radius:12px;background:var(--purple-lt);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🏢</div>
+      <div class="rev-label">
+        <h5>Stream 3 — Enterprise On-Premise License</h5>
+        <p>Regulated industries (healthcare, legal, finance) that cannot send user data to cloud APIs. Annual license for self-hosted deployment. HIPAA BAA, SOC2 Type II included. Highest ACV tier.</p>
+      </div>
+      <div class="rev-bar-wrap">
+        <div class="rev-bar" style="background:var(--purple-lt)"><div class="rev-bar" style="width:15%;background:var(--purple)"></div></div>
+      </div>
+      <div class="rev-pct" style="color:var(--purple)">15%</div>
+    </div>
+
+    <div class="rev-row">
+      <div style="width:44px;height:44px;border-radius:12px;background:var(--amber-lt);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">📊</div>
+      <div class="rev-label">
+        <h5>Stream 4 — Anonymized Benchmark Intelligence (Year 2+)</h5>
+        <p>Aggregated, anonymized signals across the customer network produce vertical benchmarks — "in oncology reports, timeliness has 2.3× more weight than novelty." Sold as insight reports to vertical SaaS companies and analysts.</p>
+      </div>
+      <div class="rev-bar-wrap">
+        <div class="rev-bar" style="background:var(--amber-lt)"><div class="rev-bar" style="width:5%;background:var(--amber)"></div></div>
+      </div>
+      <div class="rev-pct" style="color:var(--amber)">5%</div>
+    </div>
+  </div>
+
+  <!-- Value exchange diagram -->
+  <div class="highlight-box">
+    <h3>The Core Value Exchange</h3>
+    <p>Customers pay for a personalization layer they couldn't build themselves. Their users get better experiences. Their graphs get richer over time. Switching costs increase. Churn approaches zero after month 6.</p>
+  </div>
+</section>
+
+<!-- ══ 6. PRICING MODEL ═════════════════════════════════════════════ -->
+<section>
+  <div class="sec-label">Pricing</div>
+  <h2>Pricing Designed to Land, Expand,<br>and Lock In — In That Order</h2>
+  <p class="sec-sub">Low barrier to start. Natural expansion triggers as the customer's user base and graph usage grows. Enterprise tier captures regulated industries with high compliance requirements.</p>
+
+  <div class="pricing-grid">
+
+    <div class="price-card">
+      <div class="price-name">Starter</div>
+      <div class="price-amount"><sup>$</sup>49</div>
+      <div class="price-period">per month</div>
+      <div class="price-desc">For indie developers and early-stage startups validating the integration.</div>
+      <ul class="price-features">
+        <li>Up to 500 Monthly Active Users</li>
+        <li>100,000 ranking API calls/mo</li>
+        <li>Interest Graph + Memory Pack</li>
+        <li>3 specialty modules included</li>
+        <li>Community support</li>
+        <li class="off">Webhooks & custom modules</li>
+        <li class="off">SLA guarantees</li>
+        <li class="off">On-premise deployment</li>
+      </ul>
+    </div>
+
+    <div class="price-card featured">
+      <div class="price-badge">Most Popular</div>
+      <div class="price-name">Growth</div>
+      <div class="price-amount"><sup>$</sup>499</div>
+      <div class="price-period">per month</div>
+      <div class="price-desc">For funded startups and scale-ups with active user bases. Pantory-tier.</div>
+      <ul class="price-features">
+        <li>Up to 10,000 Monthly Active Users</li>
+        <li>2M ranking API calls/mo</li>
+        <li>Interest Graph + Memory Pack + Analytics</li>
+        <li>All specialty modules</li>
+        <li>Webhooks + custom module SDK</li>
+        <li>Priority email support (24h SLA)</li>
+        <li>GDPR data residency controls</li>
+        <li class="off">On-premise deployment</li>
+      </ul>
+    </div>
+
+    <div class="price-card">
+      <div class="price-name">Enterprise</div>
+      <div class="price-amount" style="font-size:30px">Custom</div>
+      <div class="price-period">annual contract</div>
+      <div class="price-desc">For regulated industries — healthcare, legal, financial. HIPAA BAA + SOC2 Type II.</div>
+      <ul class="price-features">
+        <li>Unlimited MAU + API calls</li>
+        <li>On-premise / VPC deployment</li>
+        <li>HIPAA BAA + SOC2 Type II</li>
+        <li>Custom specialty module development</li>
+        <li>Dedicated customer success manager</li>
+        <li>99.99% SLA with credits</li>
+        <li>Custom data retention policies</li>
+        <li>White-label option available</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <div style="margin-top:32px; background:var(--white); border:1px solid var(--line); border-radius:14px; padding:28px; overflow-x:auto">
+    <h4 style="font-size:16px;font-weight:700;margin-bottom:16px;color:var(--ink)">Usage-Based Overage Pricing</h4>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>Usage Type</th>
+          <th>Included in Growth</th>
+          <th>Overage Rate</th>
+          <th>Enterprise (custom)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Monthly Active Users</td>
+          <td>10,000</td>
+          <td>$0.04 / MAU</td>
+          <td>Volume discount</td>
+        </tr>
+        <tr>
+          <td>Ranking API calls</td>
+          <td>2M / month</td>
+          <td>$0.80 / 1,000 calls</td>
+          <td>Volume discount</td>
+        </tr>
+        <tr>
+          <td>Graph storage</td>
+          <td>5 GB</td>
+          <td>$0.20 / GB</td>
+          <td>Unlimited</td>
+        </tr>
+        <tr>
+          <td>Specialty modules</td>
+          <td>All core modules</td>
+          <td>$49–$199 / module</td>
+          <td>All included</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══ 7. FINANCIAL MODEL ═══════════════════════════════════════════ -->
+<section>
+  <div class="sec-label">Financial Projections</div>
+  <h2>3-Year Financial Model —<br>Conservative Case</h2>
+  <p class="sec-sub">Based on comparable B2B developer SDK companies (Stripe, Twilio, Segment early years). Revenue ramps through vertical specialization, not horizontal marketing.</p>
+
+  <!-- Customer growth -->
+  <div class="g3" style="margin-bottom:40px">
+    <div class="acard blue">
+      <h4>Year 1 — Validation</h4>
+      <p><strong style="font-size:28px;display:block;line-height:1;margin-bottom:4px">$612K</strong> ARR</p>
+      <p>50 customers. Healthcare-first. Pantory as anchor. Mix of Starter (30) and Growth (20). 2 Enterprise pilots.</p>
+    </div>
+    <div class="acard teal">
+      <h4>Year 2 — Expansion</h4>
+      <p><strong style="font-size:28px;display:block;line-height:1;margin-bottom:4px">$4.1M</strong> ARR</p>
+      <p>320 customers. Healthcare + Legal live. Marketplace launched. 15 Enterprise contracts. Module ecosystem seeded.</p>
+    </div>
+    <div class="acard purple">
+      <h4>Year 3 — Scale</h4>
+      <p><strong style="font-size:28px;display:block;line-height:1;margin-bottom:4px">$18.4M</strong> ARR</p>
+      <p>1,500 customers. All 6 verticals active. Benchmark intelligence product live. Series A territory.</p>
+    </div>
+  </div>
+
+  <!-- Full P&L table -->
+  <div style="background:var(--white);border-radius:16px;border:1px solid var(--line);overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.05);overflow-x:auto">
+    <table class="fin-table">
+      <thead>
+        <tr>
+          <th style="text-align:left">Line Item</th>
+          <th class="yr">Year 1</th>
+          <th class="yr">Year 2</th>
+          <th class="yr">Year 3</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="4" style="background:var(--surface);font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);padding:10px 18px">REVENUE</td></tr>
+        <tr>
+          <td>Starter subscriptions (avg $49/mo)</td>
+          <td>$17,640</td>
+          <td>$70,560</td>
+          <td>$235,200</td>
+        </tr>
+        <tr>
+          <td>Growth subscriptions (avg $499/mo)</td>
+          <td>$119,760</td>
+          <td>$838,320</td>
+          <td>$4,792,320</td>
+        </tr>
+        <tr>
+          <td>Enterprise contracts (avg $80K/yr)</td>
+          <td>$160,000</td>
+          <td>$1,200,000</td>
+          <td>$7,200,000</td>
+        </tr>
+        <tr>
+          <td>Overage / usage-based</td>
+          <td>$24,600</td>
+          <td>$290,000</td>
+          <td>$1,870,000</td>
+        </tr>
+        <tr>
+          <td>Module marketplace (30% rev-share)</td>
+          <td>$0</td>
+          <td>$180,000</td>
+          <td>$1,450,000</td>
+        </tr>
+        <tr>
+          <td>Benchmark intelligence reports</td>
+          <td>$0</td>
+          <td>$0</td>
+          <td>$480,000</td>
+        </tr>
+        <tr class="total">
+          <td>Total Revenue</td>
+          <td>$612,000</td>
+          <td>$4,178,880</td>
+          <td>$18,427,520</td>
+        </tr>
+        <tr><td colspan="4" style="background:var(--surface);font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);padding:10px 18px">COSTS</td></tr>
+        <tr class="cost">
+          <td>Engineering (2 → 6 → 14 engineers)</td>
+          <td>($360,000)</td>
+          <td>($1,080,000)</td>
+          <td>($2,520,000)</td>
+        </tr>
+        <tr class="cost">
+          <td>Infrastructure (cloud, hosting, graph DB)</td>
+          <td>($48,000)</td>
+          <td>($220,000)</td>
+          <td>($740,000)</td>
+        </tr>
+        <tr class="cost">
+          <td>Sales & Marketing</td>
+          <td>($80,000)</td>
+          <td>($380,000)</td>
+          <td>($1,840,000)</td>
+        </tr>
+        <tr class="cost">
+          <td>Compliance (HIPAA, SOC2 audits)</td>
+          <td>($60,000)</td>
+          <td>($90,000)</td>
+          <td>($120,000)</td>
+        </tr>
+        <tr class="cost">
+          <td>G&A (legal, ops, tools)</td>
+          <td>($40,000)</td>
+          <td>($120,000)</td>
+          <td>($280,000)</td>
+        </tr>
+        <tr class="subtotal">
+          <td>Total Costs</td>
+          <td>($588,000)</td>
+          <td>($1,890,000)</td>
+          <td>($5,500,000)</td>
+        </tr>
+        <tr class="profit">
+          <td>Net Income / (Loss)</td>
+          <td style="color:var(--amber)">$24,000</td>
+          <td style="color:var(--green)">$2,288,880</td>
+          <td style="color:var(--green)">$12,927,520</td>
+        </tr>
+        <tr class="subtotal">
+          <td>Net Margin</td>
+          <td style="color:var(--amber)">3.9%</td>
+          <td style="color:var(--green)">54.8%</td>
+          <td style="color:var(--green)">70.1%</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Key metrics -->
+  <div class="g4" style="margin-top:28px">
+    <div class="acard blue">
+      <h4>Gross Margin Target</h4>
+      <p><strong style="font-size:22px">82%</strong> — Software-only delivery. Graph compute is low-cost at scale. No marginal cost per user interaction beyond API calls.</p>
+    </div>
+    <div class="acard teal">
+      <h4>Avg CAC</h4>
+      <p><strong style="font-size:22px">$1,200</strong> — Dev-led growth (DX documentation, free tier). Content marketing in healthcare/legal. Conference presence in target verticals.</p>
+    </div>
+    <div class="acard green">
+      <h4>LTV / CAC Ratio</h4>
+      <p><strong style="font-size:22px">18:1</strong> — Graph switching costs + memory lock-in produce 90%+ net revenue retention by year 2. 36-month avg customer lifetime.</p>
+    </div>
+    <div class="acard purple">
+      <h4>Payback Period</h4>
+      <p><strong style="font-size:22px">4 months</strong> — Low CAC + usage-based expansion means customers become profitable before their first annual renewal.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 8. MOAT & DEFENSIBILITY ═════════════════════════════════════ -->
+<section>
+  <div class="sec-label">Defensibility</div>
+  <h2>Why This Gets Harder to Compete With<br>Every Month It Runs</h2>
+  <p class="sec-sub">Most dev tools are stateless utilities — easily cloned. RecoMe SDK has four structural moats that compound over time.</p>
+
+  <div class="moat-item">
+    <div class="moat-num" style="background:var(--brand)">M1</div>
+    <div>
+      <h4>Switching Cost Moat — The Graph Is the Product</h4>
+      <p>After 6 months, a customer's user base has accumulated thousands of interest graphs, each with session history, memory packs, and learned weights. That data doesn't port to another tool. Switching means starting all their users over from zero. This is why net revenue retention will exceed 110% from year 2 — expansion revenue from existing customers offsets any churn.</p>
+    </div>
+  </div>
+
+  <div class="moat-item">
+    <div class="moat-num" style="background:var(--teal)">M2</div>
+    <div>
+      <h4>Data Network Effect — Vertical Benchmarks</h4>
+      <p>As more healthcare customers use the SDK, the aggregate anonymized signal data tells us that in oncology reports, timeliness has 2.3× more weight than novelty. This calibrates the default scoring weights for every new healthcare customer. The more customers in a vertical, the better the cold-start experience for new ones. New entrants start from zero — we start from the collective intelligence of every customer in that vertical.</p>
+    </div>
+  </div>
+
+  <div class="moat-item">
+    <div class="moat-num" style="background:var(--purple)">M3</div>
+    <div>
+      <h4>Module Ecosystem Moat — Third-Party Expertise Lock-In</h4>
+      <p>Once an oncologist-built module, a securities lawyer-built contract module, and a CFA-built earnings module exist in the marketplace, we have expertise embedded in our platform that we didn't pay to build and can't easily be replicated. Each module adds stickiness for every customer in that vertical. This is the same dynamic that made Salesforce's AppExchange and Shopify's app store irreplaceable.</p>
+    </div>
+  </div>
+
+  <div class="moat-item">
+    <div class="moat-num" style="background:var(--green)">M4</div>
+    <div>
+      <h4>Compliance Certification Moat — Expensive to Match</h4>
+      <p>HIPAA BAA and SOC2 Type II are not features — they are 6-12 month audit processes that cost $100K+ to obtain and require ongoing maintenance. Once we hold them, we are the only SDK with a functioning personalization graph that regulated industries can legally use. A new competitor would need 12–18 months just to reach the compliance starting line.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 9. GO-TO-MARKET ══════════════════════════════════════════════ -->
+<section>
+  <div class="sec-label">Go-To-Market</div>
+  <h2>How We Acquire Customers — Vertical-First,<br>Developer-Led, Reference-Driven</h2>
+  <p class="sec-sub">Not a horizontal "personalization for everyone" pitch. A focused vertical playbook repeated across six markets, each unlocked by a reference customer in that space.</p>
+
+  <div class="gtm-step">
+    <div class="gtm-step-num" style="background:var(--brand)">1</div>
+    <div>
+      <h4>Anchor in Healthcare — Pantory as Reference Customer</h4>
+      <p>Pantory becomes the first paying customer and the first case study. A documented 40% improvement in user comprehension score (measurable via re-read rates + comprehension quiz) becomes the proof point for every subsequent healthcare conversation. Every medical report platform, patient portal, and clinical AI company is a warm outbound target with a concrete reference case.</p>
+    </div>
+  </div>
+
+  <div class="gtm-step">
+    <div class="gtm-step-num" style="background:var(--teal)">2</div>
+    <div>
+      <h4>Developer-Led Growth — Free Tier + Best-in-Class DX</h4>
+      <p>500 MAU free tier removes sales friction entirely. Engineers at target companies try the SDK in a weekend hackathon. If the interest graph gives them a working result in under 4 hours of integration, they bring it to their CTO. The entire developer community in the target verticals becomes a distributed sales force. SDK quality is the primary marketing spend.</p>
+    </div>
+  </div>
+
+  <div class="gtm-step">
+    <div class="gtm-step-num" style="background:var(--purple)">3</div>
+    <div>
+      <h4>Vertical Conference Strategy — One Per Vertical Per Year</h4>
+      <p>HIMSS (healthcare), ILTA (legal tech), Money20/20 (fintech), ASU+GSV (edtech). One conference per vertical. Not sponsor booths — a technical talk or workshop where we demonstrate the SDK live on a real document in that vertical. Engineers in the audience are the decision-makers for SDK adoption. The talk is recorded, becomes a YouTube asset, and drives inbound for 12 months.</p>
+    </div>
+  </div>
+
+  <div class="gtm-step">
+    <div class="gtm-step-num" style="background:var(--amber)">4</div>
+    <div>
+      <h4>Land and Expand — Pricing Triggers Natural Upgrades</h4>
+      <p>Starter customers hit the 500 MAU cap within 60–90 days if the product is working. The upgrade conversation is not a sales call — it's triggered by usage. Growth customers hit the MAU ceiling as their product scales. Enterprise conversations are triggered when compliance requirements emerge. The pricing ladder is designed so customers self-select into the right tier as they grow.</p>
+    </div>
+  </div>
+
+  <div class="gtm-step">
+    <div class="gtm-step-num" style="background:var(--green)">5</div>
+    <div>
+      <h4>Module Marketplace — Open the Platform in Year 2</h4>
+      <p>Announce the module SDK publicly. Invite domain experts (oncologists, securities lawyers, financial analysts) to build specialty modules. Offer 70% revenue share. This creates a community of contributors whose professional reputation is tied to the quality of their module. It also generates a long-tail of specialty modules we could never build ourselves — covering rare document types, niche regulatory regimes, and specialty medical subspecialties.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 10. ROADMAP ══════════════════════════════════════════════════ -->
+<section>
+  <div class="sec-label">Roadmap</div>
+  <h2>18-Month Execution Roadmap</h2>
+  <p class="sec-sub">Three phases — each one unlocks the next revenue stream and expands the competitive moat.</p>
+
+  <div class="timeline">
+
+    <div class="tl-item">
+      <div class="tl-dot" style="background:var(--brand);box-shadow:0 0 0 2px var(--brand)"></div>
+      <div class="tl-meta">Months 1–3 · Foundation</div>
+      <h4>SDK v1.0 — Healthcare Package</h4>
+      <p>Package the Interest Graph, OpportunityRanker, and Memory Pack as a clean developer SDK with TypeScript + Python bindings. Build the oncology specialty module. Close Pantory as first paying customer. Begin HIPAA BAA process. Launch with free tier and Growth pricing. Target: 10 paying customers, $40K MRR.</p>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-dot" style="background:var(--teal);box-shadow:0 0 0 2px var(--teal)"></div>
+      <div class="tl-meta">Months 4–6 · Prove and Document</div>
+      <h4>Pantory Case Study + Legal Vertical Entry</h4>
+      <p>Publish quantified results from Pantory (comprehension scores, session depth, return visit rate). Use this as the template for legal tech outreach. Build the contract delta module. Attend one healthcare conference. Begin SOC2 Type II audit. Target: 40 customers, $120K MRR.</p>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-dot" style="background:var(--purple);box-shadow:0 0 0 2px var(--purple)"></div>
+      <div class="tl-meta">Months 7–9 · Enterprise Unlock</div>
+      <h4>On-Premise Tier + First Enterprise Contracts</h4>
+      <p>Ship the self-hosted deployment option. Close first 3 enterprise contracts in healthcare ($80K ACV each). Obtain HIPAA BAA certification. Launch the module SDK in private beta with 5 invited domain expert contributors. Target: 120 customers, $280K MRR.</p>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-dot" style="background:var(--amber);box-shadow:0 0 0 2px var(--amber)"></div>
+      <div class="tl-meta">Months 10–12 · Platform Opens</div>
+      <h4>Module Marketplace Launch + Financial Vertical</h4>
+      <p>Open the module marketplace publicly. Launch the earnings report module for financial services. Obtain SOC2 Type II. Raise seed or Series A based on $1.5M ARR run rate. Target: 250 customers, $510K MRR.</p>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-dot" style="background:var(--green);box-shadow:0 0 0 2px var(--green)"></div>
+      <div class="tl-meta">Months 13–18 · Data Flywheel</div>
+      <h4>Vertical Benchmarks + EdTech + RegTech Entry</h4>
+      <p>Launch anonymized vertical benchmark reports as a paid product. Enter EdTech and RegTech verticals with reference customer case studies. Begin building the aggregate signal intelligence layer that calibrates default scoring weights per vertical. Target: 600 customers, $1.2M MRR.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══ 11. THE PITCH ════════════════════════════════════════════════ -->
+<section>
+  <div class="sec-label">The Single Slide</div>
+  <h2>If You Could Only Say One Thing</h2>
+
+  <div class="highlight-box">
+    <h3>Every company that has repeat users and complex content is rebuilding the same personalization infrastructure from scratch — and doing it badly.</h3>
+    <p>RecoMe SDK is the first developer tool that gives them a persistent user interest graph, a composite content ranker, and cross-session memory in a single integration — with no ML team required, no cold-start delay, and switching costs that compound from day one. The market is $38B by 2030. No one else is here yet.</p>
+  </div>
+
+  <div class="g3" style="margin-top:28px">
+    <div class="acard green">
+      <h4>The Ask</h4>
+      <p>$800K seed round. 18-month runway to $1.2M MRR, SOC2 Type II, 3 enterprise contracts, and module marketplace with 20+ modules live.</p>
+    </div>
+    <div class="acard blue">
+      <h4>Use of Funds</h4>
+      <p>60% engineering (3 additional). 20% compliance (HIPAA, SOC2). 15% GTM (conferences, DX, developer community). 5% legal and ops.</p>
+    </div>
+    <div class="acard purple">
+      <h4>Why Now</h4>
+      <p>LLM adoption created a new category of "AI-native apps" in 2024–2025. All of them are stateless. None of them have a personalization layer. The window to become infrastructure before hyperscalers notice is 12–24 months.</p>
+    </div>
+  </div>
+</section>
+
+</div><!-- /wrap -->
+
+<footer>
+  <strong>RecoMe SDK</strong> &nbsp;—&nbsp; Preference Graph Infrastructure for B2B Applications<br>
+  <span style="margin-top:6px;display:block">Interest Graph · OpportunityRanker · Memory Pack · Profile Extractor · Module Marketplace</span>
+  <span style="display:block;margin-top:8px;font-size:11px">Business Model Document · 2026 · Confidential</span>
+</footer>
+
+</body>
+</html>

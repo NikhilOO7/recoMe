@@ -1,0 +1,1813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RecoMe Platform API — Universal Preference Graph</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #0d1117;
+      --panel:       #161b22;
+      --panel2:      #1c2128;
+      --border:      #21262d;
+      --border2:     #30363d;
+      --infra:       #10b981;
+      --infra-light: #34d399;
+      --infra-dim:   rgba(16,185,129,0.12);
+      --infra-glow:  rgba(16,185,129,0.25);
+      --text:        #e6edf3;
+      --text-muted:  #7d8590;
+      --text-dim:    #484f58;
+      /* syntax */
+      --syn-purple:  #c678dd;
+      --syn-blue:    #61afef;
+      --syn-green:   #98c379;
+      --syn-amber:   #e5c07b;
+      --syn-red:     #e06c75;
+      --syn-comment: #5c6370;
+      --radius:      8px;
+      --radius-lg:   12px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      background: rgba(13,17,23,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1.05rem;
+      letter-spacing: -0.01em;
+      text-decoration: none;
+      color: var(--text);
+      flex-shrink: 0;
+    }
+
+    .nav-logo-mark {
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, var(--infra), #065f46);
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.5px;
+      box-shadow: 0 0 12px var(--infra-glow);
+      flex-shrink: 0;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.1rem;
+      list-style: none;
+      flex-wrap: wrap;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      font-weight: 500;
+      padding: 6px 12px;
+      border-radius: var(--radius);
+      transition: color 0.15s, background 0.15s;
+      white-space: nowrap;
+    }
+
+    .nav-links a:hover { color: var(--text); background: var(--border); }
+
+    .nav-back {
+      text-decoration: none;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      font-weight: 500;
+      padding: 5px 12px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      transition: color 0.15s, background 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+
+    .nav-back:hover {
+      color: var(--text);
+      background: var(--border);
+      border-color: var(--border2);
+    }
+
+    /* ─── HERO ─── */
+    .hero {
+      text-align: center;
+      padding: 5rem 2rem 4rem;
+      background: radial-gradient(ellipse 80% 40% at 50% 0%, rgba(16,185,129,0.07) 0%, transparent 70%);
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--infra-dim);
+      border: 1px solid rgba(16,185,129,0.35);
+      color: var(--infra-light);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-eyebrow::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--infra);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.45; transform: scale(0.8); }
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 4vw, 3.25rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 1.25rem;
+    }
+
+    .hero h1 span { color: var(--infra); }
+
+    .hero p {
+      max-width: 620px;
+      margin: 0 auto 2.5rem;
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      line-height: 1.7;
+    }
+
+    .hero-stats {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .stat-box {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.5rem;
+      min-width: 110px;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+
+    .stat-box:hover { border-color: var(--infra); }
+
+    .stat-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--infra-light);
+      line-height: 1.2;
+    }
+
+    .stat-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-top: 4px;
+      letter-spacing: 0.03em;
+    }
+
+    /* ─── SECTION ─── */
+    section {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 4rem 2rem;
+    }
+
+    .section-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 0.75rem;
+    }
+
+    .section-label .pill {
+      background: var(--infra-dim);
+      color: var(--infra);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 20px;
+      border: 1px solid rgba(16,185,129,0.3);
+    }
+
+    .section-divider {
+      height: 1px;
+      background: var(--border);
+      max-width: 1080px;
+      margin: 0 auto;
+    }
+
+    section h2 {
+      font-size: clamp(1.4rem, 2.5vw, 2rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.6rem;
+    }
+
+    section > p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      max-width: 640px;
+      margin-bottom: 2.5rem;
+    }
+
+    /* ─── OAUTH FLOW ─── */
+    .oauth-stage {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    @media (max-width: 700px) {
+      .oauth-stage { grid-template-columns: 1fr; }
+    }
+
+    /* Steps indicator */
+    .oauth-steps {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 2rem;
+    }
+
+    .oauth-step-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-dim);
+      transition: color 0.3s;
+    }
+
+    .oauth-step-item.active { color: var(--infra-light); }
+    .oauth-step-item.done   { color: var(--text-muted); }
+
+    .step-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      background: var(--border);
+      color: var(--text-dim);
+      transition: background 0.3s, color 0.3s;
+      flex-shrink: 0;
+    }
+
+    .oauth-step-item.active .step-num {
+      background: var(--infra);
+      color: #fff;
+      box-shadow: 0 0 8px var(--infra-glow);
+    }
+
+    .oauth-step-item.done .step-num {
+      background: rgba(16,185,129,0.2);
+      color: var(--infra);
+    }
+
+    .step-connector {
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+      margin: 0 10px;
+      max-width: 60px;
+      transition: background 0.3s;
+    }
+
+    .step-connector.done { background: rgba(16,185,129,0.4); }
+
+    /* App mock */
+    .app-mock {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .app-mock-bar {
+      background: var(--panel2);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .app-mock-dots {
+      display: flex;
+      gap: 5px;
+    }
+
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot-r { background: #e06c75; }
+    .dot-y { background: #e5c07b; }
+    .dot-g { background: #98c379; }
+
+    .app-mock-url {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-dim);
+    }
+
+    .app-mock-body {
+      padding: 2.5rem 2rem;
+      text-align: center;
+    }
+
+    .app-brand {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #6366f1, #4338ca);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #fff;
+      margin: 0 auto 1rem;
+    }
+
+    .app-mock-body h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+    }
+
+    .app-mock-body p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+    }
+
+    .btn-sso {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--infra);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 10px 20px;
+      border-radius: var(--radius);
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+      box-shadow: 0 0 16px rgba(16,185,129,0.25);
+    }
+
+    .btn-sso:hover {
+      background: var(--infra-light);
+      transform: translateY(-1px);
+      box-shadow: 0 0 24px rgba(16,185,129,0.4);
+    }
+
+    .btn-sso:active { transform: translateY(0); }
+
+    .sso-logo-mark {
+      width: 20px;
+      height: 20px;
+      background: rgba(255,255,255,0.25);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    /* Consent modal */
+    .consent-panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: none;
+    }
+
+    .consent-panel.visible { display: block; }
+
+    .consent-header {
+      background: var(--panel2);
+      border-bottom: 1px solid var(--border);
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .consent-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, var(--infra), #065f46);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      font-weight: 800;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .consent-app-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, #6366f1, #4338ca);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .consent-arrow {
+      color: var(--text-dim);
+      font-size: 1rem;
+    }
+
+    .consent-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .consent-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .consent-body { padding: 1.25rem 1.5rem; }
+
+    .scope-list { list-style: none; margin-bottom: 1.25rem; }
+
+    .scope-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.82rem;
+    }
+
+    .scope-item:last-child { border-bottom: none; }
+
+    .scope-check {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .scope-check.granted {
+      background: rgba(16,185,129,0.2);
+      color: var(--infra);
+      border: 1px solid rgba(16,185,129,0.4);
+    }
+
+    .scope-check.denied {
+      background: rgba(126,131,138,0.1);
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+    }
+
+    .scope-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: var(--syn-blue);
+      font-weight: 500;
+    }
+
+    .scope-desc { color: var(--text-muted); margin-top: 2px; font-size: 0.78rem; }
+    .scope-item.not-requested .scope-name { color: var(--text-dim); }
+    .scope-item.not-requested .scope-desc { color: var(--text-dim); }
+
+    .not-shared-box {
+      background: rgba(16,185,129,0.05);
+      border: 1px solid rgba(16,185,129,0.15);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+    }
+
+    .not-shared-box strong {
+      color: var(--infra-light);
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .not-shared-box ul {
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .not-shared-box li::before { content: '✕ '; color: var(--syn-red); }
+
+    .consent-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .btn-allow {
+      background: var(--infra);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 9px 16px;
+      border-radius: var(--radius);
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s, box-shadow 0.15s;
+      box-shadow: 0 0 12px rgba(16,185,129,0.2);
+    }
+
+    .btn-allow:hover { background: var(--infra-light); box-shadow: 0 0 18px rgba(16,185,129,0.35); }
+
+    .btn-deny {
+      background: transparent;
+      color: var(--text-muted);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 9px 16px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .btn-deny:hover { background: var(--border); color: var(--text); }
+
+    /* Token response */
+    .token-panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: none;
+    }
+
+    .token-panel.visible { display: block; }
+
+    .token-panel-header {
+      background: var(--panel2);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .token-panel-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .badge-success {
+      background: rgba(16,185,129,0.15);
+      border: 1px solid rgba(16,185,129,0.35);
+      color: var(--infra-light);
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 9px;
+      border-radius: 20px;
+    }
+
+    .token-body { padding: 1.25rem 1.5rem; }
+
+    .token-caption {
+      margin-top: 1.25rem;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      background: var(--infra-dim);
+      border: 1px solid rgba(16,185,129,0.2);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+    }
+
+    .token-caption strong { color: var(--infra-light); }
+
+    .btn-reset {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 1rem;
+      background: transparent;
+      color: var(--text-muted);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 500;
+      padding: 6px 12px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .btn-reset:hover { background: var(--border); color: var(--text); }
+
+    /* ─── API EXPLORER ─── */
+    .api-explorer {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 0;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      min-height: 480px;
+    }
+
+    @media (max-width: 760px) {
+      .api-explorer { grid-template-columns: 1fr; }
+    }
+
+    .endpoint-list {
+      border-right: 1px solid var(--border);
+      padding: 12px 0;
+      overflow-y: auto;
+    }
+
+    .endpoint-list-header {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      padding: 4px 16px 10px;
+    }
+
+    .endpoint-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 16px;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      transition: background 0.12s, border-color 0.12s;
+    }
+
+    .endpoint-item:hover { background: rgba(16,185,129,0.05); }
+
+    .endpoint-item.active {
+      background: var(--infra-dim);
+      border-left-color: var(--infra);
+    }
+
+    .method-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.62rem;
+      font-weight: 700;
+      padding: 2px 5px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      margin-top: 2px;
+      letter-spacing: 0.03em;
+    }
+
+    .method-get  { background: rgba(97,175,239,0.15); color: var(--syn-blue); }
+    .method-post { background: rgba(16,185,129,0.12); color: var(--infra-light); }
+
+    .endpoint-path {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      word-break: break-all;
+      line-height: 1.4;
+    }
+
+    .endpoint-item.active .endpoint-path { color: var(--text); }
+
+    .endpoint-desc {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    .endpoint-item.active .endpoint-desc { color: var(--text-muted); }
+
+    /* Request/Response panels */
+    .api-main { display: flex; flex-direction: column; overflow: hidden; }
+
+    .api-req-res {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    @media (max-width: 900px) {
+      .api-req-res { grid-template-columns: 1fr; }
+    }
+
+    .api-pane {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-right: 1px solid var(--border);
+    }
+
+    .api-pane:last-child { border-right: none; }
+
+    .api-pane-header {
+      background: var(--panel2);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .api-pane-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .btn-send {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--infra);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: var(--radius);
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s, box-shadow 0.15s;
+      box-shadow: 0 0 10px rgba(16,185,129,0.2);
+    }
+
+    .btn-send:hover { background: var(--infra-light); }
+    .btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .spinner {
+      width: 12px;
+      height: 12px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      display: none;
+    }
+
+    .spinning { display: inline-block !important; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .api-pane-body {
+      padding: 1rem 1.25rem;
+      overflow-y: auto;
+      flex: 1;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      line-height: 1.7;
+    }
+
+    .req-method-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .req-method-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 5px;
+    }
+
+    .req-url {
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      word-break: break-all;
+    }
+
+    .req-section-title {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .req-headers { margin-bottom: 14px; }
+
+    .header-line { margin-bottom: 3px; }
+
+    .hdr-key   { color: var(--syn-blue); }
+    .hdr-colon { color: var(--text-dim); }
+    .hdr-val   { color: var(--syn-green); }
+    .hdr-val-dim { color: var(--text-muted); }
+
+    /* Syntax highlight tokens */
+    .tok-key     { color: var(--syn-blue); }
+    .tok-str     { color: var(--syn-green); }
+    .tok-num     { color: var(--syn-amber); }
+    .tok-bool    { color: var(--syn-purple); }
+    .tok-null    { color: var(--syn-purple); }
+    .tok-punct   { color: var(--text-dim); }
+    .tok-comment { color: var(--syn-comment); font-style: italic; }
+
+    /* Response loading overlay */
+    .res-loading {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 3rem;
+      color: var(--text-muted);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.82rem;
+      flex: 1;
+    }
+
+    .res-loading.visible { display: flex; }
+    .res-loading .spinner { display: block; width: 20px; height: 20px; }
+
+    .res-content { display: block; }
+    .res-content.hidden { display: none; }
+
+    /* ─── AUDIENCE INTEL ─── */
+    .audience-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (max-width: 640px) {
+      .audience-grid { grid-template-columns: 1fr; }
+    }
+
+    .audience-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .audience-card.traditional::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    }
+
+    .audience-card.recomeapi::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--infra), var(--infra-light));
+    }
+
+    .card-tag {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    .audience-card.traditional .card-tag { color: #8b5cf6; }
+    .audience-card.recomeapi    .card-tag { color: var(--infra); }
+
+    .audience-card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; }
+
+    .targeting-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 1rem;
+    }
+
+    .t-pill {
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 3px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+
+    .audience-card.recomeapi .t-pill {
+      background: var(--infra-dim);
+      border-color: rgba(16,185,129,0.3);
+      color: var(--infra-light);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+    }
+
+    .audience-card .eq-sign {
+      font-size: 1.1rem;
+      color: var(--text-dim);
+      margin: 0.5rem 0;
+    }
+
+    .audience-result {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .audience-num {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .audience-card.traditional .audience-num { color: #a5b4fc; }
+    .audience-card.recomeapi    .audience-num { color: var(--infra-light); }
+
+    .audience-unit { font-size: 0.8rem; color: var(--text-muted); }
+
+    .conversion-bar {
+      height: 6px;
+      border-radius: 3px;
+      background: var(--border);
+      margin: 10px 0 4px;
+      overflow: hidden;
+    }
+
+    .conversion-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 1s ease;
+    }
+
+    .audience-card.traditional .conversion-fill { background: #6366f1; }
+    .audience-card.recomeapi    .conversion-fill { background: var(--infra); }
+
+    .conversion-label { font-size: 0.78rem; color: var(--text-muted); }
+    .conversion-label span { font-weight: 700; }
+
+    .audience-card.traditional .conversion-label span { color: #a5b4fc; }
+    .audience-card.recomeapi    .conversion-label span { color: var(--infra-light); }
+
+    .revenue-lift {
+      background: var(--panel);
+      border: 1px solid rgba(16,185,129,0.3);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      background: linear-gradient(135deg, rgba(16,185,129,0.06), var(--panel));
+    }
+
+    .lift-left {}
+    .lift-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .lift-value {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--infra-light);
+    }
+
+    .lift-sublabel { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+
+    .lift-right {
+      max-width: 340px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .lift-right strong { color: var(--infra-light); }
+
+    /* ─── FOOTER ─── */
+    .page-footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 0.8rem;
+    }
+
+    .page-footer a { color: var(--infra); text-decoration: none; }
+    .page-footer a:hover { color: var(--infra-light); }
+
+    /* ─── UTILITIES ─── */
+    pre { white-space: pre-wrap; word-break: break-all; }
+
+    .fade-in {
+      animation: fadeIn 0.3s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── NAV ─── -->
+<nav>
+  <a class="nav-logo" href="#">
+    <div class="nav-logo-mark">R</div>
+    RecoMe
+  </a>
+  <ul class="nav-links">
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#oauth">OAuth Flow</a></li>
+    <li><a href="#explorer">API Explorer</a></li>
+    <li><a href="#audience">Audience Intel</a></li>
+  </ul>
+  <a class="nav-back" href="index.html">← Back to demos</a>
+</nav>
+
+<!-- ─── HERO ─── -->
+<div class="hero" id="overview">
+  <div class="hero-eyebrow">Platform API — V4</div>
+  <h1>The <span>Universal Preference</span> Graph</h1>
+  <p>Sign in with RecoMe. Query the global taste graph. Build audience segments from real interest signals — not demographic guesses.</p>
+  <div class="hero-stats">
+    <div class="stat-box">
+      <div class="stat-value">180ms</div>
+      <div class="stat-label">avg API response</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value">OAuth 2.0</div>
+      <div class="stat-label">security</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value">7</div>
+      <div class="stat-label">endpoints</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value">Zero PII</div>
+      <div class="stat-label">shared</div>
+    </div>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ─── SECTION 1: OAUTH FLOW ─── -->
+<section id="oauth">
+  <div class="section-label">
+    <span class="pill">Section 01</span>
+  </div>
+  <h2>"Sign in with RecoMe" OAuth Flow</h2>
+  <p>A privacy-first SSO that shares only what users explicitly grant — scoped interest signals, never raw data or personal identifiers.</p>
+
+  <!-- Steps indicator -->
+  <div class="oauth-steps">
+    <div class="oauth-step-item active" id="step-indicator-1">
+      <div class="step-num">1</div>
+      <span>App requests auth</span>
+    </div>
+    <div class="step-connector" id="connector-1-2"></div>
+    <div class="oauth-step-item" id="step-indicator-2">
+      <div class="step-num">2</div>
+      <span>Consent screen</span>
+    </div>
+    <div class="step-connector" id="connector-2-3"></div>
+    <div class="oauth-step-item" id="step-indicator-3">
+      <div class="step-num">3</div>
+      <span>Token issued</span>
+    </div>
+  </div>
+
+  <div class="oauth-stage">
+    <!-- Left: App mock (always visible) -->
+    <div>
+      <div class="app-mock" id="app-mock-panel">
+        <div class="app-mock-bar">
+          <div class="app-mock-dots">
+            <div class="dot dot-r"></div>
+            <div class="dot dot-y"></div>
+            <div class="dot dot-g"></div>
+          </div>
+          <div class="app-mock-url">app.eduflow.io/login</div>
+        </div>
+        <div class="app-mock-body">
+          <div class="app-brand">EF</div>
+          <h3>Welcome to EduFlow</h3>
+          <p>Personalized courses for curious minds</p>
+          <button class="btn-sso" id="btn-sso-trigger" onclick="oauthStep(2)">
+            <div class="sso-logo-mark">R</div>
+            Sign in with RecoMe
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Consent / Token panel -->
+    <div>
+      <!-- Step 2: Consent -->
+      <div class="consent-panel fade-in" id="consent-panel">
+        <div class="consent-header">
+          <div class="consent-logo">R</div>
+          <div class="consent-arrow">→</div>
+          <div class="consent-app-icon">EF</div>
+          <div style="margin-left: 6px;">
+            <div class="consent-title">EduFlow is requesting access</div>
+            <div class="consent-subtitle">to your RecoMe profile</div>
+          </div>
+        </div>
+        <div class="consent-body">
+          <ul class="scope-list">
+            <li class="scope-item">
+              <div class="scope-check granted">✓</div>
+              <div>
+                <div class="scope-name">interests.read</div>
+                <div class="scope-desc">Your top interest categories (read-only)</div>
+              </div>
+            </li>
+            <li class="scope-item">
+              <div class="scope-check granted">✓</div>
+              <div>
+                <div class="scope-name">preferences.summary</div>
+                <div class="scope-desc">Aggregated preference profile (anonymized)</div>
+              </div>
+            </li>
+            <li class="scope-item not-requested">
+              <div class="scope-check denied">✗</div>
+              <div>
+                <div class="scope-name">raw_graph</div>
+                <div class="scope-desc">NOT requested — not granted</div>
+              </div>
+            </li>
+            <li class="scope-item not-requested">
+              <div class="scope-check denied">✗</div>
+              <div>
+                <div class="scope-name">personal_data</div>
+                <div class="scope-desc">NOT requested — not granted</div>
+              </div>
+            </li>
+          </ul>
+
+          <div class="not-shared-box">
+            <strong>EduFlow will NOT receive:</strong>
+            <ul>
+              <li>Raw graph data</li>
+              <li>Browsing history</li>
+              <li>Personal identifiers</li>
+            </ul>
+          </div>
+
+          <div class="consent-actions">
+            <button class="btn-allow" onclick="oauthStep(3)">Allow</button>
+            <button class="btn-deny" onclick="oauthStep(1)">Deny</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Token -->
+      <div class="token-panel fade-in" id="token-panel">
+        <div class="token-panel-header">
+          <span class="token-panel-title">Token Response</span>
+          <span class="badge-success">200 OK</span>
+        </div>
+        <div class="token-body">
+          <pre><span class="tok-punct">{</span>
+  <span class="tok-key">"access_token"</span><span class="tok-punct">:</span> <span class="tok-str">"rmt_v4_eyJhbGciOiJIUzI1NiJ9..."</span><span class="tok-punct">,</span>
+  <span class="tok-key">"token_type"</span><span class="tok-punct">:</span>   <span class="tok-str">"Bearer"</span><span class="tok-punct">,</span>
+  <span class="tok-key">"scope"</span><span class="tok-punct">:</span>        <span class="tok-str">"interests.read preferences.summary"</span><span class="tok-punct">,</span>
+  <span class="tok-key">"expires_in"</span><span class="tok-punct">:</span>   <span class="tok-num">3600</span><span class="tok-punct">,</span>
+  <span class="tok-key">"taste_profile_id"</span><span class="tok-punct">:</span> <span class="tok-str">"tp_a7f2c9d4e8b1"</span>
+<span class="tok-punct">}</span></pre>
+          <div class="token-caption">
+            <strong>EduFlow now personalizes your course recommendations without ever seeing who you are.</strong>
+          </div>
+          <button class="btn-reset" onclick="oauthStep(1)">↺ Start over</button>
+        </div>
+      </div>
+
+      <!-- Placeholder hint for step 1 -->
+      <div id="oauth-hint" style="display:flex; align-items:center; justify-content:center; height:100%; min-height:200px; color:var(--text-dim); font-size:0.85rem; text-align:center; padding:2rem; background:var(--panel); border:1px dashed var(--border); border-radius:var(--radius-lg);">
+        Click "Sign in with RecoMe" on the left to start the OAuth flow
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ─── SECTION 2: API EXPLORER ─── -->
+<section id="explorer">
+  <div class="section-label">
+    <span class="pill">Section 02</span>
+  </div>
+  <h2>API Explorer</h2>
+  <p>Select an endpoint to inspect the request and response. Click "Send Request" to simulate a live call.</p>
+
+  <div class="api-explorer">
+    <!-- Endpoint list -->
+    <div class="endpoint-list">
+      <div class="endpoint-list-header">Endpoints</div>
+
+      <div class="endpoint-item active" data-ep="0" onclick="selectEndpoint(0)">
+        <span class="method-badge method-get">GET</span>
+        <div>
+          <div class="endpoint-path">/v4/profile/summary</div>
+          <div class="endpoint-desc">Anonymized interest summary</div>
+        </div>
+      </div>
+
+      <div class="endpoint-item" data-ep="1" onclick="selectEndpoint(1)">
+        <span class="method-badge method-get">GET</span>
+        <div>
+          <div class="endpoint-path">/v4/interests/top</div>
+          <div class="endpoint-desc">Top N interest categories</div>
+        </div>
+      </div>
+
+      <div class="endpoint-item" data-ep="2" onclick="selectEndpoint(2)">
+        <span class="method-badge method-post">POST</span>
+        <div>
+          <div class="endpoint-path">/v4/rank</div>
+          <div class="endpoint-desc">Rank content by relevance</div>
+        </div>
+      </div>
+
+      <div class="endpoint-item" data-ep="3" onclick="selectEndpoint(3)">
+        <span class="method-badge method-get">GET</span>
+        <div>
+          <div class="endpoint-path">/v4/delta</div>
+          <div class="endpoint-desc">Changes since last session</div>
+        </div>
+      </div>
+
+      <div class="endpoint-item" data-ep="4" onclick="selectEndpoint(4)">
+        <span class="method-badge method-post">POST</span>
+        <div>
+          <div class="endpoint-path">/v4/audience/segment</div>
+          <div class="endpoint-desc">B2B: build audience segment</div>
+        </div>
+      </div>
+
+      <div class="endpoint-item" data-ep="5" onclick="selectEndpoint(5)">
+        <span class="method-badge method-get">GET</span>
+        <div>
+          <div class="endpoint-path">/v4/graph/neighbors</div>
+          <div class="endpoint-desc">Adjacent graph nodes</div>
+        </div>
+      </div>
+
+      <div class="endpoint-item" data-ep="6" onclick="selectEndpoint(6)">
+        <span class="method-badge method-post">POST</span>
+        <div>
+          <div class="endpoint-path">/v4/signal</div>
+          <div class="endpoint-desc">Send signal to update graph</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Request / Response -->
+    <div class="api-main">
+      <div class="api-req-res">
+        <!-- Request pane -->
+        <div class="api-pane">
+          <div class="api-pane-header">
+            <span class="api-pane-label">Request</span>
+            <button class="btn-send" id="btn-send" onclick="sendRequest()">
+              <div class="spinner" id="send-spinner"></div>
+              Send Request
+            </button>
+          </div>
+          <div class="api-pane-body" id="req-body-content">
+            <!-- filled by JS -->
+          </div>
+        </div>
+
+        <!-- Response pane -->
+        <div class="api-pane">
+          <div class="api-pane-header">
+            <span class="api-pane-label">Response</span>
+            <span id="res-status-badge"></span>
+          </div>
+          <div class="api-pane-body" style="position:relative; padding:0;">
+            <div class="res-loading" id="res-loading">
+              <div class="spinner spinning"></div>
+              <span>Sending request...</span>
+            </div>
+            <div class="res-content" id="res-body-content" style="padding:1rem 1.25rem;">
+              <!-- filled by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ─── SECTION 3: AUDIENCE INTELLIGENCE ─── -->
+<section id="audience">
+  <div class="section-label">
+    <span class="pill">Section 03</span>
+  </div>
+  <h2>Audience Intelligence Use Case</h2>
+  <p>RetailCo wants to reach users with a strong interest in sustainable fashion. See how behavioral signals outperform demographic proxies.</p>
+
+  <div class="audience-grid">
+    <!-- Traditional -->
+    <div class="audience-card traditional">
+      <div class="card-tag">Traditional Targeting</div>
+      <h3>Demographic Proxies</h3>
+      <div class="targeting-pills">
+        <span class="t-pill">Age 25–35</span>
+        <span class="t-pill">Female</span>
+        <span class="t-pill">Urban</span>
+      </div>
+      <div class="eq-sign">=</div>
+      <div class="audience-result">
+        <span class="audience-num">2.1M</span>
+        <span class="audience-unit">people reached</span>
+      </div>
+      <div class="conversion-bar">
+        <div class="conversion-fill" style="width:8%"></div>
+      </div>
+      <div class="conversion-label"><span>8%</span> purchase conversion</div>
+    </div>
+
+    <!-- RecoMe -->
+    <div class="audience-card recomeapi">
+      <div class="card-tag">RecoMe Audience Intel</div>
+      <h3>Behavioral Interest Signals</h3>
+      <div class="targeting-pills">
+        <span class="t-pill">interest[sustainable-fashion, w&gt;0.7]</span>
+        <span class="t-pill">interest[eco-products, w&gt;0.6]</span>
+      </div>
+      <div class="eq-sign">=</div>
+      <div class="audience-result">
+        <span class="audience-num">340K</span>
+        <span class="audience-unit">people reached</span>
+      </div>
+      <div class="conversion-bar">
+        <div class="conversion-fill" style="width:31%"></div>
+      </div>
+      <div class="conversion-label"><span>31%</span> purchase conversion</div>
+    </div>
+  </div>
+
+  <div class="revenue-lift">
+    <div class="lift-left">
+      <div class="lift-label">Additional revenue lift</div>
+      <div class="lift-value">$2.3M</div>
+      <div class="lift-sublabel">from precision targeting vs. demographic guesses</div>
+    </div>
+    <div class="lift-right">
+      <strong>RecoMe never reveals who these people are</strong> — only that they exist and what they care about. Pure signal, zero PII. The audience segment API returns aggregate reach estimates and anonymized breakdowns with no personal identifiers, ever.
+    </div>
+  </div>
+</section>
+
+<!-- ─── FOOTER ─── -->
+<footer class="page-footer">
+  RecoMe Platform API — V4 &nbsp;·&nbsp; <a href="index.html">← Back to demos</a> &nbsp;·&nbsp; Universal Preference Graph
+</footer>
+
+<script>
+  /* ─────────────────────────────────────────────
+     OAUTH FLOW
+  ───────────────────────────────────────────── */
+  function oauthStep(step) {
+    const hint    = document.getElementById('oauth-hint');
+    const consent = document.getElementById('consent-panel');
+    const token   = document.getElementById('token-panel');
+
+    const s1 = document.getElementById('step-indicator-1');
+    const s2 = document.getElementById('step-indicator-2');
+    const s3 = document.getElementById('step-indicator-3');
+    const c12 = document.getElementById('connector-1-2');
+    const c23 = document.getElementById('connector-2-3');
+
+    // Reset all panels
+    hint.style.display    = 'none';
+    consent.classList.remove('visible');
+    token.classList.remove('visible');
+
+    // Reset step indicators
+    [s1, s2, s3].forEach(s => {
+      s.classList.remove('active', 'done');
+    });
+    [c12, c23].forEach(c => c.classList.remove('done'));
+
+    if (step === 1) {
+      hint.style.display = 'flex';
+      s1.classList.add('active');
+    } else if (step === 2) {
+      consent.classList.add('visible');
+      consent.classList.remove('fade-in');
+      void consent.offsetWidth; // reflow
+      consent.classList.add('fade-in');
+      s1.classList.add('done');
+      c12.classList.add('done');
+      s2.classList.add('active');
+    } else if (step === 3) {
+      token.classList.add('visible');
+      token.classList.remove('fade-in');
+      void token.offsetWidth;
+      token.classList.add('fade-in');
+      s1.classList.add('done');
+      s2.classList.add('done');
+      c12.classList.add('done');
+      c23.classList.add('done');
+      s3.classList.add('active');
+    }
+  }
+
+  /* ─────────────────────────────────────────────
+     API EXPLORER DATA
+  ───────────────────────────────────────────── */
+  const ENDPOINTS = [
+    {
+      method: 'GET',
+      path: '/v4/profile/summary',
+      params: '',
+      body: null,
+      response: `{
+  "profile_id":          "tp_a7f2c9d4e8b1",
+  "generated_at":        "2026-03-15T14:22:10Z",
+  "top_domains":         ["technology", "health", "finance"],
+  "preference_strength": 0.84,
+  "graph_maturity":      "rich",
+  "pii_shared":          false
+}`
+    },
+    {
+      method: 'GET',
+      path: '/v4/interests/top',
+      params: '?limit=5',
+      body: null,
+      response: `{
+  "interests": [
+    {"entity": "distributed-systems", "weight": 0.91, "category": "technology"},
+    {"entity": "cancer-research",     "weight": 0.88, "category": "health"},
+    {"entity": "rust-programming",    "weight": 0.85, "category": "technology"},
+    {"entity": "clinical-trials",     "weight": 0.79, "category": "health"},
+    {"entity": "system-design",       "weight": 0.76, "category": "technology"}
+  ],
+  "total_nodes":   247,
+  "last_updated":  "2026-03-15T11:08:33Z"
+}`
+    },
+    {
+      method: 'POST',
+      path: '/v4/rank',
+      params: '',
+      body: `{
+  "items": [
+    "intro to rust",
+    "blockchain basics",
+    "distributed systems paper"
+  ],
+  "context": "course_recommendation"
+}`,
+      response: `{
+  "ranked": [
+    {
+      "item":   "distributed systems paper",
+      "score":  0.91,
+      "reason": "strong interest match"
+    },
+    {
+      "item":   "intro to rust",
+      "score":  0.83,
+      "reason": "interest match + novelty"
+    },
+    {
+      "item":   "blockchain basics",
+      "score":  0.12,
+      "reason": "blocked topic (affinity propagation)"
+    }
+  ],
+  "threshold_applied": 0.65,
+  "filtered_count":    1
+}`
+    },
+    {
+      method: 'GET',
+      path: '/v4/delta',
+      params: '?since=2026-03-14T00:00:00Z',
+      body: null,
+      response: `{
+  "new_interests": [
+    {
+      "entity":     "wasm",
+      "weight":     0.61,
+      "first_seen": "2026-03-14T09:12Z"
+    }
+  ],
+  "strengthened": [
+    {
+      "entity":       "rust-programming",
+      "weight_delta": 0.08
+    }
+  ],
+  "weakened":     [],
+  "blocked_added": []
+}`
+    },
+    {
+      method: 'POST',
+      path: '/v4/audience/segment',
+      params: '',
+      body: `{
+  "segment_criteria": {
+    "min_weight":  0.7,
+    "domains":     ["health"],
+    "exclude_pii": true
+  },
+  "audience_size_estimate": true
+}`,
+      response: `{
+  "segment_id":       "seg_h7k2m9p4",
+  "estimated_reach":  142000,
+  "domain_breakdown": {
+    "cancer-research": 38000,
+    "clinical-trials": 29000,
+    "medical-devices": 21000
+  },
+  "pii_in_response":  false,
+  "billing_estimate": "$284.00"
+}`
+    },
+    {
+      method: 'GET',
+      path: '/v4/graph/neighbors',
+      params: '?node=distributed-systems&depth=1&limit=6',
+      body: null,
+      response: `{
+  "node": "distributed-systems",
+  "neighbors": [
+    {"entity": "consensus-algorithms", "edge_weight": 0.87, "relation": "sub-topic"},
+    {"entity": "system-design",        "edge_weight": 0.82, "relation": "co-interest"},
+    {"entity": "databases",            "edge_weight": 0.79, "relation": "co-interest"},
+    {"entity": "rust-programming",     "edge_weight": 0.74, "relation": "tooling"},
+    {"entity": "cloud-infra",          "edge_weight": 0.68, "relation": "co-interest"},
+    {"entity": "wasm",                 "edge_weight": 0.55, "relation": "emerging"}
+  ],
+  "depth": 1,
+  "total_edges": 6
+}`
+    },
+    {
+      method: 'POST',
+      path: '/v4/signal',
+      params: '',
+      body: `{
+  "signal_type": "dwell",
+  "entity":      "consensus-algorithms",
+  "duration_s":  148,
+  "context":     "article_read",
+  "timestamp":   "2026-03-15T14:30:00Z"
+}`,
+      response: `{
+  "signal_id":     "sig_3f9a1b2c",
+  "accepted":      true,
+  "entity":        "consensus-algorithms",
+  "weight_before": 0.54,
+  "weight_after":  0.61,
+  "delta":         0.07,
+  "graph_updated": true,
+  "processed_at":  "2026-03-15T14:30:01Z"
+}`
+    }
+  ];
+
+  const SCOPE_LABELS = {
+    'interests.read': true,
+    'preferences.summary': true
+  };
+
+  let currentEp = 0;
+  let responseReady = false;
+
+  function hl(json) {
+    // Syntax-highlight a JSON string into HTML spans
+    return json
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(
+        /("(?:[^"\\]|\\.)*")\s*:/g,
+        '<span class="tok-key">$1</span><span class="tok-punct">:</span>'
+      )
+      .replace(
+        /:\s*("(?:[^"\\]|\\.)*")/g,
+        ': <span class="tok-str">$1</span>'
+      )
+      .replace(
+        /:\s*(-?\d+\.?\d*)/g,
+        ': <span class="tok-num">$1</span>'
+      )
+      .replace(
+        /:\s*(true|false)/g,
+        ': <span class="tok-bool">$1</span>'
+      )
+      .replace(
+        /:\s*(null)/g,
+        ': <span class="tok-null">$1</span>'
+      )
+      .replace(/([{}\[\],])/g, '<span class="tok-punct">$1</span>');
+  }
+
+  function renderRequest(ep) {
+    const data = ENDPOINTS[ep];
+    const methodClass = data.method === 'GET' ? 'method-get' : 'method-post';
+    let html = `
+      <div class="req-method-line">
+        <span class="req-method-badge ${methodClass}">${data.method}</span>
+        <span class="req-url">https://api.recome.ai${data.path}${data.params}</span>
+      </div>
+      <div class="req-headers req-section-title">Headers</div>
+      <div class="req-headers">
+        <div class="header-line">
+          <span class="hdr-key">Authorization</span><span class="hdr-colon">: </span><span class="hdr-val">Bearer rmt_v4_eyJhbGciOiJIUzI1NiJ9...</span>
+        </div>
+        <div class="header-line">
+          <span class="hdr-key">Content-Type</span><span class="hdr-colon">: </span><span class="hdr-val-dim">application/json</span>
+        </div>
+        <div class="header-line">
+          <span class="hdr-key">X-Profile-ID</span><span class="hdr-colon">: </span><span class="hdr-val-dim">tp_a7f2c9d4e8b1</span>
+        </div>
+      </div>
+    `;
+    if (data.body) {
+      html += `
+        <div class="req-section-title" style="margin-top:14px;">Body</div>
+        <pre>${hl(data.body)}</pre>
+      `;
+    }
+    document.getElementById('req-body-content').innerHTML = html;
+  }
+
+  function renderResponse(ep) {
+    const data = ENDPOINTS[ep];
+    document.getElementById('res-body-content').innerHTML = `<pre>${hl(data.response)}</pre>`;
+  }
+
+  function selectEndpoint(idx) {
+    currentEp = idx;
+    responseReady = false;
+
+    // Update active state on list items
+    document.querySelectorAll('.endpoint-item').forEach((el, i) => {
+      el.classList.toggle('active', i === idx);
+    });
+
+    // Render request
+    renderRequest(idx);
+
+    // Hide response, show placeholder
+    const resContent = document.getElementById('res-body-content');
+    const resLoading = document.getElementById('res-loading');
+    const resBadge   = document.getElementById('res-status-badge');
+
+    resLoading.classList.remove('visible');
+    resContent.classList.remove('hidden');
+    resContent.innerHTML = `<span style="color:var(--text-dim); font-family:'Inter',sans-serif; font-size:0.82rem;">Click "Send Request" to see the response.</span>`;
+    resBadge.innerHTML = '';
+  }
+
+  function sendRequest() {
+    const btn     = document.getElementById('btn-send');
+    const spinner = document.getElementById('send-spinner');
+    const resContent = document.getElementById('res-body-content');
+    const resLoading = document.getElementById('res-loading');
+    const resBadge   = document.getElementById('res-status-badge');
+
+    btn.disabled = true;
+    spinner.classList.add('spinning');
+
+    resContent.classList.add('hidden');
+    resLoading.classList.add('visible');
+    resBadge.innerHTML = '';
+
+    setTimeout(() => {
+      resLoading.classList.remove('visible');
+      resContent.classList.remove('hidden');
+      renderResponse(currentEp);
+      resBadge.innerHTML = `<span class="badge-success">200 OK</span>`;
+      btn.disabled = false;
+      spinner.classList.remove('spinning');
+      responseReady = true;
+    }, 320);
+  }
+
+  // Initialize explorer
+  selectEndpoint(0);
+
+  /* ─────────────────────────────────────────────
+     INIT
+  ───────────────────────────────────────────── */
+  // OAuth starts at step 1
+  oauthStep(1);
+</script>
+</body>
+</html>

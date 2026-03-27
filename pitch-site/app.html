@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Mobile / Web App — RecoMe</title>
+  <link rel="stylesheet" href="shared.css"/>
+  <style>
+    /* ── HERO ──────────────────────────── */
+    .hero-app {
+      min-height: 92vh;
+      display: flex; align-items: center;
+      position: relative; overflow: hidden;
+      padding-top: 56px;
+    }
+    .hero-app .glow.a { width:600px;height:600px;background:#0d9488;top:-200px;left:-130px; }
+    .hero-app .glow.b { width:380px;height:380px;background:#7c3aed;bottom:-80px;right:-60px; }
+    .hero-inner { position:relative;z-index:1;max-width:860px;padding-top:48px; }
+
+    .hero-h1 {
+      font-size:clamp(40px,6.5vw,82px);font-weight:900;line-height:1.0;
+      letter-spacing:-3px;margin-bottom:22px;
+    }
+    .hero-h1 .grad {
+      background:linear-gradient(100deg,#fff 20%,#5eead4 80%);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    }
+    .hero-sub { font-size:18px;color:rgba(255,255,255,0.52);max-width:620px;line-height:1.7;margin-bottom:40px; }
+    .hero-actions { display:flex;gap:14px;flex-wrap:wrap;margin-bottom:52px; }
+
+    .btn-primary {
+      background:#fff;color:var(--ink);
+      padding:13px 28px;border-radius:10px;font-weight:700;font-size:15px;
+      text-decoration:none;display:inline-block;transition:opacity .15s;
+    }
+    .btn-primary:hover { opacity:.88; }
+    .btn-app {
+      background:var(--app);color:#fff;
+      padding:13px 28px;border-radius:10px;font-weight:700;font-size:15px;
+      text-decoration:none;display:inline-block;transition:opacity .15s;
+    }
+    .btn-app:hover { opacity:.88; }
+    .btn-outline {
+      background:transparent;color:#fff;
+      border:1px solid rgba(255,255,255,0.22);
+      padding:13px 28px;border-radius:10px;font-weight:600;font-size:15px;
+      text-decoration:none;display:inline-block;transition:all .15s;
+    }
+    .btn-outline:hover { background:rgba(255,255,255,0.06); }
+
+    /* ── SCREEN CARDS ────────────────────── */
+    .screen-grid {
+      display:grid;grid-template-columns:repeat(3,1fr);gap:16px;
+    }
+    @media(max-width:900px){ .screen-grid { grid-template-columns:1fr 1fr; } }
+    @media(max-width:560px){ .screen-grid { grid-template-columns:1fr; } }
+
+    .scard {
+      background:rgba(255,255,255,0.04);
+      border:1px solid var(--line-dark);
+      border-radius:14px;padding:26px;
+      transition:background .2s;
+    }
+    .scard:hover { background:rgba(255,255,255,0.07); }
+    .scard .sc-icon {
+      width:44px;height:44px;border-radius:11px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:20px;margin-bottom:16px;
+      background:rgba(13,148,136,0.12);border:1px solid rgba(13,148,136,0.25);
+    }
+    .scard h4 { font-size:15px;font-weight:700;margin-bottom:8px;color:#fff; }
+    .scard p  { font-size:13px;color:rgba(255,255,255,0.48);line-height:1.65; }
+    .scard .sc-label {
+      display:inline-block;font-size:11px;font-weight:700;
+      text-transform:uppercase;letter-spacing:1.2px;
+      color:var(--app);margin-bottom:10px;
+    }
+
+    /* ── INSIGHT QUOTE ──────────────────── */
+    .insight-quote {
+      background:rgba(13,148,136,0.08);
+      border:1px solid rgba(13,148,136,0.22);
+      border-left:4px solid var(--app);
+      border-radius:0 12px 12px 0;
+      padding:28px 32px;
+      margin:36px 0;
+    }
+    .insight-quote blockquote {
+      font-size:clamp(15px,2.2vw,20px);
+      font-weight:600;line-height:1.65;
+      color:rgba(255,255,255,0.88);
+      font-style:italic;
+      margin-bottom:12px;
+    }
+    .insight-quote .iq-caption {
+      font-size:12px;color:rgba(255,255,255,0.35);
+      font-weight:600;text-transform:uppercase;letter-spacing:1px;
+    }
+
+    /* ── PERSONA CARDS ──────────────────── */
+    .persona-grid { display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px; }
+    @media(max-width:800px){ .persona-grid { grid-template-columns:1fr 1fr; } }
+    @media(max-width:520px){ .persona-grid { grid-template-columns:1fr; } }
+
+    .persona-card {
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--line-dark);
+      border-radius:14px;padding:24px;
+    }
+    .persona-card .pa-avatar {
+      width:48px;height:48px;border-radius:12px;
+      background:rgba(13,148,136,0.15);border:1px solid rgba(13,148,136,0.25);
+      display:flex;align-items:center;justify-content:center;
+      font-size:22px;margin-bottom:14px;
+    }
+    .persona-card h4 { font-size:15px;font-weight:700;margin-bottom:4px;color:#fff; }
+    .persona-card .pa-sub { font-size:12px;color:var(--app);font-weight:600;margin-bottom:10px; }
+    .persona-card p { font-size:13px;color:rgba(255,255,255,0.45);line-height:1.65; }
+
+    /* ── COMPARISON TABLE WRAPPER ─────────── */
+    .ctbl-wrap {
+      overflow-x:auto;
+      border:1px solid var(--line-dark);
+      border-radius:14px;
+    }
+    .ctbl { min-width:620px; }
+    .ctbl .us { background:rgba(13,148,136,0.06); }
+    .ctbl th.highlight { color:#5eead4; }
+
+    /* ── PRICING ──────────────────────────── */
+    .pricing-grid { display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px; }
+    @media(max-width:800px){ .pricing-grid { grid-template-columns:1fr 1fr; } }
+    @media(max-width:520px){ .pricing-grid { grid-template-columns:1fr; } }
+
+    .price-card.featured { border-color:var(--app); }
+    .price-card .pa { color:#fff; }
+    .price-card .featured-badge {
+      display:inline-block;font-size:11px;font-weight:700;
+      text-transform:uppercase;letter-spacing:1.2px;
+      background:rgba(13,148,136,0.2);color:var(--app);
+      border:1px solid rgba(13,148,136,0.35);
+      border-radius:999px;padding:3px 10px;margin-bottom:12px;
+    }
+    .price-card ul li::before { color: var(--app); }
+
+    /* ── IN-APP EXTRAS ───────────────────── */
+    .extra-grid { display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:28px; }
+    @media(max-width:620px){ .extra-grid { grid-template-columns:1fr; } }
+
+    .extra-card {
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--line-dark);
+      border-radius:12px;padding:20px 22px;
+      display:flex;gap:14px;align-items:flex-start;
+    }
+    .extra-card .ec-ico { font-size:24px;flex-shrink:0;margin-top:2px; }
+    .extra-card h5 { font-size:14px;font-weight:700;margin-bottom:4px;color:#fff; }
+    .extra-card p  { font-size:13px;color:rgba(255,255,255,0.42);line-height:1.6; }
+    .extra-card .ec-price { font-size:13px;font-weight:700;color:var(--app);margin-top:6px; }
+
+    /* ── NOTIF MOCK ──────────────────────── */
+    .notif-mock {
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.12);
+      border-radius:16px;padding:18px 20px;
+      display:flex;gap:14px;align-items:flex-start;
+      max-width:420px;
+    }
+    .notif-mock .nm-ico {
+      width:40px;height:40px;border-radius:10px;flex-shrink:0;
+      background:rgba(13,148,136,0.25);border:1px solid rgba(13,148,136,0.4);
+      display:flex;align-items:center;justify-content:center;font-size:18px;
+    }
+    .notif-mock .nm-title { font-size:14px;font-weight:700;color:#fff;margin-bottom:4px; }
+    .notif-mock .nm-body  { font-size:12px;color:rgba(255,255,255,0.5);line-height:1.55; }
+    .notif-mock .nm-time  { font-size:11px;color:rgba(255,255,255,0.25);margin-top:6px; }
+
+    /* ── GRAPH VIZ MOCK ──────────────────── */
+    .graph-mock {
+      background:rgba(13,148,136,0.04);
+      border:1px solid rgba(13,148,136,0.15);
+      border-radius:14px;padding:28px;
+      font-family:var(--mono);
+    }
+    .graph-mock .gm-title { font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.3);margin-bottom:18px; }
+    .gm-node {
+      display:flex;align-items:center;gap:12px;
+      margin-bottom:10px;
+    }
+    .gm-node .gn-label { font-size:13px;color:rgba(255,255,255,0.75);min-width:220px; }
+    .gm-node .gn-bar-wrap {
+      flex:1;height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;
+    }
+    .gm-node .gn-bar { height:100%;border-radius:4px;background:var(--app); }
+    .gm-node .gn-val { font-size:12px;color:var(--app);min-width:36px;text-align:right; }
+    .gm-node .gn-neg { background:#f87171; }
+    .gm-node .gn-val.neg { color:#f87171; }
+
+    /* ── SECTION ALT BG ──────────────────── */
+    .alt-bg {
+      background:rgba(255,255,255,0.015);
+      border-top:1px solid var(--line-dark);
+      border-bottom:1px solid var(--line-dark);
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="topnav">
+  <a href="index.html" class="logo">Reco<span>Me</span></a>
+  <a href="extension.html" class="hide-sm"><span class="dot" style="background:var(--ext)"></span>Extension</a>
+  <a href="agents.html" class="hide-sm"><span class="dot" style="background:var(--agent)"></span>Agents</a>
+  <a href="app.html" class="active hide-sm"><span class="dot" style="background:var(--app)"></span>App</a>
+  <a href="sdk.html" class="hide-sm"><span class="dot" style="background:var(--sdk)"></span>SDK</a>
+  <a href="platform.html" class="hide-sm"><span class="dot" style="background:var(--infra)"></span>Platform</a>
+  <a href="financials.html" class="hide-sm">Financials</a>
+  <a href="financials.html#ask" class="cta">Investor Deck →</a>
+</nav>
+
+<!-- HERO -->
+<div class="wrap">
+  <div class="hero-app">
+    <div class="glow a"></div>
+    <div class="glow b"></div>
+    <div class="hero-inner">
+      <div class="prod-badge" style="background:rgba(13,148,136,0.1);border:1px solid rgba(13,148,136,0.25);color:var(--app);">
+        <span>📱</span> Mobile / Web App · Consumer Beta
+      </div>
+      <h1 class="hero-h1">
+        Your Taste Identity.<br>
+        <span class="grad">Visible. Editable. Yours.</span>
+      </h1>
+      <p class="hero-sub">
+        The only consumer app that shows you your complete preference graph in real-time — and lets you actually edit it. Chat with your AdvisorAgent. Track products. Own your taste identity from any device.
+      </p>
+      <div class="hero-actions">
+        <a href="demos/app-demo.html" class="btn-app">Live Demo →</a>
+        <a href="#screens" class="btn-outline">See the 6 Screens</a>
+        <a href="financials.html#ask" class="btn-outline">Investor Deck</a>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="sn" style="color:var(--app)">6</div>
+          <div class="sl">Screens</div>
+        </div>
+        <div class="stat-box">
+          <div class="sn" style="color:var(--app)">Live</div>
+          <div class="sl">Real-time graph updates</div>
+        </div>
+        <div class="stat-box">
+          <div class="sn" style="color:var(--app)">Chat</div>
+          <div class="sl">with AdvisorAgent</div>
+        </div>
+        <div class="stat-box">
+          <div class="sn" style="color:var(--app)">Sync</div>
+          <div class="sl">Cross-device</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- THE 6 SCREENS -->
+<div class="wrap" id="screens">
+  <section>
+    <div class="eyebrow app">Six Screens</div>
+    <h2 class="h2" style="margin-bottom:12px">Every Surface of Your Taste Identity</h2>
+    <p class="sub" style="margin-bottom:36px">Six purpose-built screens, each giving you a different lens into your preference graph — and different controls over it.</p>
+
+    <div class="screen-grid">
+      <div class="scard">
+        <div class="sc-icon">📊</div>
+        <div class="sc-label">DashboardScreen</div>
+        <h4>Your preference overview</h4>
+        <p>Overview of preference stats, graph visualization showing your taste clusters, daily and weekly activity. The home base for your taste identity.</p>
+      </div>
+      <div class="scard">
+        <div class="sc-icon">🤖</div>
+        <div class="sc-label">AgentScreen</div>
+        <h4>Chat with AdvisorAgent</h4>
+        <p>Chat interface with AdvisorAgent. Ask questions, get recommendations, understand why you saw something. Your AI that knows your taste deeply.</p>
+      </div>
+      <div class="scard">
+        <div class="sc-icon">✨</div>
+        <div class="sc-label">InsightsScreen</div>
+        <h4>Curated by ScoutAgent</h4>
+        <p>Personalized insight cards surfaced by ScoutAgent — curated opportunities in your areas of interest. Things you should know about that you haven't seen yet.</p>
+      </div>
+      <div class="scard">
+        <div class="sc-icon">🎛️</div>
+        <div class="sc-label">PreferencesScreen</div>
+        <h4>Edit your taste identity</h4>
+        <p>Manage your taste identity directly — edit graph nodes, adjust weights, block topics. The one screen no other personalization product in the world has built.</p>
+      </div>
+      <div class="scard">
+        <div class="sc-icon">👁️</div>
+        <div class="sc-label">WatchlistScreen</div>
+        <h4>ShopperAgent's dashboard</h4>
+        <p>Track products, content, and prices being monitored by ShopperAgent. See the status of all active watches, current prices, 90-day charts, availability across retailers.</p>
+      </div>
+      <div class="scard">
+        <div class="sc-icon">🔒</div>
+        <div class="sc-label">SettingsScreen</div>
+        <h4>Full transparency and control</h4>
+        <p>Privacy controls, connected platforms, data export, subscription management. See every data point stored. Your taste identity — fully auditable.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- WHY THIS EXISTS -->
+<div class="alt-bg">
+  <div class="wrap">
+    <section>
+      <div class="eyebrow app">The Insight</div>
+      <h2 class="h2" style="margin-bottom:28px">Why This App Needs to Exist</h2>
+
+      <div class="insight-quote">
+        <blockquote>
+          "Spotify Wrapped tells you your taste once a year. Apple Screen Time shows you usage, not meaning. Google Discover has no user control whatsoever. RecoMe App gives you your complete taste identity — in real-time — and lets you edit it."
+        </blockquote>
+        <div class="iq-caption">The transparency and control layer that every other platform refuses to build.</div>
+      </div>
+
+      <div class="g3" style="margin-top:32px">
+        <div class="card">
+          <h4 style="color:rgba(255,255,255,0.9)">Spotify Wrapped</h4>
+          <p>Once a year. Retrospective. No editing. No acting on it. A fun summary card, not a tool.</p>
+        </div>
+        <div class="card">
+          <h4 style="color:rgba(255,255,255,0.9)">Apple Screen Time</h4>
+          <p>Shows you usage data — hours spent, app opens. Tells you nothing about what it means or what you care about.</p>
+        </div>
+        <div class="card">
+          <h4 style="color:rgba(255,255,255,0.9)">Google Discover</h4>
+          <p>Infers your preferences and acts on them — but gives you zero transparency and no real control. The feed serves Google's interests, not yours.</p>
+        </div>
+      </div>
+
+      <div class="callout app" style="margin-top:24px">
+        <div class="callout-ico">📱</div>
+        <div>
+          <h4>RecoMe App</h4>
+          <p>Real-time preference graph. Fully editable. Agents that act on your behalf. Data you can export and carry. This is the transparency and control layer that every other platform refuses to build.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- TARGET AUDIENCE -->
+<div class="wrap">
+  <section>
+    <div class="eyebrow app">Target Audience</div>
+    <h2 class="h2" style="margin-bottom:12px">Three Personas. Three Distinct Needs.</h2>
+    <p class="sub" style="margin-bottom:36px">Each user gets a fundamentally different kind of value from the same six screens.</p>
+
+    <div class="persona-grid">
+      <div class="persona-card">
+        <div class="pa-avatar">👩‍💻</div>
+        <h4>Priya</h4>
+        <div class="pa-sub">UX Researcher, 28</div>
+        <p>Uses InsightsScreen to understand her own professional taste clusters for positioning. The app shows her what she's actually been engaging with — and turns it into professional intelligence she can use in client pitches.</p>
+      </div>
+      <div class="persona-card">
+        <div class="pa-avatar">🍷</div>
+        <h4>Tom</h4>
+        <div class="pa-sub">Wine Enthusiast, 45</div>
+        <p>Uses WatchlistScreen to track 8 bottles and gets price drop alerts from ShopperAgent. Never misses a limited release he'd have never found manually. Saves money on every purchase without doing the legwork.</p>
+      </div>
+      <div class="persona-card">
+        <div class="pa-avatar">🛡️</div>
+        <h4>Alex</h4>
+        <div class="pa-sub">Privacy-Conscious Professional, 35</div>
+        <p>Uses PreferencesScreen to control exactly what the graph knows, and SettingsScreen to see every data point stored. Finally — a product that treats personalization as a user right, not a platform resource.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- USE CASE 1 — PRIYA -->
+<div class="alt-bg">
+  <div class="wrap">
+    <section>
+      <div class="eyebrow app">Use Case 01</div>
+      <h2 class="h2" style="margin-bottom:8px">Using Your Taste Identity as Professional Intelligence</h2>
+      <p class="sub" style="margin-bottom:32px">Priya needs to position herself for a new client pitch in healthcare UX.</p>
+
+      <div class="usecase">
+        <div class="usecase-header" style="background:rgba(13,148,136,0.07);">
+          <div class="uc-num" style="background:var(--app)">P</div>
+          <div>
+            <h4>Priya · UX Researcher · InsightsScreen + AdvisorAgent</h4>
+            <p>AdvisorAgent has been monitoring engagement patterns for 3 weeks without any input from Priya.</p>
+          </div>
+        </div>
+        <div class="usecase-body">
+          <div class="wf">
+            <div class="wf-step">
+              <div class="wf-n" style="background:var(--app)">1</div>
+              <div class="wf-txt">
+                <h5>Priya opens InsightsScreen</h5>
+                <p>AdvisorAgent has been monitoring her engagement patterns for 3 weeks — silently building her taste profile.</p>
+              </div>
+            </div>
+            <div class="wf-arrow">↓</div>
+            <div class="wf-step">
+              <div class="wf-n" style="background:var(--app)">2</div>
+              <div class="wf-txt">
+                <h5>Taste cluster map surfaces</h5>
+                <p>3 clusters detected: "Accessibility + Inclusive Design" (high engagement), "Behavioral Psychology + Nudge Theory" (medium), "FinTech UX patterns" (medium).</p>
+              </div>
+            </div>
+            <div class="wf-arrow">↓</div>
+            <div class="wf-step">
+              <div class="wf-n" style="background:var(--app)">3</div>
+              <div class="wf-txt">
+                <h5>Priya asks AdvisorAgent a question</h5>
+                <p>"How would you describe my design expertise based on what I've actually engaged with?"</p>
+              </div>
+            </div>
+            <div class="wf-arrow">↓</div>
+            <div class="wf-step">
+              <div class="wf-n" style="background:var(--app)">4</div>
+              <div class="wf-txt">
+                <h5>AdvisorAgent queries the knowledge graph</h5>
+                <p>Top 15 entities by weight, last 30 days engagement patterns, depth signals (re-reads, saved, shared).</p>
+              </div>
+            </div>
+            <div class="wf-arrow">↓</div>
+            <div class="wf-step">
+              <div class="wf-n" style="background:var(--app)">5</div>
+              <div class="wf-txt">
+                <h5>AdvisorAgent responds with a precise profile</h5>
+                <p>"Your deepest area is accessibility-first design — you spend 3x longer on accessibility content than any other topic. You have strong adjacent interest in healthcare UX (8 articles this month). You're lighter on visual design trends."</p>
+              </div>
+            </div>
+            <div class="wf-arrow">↓</div>
+            <div class="wf-step">
+              <div class="wf-n" style="background:var(--app)">6</div>
+              <div class="wf-txt">
+                <h5>Priya uses this to position her pitch</h5>
+                <p>She frames herself as an "accessibility-first healthcare UX specialist" — grounded in actual engagement data, not intuition.</p>
+              </div>
+            </div>
+            <div class="wf-arrow">↓</div>
+            <div class="wf-step">
+              <div class="wf-n" style="background:var(--app)">7</div>
+              <div class="wf-txt">
+                <h5>ScoutAgent surfaces two healthcare UX conference CFPs</h5>
+                <p>Both match her exact profile. Priya didn't have to search. They appeared because the graph knew what she was ready for.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="callout app" style="margin-top:20px">
+            <div class="callout-ico">✅</div>
+            <div>
+              <h4>Result</h4>
+              <p>Priya lands the pitch. The app showed her something about herself she hadn't consciously recognized. Her taste identity became a professional asset.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- USE CASE 2 — TOM -->
+<div class="wrap">
+  <section>
+    <div class="eyebrow app">Use Case 02</div>
+    <h2 class="h2" style="margin-bottom:8px">WatchlistScreen + ShopperAgent: The Personal Sommelier That Never Sleeps</h2>
+    <p class="sub" style="margin-bottom:32px">Tom has 340 wines rated on Vivino. He uses WatchlistScreen to track 8 bottles he wants to buy at the right price.</p>
+
+    <div class="usecase">
+      <div class="usecase-header" style="background:rgba(13,148,136,0.07);">
+        <div class="uc-num" style="background:var(--app)">T</div>
+        <div>
+          <h4>Tom · Wine Enthusiast · WatchlistScreen + ShopperAgent</h4>
+          <p>Vivino import, 340 wines rated, ShopperAgent active on 8 bottles across 6 retailers.</p>
+        </div>
+      </div>
+      <div class="usecase-body">
+        <div class="wf">
+          <div class="wf-step">
+            <div class="wf-n" style="background:var(--app)">1</div>
+            <div class="wf-txt">
+              <h5>Tom imports Vivino data via ImportManager</h5>
+              <p>340 wines rated. 89 saved bottles. 5 minutes to import and process.</p>
+            </div>
+          </div>
+          <div class="wf-arrow">↓</div>
+          <div class="wf-step">
+            <div class="wf-n" style="background:var(--app)">2</div>
+            <div class="wf-txt">
+              <h5>Interest graph builds automatically</h5>
+              <p>Barolo (w:0.94), Barbaresco (w:0.88), Nebbiolo (w:0.91). Dislikes: natural-wine (w:-0.7). No manual configuration required.</p>
+            </div>
+          </div>
+          <div class="wf-arrow">↓</div>
+          <div class="wf-step">
+            <div class="wf-n" style="background:var(--app)">3</div>
+            <div class="wf-txt">
+              <h5>Tom opens WatchlistScreen</h5>
+              <p>8 bottles on watch. ShopperAgent active on all 8. Each bottle shows current price, 90-day price chart, availability across 6 retailers, trend arrow.</p>
+            </div>
+          </div>
+
+          <div class="wf-arrow">↓</div>
+          <div class="wf-step">
+            <div class="wf-n" style="background:var(--app)">4</div>
+            <div class="wf-txt">
+              <h5>Wednesday 11pm — ShopperAgent detects a price drop</h5>
+              <p>Giacomo Conterno Barolo 2016 listed at $89 (was $140 last month) on Wine.com. Limited stock: 3 bottles remaining.</p>
+            </div>
+          </div>
+          <div class="wf-arrow">↓</div>
+          <div class="wf-step">
+            <div class="wf-n" style="background:var(--app)">5</div>
+            <div class="wf-txt">
+              <h5>Push notification sent immediately</h5>
+              <p>Tom sees it instantly even though he wasn't checking the app.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="notif-mock" style="margin:20px 0">
+          <div class="nm-ico">🍷</div>
+          <div>
+            <div class="nm-title">Giacomo Conterno Barolo 2016 — $89</div>
+            <div class="nm-body">37% below 90-day average. 3 bottles remaining on Wine.com. This matches your top preference node (Barolo, w:0.94).</div>
+            <div class="nm-time">ShopperAgent · Just now</div>
+          </div>
+        </div>
+
+        <div class="wf" style="margin-top:8px">
+          <div class="wf-step">
+            <div class="wf-n" style="background:var(--app)">6</div>
+            <div class="wf-txt">
+              <h5>Tom opens WatchlistScreen from notification</h5>
+              <p>One tap to purchase. The whole experience takes under 60 seconds from notification to order.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout app" style="margin-top:20px">
+          <div class="callout-ico">✅</div>
+          <div>
+            <h4>Result</h4>
+            <p>Tom saves $51 per bottle and doesn't miss a limited release he would have never found manually. ShopperAgent does the monitoring 24/7 so Tom doesn't have to.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Graph mock for Tom's interest nodes -->
+    <div class="graph-mock" style="margin-top:32px">
+      <div class="gm-title">Tom's Wine Interest Graph — Top Nodes</div>
+      <div class="gm-node">
+        <div class="gn-label">Barolo</div>
+        <div class="gn-bar-wrap"><div class="gn-bar" style="width:94%"></div></div>
+        <div class="gn-val">0.94</div>
+      </div>
+      <div class="gm-node">
+        <div class="gn-label">Nebbiolo</div>
+        <div class="gn-bar-wrap"><div class="gn-bar" style="width:91%"></div></div>
+        <div class="gn-val">0.91</div>
+      </div>
+      <div class="gm-node">
+        <div class="gn-label">Barbaresco</div>
+        <div class="gn-bar-wrap"><div class="gn-bar" style="width:88%"></div></div>
+        <div class="gn-val">0.88</div>
+      </div>
+      <div class="gm-node">
+        <div class="gn-label">Natural Wine</div>
+        <div class="gn-bar-wrap"><div class="gn-bar gn-neg" style="width:70%"></div></div>
+        <div class="gn-val neg">-0.70</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- MONETIZATION -->
+<div class="alt-bg">
+  <div class="wrap">
+    <section>
+      <div class="eyebrow app">Monetization</div>
+      <h2 class="h2" style="margin-bottom:12px">Three Revenue Streams</h2>
+      <p class="sub" style="margin-bottom:36px">Consumer subscriptions form the core. In-app packs and data portability create incremental revenue without adding friction.</p>
+
+      <div class="pricing-grid">
+        <div class="price-card">
+          <div class="pn">Free</div>
+          <div class="pa"><sup>$</sup>0</div>
+          <div class="pm">forever</div>
+          <div class="pd">2 platforms. Basic preference graph. No agents.</div>
+          <ul>
+            <li>DashboardScreen — basic view</li>
+            <li>PreferencesScreen — limited nodes</li>
+            <li>2 connected platforms</li>
+            <li class="off">AI Agents (AdvisorAgent, ShopperAgent)</li>
+            <li class="off">InsightsScreen (ScoutAgent)</li>
+            <li class="off">WatchlistScreen (ShopperAgent)</li>
+            <li class="off">Data export</li>
+          </ul>
+        </div>
+        <div class="price-card featured">
+          <div class="featured-badge">Most Popular</div>
+          <div class="pn">Pro</div>
+          <div class="pa"><sup>$</sup>9</div>
+          <div class="pm">/month</div>
+          <div class="pd">All platforms, full graph, all agents. The complete RecoMe experience.</div>
+          <ul>
+            <li>All 6 screens unlocked</li>
+            <li>All platform connections</li>
+            <li>Full preference graph — unlimited nodes</li>
+            <li>AdvisorAgent — unlimited chat</li>
+            <li>ShopperAgent — up to 20 watches</li>
+            <li>ScoutAgent — InsightsScreen</li>
+            <li>Data export (monthly)</li>
+          </ul>
+        </div>
+        <div class="price-card">
+          <div class="pn">Team</div>
+          <div class="pa"><sup>$</sup>19</div>
+          <div class="pm">/month</div>
+          <div class="pd">Pro features for up to 5 household members. Shared watchlists.</div>
+          <ul>
+            <li>Everything in Pro</li>
+            <li>Up to 5 family/team members</li>
+            <li>Shared WatchlistScreen</li>
+            <li>Household preference graph</li>
+            <li>Priority support</li>
+            <li>Weekly data export</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="extra-grid">
+        <div class="extra-card">
+          <div class="ec-ico">🛒</div>
+          <div>
+            <h5>Enhanced ShopperAgent Pack</h5>
+            <p>Monitor more retailers, faster polling intervals, priority price alerts, multi-currency support.</p>
+            <div class="ec-price">$4.99 / month add-on</div>
+          </div>
+        </div>
+        <div class="extra-card">
+          <div class="ec-ico">🔑</div>
+          <div>
+            <h5>Data Portability Premium</h5>
+            <p>Encrypted export, "Sign in with RecoMe" identity features, connects to Platform API. Your taste identity becomes portable across the internet.</p>
+            <div class="ec-price">$2 / month add-on</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- COMPETITIVE POSITIONING -->
+<div class="wrap">
+  <section>
+    <div class="eyebrow app">Competitive Positioning</div>
+    <h2 class="h2" style="margin-bottom:12px">Every Other Platform Fails on the Basics</h2>
+    <p class="sub" style="margin-bottom:32px">Compare on the six dimensions that actually matter to users. No other product checks all six boxes.</p>
+
+    <div class="ctbl-wrap">
+      <table class="ctbl">
+        <thead>
+          <tr>
+            <th>Capability</th>
+            <th>Spotify</th>
+            <th>Google Discover</th>
+            <th>Apple Screen Time</th>
+            <th>Pinterest</th>
+            <th class="highlight">RecoMe App</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Shows your taste graph in real-time</td>
+            <td class="cx">✗</td>
+            <td class="cx">✗</td>
+            <td class="cx">✗</td>
+            <td class="cp">~</td>
+            <td class="ck us">✓</td>
+          </tr>
+          <tr>
+            <td>You can edit your own preferences</td>
+            <td class="cx">✗</td>
+            <td class="cx">✗</td>
+            <td class="cx">✗</td>
+            <td class="cx">✗</td>
+            <td class="ck us">✓</td>
+          </tr>
+          <tr>
+            <td>Cross-domain (shopping + content + learning)</td>
+            <td class="cx">✗</td>
+            <td class="cp">~</td>
+            <td class="cx">✗</td>
+            <td class="cx">✗</td>
+            <td class="ck us">✓</td>
+          </tr>
+          <tr>
+            <td>Agent acts on your behalf</td>
+            <td class="cx">✗</td>
+            <td class="cx">✗</td>
+            <td class="cx">✗</td>
+            <td class="cx">✗</td>
+            <td class="ck us">✓</td>
+          </tr>
+          <tr>
+            <td>Privacy-first, local-first</td>
+            <td class="cx">✗</td>
+            <td class="cx">✗</td>
+            <td class="cp">~</td>
+            <td class="cx">✗</td>
+            <td class="ck us">✓</td>
+          </tr>
+          <tr>
+            <td>Data export and portability</td>
+            <td class="cp">~</td>
+            <td class="cx">✗</td>
+            <td class="cx">✗</td>
+            <td class="cx">✗</td>
+            <td class="ck us">✓</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:12px;color:rgba(255,255,255,0.25);margin-top:12px;">✓ full support &nbsp;~ partial &nbsp;✗ not supported</p>
+  </section>
+</div>
+
+<!-- BIG TECH POSITIONING -->
+<div class="alt-bg">
+  <div class="wrap">
+    <section>
+      <div class="eyebrow app">The Big Picture</div>
+      <h2 class="h2" style="margin-bottom:24px">The User Has Been an Afterthought. Until Now.</h2>
+
+      <div class="insight-quote">
+        <blockquote>
+          "Every platform knows your preferences. None of them show you. None of them let you edit. None of them act on your behalf without serving their own interests first."
+        </blockquote>
+        <div class="iq-caption">RecoMe App is the first product built for the user's interests — not the platform's engagement metrics.</div>
+      </div>
+
+      <div class="g3" style="margin-top:32px">
+        <div class="card">
+          <h4>They know you.</h4>
+          <p>Every major platform has built an incredibly detailed preference model of who you are. You're not allowed to see it.</p>
+        </div>
+        <div class="card">
+          <h4>You can't edit it.</h4>
+          <p>Even if you could see it, you can't correct it. Wrong signals stay in the graph forever. The algorithm decides what you like.</p>
+        </div>
+        <div class="card">
+          <h4>It's used against you.</h4>
+          <p>Your preference data serves their ad revenue and engagement metrics. Every recommendation is ultimately in service of the platform, not you.</p>
+        </div>
+      </div>
+
+      <div class="callout app" style="margin-top:28px">
+        <div class="callout-ico">📱</div>
+        <div>
+          <h4>RecoMe App is structurally different.</h4>
+          <p>The preference graph belongs to the user. The agents work for the user. The app's success is measured by user outcomes — not session time, not ad impressions. This isn't a positioning statement. It's an architectural decision.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- CRITICAL RISKS -->
+<div class="wrap">
+  <section>
+    <div class="eyebrow white">Critical Risks</div>
+    <h2 class="h2" style="margin-bottom:12px">Known Risks. Concrete Mitigations.</h2>
+    <p class="sub" style="margin-bottom:32px">We've identified three primary risks and have active mitigations for each.</p>
+
+    <div class="risk">
+      <div class="risk-ico">⚠️</div>
+      <div>
+        <h5>Mobile engagement competition</h5>
+        <p>TikTok, Instagram, and YouTube all have massive engagement loops and near-infinite content moats. RecoMe App is used differently — intentionally, not addictively — but discovery is hard when competing for home screen space. Mitigation: web-first approach reduces friction, and the use case (knowing yourself) doesn't compete with entertainment.</p>
+      </div>
+    </div>
+    <div class="risk">
+      <div class="risk-ico">⚠️</div>
+      <div>
+        <h5>App Store distribution and 30% cut</h5>
+        <p>Apple's 30% in-app purchase fee materially impacts subscription economics for a $9/month product. Mitigation: web app as primary product with native app as a convenience layer. Subscriptions managed via web checkout to avoid the App Store fee on the majority of revenue.</p>
+      </div>
+    </div>
+    <div class="risk">
+      <div class="risk-ico">⚠️</div>
+      <div>
+        <h5>Graph quality without the extension</h5>
+        <p>The app is significantly more powerful when fed by the browser extension. Without it, the graph starts cold and preference quality is lower. Mitigation: manual preference import, Vivino and Spotify data import at onboarding, and a structured onboarding questionnaire that seeds the graph with meaningful initial data.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- CTA -->
+<div style="background:rgba(13,148,136,0.04);border-top:1px solid rgba(13,148,136,0.15);border-bottom:1px solid rgba(13,148,136,0.15);">
+  <div class="wrap">
+    <section style="text-align:center">
+      <div class="eyebrow app" style="justify-content:center">Next Steps</div>
+      <h2 class="h2" style="margin-bottom:16px">Explore the Full Ecosystem</h2>
+      <p class="sub" style="margin:0 auto 40px;text-align:center">The App is one of five products. See how each one feeds the next — and what the full investment opportunity looks like.</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <a href="extension.html" class="btn-outline" style="border-color:rgba(35,86,232,0.5);color:#93b4fd">Extension</a>
+        <a href="agents.html" class="btn-outline" style="border-color:rgba(124,58,237,0.5);color:#c4b5fd">AI Agents</a>
+        <a href="sdk.html" class="btn-outline" style="border-color:rgba(217,119,6,0.5);color:#fcd34d">SDK</a>
+        <a href="platform.html" class="btn-outline" style="border-color:rgba(16,185,129,0.5);color:#6ee7b7">Platform API</a>
+        <a href="financials.html" class="btn-app">Financials and The Ask →</a>
+      </div>
+    </section>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <span class="logo">RecoMe</span>
+  <span>Pre-Seed Round 2026 · Confidential</span>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RecoMe Mobile App — Screen Walkthrough</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a0a0f;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .page-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px 40px;
+      border-bottom: 1px solid #1e293b;
+    }
+    .back-link {
+      color: #0d9488;
+      text-decoration: none;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      opacity: 0.85;
+      transition: opacity 0.2s;
+    }
+    .back-link:hover { opacity: 1; }
+    .page-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #f1f5f9;
+    }
+
+    /* ── Main layout ── */
+    .main-layout {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 40px 60px;
+      gap: 0;
+    }
+
+    .content-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 48px;
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    /* ── Phone column ── */
+    .phone-column {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      flex-shrink: 0;
+    }
+
+    /* ── Phone frame ── */
+    .phone-wrapper {
+      transform: scale(0.72);
+      transform-origin: top center;
+    }
+
+    .phone-frame {
+      width: 390px;
+      height: 844px;
+      background: #111827;
+      border-radius: 54px;
+      border: 3px solid #374151;
+      box-shadow:
+        0 0 0 1px #1f2937,
+        0 40px 120px rgba(0,0,0,0.8),
+        inset 0 0 0 1px #4b5563;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Notch */
+    .phone-notch {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 34px;
+      background: #111827;
+      border-radius: 0 0 20px 20px;
+      z-index: 100;
+      border-left: 3px solid #374151;
+      border-right: 3px solid #374151;
+      border-bottom: 3px solid #374151;
+    }
+
+    /* Home bar */
+    .phone-home-bar {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 130px;
+      height: 5px;
+      background: #6b7280;
+      border-radius: 3px;
+      z-index: 100;
+    }
+
+    /* Side buttons */
+    .phone-frame::before {
+      content: '';
+      position: absolute;
+      left: -5px;
+      top: 130px;
+      width: 4px;
+      height: 32px;
+      background: #374151;
+      border-radius: 2px 0 0 2px;
+      box-shadow: 0 48px 0 #374151, 0 96px 0 #374151;
+    }
+    .phone-frame::after {
+      content: '';
+      position: absolute;
+      right: -5px;
+      top: 160px;
+      width: 4px;
+      height: 64px;
+      background: #374151;
+      border-radius: 0 2px 2px 0;
+    }
+
+    /* Screen container */
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      border-radius: 52px;
+    }
+
+    /* Each screen */
+    .screen {
+      display: none;
+      width: 390px;
+      height: 844px;
+      background: #0f172a;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+    .screen.active { display: flex; }
+
+    /* Status bar */
+    .status-bar {
+      height: 44px;
+      padding: 14px 24px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 600;
+      color: #f1f5f9;
+      flex-shrink: 0;
+      margin-top: 6px;
+    }
+    .status-icons {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .signal-bars { display: flex; align-items: flex-end; gap: 2px; }
+    .signal-bars span {
+      background: #f1f5f9;
+      border-radius: 1px;
+      width: 3px;
+    }
+
+    /* App header */
+    .app-header {
+      padding: 10px 20px 8px;
+      flex-shrink: 0;
+    }
+    .app-header h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+    .app-header p {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    /* Scrollable content area */
+    .screen-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 16px 80px;
+      scrollbar-width: none;
+    }
+    .screen-content::-webkit-scrollbar { display: none; }
+
+    /* ─── SCREEN 1: Dashboard ─── */
+    .taste-graph-wrap {
+      background: #1e293b;
+      border-radius: 16px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .taste-graph-wrap h3 {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .stats-strip {
+      display: flex;
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 10px 0;
+      margin-bottom: 12px;
+    }
+    .stat-item {
+      flex: 1;
+      text-align: center;
+      border-right: 1px solid #334155;
+    }
+    .stat-item:last-child { border-right: none; }
+    .stat-num {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0d9488;
+    }
+    .stat-label {
+      font-size: 9px;
+      color: #64748b;
+      margin-top: 2px;
+      line-height: 1.3;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #94a3b8;
+      margin-bottom: 8px;
+      margin-top: 4px;
+    }
+    .activity-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid #1e293b;
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .activity-text { flex: 1; }
+    .activity-title { font-size: 12px; color: #e2e8f0; font-weight: 500; }
+    .activity-sub { font-size: 10px; color: #64748b; margin-top: 2px; }
+    .activity-time { font-size: 10px; color: #475569; }
+
+    /* ─── SCREEN 2: Chat ─── */
+    .chat-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-bottom: 1px solid #1e293b;
+      flex-shrink: 0;
+    }
+    .chat-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #7c3aed, #5b21b6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .chat-header-text h3 { font-size: 15px; font-weight: 600; color: #f1f5f9; }
+    .chat-header-text p { font-size: 10px; color: #22c55e; }
+    .back-arrow {
+      margin-left: auto;
+      color: #64748b;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      scrollbar-width: none;
+    }
+    .chat-messages::-webkit-scrollbar { display: none; }
+
+    .bubble-row {
+      display: flex;
+      flex-direction: column;
+    }
+    .bubble-row.user { align-items: flex-end; }
+    .bubble-row.agent { align-items: flex-start; }
+
+    .bubble {
+      max-width: 78%;
+      padding: 9px 13px;
+      border-radius: 16px;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .bubble-row.user .bubble {
+      background: #0d9488;
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .bubble-row.agent .bubble {
+      background: #1e293b;
+      color: #e2e8f0;
+      border-bottom-left-radius: 4px;
+    }
+    .bubble-time {
+      font-size: 9px;
+      color: #475569;
+      margin-top: 3px;
+      padding: 0 4px;
+    }
+    .bubble code {
+      background: #0f172a;
+      padding: 1px 4px;
+      border-radius: 4px;
+      font-size: 11px;
+      color: #0d9488;
+    }
+
+    .chat-input-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-top: 1px solid #1e293b;
+      background: #0f172a;
+      flex-shrink: 0;
+      padding-bottom: 24px;
+    }
+    .chat-input {
+      flex: 1;
+      background: #1e293b;
+      border: none;
+      border-radius: 20px;
+      padding: 9px 14px;
+      color: #94a3b8;
+      font-size: 12px;
+      outline: none;
+    }
+    .chat-send {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #0d9488;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* ─── SCREEN 3: Insights ─── */
+    .insight-card {
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+    .insight-card.blue { background: linear-gradient(135deg, #1e3a5f, #1e2d4a); border: 1px solid #2563eb33; }
+    .insight-card.teal { background: linear-gradient(135deg, #134e4a, #0f3d3a); border: 1px solid #0d948833; }
+    .insight-card.purple { background: linear-gradient(135deg, #2e1065, #1e1040); border: 1px solid #7c3aed33; }
+
+    .insight-tag {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      opacity: 0.7;
+    }
+    .insight-card.blue .insight-tag { color: #60a5fa; }
+    .insight-card.teal .insight-tag { color: #2dd4bf; }
+    .insight-card.purple .insight-tag { color: #a78bfa; }
+
+    .insight-title { font-size: 13px; font-weight: 600; color: #f1f5f9; margin-bottom: 4px; }
+    .insight-desc { font-size: 11px; color: #94a3b8; margin-bottom: 8px; line-height: 1.4; }
+    .insight-footer { display: flex; align-items: center; justify-content: space-between; }
+    .insight-score { font-size: 10px; color: #64748b; }
+    .insight-cta {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+    }
+    .insight-card.blue .insight-cta { background: #2563eb; color: #fff; }
+    .insight-card.teal .insight-cta { background: #0d9488; color: #fff; }
+    .insight-card.purple .insight-cta { background: #7c3aed; color: #fff; }
+    .insight-why { font-size: 9px; color: #475569; margin-top: 6px; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+
+    .insights-meta {
+      font-size: 11px;
+      color: #64748b;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    /* ─── SCREEN 4: Preferences ─── */
+    .prefs-meta {
+      font-size: 11px;
+      color: #64748b;
+      margin-bottom: 14px;
+    }
+    .prefs-meta span { color: #0d9488; font-weight: 600; }
+
+    .interest-item {
+      margin-bottom: 10px;
+    }
+    .interest-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    .interest-name { font-size: 12px; color: #e2e8f0; font-weight: 500; }
+    .interest-actions { display: flex; align-items: center; gap: 6px; }
+    .interest-weight { font-size: 11px; color: #0d9488; font-weight: 700; }
+    .interest-edit {
+      font-size: 9px;
+      color: #475569;
+      background: #1e293b;
+      border: none;
+      padding: 2px 7px;
+      border-radius: 5px;
+      cursor: pointer;
+      color: #94a3b8;
+    }
+    .weight-bar-track {
+      height: 6px;
+      background: #1e293b;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .weight-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #0d9488, #14b8a6);
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+
+    .blocked-section { margin-top: 14px; }
+    .blocked-title { font-size: 12px; font-weight: 600; color: #ef4444; margin-bottom: 8px; }
+    .blocked-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: #1e293b;
+      border-radius: 10px;
+      margin-bottom: 6px;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    .add-interest-btn {
+      width: 100%;
+      padding: 12px;
+      background: transparent;
+      border: 2px dashed #1e293b;
+      border-radius: 12px;
+      color: #0d9488;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 14px;
+    }
+
+    /* ─── SCREEN 5: Watchlist ─── */
+    .watchlist-header-sub {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .item-count-badge {
+      background: #0d9488;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .watch-item {
+      background: #1e293b;
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      position: relative;
+    }
+    .watch-item.alert { border: 1px solid #22c55e; background: #0f2a1a; }
+    .watch-item.in-range { border: 1px solid #0d9488; }
+
+    .watch-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .watch-name { font-size: 13px; font-weight: 600; color: #f1f5f9; }
+    .watch-badge {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 3px 7px;
+      border-radius: 6px;
+    }
+    .badge-alert { background: #22c55e; color: #000; }
+    .badge-watching { background: #f59e0b; color: #000; }
+    .badge-inrange { background: #0d9488; color: #fff; }
+
+    .watch-price-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .watch-price { font-size: 18px; font-weight: 700; color: #f1f5f9; }
+    .watch-price.green { color: #22c55e; }
+    .watch-target { font-size: 10px; color: #64748b; margin-top: 2px; }
+    .watch-cta {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      background: #0d9488;
+      color: #fff;
+    }
+    .watch-cta.green { background: #22c55e; color: #000; }
+
+    .agent-status {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 10px 14px;
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .agent-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      animation: pulse 2s infinite;
+      flex-shrink: 0;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .agent-status-text { font-size: 10px; color: #64748b; }
+
+    /* ─── SCREEN 6: Settings ─── */
+    .settings-section {
+      margin-bottom: 14px;
+    }
+    .settings-section-title {
+      font-size: 10px;
+      font-weight: 700;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 8px;
+    }
+    .settings-card {
+      background: #1e293b;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .settings-row {
+      display: flex;
+      align-items: center;
+      padding: 11px 14px;
+      border-bottom: 1px solid #0f172a;
+    }
+    .settings-row:last-child { border-bottom: none; }
+    .settings-row-icon { font-size: 16px; width: 24px; flex-shrink: 0; }
+    .settings-row-label { flex: 1; font-size: 12px; color: #e2e8f0; margin-left: 8px; }
+    .toggle {
+      width: 36px;
+      height: 20px;
+      border-radius: 10px;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .toggle.on { background: #0d9488; }
+    .toggle.off { background: #334155; }
+    .toggle::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      transition: left 0.2s;
+    }
+    .toggle.on::after { left: 18px; }
+    .toggle.off::after { left: 2px; }
+
+    .settings-text { font-size: 11px; color: #64748b; }
+    .settings-actions { display: flex; gap: 6px; margin-top: 6px; }
+    .settings-btn {
+      font-size: 10px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid #334155;
+      background: transparent;
+      color: #94a3b8;
+      cursor: pointer;
+    }
+
+    /* ── Tabs ── */
+    .tabs-wrapper {
+      width: 390px;
+      margin-top: calc(844px * 0.72 - 844px + 24px);
+      position: relative;
+      top: 0;
+    }
+    /* Actually compute the offset from the phone scale */
+    .phone-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+    .phone-scaled {
+      transform: scale(0.72);
+      transform-origin: top center;
+      width: 390px;
+      height: 844px;
+      flex-shrink: 0;
+    }
+    /* We compensate for scale reduction */
+    .phone-spacer {
+      height: calc(844px * 0.72);
+      width: 390px;
+      position: relative;
+      margin-bottom: 24px;
+      flex-shrink: 0;
+    }
+    .phone-scaled-inner {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform: scale(0.72);
+      transform-origin: top left;
+    }
+
+    .tabs {
+      display: flex;
+      background: #1e293b;
+      border-radius: 14px;
+      padding: 4px;
+      gap: 2px;
+      width: 390px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 8px 4px;
+      background: transparent;
+      border: none;
+      border-radius: 10px;
+      color: #64748b;
+      font-size: 10px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .tab-btn:hover { color: #94a3b8; }
+    .tab-btn.active {
+      background: #0d9488;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* ── Annotation panel ── */
+    .annotation-panel {
+      width: 280px;
+      flex-shrink: 0;
+      padding-top: 12px;
+    }
+    .annotation-card {
+      background: #1e293b;
+      border-radius: 16px;
+      padding: 20px;
+      border-left: 3px solid #0d9488;
+      position: sticky;
+      top: 24px;
+    }
+    .annotation-screen-name {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #0d9488;
+      margin-bottom: 12px;
+    }
+    .annotation-block {
+      margin-bottom: 14px;
+    }
+    .annotation-block:last-child { margin-bottom: 0; }
+    .annotation-label {
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #475569;
+      margin-bottom: 5px;
+    }
+    .annotation-text {
+      font-size: 13px;
+      color: #cbd5e1;
+      line-height: 1.55;
+    }
+
+    /* ── Bottom ── */
+    .page-footer {
+      text-align: center;
+      padding: 32px;
+      border-top: 1px solid #1e293b;
+      margin-top: 40px;
+    }
+    .page-footer a {
+      color: #0d9488;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    /* SVG Taste Graph */
+    .graph-svg { display: block; }
+
+    /* Sparkline */
+    .sparkline-wrap { margin-top: 8px; }
+  </style>
+</head>
+<body>
+
+  <!-- ── Header ── -->
+  <header class="page-header">
+    <a href="../index.html" class="back-link">← Back</a>
+    <span style="color:#334155">|</span>
+    <h1 class="page-title">RecoMe Mobile App — Screen Walkthrough</h1>
+  </header>
+
+  <!-- ── Main layout ── -->
+  <div class="main-layout">
+    <div class="content-row">
+
+      <!-- Left: phone + tabs -->
+      <div class="phone-column">
+
+        <!-- Phone (scaled) -->
+        <div class="phone-spacer">
+          <div class="phone-scaled-inner">
+            <div class="phone-frame">
+              <div class="phone-notch"></div>
+              <div class="phone-home-bar"></div>
+              <div class="phone-screen">
+
+                <!-- ── SCREEN 1: Dashboard ── -->
+                <div class="screen active" id="screen-dashboard">
+                  <div class="status-bar">
+                    <span>9:41</span>
+                    <div class="status-icons">
+                      <div class="signal-bars">
+                        <span style="height:4px"></span>
+                        <span style="height:7px"></span>
+                        <span style="height:10px"></span>
+                        <span style="height:13px"></span>
+                      </div>
+                      <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+                        <rect x="0" y="3" width="14" height="8" rx="2" stroke="#f1f5f9" stroke-width="1.5"/>
+                        <rect x="15" y="5" width="1.5" height="4" rx="0.75" fill="#f1f5f9"/>
+                        <rect x="1.5" y="4.5" width="11" height="5" rx="1" fill="#f1f5f9"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="app-header">
+                    <h2>Good morning, James 👋</h2>
+                    <p>Your taste identity · 127 nodes · 340 edges</p>
+                  </div>
+                  <div class="screen-content">
+
+                    <!-- Taste graph -->
+                    <div class="taste-graph-wrap">
+                      <h3>Taste Graph</h3>
+                      <svg class="graph-svg" width="358" height="200" viewBox="0 0 358 200">
+                        <!-- Connection lines -->
+                        <line x1="179" y1="100" x2="179" y2="26" stroke="#1e3a2e" stroke-width="2"/>
+                        <line x1="179" y1="100" x2="94" y2="55" stroke="#1e2a3e" stroke-width="2"/>
+                        <line x1="179" y1="100" x2="46" y2="130" stroke="#2a1e3e" stroke-width="2"/>
+                        <line x1="179" y1="100" x2="94" y2="170" stroke="#3e2a1e" stroke-width="2"/>
+                        <line x1="179" y1="100" x2="280" y2="55" stroke="#1e2e3e" stroke-width="2"/>
+                        <line x1="179" y1="100" x2="312" y2="130" stroke="#3e1e2a" stroke-width="2"/>
+
+                        <!-- Center node -->
+                        <circle cx="179" cy="100" r="28" fill="#0d9488" opacity="0.15"/>
+                        <circle cx="179" cy="100" r="20" fill="#0d9488" opacity="0.9"/>
+                        <text x="179" y="104" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">James</text>
+
+                        <!-- Medical Research (green, large) -->
+                        <circle cx="179" cy="26" r="22" fill="#16a34a" opacity="0.85"/>
+                        <text x="179" y="23" text-anchor="middle" font-size="7.5" fill="#fff" font-weight="600">Medical</text>
+                        <text x="179" y="33" text-anchor="middle" font-size="7.5" fill="#fff" font-weight="600">Research</text>
+
+                        <!-- Amazon Shopping (blue) -->
+                        <circle cx="94" cy="55" r="16" fill="#2563eb" opacity="0.85"/>
+                        <text x="94" y="52" text-anchor="middle" font-size="7" fill="#fff" font-weight="600">Amazon</text>
+                        <text x="94" y="62" text-anchor="middle" font-size="7" fill="#fff" font-weight="600">Shopping</text>
+
+                        <!-- Technology (purple) -->
+                        <circle cx="46" cy="130" r="18" fill="#7c3aed" opacity="0.85"/>
+                        <text x="46" y="128" text-anchor="middle" font-size="7.5" fill="#fff" font-weight="600">Tech</text>
+                        <text x="46" y="138" text-anchor="middle" font-size="7.5" fill="#fff" font-weight="600">nology</text>
+
+                        <!-- Cooking (amber) -->
+                        <circle cx="94" cy="170" r="14" fill="#d97706" opacity="0.85"/>
+                        <text x="94" y="173" text-anchor="middle" font-size="7.5" fill="#fff" font-weight="600">Cooking</text>
+
+                        <!-- Music (teal) -->
+                        <circle cx="280" cy="55" r="13" fill="#0891b2" opacity="0.85"/>
+                        <text x="280" y="58" text-anchor="middle" font-size="7.5" fill="#fff" font-weight="600">Music</text>
+
+                        <!-- Fitness (orange) -->
+                        <circle cx="312" cy="130" r="15" fill="#ea580c" opacity="0.85"/>
+                        <text x="312" y="133" text-anchor="middle" font-size="7.5" fill="#fff" font-weight="600">Fitness</text>
+                      </svg>
+                    </div>
+
+                    <!-- Stats -->
+                    <p class="section-title">This Week</p>
+                    <div class="stats-strip">
+                      <div class="stat-item">
+                        <div class="stat-num">847</div>
+                        <div class="stat-label">items<br>filtered</div>
+                      </div>
+                      <div class="stat-item">
+                        <div class="stat-num">3</div>
+                        <div class="stat-label">insights<br>surfaced</div>
+                      </div>
+                      <div class="stat-item">
+                        <div class="stat-num" style="color:#22c55e">$45</div>
+                        <div class="stat-label">saved by<br>ShopperAgent</div>
+                      </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <p class="section-title">Recent Activity</p>
+                    <div class="activity-item">
+                      <div class="activity-icon" style="background:#1e2a3e">📰</div>
+                      <div class="activity-text">
+                        <div class="activity-title">Async Rust in Production</div>
+                        <div class="activity-sub">Rust node updated: w 0.81 → 0.88</div>
+                      </div>
+                      <div class="activity-time">12m ago</div>
+                    </div>
+                    <div class="activity-item">
+                      <div class="activity-icon" style="background:#1a2620">🛍️</div>
+                      <div class="activity-text">
+                        <div class="activity-title">Air Jordan 4 Bred price drop</div>
+                        <div class="activity-sub">ShopperAgent · $265 (was $299)</div>
+                      </div>
+                      <div class="activity-time">1h ago</div>
+                    </div>
+                    <div class="activity-item">
+                      <div class="activity-icon" style="background:#1e1635">🎙️</div>
+                      <div class="activity-text">
+                        <div class="activity-title">New podcast: Raft consensus</div>
+                        <div class="activity-sub">ScoutAgent · 94% match</div>
+                      </div>
+                      <div class="activity-time">3h ago</div>
+                    </div>
+
+                  </div>
+                </div>
+
+                <!-- ── SCREEN 2: Agent Chat ── -->
+                <div class="screen" id="screen-agent">
+                  <div class="status-bar">
+                    <span>9:41</span>
+                    <div class="status-icons">
+                      <div class="signal-bars">
+                        <span style="height:4px"></span><span style="height:7px"></span><span style="height:10px"></span><span style="height:13px"></span>
+                      </div>
+                      <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><rect x="0" y="3" width="14" height="8" rx="2" stroke="#f1f5f9" stroke-width="1.5"/><rect x="15" y="5" width="1.5" height="4" rx="0.75" fill="#f1f5f9"/><rect x="1.5" y="4.5" width="11" height="5" rx="1" fill="#f1f5f9"/></svg>
+                    </div>
+                  </div>
+                  <div class="chat-header">
+                    <div class="chat-avatar">🤖</div>
+                    <div class="chat-header-text">
+                      <h3>AdvisorAgent</h3>
+                      <p>● Online</p>
+                    </div>
+                    <span class="back-arrow">⌃</span>
+                  </div>
+
+                  <div class="chat-messages">
+                    <div class="bubble-row user">
+                      <div class="bubble">Why did my Rust interest jump this week?</div>
+                      <span class="bubble-time">9:32 AM</span>
+                    </div>
+                    <div class="bubble-row agent">
+                      <div class="bubble">You spent <strong>47 minutes</strong> on Rust content this week (↑ from 12 min last week). Three articles drove this:<br><br>• "Async Rust in Production"<br>• "Writing Parsers in Rust"<br>• "Rust at Scale"<br><br>Your graph updated: Rust <code>w: 0.71 → 0.88</code></div>
+                      <span class="bubble-time">9:32 AM</span>
+                    </div>
+                    <div class="bubble-row user">
+                      <div class="bubble">Find me a good Rust project to contribute to</div>
+                      <span class="bubble-time">9:34 AM</span>
+                    </div>
+                    <div class="bubble-row agent">
+                      <div class="bubble">ScoutAgent found <strong>3 matches</strong> for you:<br><br>① <strong>tokio</strong> — async runtime, matches your async interest (w:0.88)<br>② <strong>ripgrep</strong> — systems focus, aligns with your Distributed Systems cluster<br>③ <strong>rustfmt</strong> — good first issues, 12 open right now<br><br>Want me to open any of these?</div>
+                      <span class="bubble-time">9:34 AM</span>
+                    </div>
+                  </div>
+
+                  <div class="chat-input-bar">
+                    <input class="chat-input" type="text" placeholder="Ask AdvisorAgent…" readonly />
+                    <button class="chat-send">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- ── SCREEN 3: Insights ── -->
+                <div class="screen" id="screen-insights">
+                  <div class="status-bar">
+                    <span>9:41</span>
+                    <div class="status-icons">
+                      <div class="signal-bars"><span style="height:4px"></span><span style="height:7px"></span><span style="height:10px"></span><span style="height:13px"></span></div>
+                      <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><rect x="0" y="3" width="14" height="8" rx="2" stroke="#f1f5f9" stroke-width="1.5"/><rect x="15" y="5" width="1.5" height="4" rx="0.75" fill="#f1f5f9"/><rect x="1.5" y="4.5" width="11" height="5" rx="1" fill="#f1f5f9"/></svg>
+                    </div>
+                  </div>
+                  <div class="app-header">
+                    <h2>Your Insights</h2>
+                    <p>Surfaced by ScoutAgent · Updated 2h ago</p>
+                  </div>
+                  <div class="screen-content" style="padding-top: 4px;">
+
+                    <div class="insight-card blue">
+                      <div class="insight-tag">Event</div>
+                      <div class="insight-title">📅 RustConf 2026 CFP</div>
+                      <div class="insight-desc">Deadline in 3 days · Matches your Rust interest (w: 0.88). Submit a talk on async systems or parser design.</div>
+                      <div class="insight-footer">
+                        <span class="insight-score">Match score: 0.91</span>
+                        <button class="insight-cta">Register →</button>
+                      </div>
+                      <div class="insight-why">Why am I seeing this?</div>
+                    </div>
+
+                    <div class="insight-card teal">
+                      <div class="insight-tag">Book</div>
+                      <div class="insight-title">📚 Designing Data-Intensive Apps</div>
+                      <div class="insight-desc">71% of engineers with your profile found this essential. Covers distributed consensus, your top cluster.</div>
+                      <div class="insight-footer">
+                        <span class="insight-score">Score: 0.84</span>
+                        <button class="insight-cta">View on Amazon</button>
+                      </div>
+                      <div class="insight-why">Why am I seeing this?</div>
+                    </div>
+
+                    <div class="insight-card purple">
+                      <div class="insight-tag">Podcast</div>
+                      <div class="insight-title">🎙 Systems Design Podcast Ep. 204</div>
+                      <div class="insight-desc">Topic: distributed consensus — your top interest cluster (Distributed Systems w: 0.93).</div>
+                      <div class="insight-footer">
+                        <span class="insight-score">Score: 0.89</span>
+                        <button class="insight-cta">Listen →</button>
+                      </div>
+                      <div class="insight-why">Why am I seeing this?</div>
+                    </div>
+
+                  </div>
+                </div>
+
+                <!-- ── SCREEN 4: Preferences ── -->
+                <div class="screen" id="screen-preferences">
+                  <div class="status-bar">
+                    <span>9:41</span>
+                    <div class="status-icons">
+                      <div class="signal-bars"><span style="height:4px"></span><span style="height:7px"></span><span style="height:10px"></span><span style="height:13px"></span></div>
+                      <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><rect x="0" y="3" width="14" height="8" rx="2" stroke="#f1f5f9" stroke-width="1.5"/><rect x="15" y="5" width="1.5" height="4" rx="0.75" fill="#f1f5f9"/><rect x="1.5" y="4.5" width="11" height="5" rx="1" fill="#f1f5f9"/></svg>
+                    </div>
+                  </div>
+                  <div class="app-header">
+                    <h2>Taste Identity ✏️</h2>
+                    <p class="prefs-meta"><span>47</span> active interests · <span style="color:#ef4444">12</span> blocked topics</p>
+                  </div>
+                  <div class="screen-content" style="padding-top: 4px;">
+
+                    <p class="section-title">Top Interests</p>
+
+                    <div class="interest-item">
+                      <div class="interest-top">
+                        <span class="interest-name">Distributed Systems</span>
+                        <div class="interest-actions">
+                          <span class="interest-weight">0.93</span>
+                          <button class="interest-edit">Edit</button>
+                        </div>
+                      </div>
+                      <div class="weight-bar-track"><div class="weight-bar-fill" style="width:93%"></div></div>
+                    </div>
+
+                    <div class="interest-item">
+                      <div class="interest-top">
+                        <span class="interest-name">Rust Programming</span>
+                        <div class="interest-actions">
+                          <span class="interest-weight">0.88</span>
+                          <button class="interest-edit">Edit</button>
+                        </div>
+                      </div>
+                      <div class="weight-bar-track"><div class="weight-bar-fill" style="width:88%"></div></div>
+                    </div>
+
+                    <div class="interest-item">
+                      <div class="interest-top">
+                        <span class="interest-name">System Design</span>
+                        <div class="interest-actions">
+                          <span class="interest-weight">0.81</span>
+                          <button class="interest-edit">Edit</button>
+                        </div>
+                      </div>
+                      <div class="weight-bar-track"><div class="weight-bar-fill" style="width:81%"></div></div>
+                    </div>
+
+                    <div class="interest-item">
+                      <div class="interest-top">
+                        <span class="interest-name">Cancer Treatment Research</span>
+                        <div class="interest-actions">
+                          <span class="interest-weight" style="color:#22c55e">1.00</span>
+                          <button class="interest-edit">Edit</button>
+                        </div>
+                      </div>
+                      <div class="weight-bar-track"><div class="weight-bar-fill" style="width:100%; background: linear-gradient(90deg,#16a34a,#22c55e)"></div></div>
+                    </div>
+
+                    <div class="interest-item">
+                      <div class="interest-top">
+                        <span class="interest-name">Chemo Side Effects</span>
+                        <div class="interest-actions">
+                          <span class="interest-weight">0.82</span>
+                          <button class="interest-edit">Edit</button>
+                        </div>
+                      </div>
+                      <div class="weight-bar-track"><div class="weight-bar-fill" style="width:82%"></div></div>
+                    </div>
+
+                    <div class="blocked-section">
+                      <p class="blocked-title">Blocked Topics</p>
+                      <div class="blocked-item">🚫 <span>Crypto / Web3</span></div>
+                      <div class="blocked-item">🚫 <span>Marketing content</span></div>
+                      <div class="blocked-item">🚫 <span>Celebrity news</span></div>
+                    </div>
+
+                    <button class="add-interest-btn">+ Add Interest</button>
+
+                  </div>
+                </div>
+
+                <!-- ── SCREEN 5: Watchlist ── -->
+                <div class="screen" id="screen-watchlist">
+                  <div class="status-bar">
+                    <span>9:41</span>
+                    <div class="status-icons">
+                      <div class="signal-bars"><span style="height:4px"></span><span style="height:7px"></span><span style="height:10px"></span><span style="height:13px"></span></div>
+                      <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><rect x="0" y="3" width="14" height="8" rx="2" stroke="#f1f5f9" stroke-width="1.5"/><rect x="15" y="5" width="1.5" height="4" rx="0.75" fill="#f1f5f9"/><rect x="1.5" y="4.5" width="11" height="5" rx="1" fill="#f1f5f9"/></svg>
+                    </div>
+                  </div>
+                  <div class="app-header">
+                    <h2>Watchlist 🛒</h2>
+                    <div class="watchlist-header-sub">
+                      <span class="item-count-badge">6 items</span>
+                    </div>
+                  </div>
+                  <div class="screen-content" style="padding-top: 0;">
+
+                    <!-- Item 1: Alert -->
+                    <div class="watch-item alert">
+                      <div class="watch-top">
+                        <span class="watch-name">Air Jordan 4 Bred</span>
+                        <span class="watch-badge badge-alert">🔔 ALERT</span>
+                      </div>
+                      <div class="watch-price-row">
+                        <div>
+                          <div class="watch-price green">$265</div>
+                          <div class="watch-target">Target: $280 · ✅ Below target</div>
+                        </div>
+                        <button class="watch-cta green">Buy on GOAT →</button>
+                      </div>
+                    </div>
+
+                    <!-- Item 2: Watching -->
+                    <div class="watch-item">
+                      <div class="watch-top">
+                        <span class="watch-name">Sony WH-1000XM6</span>
+                        <span class="watch-badge badge-watching">⏳ Watching</span>
+                      </div>
+                      <div class="watch-price-row">
+                        <div>
+                          <div class="watch-price">$349</div>
+                          <div class="watch-target">Target: $300 · $49 above target</div>
+                        </div>
+                        <svg class="sparkline-wrap" width="80" height="36" viewBox="0 0 80 36">
+                          <polyline points="0,28 12,24 24,30 36,18 48,22 60,14 72,20 80,16"
+                            fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <circle cx="80" cy="16" r="3" fill="#f59e0b"/>
+                        </svg>
+                      </div>
+                    </div>
+
+                    <!-- Item 3: In range -->
+                    <div class="watch-item in-range">
+                      <div class="watch-top">
+                        <span class="watch-name">DDIA Book</span>
+                        <span class="watch-badge badge-inrange">✅ In range</span>
+                      </div>
+                      <div class="watch-price-row">
+                        <div>
+                          <div class="watch-price" style="color:#0d9488">$38.99</div>
+                          <div class="watch-target">Target: $40 · $1.01 under target</div>
+                        </div>
+                        <button class="watch-cta">Buy Now →</button>
+                      </div>
+                    </div>
+
+                    <!-- Item 4: In range -->
+                    <div class="watch-item in-range">
+                      <div class="watch-top">
+                        <span class="watch-name">Keychron Q1</span>
+                        <span class="watch-badge badge-inrange">✅ In range</span>
+                      </div>
+                      <div class="watch-price-row">
+                        <div>
+                          <div class="watch-price" style="color:#0d9488">$169</div>
+                          <div class="watch-target">Target: $180 · $11 under target</div>
+                        </div>
+                        <button class="watch-cta">Buy Now →</button>
+                      </div>
+                    </div>
+
+                    <div class="agent-status">
+                      <div class="agent-dot"></div>
+                      <div class="agent-status-text">ShopperAgent · Last checked 4 min ago · Next check in 56 min</div>
+                    </div>
+
+                  </div>
+                </div>
+
+                <!-- ── SCREEN 6: Settings ── -->
+                <div class="screen" id="screen-settings">
+                  <div class="status-bar">
+                    <span>9:41</span>
+                    <div class="status-icons">
+                      <div class="signal-bars"><span style="height:4px"></span><span style="height:7px"></span><span style="height:10px"></span><span style="height:13px"></span></div>
+                      <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><rect x="0" y="3" width="14" height="8" rx="2" stroke="#f1f5f9" stroke-width="1.5"/><rect x="15" y="5" width="1.5" height="4" rx="0.75" fill="#f1f5f9"/><rect x="1.5" y="4.5" width="11" height="5" rx="1" fill="#f1f5f9"/></svg>
+                    </div>
+                  </div>
+                  <div class="app-header">
+                    <h2>Settings</h2>
+                  </div>
+                  <div class="screen-content" style="padding-top: 4px;">
+
+                    <!-- Connected Platforms -->
+                    <div class="settings-section">
+                      <p class="settings-section-title">Connected Platforms</p>
+                      <div class="settings-card">
+                        <div class="settings-row">
+                          <span class="settings-row-icon">▶️</span>
+                          <span class="settings-row-label">YouTube</span>
+                          <div class="toggle on"></div>
+                        </div>
+                        <div class="settings-row">
+                          <span class="settings-row-icon">🛒</span>
+                          <span class="settings-row-label">Amazon</span>
+                          <div class="toggle on"></div>
+                        </div>
+                        <div class="settings-row">
+                          <span class="settings-row-icon">𝕏</span>
+                          <span class="settings-row-label">Twitter / X</span>
+                          <div class="toggle on"></div>
+                        </div>
+                        <div class="settings-row">
+                          <span class="settings-row-icon">📷</span>
+                          <span class="settings-row-label">Instagram</span>
+                          <div class="toggle on"></div>
+                        </div>
+                        <div class="settings-row">
+                          <span class="settings-row-icon">💼</span>
+                          <span class="settings-row-label">LinkedIn</span>
+                          <div class="toggle on"></div>
+                        </div>
+                        <div class="settings-row">
+                          <span class="settings-row-icon">👥</span>
+                          <span class="settings-row-label">Facebook</span>
+                          <div class="toggle off"></div>
+                        </div>
+                        <div class="settings-row">
+                          <span class="settings-row-icon">📦</span>
+                          <span class="settings-row-label">eBay</span>
+                          <div class="toggle on"></div>
+                        </div>
+                        <div class="settings-row">
+                          <span class="settings-row-icon">🏬</span>
+                          <span class="settings-row-label">Walmart</span>
+                          <div class="toggle off"></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Privacy -->
+                    <div class="settings-section">
+                      <p class="settings-section-title">Privacy</p>
+                      <div class="settings-card">
+                        <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 6px;">
+                          <div style="display:flex;align-items:center;gap:8px;">
+                            <span class="settings-row-icon">🔒</span>
+                            <span class="settings-row-label" style="margin:0">Graph storage: Local only</span>
+                          </div>
+                          <span class="settings-text" style="padding-left: 32px;">847 KB on device</span>
+                          <div class="settings-actions" style="padding-left:32px">
+                            <button class="settings-btn">Export</button>
+                            <button class="settings-btn" style="color:#ef4444;border-color:#ef444433">Delete all</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Subscription -->
+                    <div class="settings-section">
+                      <p class="settings-section-title">Subscription</p>
+                      <div class="settings-card">
+                        <div class="settings-row" style="flex-direction:column; align-items:flex-start; gap:4px;">
+                          <div style="display:flex;align-items:center;gap:8px;">
+                            <span class="settings-row-icon">⭐</span>
+                            <span class="settings-row-label" style="margin:0">Pro Plan · $9/mo</span>
+                          </div>
+                          <span class="settings-text" style="padding-left:32px">Renews Jan 15, 2027</span>
+                          <div class="settings-actions" style="padding-left:32px">
+                            <button class="settings-btn">Manage</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- GuardianAgent -->
+                    <div class="settings-section">
+                      <p class="settings-section-title">GuardianAgent</p>
+                      <div class="settings-card">
+                        <div class="settings-row" style="flex-direction:column; align-items:flex-start; gap:4px;">
+                          <div style="display:flex;align-items:center;gap:8px;">
+                            <span class="settings-row-icon">🛡️</span>
+                            <span class="settings-row-label" style="margin:0">Status: <span style="color:#22c55e">Active</span></span>
+                          </div>
+                          <span class="settings-text" style="padding-left:32px">0 unauthorized calls logged</span>
+                          <div class="settings-actions" style="padding-left:32px">
+                            <button class="settings-btn">View audit log</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+              </div><!-- /phone-screen -->
+            </div><!-- /phone-frame -->
+          </div><!-- /phone-scaled-inner -->
+        </div><!-- /phone-spacer -->
+
+        <!-- Tabs -->
+        <div class="tabs" id="tabs">
+          <button class="tab-btn active" data-screen="dashboard">Dashboard</button>
+          <button class="tab-btn" data-screen="agent">Agent</button>
+          <button class="tab-btn" data-screen="insights">Insights</button>
+          <button class="tab-btn" data-screen="preferences">Prefs</button>
+          <button class="tab-btn" data-screen="watchlist">Watchlist</button>
+          <button class="tab-btn" data-screen="settings">Settings</button>
+        </div>
+
+      </div><!-- /phone-column -->
+
+      <!-- Right: annotation panel -->
+      <div class="annotation-panel">
+        <div class="annotation-card" id="annotation-card">
+          <div class="annotation-screen-name" id="ann-name">Dashboard</div>
+          <div class="annotation-block">
+            <div class="annotation-label">What you're seeing</div>
+            <div class="annotation-text" id="ann-seeing"></div>
+          </div>
+          <div class="annotation-block">
+            <div class="annotation-label">Key feature</div>
+            <div class="annotation-text" id="ann-key"></div>
+          </div>
+          <div class="annotation-block">
+            <div class="annotation-label">Why it matters</div>
+            <div class="annotation-text" id="ann-why"></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content-row -->
+
+    <!-- Bottom back link -->
+    <footer class="page-footer">
+      <a href="../index.html">← Back to demos</a>
+    </footer>
+  </div><!-- /main-layout -->
+
+  <script>
+    const annotations = {
+      dashboard: {
+        name: 'Dashboard',
+        seeing: "The home screen showing James's live taste graph — 127 interest nodes and 340 weighted edges — alongside real-time agent activity stats.",
+        key: 'The SVG taste graph clusters interests by domain with node size proportional to weight, giving an at-a-glance view of what the system knows about you.',
+        why: 'Users need to trust the system. Seeing their taste graph demystifies how RecoMe works and builds confidence that it represents them accurately.'
+      },
+      agent: {
+        name: 'Agent Chat — AdvisorAgent',
+        seeing: 'A conversational interface where the user interrogates their own taste graph and delegates discovery tasks to specialized sub-agents.',
+        key: 'The agent explains exactly why Rust interest increased — with specific articles and graph weight changes — then hands off to ScoutAgent to find matching open-source projects.',
+        why: "Explainability is the core differentiator. Users don't just get recommendations; they get a full audit trail of how their profile changed and why."
+      },
+      insights: {
+        name: 'Insights',
+        seeing: "Proactively surfaced cards — a conference CFP, a book recommendation, and a podcast episode — each ranked by match score against the user's graph.",
+        key: 'Every insight shows its match score and a "Why am I seeing this?" link, keeping the system transparent and learnable.',
+        why: 'Push-based discovery closes the loop: instead of the user hunting for relevant content, RecoMe delivers it at the right moment with full context.'
+      },
+      preferences: {
+        name: 'Preferences — Taste Identity',
+        seeing: "A ranked list of the user's top interests with visual weight bars and a list of explicitly blocked topics — all inferred from browsing behavior.",
+        key: 'Interests like "Cancer Treatment Research" (weight 1.00) show the graph works across sensitive domains — built from browsing signals, never clinical records.',
+        why: 'Users need control. The ability to view, edit, and block topics ensures RecoMe stays aligned with what actually matters to each person.'
+      },
+      watchlist: {
+        name: 'Watchlist',
+        seeing: 'A real-time price tracker for 6 items: sneakers, headphones, books, and a keyboard — with color-coded alerts when targets are hit.',
+        key: 'ShopperAgent runs continuously in the background, sending alerts the moment a price crosses a user-set threshold — no polling required from the user.',
+        why: 'Autonomous agents create tangible, measurable value. The "$45 saved" stat on the dashboard comes directly from this screen\'s alerts acting on the user\'s behalf.'
+      },
+      settings: {
+        name: 'Settings',
+        seeing: 'Platform connection toggles, privacy controls, subscription details, and the GuardianAgent audit panel — all in one place.',
+        key: 'GuardianAgent logs every API call made by other agents and surfaces a zero-unauthorized-calls status, giving users a security layer over all agent activity.',
+        why: 'Agent autonomy requires oversight. GuardianAgent is the trust mechanism that lets users grant agents broad permissions without anxiety about what they\'re doing.'
+      }
+    };
+
+    function switchScreen(key) {
+      // Hide all screens
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      // Show target
+      const target = document.getElementById('screen-' + key);
+      if (target) target.classList.add('active');
+
+      // Update tabs
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.screen === key);
+      });
+
+      // Update annotation
+      const ann = annotations[key];
+      if (ann) {
+        document.getElementById('ann-name').textContent = ann.name;
+        document.getElementById('ann-seeing').textContent = ann.seeing;
+        document.getElementById('ann-key').textContent = ann.key;
+        document.getElementById('ann-why').textContent = ann.why;
+      }
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => switchScreen(btn.dataset.screen));
+    });
+
+    // Initialize annotation
+    switchScreen('dashboard');
+  </script>
+</body>
+</html>

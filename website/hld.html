@@ -1,0 +1,1830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RecoMe — High Level System Design</title>
+  <meta name="description" content="A complete system design document for RecoMe — a privacy-first AI browser extension. Learn distributed systems, AI infrastructure, and real-world architecture through a real product." />
+  <link rel="icon" href="favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ═══════════════════════════════════════════════════════════════════════════
+       RecoMe HLD — Stylesheet
+       ═══════════════════════════════════════════════════════════════════════════ */
+
+    :root {
+      --bg: #0a0a1a;
+      --bg1: #0f0f25;
+      --bg2: #151530;
+      --bg3: #1a1a3a;
+      --surface: #1e1e40;
+      --border: #2a2a55;
+      --border-light: #3a3a6a;
+      --text: #e8e8f0;
+      --text-muted: #9090b0;
+      --text-dim: #606080;
+      --accent: #6366f1;
+      --accent-light: #818cf8;
+      --green: #4ade80;
+      --red: #f87171;
+      --orange: #fb923c;
+      --yellow: #fbbf24;
+      --cyan: #22d3ee;
+      --purple: #a78bfa;
+      --pink: #f472b6;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.3);
+      --shadow-glow: 0 0 40px rgba(99,102,241,0.15);
+      --mono: 'JetBrains Mono', monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Layout ────────────────────────────────────────────────────────────── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+    /* ── Navigation ────────────────────────────────────────────────────────── */
+    .hld-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(10, 10, 26, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+    }
+    .hld-nav .container {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .hld-nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      color: var(--text);
+      font-weight: 700;
+      font-size: 15px;
+    }
+    .hld-nav-brand img { height: 28px; }
+    .hld-nav-tag {
+      font-size: 11px;
+      background: var(--accent);
+      color: white;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    .hld-nav-links {
+      margin-left: auto;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .hld-nav-links a {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 4px 10px;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .hld-nav-links a:hover {
+      background: var(--bg3);
+      color: var(--text);
+    }
+
+    /* ── Hero ──────────────────────────────────────────────────────────────── */
+    .hld-hero {
+      padding: 80px 0 60px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hld-hero::before {
+      content: '';
+      position: absolute;
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hld-hero h1 {
+      font-size: clamp(32px, 5vw, 56px);
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+    .hld-hero h1 span {
+      background: linear-gradient(135deg, var(--accent), var(--cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hld-hero .subtitle {
+      font-size: 18px;
+      color: var(--text-muted);
+      max-width: 700px;
+      margin: 0 auto 32px;
+    }
+    .hld-hero-meta {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+    .hld-hero-meta span { display: flex; align-items: center; gap: 6px; }
+    .hld-hero-meta .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .dot-green { background: var(--green); }
+    .dot-purple { background: var(--purple); }
+    .dot-cyan { background: var(--cyan); }
+    .dot-orange { background: var(--orange); }
+
+    /* ── Table of Contents ─────────────────────────────────────────────────── */
+    .toc {
+      background: var(--bg1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      margin-bottom: 60px;
+    }
+    .toc h2 {
+      font-size: 18px;
+      margin-bottom: 20px;
+      color: var(--accent-light);
+    }
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 8px;
+    }
+    .toc a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.2s;
+    }
+    .toc a:hover {
+      background: var(--bg3);
+      color: var(--text);
+    }
+    .toc-num {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--accent);
+      font-weight: 600;
+      min-width: 28px;
+    }
+
+    /* ── Section ───────────────────────────────────────────────────────────── */
+    .hld-section {
+      margin-bottom: 80px;
+      scroll-margin-top: 80px;
+    }
+    .section-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 12px;
+    }
+    .section-label .num {
+      font-family: var(--mono);
+      background: rgba(99,102,241,0.15);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .hld-section h2 {
+      font-size: clamp(24px, 3.5vw, 36px);
+      font-weight: 800;
+      margin-bottom: 8px;
+      line-height: 1.2;
+    }
+    .hld-section > .lead {
+      font-size: 16px;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+      max-width: 800px;
+    }
+
+    /* ── Concept Box (What / Why / How / When) ─────────────────────────────── */
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .concept-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .concept-box h4 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .concept-box h4.what { color: var(--cyan); }
+    .concept-box h4.why { color: var(--green); }
+    .concept-box h4.how { color: var(--purple); }
+    .concept-box h4.when { color: var(--orange); }
+    .concept-box p {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ── Diagram Container ─────────────────────────────────────────────────── */
+    .diagram {
+      background: var(--bg1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      margin: 32px 0;
+      overflow-x: auto;
+    }
+    .diagram-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .diagram svg {
+      display: block;
+      margin: 0 auto;
+      max-width: 100%;
+      height: auto;
+    }
+
+    /* ── SVG Diagram Styles ────────────────────────────────────────────────── */
+    .d-box {
+      fill: var(--bg3);
+      stroke: var(--border-light);
+      stroke-width: 1.5;
+      rx: 10;
+    }
+    .d-box-accent {
+      fill: rgba(99,102,241,0.12);
+      stroke: var(--accent);
+      stroke-width: 1.5;
+      rx: 10;
+    }
+    .d-box-green {
+      fill: rgba(74,222,128,0.08);
+      stroke: var(--green);
+      stroke-width: 1.5;
+      rx: 10;
+    }
+    .d-box-orange {
+      fill: rgba(251,146,60,0.08);
+      stroke: var(--orange);
+      stroke-width: 1.5;
+      rx: 10;
+    }
+    .d-box-cyan {
+      fill: rgba(34,211,238,0.08);
+      stroke: var(--cyan);
+      stroke-width: 1.5;
+      rx: 10;
+    }
+    .d-box-purple {
+      fill: rgba(167,139,250,0.08);
+      stroke: var(--purple);
+      stroke-width: 1.5;
+      rx: 10;
+    }
+    .d-box-pink {
+      fill: rgba(244,114,182,0.08);
+      stroke: var(--pink);
+      stroke-width: 1.5;
+      rx: 10;
+    }
+    .d-text {
+      fill: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      text-anchor: middle;
+      dominant-baseline: central;
+    }
+    .d-text-sm {
+      fill: var(--text-muted);
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      font-weight: 500;
+      text-anchor: middle;
+      dominant-baseline: central;
+    }
+    .d-text-mono {
+      fill: var(--accent-light);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 500;
+      text-anchor: middle;
+      dominant-baseline: central;
+    }
+    .d-label {
+      fill: var(--text-dim);
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      text-anchor: middle;
+      dominant-baseline: central;
+    }
+    .d-arrow {
+      stroke: var(--border-light);
+      stroke-width: 1.5;
+      fill: none;
+      marker-end: url(#arrowhead);
+    }
+    .d-arrow-accent {
+      stroke: var(--accent);
+      stroke-width: 1.5;
+      fill: none;
+      marker-end: url(#arrowhead-accent);
+    }
+    .d-arrow-green {
+      stroke: var(--green);
+      stroke-width: 1.5;
+      fill: none;
+      marker-end: url(#arrowhead-green);
+    }
+    .d-arrow-dashed {
+      stroke: var(--text-dim);
+      stroke-width: 1;
+      stroke-dasharray: 5,5;
+      fill: none;
+      marker-end: url(#arrowhead);
+    }
+    .d-group-label {
+      fill: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      text-anchor: start;
+    }
+    .d-region {
+      fill: none;
+      stroke: var(--border);
+      stroke-width: 1;
+      stroke-dasharray: 8,4;
+      rx: 12;
+    }
+
+    /* ── Detail Cards ──────────────────────────────────────────────────────── */
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+    .detail-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+    .detail-card h4 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .detail-card p {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+    .detail-card .tag {
+      display: inline-block;
+      font-size: 10px;
+      font-family: var(--mono);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .tag-accent { background: rgba(99,102,241,0.15); color: var(--accent-light); }
+    .tag-green { background: rgba(74,222,128,0.12); color: var(--green); }
+    .tag-orange { background: rgba(251,146,60,0.12); color: var(--orange); }
+    .tag-cyan { background: rgba(34,211,238,0.12); color: var(--cyan); }
+    .tag-purple { background: rgba(167,139,250,0.12); color: var(--purple); }
+
+    /* ── Code Block ────────────────────────────────────────────────────────── */
+    .code-block {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 20px;
+      margin: 16px 0;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.8;
+      color: var(--text-muted);
+    }
+    .code-block .keyword { color: var(--purple); }
+    .code-block .string { color: var(--green); }
+    .code-block .comment { color: var(--text-dim); font-style: italic; }
+    .code-block .type { color: var(--cyan); }
+    .code-block .fn { color: var(--yellow); }
+
+    /* ── Table ─────────────────────────────────────────────────────────────── */
+    .hld-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 14px;
+    }
+    .hld-table th {
+      text-align: left;
+      padding: 12px 16px;
+      background: var(--bg2);
+      border-bottom: 2px solid var(--border);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-dim);
+      font-weight: 700;
+    }
+    .hld-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+    .hld-table tr:hover td { background: rgba(99,102,241,0.03); }
+    .hld-table code {
+      font-family: var(--mono);
+      font-size: 12px;
+      background: var(--bg3);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: var(--accent-light);
+    }
+
+    /* ── Callout ───────────────────────────────────────────────────────────── */
+    .callout {
+      border-left: 3px solid var(--accent);
+      background: rgba(99,102,241,0.05);
+      padding: 16px 20px;
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      margin: 20px 0;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    .callout strong { color: var(--text); }
+    .callout-green { border-left-color: var(--green); background: rgba(74,222,128,0.04); }
+    .callout-orange { border-left-color: var(--orange); background: rgba(251,146,60,0.04); }
+
+    /* ── Step Flow ─────────────────────────────────────────────────────────── */
+    .step-flow {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin: 24px 0;
+    }
+    .step-item {
+      display: flex;
+      gap: 20px;
+      padding: 20px 0;
+      position: relative;
+    }
+    .step-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 19px;
+      top: 56px;
+      bottom: 0;
+      width: 2px;
+      background: var(--border);
+    }
+    .step-num {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--bg3);
+      border: 2px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent-light);
+      flex-shrink: 0;
+      z-index: 1;
+    }
+    .step-content h4 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .step-content p {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ── Metric Row ────────────────────────────────────────────────────────── */
+    .metrics {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin: 20px 0;
+    }
+    .metric {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px 24px;
+      text-align: center;
+    }
+    .metric .value {
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--accent-light);
+      font-family: var(--mono);
+    }
+    .metric .label {
+      font-size: 11px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+
+    /* ── Footer ────────────────────────────────────────────────────────────── */
+    .hld-footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 0;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    .hld-footer a { color: var(--accent-light); text-decoration: none; }
+
+    /* ── Responsive ────────────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .hld-nav-links { display: none; }
+      .concept-grid { grid-template-columns: 1fr; }
+      .detail-grid { grid-template-columns: 1fr; }
+      .metrics { flex-direction: column; }
+      .hld-hero-meta { flex-direction: column; align-items: center; gap: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SVG Defs — Arrow markers
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<svg style="position:absolute;width:0;height:0">
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#3a3a6a" />
+    </marker>
+    <marker id="arrowhead-accent" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#6366f1" />
+    </marker>
+    <marker id="arrowhead-green" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#4ade80" />
+    </marker>
+  </defs>
+</svg>
+
+<!-- ═══════════════════ NAV ═══════════════════ -->
+<nav class="hld-nav">
+  <div class="container">
+    <a href="index.html" class="hld-nav-brand">
+      <img src="logo.png" alt="RecoMe" />
+      <span>RecoMe</span>
+    </a>
+    <span class="hld-nav-tag">HIGH LEVEL DESIGN</span>
+    <div class="hld-nav-links">
+      <a href="#architecture">Architecture</a>
+      <a href="#messaging">Messaging</a>
+      <a href="#scoring">Scoring</a>
+      <a href="#brain">AI Brain</a>
+      <a href="#storage">Storage</a>
+      <a href="#platforms">Platforms</a>
+      <a href="#commerce">Commerce</a>
+      <a href="index.html">Back to Site</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════ HERO ═══════════════════ -->
+<section class="hld-hero">
+  <div class="container">
+    <h1>System Design:<br /><span>RecoMe Architecture</span></h1>
+    <p class="subtitle">A complete high-level design document for building a privacy-first, AI-powered browser extension. Written so anyone — from students to senior engineers — can understand how real distributed systems are built.</p>
+    <div class="hld-hero-meta">
+      <span><span class="dot dot-green"></span> TypeScript + React 19</span>
+      <span><span class="dot dot-purple"></span> Chrome Manifest V3</span>
+      <span><span class="dot dot-cyan"></span> IndexedDB + Chrome Storage</span>
+      <span><span class="dot dot-orange"></span> Multi-LLM (Claude, GPT, Gemini)</span>
+    </div>
+  </div>
+</section>
+
+<main class="container">
+
+<!-- ═══════════════════ TABLE OF CONTENTS ═══════════════════ -->
+<div class="toc">
+  <h2>Table of Contents</h2>
+  <div class="toc-grid">
+    <a href="#architecture"><span class="toc-num">01</span> System Architecture Overview</a>
+    <a href="#messaging"><span class="toc-num">02</span> Message Passing System</a>
+    <a href="#content-pipeline"><span class="toc-num">03</span> Content Detection Pipeline</a>
+    <a href="#scoring"><span class="toc-num">04</span> Scoring Engine</a>
+    <a href="#memory"><span class="toc-num">05</span> Memory &amp; Learning</a>
+    <a href="#graph"><span class="toc-num">06</span> Knowledge Graph</a>
+    <a href="#brain"><span class="toc-num">07</span> AI Brain &amp; Agent System</a>
+    <a href="#platforms"><span class="toc-num">08</span> Platform Adapters</a>
+    <a href="#selectors"><span class="toc-num">09</span> Self-Healing Selectors</a>
+    <a href="#intelligence"><span class="toc-num">10</span> Platform Intelligence</a>
+    <a href="#overlay"><span class="toc-num">11</span> Overlay &amp; Prompts</a>
+    <a href="#commerce"><span class="toc-num">12</span> Commerce &amp; Price Tracking</a>
+    <a href="#importers"><span class="toc-num">13</span> Platform Importers</a>
+    <a href="#social"><span class="toc-num">14</span> Social &amp; Preference Packs</a>
+    <a href="#storage"><span class="toc-num">15</span> Storage Architecture</a>
+    <a href="#cloud"><span class="toc-num">16</span> Cloud &amp; Sync</a>
+    <a href="#monitoring"><span class="toc-num">17</span> Monitoring &amp; QA</a>
+    <a href="#security"><span class="toc-num">18</span> Security &amp; Privacy</a>
+    <a href="#e2e"><span class="toc-num">19</span> End-to-End Data Flow</a>
+    <a href="#decisions"><span class="toc-num">20</span> Key Design Decisions</a>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SECTION 1 — System Architecture Overview
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="hld-section" id="architecture">
+  <div class="section-label"><span class="num">01</span> Foundation</div>
+  <h2>System Architecture Overview</h2>
+  <p class="lead">RecoMe is a browser extension built on Chrome's Manifest V3 architecture. Think of it as three separate programs running at the same time, talking to each other through messages — like departments in a company communicating via internal memos.</p>
+
+  <div class="concept-grid">
+    <div class="concept-box">
+      <h4 class="what">&#128204; What</h4>
+      <p>A multi-process browser extension with a <strong>content script</strong> (interacts with web pages), a <strong>background service worker</strong> (the brain), and <strong>UI panels</strong> (popup, DevTools). Each runs in its own isolated sandbox.</p>
+    </div>
+    <div class="concept-box">
+      <h4 class="why">&#127793; Why</h4>
+      <p>Chrome enforces process isolation for security — a content script can't directly access IndexedDB, and the background can't touch the DOM. This separation is a <strong>security boundary</strong> that protects both the user and the extension.</p>
+    </div>
+    <div class="concept-box">
+      <h4 class="how">&#9881;&#65039; How</h4>
+      <p>Each process communicates via <code>chrome.runtime.sendMessage()</code> — an async request/response pattern. The background service worker acts as a central router, dispatching messages to the right handler.</p>
+    </div>
+    <div class="concept-box">
+      <h4 class="when">&#9200; When</h4>
+      <p>The content script loads on every HTTPS page (<code>document_idle</code>). The background starts when Chrome launches. The popup opens on icon click. DevTools opens from Chrome's developer panel.</p>
+    </div>
+  </div>
+
+  <!-- Architecture Diagram -->
+  <div class="diagram">
+    <div class="diagram-title">High-Level Architecture — Process Model</div>
+    <svg viewBox="0 0 900 520" xmlns="http://www.w3.org/2000/svg">
+      <!-- Regions -->
+      <rect class="d-region" x="20" y="40" width="260" height="440" />
+      <text class="d-group-label" x="36" y="62">Content Script (DOM)</text>
+
+      <rect class="d-region" x="320" y="40" width="260" height="440" />
+      <text class="d-group-label" x="336" y="62">Background Service Worker</text>
+
+      <rect class="d-region" x="620" y="40" width="260" height="440" />
+      <text class="d-group-label" x="636" y="62">UI Panels</text>
+
+      <!-- Content Script boxes -->
+      <rect class="d-box-cyan" x="40" y="90" width="220" height="50" />
+      <text class="d-text" x="150" y="115">Platform Adapters</text>
+
+      <rect class="d-box-cyan" x="40" y="160" width="220" height="50" />
+      <text class="d-text" x="150" y="185">Content Observer</text>
+
+      <rect class="d-box-cyan" x="40" y="230" width="220" height="50" />
+      <text class="d-text" x="150" y="255">Dwell Tracker</text>
+
+      <rect class="d-box-cyan" x="40" y="300" width="220" height="50" />
+      <text class="d-text" x="150" y="325">Floating Overlay</text>
+
+      <rect class="d-box-cyan" x="40" y="370" width="220" height="50" />
+      <text class="d-text" x="150" y="395">Smart Prompts</text>
+
+      <!-- Background boxes -->
+      <rect class="d-box-accent" x="340" y="90" width="220" height="50" />
+      <text class="d-text" x="450" y="115">Message Handler</text>
+
+      <rect class="d-box-accent" x="340" y="160" width="220" height="50" />
+      <text class="d-text" x="450" y="185">Intelligence Service</text>
+
+      <rect class="d-box-accent" x="340" y="230" width="220" height="50" />
+      <text class="d-text" x="450" y="255">Memory + Graph</text>
+
+      <rect class="d-box-accent" x="340" y="300" width="220" height="50" />
+      <text class="d-text" x="450" y="325">Brain Orchestrator</text>
+
+      <rect class="d-box-accent" x="340" y="370" width="220" height="50" />
+      <text class="d-text" x="450" y="395">Commerce Engine</text>
+
+      <rect class="d-box-accent" x="340" y="440" width="220" height="30" />
+      <text class="d-text-sm" x="450" y="455">Alarms &middot; Events &middot; Monitoring</text>
+
+      <!-- UI boxes -->
+      <rect class="d-box-green" x="640" y="90" width="220" height="50" />
+      <text class="d-text" x="750" y="115">Popup (React)</text>
+
+      <rect class="d-box-green" x="640" y="160" width="220" height="50" />
+      <text class="d-text" x="750" y="185">DevTools (11 tabs)</text>
+
+      <rect class="d-box-green" x="640" y="230" width="220" height="50" />
+      <text class="d-text" x="750" y="255">Onboarding Flow</text>
+
+      <!-- Storage -->
+      <rect class="d-box-orange" x="640" y="340" width="220" height="80" />
+      <text class="d-text" x="750" y="370">Storage Layer</text>
+      <text class="d-text-sm" x="750" y="395">IndexedDB &middot; chrome.storage</text>
+
+      <!-- Arrows: Content → Background -->
+      <line class="d-arrow-accent" x1="260" y1="115" x2="330" y2="115" />
+      <line class="d-arrow-accent" x1="260" y1="185" x2="330" y2="185" />
+      <line class="d-arrow-accent" x1="260" y1="255" x2="330" y2="255" />
+
+      <!-- Arrows: Background → UI -->
+      <line class="d-arrow-green" x1="560" y1="115" x2="630" y2="115" />
+      <line class="d-arrow-green" x1="560" y1="185" x2="630" y2="185" />
+
+      <!-- Arrows: Background → Storage -->
+      <line class="d-arrow" x1="560" y1="255" x2="630" y2="360" />
+
+      <!-- Message labels -->
+      <text class="d-text-mono" x="295" y="105">messages</text>
+      <text class="d-text-mono" x="595" y="105">responses</text>
+    </svg>
+  </div>
+
+  <div class="callout">
+    <strong>Why three processes?</strong> Imagine a restaurant: the <strong>waiter</strong> (content script) takes orders from each table (web page), the <strong>kitchen</strong> (background) prepares everything using recipes and ingredients (intelligence + memory), and the <strong>manager's office</strong> (popup/DevTools) lets the owner see how things are going and change the menu. They all talk through order tickets (messages), not by shouting across the room.
+  </div>
+
+  <div class="metrics">
+    <div class="metric"><div class="value">3</div><div class="label">Process Types</div></div>
+    <div class="metric"><div class="value">~50</div><div class="label">Message Types</div></div>
+    <div class="metric"><div class="value">9</div><div class="label">Platform Adapters</div></div>
+    <div class="metric"><div class="value">6</div><div class="label">AI Agents</div></div>
+    <div class="metric"><div class="value">5</div><div class="label">IndexedDB Tables</div></div>
+    <div class="metric"><div class="value">0</div><div class="label">External Servers</div></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SECTION 2 — Message Passing System
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="hld-section" id="messaging">
+  <div class="section-label"><span class="num">02</span> Communication</div>
+  <h2>Message Passing System</h2>
+  <p class="lead">Since the three processes can't share memory, they communicate by sending typed messages. Think of it like a postal system — every letter has a type (what kind of request) and a payload (the data).</p>
+
+  <div class="concept-grid">
+    <div class="concept-box">
+      <h4 class="what">&#128204; What</h4>
+      <p>An async request/response system where every message is a TypeScript union type with <code>type</code> and <code>payload</code> fields. A central <strong>dispatcher</strong> in the background routes each message to the right handler.</p>
+    </div>
+    <div class="concept-box">
+      <h4 class="why">&#127793; Why</h4>
+      <p>Type-safe messaging prevents runtime errors. If you send a <code>PROCESS_CONTENT</code> message, TypeScript guarantees the payload contains the right fields. This is like having a form for every type of request — no ambiguity.</p>
+    </div>
+    <div class="concept-box">
+      <h4 class="how">&#9881;&#65039; How</h4>
+      <p>The background's <code>messageHandler.ts</code> uses an exhaustive <code>switch</code> statement — meaning if you add a new message type but forget to handle it, TypeScript throws a compile error. This guarantees nothing falls through the cracks.</p>
+    </div>
+    <div class="concept-box">
+      <h4 class="when">&#9200; When</h4>
+      <p>Messages fire on every significant event: a card is detected (content → background), user blocks a topic (popup → background), DevTools requests health data (devtools → background).</p>
+    </div>
+  </div>
+
+  <div class="diagram">
+    <div class="diagram-title">Message Flow — Request / Response Pattern</div>
+    <svg viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg">
+      <!-- Sender -->
+      <rect class="d-box-cyan" x="30" y="80" width="180" height="60" />
+      <text class="d-text" x="120" y="105">Content Script</text>
+      <text class="d-text-sm" x="120" y="125">Detects a YouTube card</text>
+
+      <!-- Message -->
+      <rect class="d-box" x="270" y="50" width="180" height="100" />
+      <text class="d-text-sm" x="360" y="75">PROCESS_CONTENT</text>
+      <text class="d-text-mono" x="360" y="100">{ title, topics,</text>
+      <text class="d-text-mono" x="360" y="118">  platform, url }</text>
+      <text class="d-text-sm" x="360" y="140">Typed Message</text>
+
+      <!-- Dispatcher -->
+      <rect class="d-box-accent" x="510" y="60" width="180" height="80" />
+      <text class="d-text" x="600" y="90">dispatch()</text>
+      <text class="d-text-sm" x="600" y="115">switch(message.type)</text>
+
+      <!-- Handler -->
+      <rect class="d-box-green" x="510" y="190" width="180" height="60" />
+      <text class="d-text" x="600" y="215">processContent()</text>
+      <text class="d-text-sm" x="600" y="235">Score &amp; decide</text>
+
+      <!-- Response -->
+      <rect class="d-box-orange" x="270" y="190" width="180" height="60" />
+      <text class="d-text" x="360" y="215">Response</text>
+      <text class="d-text-mono" x="360" y="235">{ action: 'hide' }</text>
+
+      <!-- Back to sender -->
+      <rect class="d-box-cyan" x="30" y="190" width="180" height="60" />
+      <text class="d-text" x="120" y="215">Content Script</text>
+      <text class="d-text-sm" x="120" y="235">Hides the card</text>
+
+      <!-- Arrows -->
+      <line class="d-arrow-accent" x1="210" y1="110" x2="260" y2="100" />
+      <line class="d-arrow-accent" x1="450" y1="100" x2="500" y2="100" />
+      <line class="d-arrow" x1="600" y1="140" x2="600" y2="180" />
+      <line class="d-arrow-green" x1="510" y1="220" x2="460" y2="220" />
+      <line class="d-arrow-green" x1="270" y1="220" x2="220" y2="220" />
+    </svg>
+  </div>
+
+  <table class="hld-table">
+    <thead>
+      <tr><th>Category</th><th>Message Types</th><th>Direction</th><th>Purpose</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Content Processing</td><td><code>PROCESS_CONTENT</code> <code>LEARN_FEEDBACK</code></td><td>Content → Background</td><td>Score cards, record feedback</td></tr>
+      <tr><td>Implicit Signals</td><td><code>IMPLICIT_SIGNAL</code> <code>TRACK_SEARCH</code></td><td>Content → Background</td><td>Dwell time, clicks, searches</td></tr>
+      <tr><td>Commerce</td><td><code>SCORE_CANDIDATES</code> <code>TRACK_PRICE</code></td><td>Content → Background</td><td>Product scoring, price tracking</td></tr>
+      <tr><td>Brain / Agent</td><td><code>BRAIN_PROCESS</code> <code>AGENT_CHAT</code></td><td>Popup → Background</td><td>AI tasks, chat messages</td></tr>
+      <tr><td>Stats / Settings</td><td><code>GET_STATS</code> <code>UPDATE_SETTINGS</code></td><td>Popup → Background</td><td>Dashboard data, config changes</td></tr>
+      <tr><td>Monitoring</td><td><code>GET_MONITOR_HEALTH</code> <code>RUN_VALIDATORS</code></td><td>DevTools → Background</td><td>System health, QA testing</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SECTION 3 — Content Detection Pipeline
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="hld-section" id="content-pipeline">
+  <div class="section-label"><span class="num">03</span> Detection</div>
+  <h2>Content Detection Pipeline</h2>
+  <p class="lead">How does RecoMe know there's a YouTube video or Amazon product on the page? It uses a MutationObserver to watch the DOM for changes, platform-specific adapters to identify content cards, and metadata extraction to understand what each card is about.</p>
+
+  <div class="concept-grid">
+    <div class="concept-box">
+      <h4 class="what">&#128204; What</h4>
+      <p>A pipeline that watches for new DOM elements, identifies recommendation cards using CSS selectors, extracts metadata (title, topics, price), and sends it to the background for scoring.</p>
+    </div>
+    <div class="concept-box">
+      <h4 class="why">&#127793; Why</h4>
+      <p>Modern websites load content dynamically — infinite scroll, AJAX updates, single-page navigation. We can't just scan the page once on load. The MutationObserver pattern lets us react to changes as they happen.</p>
+    </div>
+    <div class="concept-box">
+      <h4 class="how">&#9881;&#65039; How</h4>
+      <p>1) Observer detects new nodes → 2) Adapter matches CSS selectors → 3) Extract metadata from DOM → 4) Deduplicate by content ID → 5) Send <code>PROCESS_CONTENT</code> message → 6) Apply action (hide/show/boost) to the element.</p>
+    </div>
+    <div class="concept-box">
+      <h4 class="when">&#9200; When</h4>
+      <p>Continuously, while browsing. The observer fires on every DOM mutation. A debounce (200ms) batches rapid changes. Content is scored once and cached to avoid redundant work.</p>
+    </div>
+  </div>
+
+  <div class="diagram">
+    <div class="diagram-title">Content Detection — From Page Load to Card Hidden</div>
+    <svg viewBox="0 0 900 200" xmlns="http://www.w3.org/2000/svg">
+      <rect class="d-box" x="10" y="60" width="120" height="60" />
+      <text class="d-text" x="70" y="85">Page Loads</text>
+      <text class="d-text-sm" x="70" y="105">DOM renders</text>
+
+      <rect class="d-box-cyan" x="160" y="60" width="120" height="60" />
+      <text class="d-text" x="220" y="85">Observer</text>
+      <text class="d-text-sm" x="220" y="105">MutationObserver</text>
+
+      <rect class="d-box-purple" x="310" y="60" width="120" height="60" />
+      <text class="d-text" x="370" y="85">Adapter</text>
+      <text class="d-text-sm" x="370" y="105">CSS selectors</text>
+
+      <rect class="d-box-green" x="460" y="60" width="120" height="60" />
+      <text class="d-text" x="520" y="85">Extract</text>
+      <text class="d-text-sm" x="520" y="105">title, topics, url</text>
+
+      <rect class="d-box-accent" x="610" y="60" width="120" height="60" />
+      <text class="d-text" x="670" y="85">Score</text>
+      <text class="d-text-sm" x="670" y="105">5 factors → action</text>
+
+      <rect class="d-box-orange" x="760" y="60" width="120" height="60" />
+      <text class="d-text" x="820" y="85">Apply</text>
+      <text class="d-text-sm" x="820" y="105">hide / dim / boost</text>
+
+      <line class="d-arrow" x1="130" y1="90" x2="155" y2="90" />
+      <line class="d-arrow" x1="280" y1="90" x2="305" y2="90" />
+      <line class="d-arrow" x1="430" y1="90" x2="455" y2="90" />
+      <line class="d-arrow-accent" x1="580" y1="90" x2="605" y2="90" />
+      <line class="d-arrow-green" x1="730" y1="90" x2="755" y2="90" />
+
+      <!-- Labels underneath -->
+      <text class="d-text-mono" x="145" y="145">DOM event</text>
+      <text class="d-text-mono" x="295" y="145">match</text>
+      <text class="d-text-mono" x="445" y="145">metadata</text>
+      <text class="d-text-mono" x="595" y="145">message</text>
+      <text class="d-text-mono" x="745" y="145">CSS class</text>
+    </svg>
+  </div>
+
+  <div class="callout">
+    <strong>Real-world analogy:</strong> Think of a mail sorting facility. Letters arrive constantly (DOM mutations). A scanner reads the address (adapter matches selectors). A worker opens and categorizes each letter (metadata extraction). Then it's routed to the right department (scoring engine). Finally, the decision is applied — deliver, discard, or flag.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SECTION 4 — Scoring Engine
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="hld-section" id="scoring">
+  <div class="section-label"><span class="num">04</span> Intelligence</div>
+  <h2>Scoring Engine</h2>
+  <p class="lead">The heart of RecoMe. Every piece of content gets a score from -1 (definitely hide) to +1 (definitely boost). The score is calculated by combining 5 independent factors, each looking at a different signal.</p>
+
+  <div class="concept-grid">
+    <div class="concept-box">
+      <h4 class="what">&#128204; What</h4>
+      <p>A <strong>weighted multi-factor scoring engine</strong> that evaluates content using 5 independent scoring functions. Each factor returns a value between -1 and +1, and these are combined with configurable weights into a final score.</p>
+    </div>
+    <div class="concept-box">
+      <h4 class="why">&#127793; Why</h4>
+      <p>A single signal (like "user blocked crypto") isn't enough. Content has nuance. By combining <strong>explicit preferences</strong> (blocks/likes), <strong>learned patterns</strong> (behavior), and <strong>knowledge relationships</strong> (graph), we get much more accurate decisions.</p>
+    </div>
+    <div class="concept-box">
+      <h4 class="how">&#9881;&#65039; How</h4>
+      <p>Each factor runs independently and returns a contribution. The final score = weighted sum of all factors. Thresholds map the score to an action: hide (&lt;-0.4), suppress (-0.4 to -0.1), show (-0.1 to 0.3), or boost (&gt;0.3).</p>
+    </div>
+    <div class="concept-box">
+      <h4 class="when">&#9200; When</h4>
+      <p>Every time a new content card is detected. Scoring is synchronous in the background thread and typically completes in &lt;15ms. Results are cached per content ID.</p>
+    </div>
+  </div>
+
+  <div class="diagram">
+    <div class="diagram-title">5-Factor Scoring Model</div>
+    <svg viewBox="0 0 900 340" xmlns="http://www.w3.org/2000/svg">
+      <!-- Input -->
+      <rect class="d-box" x="30" y="130" width="140" height="60" />
+      <text class="d-text" x="100" y="155">Content Card</text>
+      <text class="d-text-sm" x="100" y="175">metadata + context</text>
+
+      <!-- Factors -->
+      <rect class="d-box-accent" x="230" y="10" width="200" height="45" />
+      <text class="d-text" x="330" y="28">1. Direct Block/Like</text>
+      <text class="d-text-sm" x="330" y="45">Explicit user preferences</text>
+
+      <rect class="d-box-purple" x="230" y="70" width="200" height="45" />
+      <text class="d-text" x="330" y="88">2. Topic Affinity</text>
+      <text class="d-text-sm" x="330" y="105">Learned topic preferences</text>
+
+      <rect class="d-box-cyan" x="230" y="130" width="200" height="45" />
+      <text class="d-text" x="330" y="148">3. Graph Relations</text>
+      <text class="d-text-sm" x="330" y="165">Knowledge graph signals</text>
+
+      <rect class="d-box-green" x="230" y="190" width="200" height="45" />
+      <text class="d-text" x="330" y="208">4. Recency Decay</text>
+      <text class="d-text-sm" x="330" y="225">Time-weighted memory</text>
+
+      <rect class="d-box-orange" x="230" y="250" width="200" height="45" />
+      <text class="d-text" x="330" y="268">5. Context Mode</text>
+      <text class="d-text-sm" x="330" y="285">Work / Shopping / etc.</text>
+
+      <!-- Combiner -->
+      <rect class="d-box-accent" x="490" y="120" width="140" height="80" />
+      <text class="d-text" x="560" y="150">Weighted Sum</text>
+      <text class="d-text-mono" x="560" y="175">Σ (wi × fi)</text>
+
+      <!-- Thresholds -->
+      <rect class="d-box-pink" x="690" y="30" width="150" height="40" />
+      <text class="d-text" x="765" y="50" style="fill:var(--red)">HIDE</text>
+
+      <rect class="d-box" x="690" y="85" width="150" height="40" />
+      <text class="d-text" x="765" y="105">SUPPRESS</text>
+
+      <rect class="d-box-green" x="690" y="140" width="150" height="40" />
+      <text class="d-text" x="765" y="160" style="fill:var(--green)">SHOW</text>
+
+      <rect class="d-box-cyan" x="690" y="195" width="150" height="40" />
+      <text class="d-text" x="765" y="215" style="fill:var(--cyan)">BOOST</text>
+
+      <!-- Arrows -->
+      <line class="d-arrow" x1="170" y1="160" x2="225" y2="160" />
+      <line class="d-arrow" x1="430" y1="32" x2="485" y2="140" />
+      <line class="d-arrow" x1="430" y1="92" x2="485" y2="145" />
+      <line class="d-arrow" x1="430" y1="152" x2="485" y2="155" />
+      <line class="d-arrow" x1="430" y1="212" x2="485" y2="170" />
+      <line class="d-arrow" x1="430" y1="272" x2="485" y2="180" />
+      <line class="d-arrow-accent" x1="630" y1="160" x2="685" y2="160" />
+
+      <!-- Score scale -->
+      <text class="d-text-mono" x="560" y="220">score: -1.0 → +1.0</text>
+      <text class="d-text-mono" x="765" y="260">thresholds</text>
+    </svg>
+  </div>
+
+  <table class="hld-table">
+    <thead>
+      <tr><th>Factor</th><th>Weight</th><th>Signal Source</th><th>Example</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Direct Block/Like</strong></td><td>0.35</td><td>User's blocked/liked topics list</td><td>User blocked "crypto" → -1.0 for crypto cards</td></tr>
+      <tr><td><strong>Topic Affinity</strong></td><td>0.25</td><td>Memory entries, interaction history</td><td>Clicked 8 travel articles → +0.7 for travel</td></tr>
+      <tr><td><strong>Graph Relations</strong></td><td>0.20</td><td>Knowledge graph entity links</td><td>Blocked "spam" → also penalizes "phishing"</td></tr>
+      <tr><td><strong>Recency Decay</strong></td><td>0.10</td><td>Time-weighted engagement</td><td>Recent interest in cameras → boost fades over 30 days</td></tr>
+      <tr><td><strong>Context Mode</strong></td><td>0.10</td><td>Active context (work/shopping/etc.)</td><td>In "work" mode → suppress entertainment</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-green">
+    <strong>Design insight:</strong> The weights are tuned so that <strong>explicit user preferences always win</strong>. If you block a topic, it gets hidden no matter what other factors say. This is the "user is always right" principle — the system learns, but the user has the final say.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SECTION 5 — Memory & Learning
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="hld-section" id="memory">
+  <div class="section-label"><span class="num">05</span> Learning</div>
+  <h2>Memory &amp; Learning System</h2>
+  <p class="lead">RecoMe doesn't just follow rules — it learns. Every interaction (block, like, dwell, click) creates a memory entry that influences future scoring. Memories decay over time, so the system adapts as your interests change.</p>
+
+  <div class="concept-grid">
+    <div class="concept-box">
+      <h4 class="what">&#128204; What</h4>
+      <p>An <strong>IndexedDB-backed memory service</strong> that stores typed events (feedback, search, implicit signal, pattern). Each entry has a <code>strength</code> field that decays over time using an exponential half-life function.</p>
+    </div>
+    <div class="concept-box">
+      <h4 class="why">&#127793; Why</h4>
+      <p>Human interests change. If you were into running shoes last month but switched to hiking boots, the old preference should fade. <strong>Exponential decay</strong> with a 30-day half-life means old memories become weaker, but strong signals (many interactions) persist longer.</p>
+    </div>
+    <div class="concept-box">
+      <h4 class="how">&#9881;&#65039; How</h4>
+      <p>Strength formula: <code>current = initial × 0.5^(daysSince/30)</code>. A memory starts at strength 1.0, drops to 0.5 after 30 days, 0.25 after 60 days, etc. The <code>decay</code> alarm runs every 15 minutes to update strengths and prune dead entries.</p>
+    </div>
+    <div class="concept-box">
+      <h4 class="when">&#9200; When</h4>
+      <p>Writes: on every user feedback, search, or implicit signal. Reads: during scoring (topic affinity factor queries recent memories). Decay: every 15 minutes via Chrome alarm.</p>
+    </div>
+  </div>
+
+  <div class="step-flow">
+    <div class="step-item">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h4>Event Happens</h4>
+        <p>User blocks "crypto" on YouTube, or dwells 30 seconds on a product page, or clicks through to an article about cameras.</p>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h4>Memory Entry Created</h4>
+        <p>A typed entry is written to IndexedDB with: type (feedback/search/implicit), topics, entities, platform, timestamp, and initial strength (1.0).</p>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h4>Pattern Detection</h4>
+        <p>After 3+ similar events, a <strong>mid-term pattern card</strong> is created: "avoids clickbait", "prefers Sony", "researching headphones". These are stronger signals that persist longer.</p>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <h4>Scoring Uses Memories</h4>
+        <p>When new content is scored, the Topic Affinity factor queries recent memories matching the content's topics, sums their decayed strengths, and produces a signal.</p>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <h4>Decay &amp; Cleanup</h4>
+        <p>Every 15 minutes, the decay alarm recomputes strengths and deletes entries below 0.01. This keeps the database lean and the system adaptive.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SECTION 6 — Knowledge Graph
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="hld-section" id="graph">
+  <div class="section-label"><span class="num">06</span> Knowledge</div>
+  <h2>Knowledge Graph</h2>
+  <p class="lead">The graph maps relationships between topics, brands, and categories. If you block "spam", the graph knows "phishing" is related — so it gets penalized too. This is how RecoMe understands that interests connect.</p>
+
+  <div class="concept-grid">
+    <div class="concept-box">
+      <h4 class="what">&#128204; What</h4>
+      <p>An <strong>entity-relationship graph</strong> stored in IndexedDB. Entities are things (topics, brands, categories). Relations are connections between them with typed edges (related_to, part_of, competes_with) and weighted strengths.</p>
+    </div>
+    <div class="concept-box">
+      <h4 class="why">&#127793; Why</h4>
+      <p>Real-world knowledge is connected. "Sony" relates to "headphones" relates to "audio" relates to "music". Without a graph, you'd need to manually specify every possible connection. The graph lets preferences <strong>propagate</strong> through relationships.</p>
+    </div>
+    <div class="concept-box">
+      <h4 class="how">&#9881;&#65039; How</h4>
+      <p>Pre-seeded with ~100 common relationships on install. Grows as you browse — when two topics appear together in content, a relation is strengthened. The <strong>CrossPlatformLinker</strong> runs daily to find patterns across platforms.</p>
+    </div>
+    <div class="concept-box">
+      <h4 class="when">&#9200; When</h4>
+      <p>Queried during scoring (Graph Relations factor). Updated when content is processed and entities co-occur. Strengthened daily by the CrossPlatformLinker alarm.</p>
+    </div>
+  </div>
+
+  <div class="diagram">
+    <div class="diagram-title">Knowledge Graph — Entity Relationships</div>
+    <svg viewBox="0 0 700 300" xmlns="http://www.w3.org/2000/svg">
+      <!-- Entities -->
+      <circle cx="350" cy="150" r="35" fill="rgba(99,102,241,0.15)" stroke="var(--accent)" stroke-width="2" />
+      <text class="d-text" x="350" y="150">audio</text>
+
+      <circle cx="180" cy="80" r="32" fill="rgba(74,222,128,0.12)" stroke="var(--green)" stroke-width="1.5" />
+      <text class="d-text" x="180" y="80">Sony</text>
+
+      <circle cx="520" cy="80" r="32" fill="rgba(74,222,128,0.12)" stroke="var(--green)" stroke-width="1.5" />
+      <text class="d-text" x="520" y="80">Bose</text>
+
+      <circle cx="140" cy="200" r="30" fill="rgba(251,146,60,0.1)" stroke="var(--orange)" stroke-width="1.5" />
+      <text class="d-text-sm" x="140" y="200">headphones</text>
+
+      <circle cx="350" cy="260" r="28" fill="rgba(167,139,250,0.1)" stroke="var(--purple)" stroke-width="1.5" />
+      <text class="d-text-sm" x="350" y="260">music</text>
+
+      <circle cx="560" cy="200" r="30" fill="rgba(251,146,60,0.1)" stroke="var(--orange)" stroke-width="1.5" />
+      <text class="d-text-sm" x="560" y="200">speakers</text>
+
+      <circle cx="180" cy="260" r="25" fill="rgba(244,114,182,0.1)" stroke="var(--pink)" stroke-width="1.5" />
+      <text class="d-text-sm" x="180" y="260">noise-cancel</text>
+
+      <!-- Edges -->
+      <line x1="210" y1="90" x2="318" y2="140" stroke="var(--border-light)" stroke-width="1.5" />
+      <line x1="490" y1="90" x2="382" y2="140" stroke="var(--border-light)" stroke-width="1.5" />
+      <line x1="165" y1="175" x2="325" y2="145" stroke="var(--border-light)" stroke-width="1.5" />
+      <line x1="535" y1="175" x2="375" y2="155" stroke="var(--border-light)" stroke-width="1.5" />
+      <line x1="340" y1="235" x2="340" y2="185" stroke="var(--border-light)" stroke-width="1.5" />
+      <line x1="160" y1="230" x2="165" y2="210" stroke="var(--border-light)" stroke-width="1.5" />
+      <line x1="200" y1="100" x2="160" y2="175" stroke="var(--border-light)" stroke-width="1.5" />
+      <line x1="500" y1="100" x2="540" y2="175" stroke="var(--border-light)" stroke-width="1.5" />
+
+      <!-- Edge labels -->
+      <text class="d-text-mono" x="250" y="108">produces</text>
+      <text class="d-text-mono" x="450" y="108">produces</text>
+      <text class="d-text-mono" x="232" y="160">part_of</text>
+      <text class="d-text-mono" x="470" y="165">part_of</text>
+      <text class="d-text-mono" x="480" y="88">competes_with</text>
+    </svg>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SECTION 7 — AI Brain & Agent System
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="hld-section" id="brain">
+  <div class="section-label"><span class="num">07</span> AI</div>
+  <h2>AI Brain &amp; Agent System</h2>
+  <p class="lead">The Brain is RecoMe's central orchestrator — it receives high-level tasks and delegates them to 6 specialized agents. Think of it as a CEO who knows which department head to call for each problem.</p>
+
+  <div class="concept-grid">
+    <div class="concept-box">
+      <h4 class="what">&#128204; What</h4>
+      <p>A <strong>task router + agent registry</strong> pattern. The Brain receives tasks (user chat, content scoring, insight detection), determines which agent(s) should handle it, dispatches in parallel when possible, and merges results.</p>
+    </div>
+    <div class="concept-box">
+      <h4 class="why">&#127793; Why</h4>
+      <p>One monolithic AI handler would be too complex and slow. By splitting into specialized agents, each one is simple, testable, and can run independently. This is the <strong>microservices pattern</strong> applied to AI — but inside a browser extension.</p>
+    </div>
+    <div class="concept-box">
+      <h4 class="how">&#9881;&#65039; How</h4>
+      <p>TaskRouter analyzes the task type → selects agents → ContextAssembler gathers relevant memory/graph data → agents execute with tools (ToolExecutor) → ResponseMerger combines results → FeedbackLoop records outcomes.</p>
+    </div>
+    <div class="concept-box">
+      <h4 class="when">&#9200; When</h4>
+      <p>On user chat messages, scheduled insight checks (every 30 min), content scoring (Filter agent), and when the overlay triggers quick actions.</p>
+    </div>
+  </div>
+
+  <div class="diagram">
+    <div class="diagram-title">Brain Orchestrator — Task Routing to Agents</div>
+    <svg viewBox="0 0 900 380" xmlns="http://www.w3.org/2000/svg">
+      <!-- Task Input -->
+      <rect class="d-box" x="30" y="150" width="120" height="60" />
+      <text class="d-text" x="90" y="175">User Task</text>
+      <text class="d-text-sm" x="90" y="195">"Compare TVs"</text>
+
+      <!-- Brain -->
+      <rect class="d-box-accent" x="200" y="120" width="160" height="120" />
+      <text class="d-text" x="280" y="155">Brain</text>
+      <text class="d-text-sm" x="280" y="178">TaskRouter</text>
+      <text class="d-text-sm" x="280" y="195">ContextAssembler</text>
+      <text class="d-text-sm" x="280" y="212">ResponseMerger</text>
+
+      <!-- Agents -->
+      <rect class="d-box-cyan" x="430" y="10" width="170" height="40" />
+      <text class="d-text" x="515" y="30">Filter Agent</text>
+
+      <rect class="d-box-green" x="430" y="65" width="170" height="40" />
+      <text class="d-text" x="515" y="85">Scout Agent</text>
+
+      <rect class="d-box-purple" x="430" y="120" width="170" height="40" />
+      <text class="d-text" x="515" y="140">Advisor Agent</text>
+
+      <rect class="d-box-orange" x="430" y="175" width="170" height="40" />
+      <text class="d-text" x="515" y="195">Shopper Agent</text>
+
+      <rect class="d-box-pink" x="430" y="230" width="170" height="40" />
+      <text class="d-text" x="515" y="250">Social Agent</text>
+
+      <rect class="d-box" x="430" y="285" width="170" height="40" />
+      <text class="d-text" x="515" y="305" style="fill:var(--red)">Guardian Agent</text>
+
+      <!-- Tools -->
+      <rect class="d-box" x="670" y="100" width="180" height="160" />
+      <text class="d-text" x="760" y="130">Tool Executor</text>
+      <text class="d-text-sm" x="760" y="155">readMemory()</text>
+      <text class="d-text-sm" x="760" y="172">queryGraph()</text>
+      <text class="d-text-sm" x="760" y="189">scoreContent()</text>
+      <text class="d-text-sm" x="760" y="206">searchProducts()</text>
+      <text class="d-text-sm" x="760" y="223">writePreference()</text>
+      <text class="d-text-sm" x="760" y="240">generateInsight()</text>
+
+      <!-- Arrows -->
+      <line class="d-arrow-accent" x1="150" y1="180" x2="195" y2="180" />
+      <line class="d-arrow" x1="360" y1="155" x2="425" y2="30" />
+      <line class="d-arrow" x1="360" y1="165" x2="425" y2="85" />
+      <line class="d-arrow" x1="360" y1="175" x2="425" y2="140" />
+      <line class="d-arrow-accent" x1="360" y1="185" x2="425" y2="195" />
+      <line class="d-arrow" x1="360" y1="195" x2="425" y2="250" />
+      <line class="d-arrow" x1="360" y1="210" x2="425" y2="305" />
+      <line class="d-arrow" x1="600" y1="195" x2="665" y2="195" />
+    </svg>
+  </div>
+
+  <div class="detail-grid">
+    <div class="detail-card">
+      <h4><span class="tag tag-cyan">FILTER</span> Filter Agent</h4>
+      <p>The fastest agent. Scores content in &lt;15ms using the 5-factor model. Runs on every detected card. No LLM needed — pure algorithmic scoring.</p>
+    </div>
+    <div class="detail-card">
+      <h4><span class="tag tag-green">SCOUT</span> Scout Agent</h4>
+      <p>Discovers trends and emerging interests. Analyzes browsing patterns, detects research sessions, identifies preference drift. Runs during scheduled insight checks.</p>
+    </div>
+    <div class="detail-card">
+      <h4><span class="tag tag-purple">ADVISOR</span> Advisor Agent</h4>
+      <p>Explains decisions. "Why was this hidden?" → "Because you blocked 'crypto' and this card's primary topic is cryptocurrency." Uses the Explainer module.</p>
+    </div>
+    <div class="detail-card">
+      <h4><span class="tag tag-orange">SHOPPER</span> Shopper Agent</h4>
+      <p>Product specialist. Compares items across retailers, tracks prices, manages the watchlist. Uses the Commerce engine for price intelligence.</p>
+    </div>
+    <div class="detail-card">
+      <h4><span class="tag tag-purple">SOCIAL</span> Social Agent</h4>
+      <p>Manages preference packs — shareable preference profiles. Build a "Cinephile Pack", export it, share with friends. Handles pack import/export.</p>
+    </div>
+    <div class="detail-card">
+      <h4><span class="tag tag-accent">GUARDIAN</span> Guardian Agent</h4>
+      <p>Safety and privacy watchdog. Validates that no sensitive data leaks, enforces rate limits on LLM calls, blocks malicious content patterns.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SECTION 8 — Platform Adapters
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="hld-section" id="platforms">
+  <div class="section-label"><span class="num">08</span> Platforms</div>
+  <h2>Platform Adapters</h2>
+  <p class="lead">Every website structures its HTML differently. YouTube uses different CSS classes than Amazon. Adapters are the translation layer — they know how to find and extract content cards on each platform.</p>
+
+  <div class="concept-grid">
+    <div class="concept-box">
+      <h4 class="what">&#128204; What</h4>
+      <p>A <strong>Strategy pattern</strong>. A BaseAdapter defines the interface (getCardSelector, extractMetadata, applyAction). Each platform extends it with platform-specific CSS selectors and extraction logic.</p>
+    </div>
+    <div class="concept-box">
+      <h4 class="why">&#127793; Why</h4>
+      <p>Without adapters, you'd need one giant if/else chain checking every possible website. The adapter pattern lets each platform's logic be <strong>isolated, testable, and independently updatable</strong>. If YouTube changes their HTML, only YouTubeAdapter needs updating.</p>
+    </div>
+  </div>
+
+  <table class="hld-table">
+    <thead>
+      <tr><th>Platform</th><th>Content Types</th><th>Key Selectors</th><th>Metadata Extracted</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>YouTube</strong></td><td>Videos, Shorts, Recommendations</td><td><code>ytd-rich-item-renderer</code></td><td>Title, channel, views, duration</td></tr>
+      <tr><td><strong>Amazon</strong></td><td>Products, Suggestions, Search</td><td><code>[data-asin]</code></td><td>Title, price, rating, brand</td></tr>
+      <tr><td><strong>Instagram</strong></td><td>Feed, Explore, Reels</td><td><code>article[role]</code></td><td>Caption, author, hashtags</td></tr>
+      <tr><td><strong>Twitter/X</strong></td><td>Timeline, Trends</td><td><code>[data-testid="tweet"]</code></td><td>Text, author, hashtags</td></tr>
+      <tr><td><strong>Facebook</strong></td><td>Feed, Marketplace, Reels</td><td><code>[data-pagelet]</code></td><td>Text, author, type</td></tr>
+      <tr><td><strong>eBay</strong></td><td>Listings, Results</td><td><code>.s-item</code></td><td>Title, price, condition</td></tr>
+      <tr><td><strong>Walmart</strong></td><td>Products, Deals</td><td><code>[data-item-id]</code></td><td>Title, price, rating</td></tr>
+      <tr><td><strong>LinkedIn</strong></td><td>Feed, Jobs, Articles</td><td><code>.feed-shared-update</code></td><td>Text, author, type</td></tr>
+      <tr><td><strong>Generic</strong></td><td>Any card-like content</td><td>Heuristic detection</td><td>Title, links, images</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SECTION 9 — Self-Healing Selectors
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="hld-section" id="selectors">
+  <div class="section-label"><span class="num">09</span> Resilience</div>
+  <h2>Self-Healing Selectors</h2>
+  <p class="lead">Websites change their HTML all the time. When YouTube renames a CSS class, RecoMe doesn't break — the self-healing selector system automatically discovers new patterns and adapts.</p>
+
+  <div class="concept-grid">
+    <div class="concept-box">
+      <h4 class="what">&#128204; What</h4>
+      <p>Four components working together: <strong>SelectorDiscovery</strong> (finds new patterns), <strong>SelectorHealth</strong> (monitors success rates), <strong>PathPatternCache</strong> (caches discovered paths), and <strong>ContentSignatures</strong> (fingerprints content structure).</p>
+    </div>
+    <div class="concept-box">
+      <h4 class="why">&#127793; Why</h4>
+      <p>Hard-coded selectors are brittle. When a platform deploys a UI update, the extension silently stops working. Self-healing selectors turn a <strong>breaking change into a self-correcting event</strong>.</p>
+    </div>
+    <div class="concept-box">
+      <h4 class="how">&#9881;&#65039; How</h4>
+      <p>SelectorHealth tracks success/failure rates per selector. When a selector drops below 30% success, SelectorDiscovery runs — it walks the DOM tree looking for elements matching content signatures (structural fingerprints). Discovered selectors are cached in PathPatternCache.</p>
+    </div>
+    <div class="concept-box">
+      <h4 class="when">&#9200; When</h4>
+      <p>SelectorHealth runs a check alarm every 60 minutes. Discovery triggers automatically when health degrades. The cache persists across sessions via chrome.storage.local.</p>
+    </div>
+  </div>
+
+  <div class="callout callout-orange">
+    <strong>Real-world analogy:</strong> Imagine a delivery driver who knows the route to your house. If the city renames the street, the driver doesn't give up — they look for landmarks (content signatures) they recognize, find the new route, and update their map (cache). Next delivery uses the new route automatically.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SECTION 10 — Platform Intelligence
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="hld-section" id="intelligence">
+  <div class="section-label"><span class="num">10</span> Intelligence</div>
+  <h2>Platform Intelligence</h2>
+  <p class="lead">Each platform has unique signals. YouTube has watch time. Amazon has purchase history. Twitter has engagement metrics. The Platform Intelligence system extracts platform-specific insights and feeds them into the scoring pipeline.</p>
+
+  <div class="detail-grid">
+    <div class="detail-card">
+      <h4>PlatformIntelligenceEngine</h4>
+      <p>Central coordinator. Detects the current platform, loads the right intelligence module, and combines signals from multiple sources (page context, interest graph, external enrichment).</p>
+    </div>
+    <div class="detail-card">
+      <h4>Per-Platform Modules</h4>
+      <p>8 specialized modules (YouTube, Amazon, Twitter, Instagram, Facebook, LinkedIn, eBay, Walmart). Each extracts platform-specific signals — like YouTube's "Shorts" vs "Long-form" distinction.</p>
+    </div>
+    <div class="detail-card">
+      <h4>OpportunityRanker</h4>
+      <p>Takes raw insights and ranks them by relevance, novelty, and actionability. "You've looked at 12 laptops" ranks higher than "You clicked one link about cats".</p>
+    </div>
+    <div class="detail-card">
+      <h4>InsightRenderer</h4>
+      <p>Converts ranked opportunities into user-facing messages shown in the overlay or popup. Handles formatting, priority, and deduplication.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SECTION 11 — Overlay & Prompts
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="hld-section" id="overlay">
+  <div class="section-label"><span class="num">11</span> Interface</div>
+  <h2>Floating Overlay &amp; Smart Prompts</h2>
+  <p class="lead">The overlay is a draggable AI assistant that lives on every web page — no need to open the popup. Smart prompts detect when you're dwelling on content and ask intelligent follow-up questions.</p>
+
+  <div class="concept-grid">
+    <div class="concept-box">
+      <h4 class="what">&#128204; What</h4>
+      <p>A <strong>Shadow DOM-isolated</strong> React component injected into every page. It renders inside a shadow root so the page's CSS can't affect it (and vice versa). States: collapsed (pill), mini (preview), expanded (full chat).</p>
+    </div>
+    <div class="concept-box">
+      <h4 class="why">&#127793; Why</h4>
+      <p>Shadow DOM is critical. Without it, the page's CSS could break the overlay, or the overlay's CSS could break the page. Shadow DOM creates a <strong>CSS boundary</strong> — like an iframe but lighter.</p>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>Smart Prompts flow:</strong> DwellTracker detects you've been on a product page for 30+ seconds → SmartPromptEngine evaluates trigger conditions → PromptFatigueManager checks you haven't been prompted recently → PromptRenderer shows a non-intrusive card: "You've been looking at OLED TVs. Want me to track prices?"
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SECTION 12 — Commerce & Price Tracking
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="hld-section" id="commerce">
+  <div class="section-label"><span class="num">12</span> Commerce</div>
+  <h2>Commerce &amp; Price Tracking</h2>
+  <p class="lead">RecoMe tracks product prices across shopping platforms, records price history with sparkline visualizations, and fires alerts when prices drop below your target.</p>
+
+  <div class="diagram">
+    <div class="diagram-title">Price Tracking Pipeline</div>
+    <svg viewBox="0 0 900 180" xmlns="http://www.w3.org/2000/svg">
+      <rect class="d-box-cyan" x="20" y="50" width="150" height="60" />
+      <text class="d-text" x="95" y="75">Product Page</text>
+      <text class="d-text-sm" x="95" y="95">Adapter extracts price</text>
+
+      <rect class="d-box-accent" x="210" y="50" width="150" height="60" />
+      <text class="d-text" x="285" y="75">PriceTracker</text>
+      <text class="d-text-sm" x="285" y="95">Records in PriceStore</text>
+
+      <rect class="d-box-green" x="400" y="50" width="150" height="60" />
+      <text class="d-text" x="475" y="75">PriceChartData</text>
+      <text class="d-text-sm" x="475" y="95">Sparkline history</text>
+
+      <rect class="d-box-orange" x="590" y="50" width="150" height="60" />
+      <text class="d-text" x="665" y="75">PriceAlertEngine</text>
+      <text class="d-text-sm" x="665" y="95">Check against targets</text>
+
+      <rect class="d-box-pink" x="780" y="50" width="100" height="60" />
+      <text class="d-text" x="830" y="75">Alert!</text>
+      <text class="d-text-sm" x="830" y="95">Notification</text>
+
+      <line class="d-arrow" x1="170" y1="80" x2="205" y2="80" />
+      <line class="d-arrow" x1="360" y1="80" x2="395" y2="80" />
+      <line class="d-arrow" x1="550" y1="80" x2="585" y2="80" />
+      <line class="d-arrow-accent" x1="740" y1="80" x2="775" y2="80" />
+    </svg>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SECTION 13 — Platform Importers
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="hld-section" id="importers">
+  <div class="section-label"><span class="num">13</span> Import</div>
+  <h2>Platform Importers</h2>
+  <p class="lead">Cold start is the #1 killer of recommendation systems. RecoMe solves it by importing your existing preferences from 7 platforms — so it knows what you like from day one.</p>
+
+  <div class="detail-grid">
+    <div class="detail-card">
+      <h4>Import Manager</h4>
+      <p>Coordinates imports across platforms. Handles progress tracking, error recovery, and deduplication. Uses two parsing strategies: <strong>DataTakeoutParser</strong> (Google/Facebook exports) and <strong>LiveScrapeParser</strong> (in-page extraction).</p>
+    </div>
+    <div class="detail-card">
+      <h4>7 Platform Importers</h4>
+      <p>YouTube (watch history, likes), Amazon (orders, wishlist), Spotify (playlists, saved), Netflix (viewing history), Twitter (likes, bookmarks), Instagram (saved, liked), Reddit (upvotes, saved).</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SECTION 14 — Social & Preference Packs
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="hld-section" id="social">
+  <div class="section-label"><span class="num">14</span> Social</div>
+  <h2>Social &amp; Preference Packs</h2>
+  <p class="lead">Preference Packs are shareable, curated bundles of preferences. Create a "Film Buff" pack with your movie-related blocks and boosts, export it as a file, and share it with friends.</p>
+
+  <div class="concept-grid">
+    <div class="concept-box">
+      <h4 class="what">&#128204; What</h4>
+      <p><strong>PackBuilder</strong> creates packs from your preferences. <strong>PackStore</strong> persists them. <strong>PackRenderer</strong> shows them in the UI. <strong>PackImporter</strong> applies external packs to your profile.</p>
+    </div>
+    <div class="concept-box">
+      <h4 class="why">&#127793; Why</h4>
+      <p>Configuration is hard. If a friend already curated the perfect "No Clickbait" setup, why repeat the work? Packs make preferences <strong>portable and social</strong>.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SECTION 15 — Storage Architecture
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="hld-section" id="storage">
+  <div class="section-label"><span class="num">15</span> Data</div>
+  <h2>Storage Architecture</h2>
+  <p class="lead">RecoMe uses three storage layers, each optimized for different access patterns. Think of it like a filing system: a desk drawer (in-memory), a filing cabinet (IndexedDB), and a shared folder (chrome.storage).</p>
+
+  <div class="diagram">
+    <div class="diagram-title">Three-Tier Storage Architecture</div>
+    <svg viewBox="0 0 900 250" xmlns="http://www.w3.org/2000/svg">
+      <!-- Tier 1 -->
+      <rect class="d-box-green" x="30" y="30" width="260" height="180" />
+      <text class="d-text" x="160" y="60" style="fill:var(--green)">Tier 1: In-Memory</text>
+      <text class="d-text-sm" x="160" y="85">Fastest — nanoseconds</text>
+      <text class="d-text-sm" x="160" y="110">Decision log (ring buffer, 500)</text>
+      <text class="d-text-sm" x="160" y="130">Monitoring events (ring buffer)</text>
+      <text class="d-text-sm" x="160" y="150">Pipeline traces (LRU, 100)</text>
+      <text class="d-text-sm" x="160" y="170">Scoring cache (per session)</text>
+      <text class="d-text-sm" x="160" y="195">Lost on service worker restart</text>
+
+      <!-- Tier 2 -->
+      <rect class="d-box-accent" x="320" y="30" width="260" height="180" />
+      <text class="d-text" x="450" y="60" style="fill:var(--accent-light)">Tier 2: IndexedDB</text>
+      <text class="d-text-sm" x="450" y="85">Fast — milliseconds</text>
+      <text class="d-text-sm" x="450" y="110">memory_entries (feedback, signals)</text>
+      <text class="d-text-sm" x="450" y="130">memory_events (raw events)</text>
+      <text class="d-text-sm" x="450" y="150">graph_entities (nodes)</text>
+      <text class="d-text-sm" x="450" y="170">graph_relations (edges)</text>
+      <text class="d-text-sm" x="450" y="195">Persists across restarts</text>
+
+      <!-- Tier 3 -->
+      <rect class="d-box-orange" x="610" y="30" width="260" height="180" />
+      <text class="d-text" x="740" y="60" style="fill:var(--orange)">Tier 3: Chrome Storage</text>
+      <text class="d-text-sm" x="740" y="85">Moderate — cross-context</text>
+      <text class="d-text-sm" x="740" y="110">storage.local: settings, stats</text>
+      <text class="d-text-sm" x="740" y="130">storage.local: blocked/liked topics</text>
+      <text class="d-text-sm" x="740" y="150">storage.local: achievements</text>
+      <text class="d-text-sm" x="740" y="170">storage.sync: cross-device prefs</text>
+      <text class="d-text-sm" x="740" y="195">Accessible from all contexts</text>
+    </svg>
+  </div>
+
+  <div class="callout callout-green">
+    <strong>Why three tiers?</strong> In-memory is fast but lost on restart — perfect for ephemeral debugging data. IndexedDB is persistent and supports complex queries — perfect for the learning system. Chrome Storage is accessible from content scripts and syncs across devices — perfect for user settings. Each tier serves a different need.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SECTION 16 — Cloud & Sync
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="hld-section" id="cloud">
+  <div class="section-label"><span class="num">16</span> Cloud</div>
+  <h2>Cloud &amp; Sync Architecture</h2>
+  <p class="lead">The optional cloud layer handles cross-device sync, user authentication, and billing. Built on Hono (lightweight Node.js framework) with Prisma ORM and PostgreSQL.</p>
+
+  <div class="detail-grid">
+    <div class="detail-card">
+      <h4>Sync Engine</h4>
+      <p>Uses CRDT (Conflict-free Replicated Data Types) for merge-without-conflicts sync. Each device can edit preferences offline, and changes merge cleanly when back online.</p>
+    </div>
+    <div class="detail-card">
+      <h4>End-to-End Encryption</h4>
+      <p>EncryptionClient encrypts all data before it leaves the browser. The server stores encrypted blobs — it can never read your preferences. Keys derived from your password via PBKDF2.</p>
+    </div>
+    <div class="detail-card">
+      <h4>Authentication</h4>
+      <p>JWT-based auth with refresh tokens. TokenService manages lifecycle. No passwords stored server-side — only bcrypt hashes.</p>
+    </div>
+    <div class="detail-card">
+      <h4>Billing (Stripe)</h4>
+      <p>StripeService handles subscription management. UsageTracker monitors API calls for quota enforcement. Free tier has no cloud features — premium unlocks sync + priority support.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SECTION 17 — Monitoring & QA
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="hld-section" id="monitoring">
+  <div class="section-label"><span class="num">17</span> QA</div>
+  <h2>Monitoring &amp; QA Dashboard</h2>
+  <p class="lead">The DevTools panel has 11 tabs — 5 for data inspection and 6 for monitoring. The monitoring system passively records all system events and runs 18 automated validators to catch functional, logical, and behavioral issues.</p>
+
+  <div class="detail-grid">
+    <div class="detail-card">
+      <h4><span class="tag tag-green">Health Tab</span></h4>
+      <p>System dashboard — card detection rate, score distribution, agent metrics, alarm status, error count. Auto-refreshes every 3 seconds.</p>
+    </div>
+    <div class="detail-card">
+      <h4><span class="tag tag-accent">Timeline Tab</span></h4>
+      <p>Unified chronological event log. Filter by category, search by type, click to drill into pipeline traces. Export as JSON for sharing.</p>
+    </div>
+    <div class="detail-card">
+      <h4><span class="tag tag-orange">Validators Tab</span></h4>
+      <p>18 automated checks: blocked topics enforced, score distribution healthy, selectors working, agents responsive, alarms firing on schedule.</p>
+    </div>
+    <div class="detail-card">
+      <h4><span class="tag tag-purple">Simulator Tab</span></h4>
+      <p>"What-if" scoring. Enter hypothetical content metadata → see exactly how each factor scores it → understand why the system would hide or boost it.</p>
+    </div>
+    <div class="detail-card">
+      <h4><span class="tag tag-cyan">Agents Tab</span></h4>
+      <p>Agent registry, performance budgets (Filter &lt;15ms, Chat &lt;3s), tool usage stats, insight funnel (generated → surfaced → acted).</p>
+    </div>
+    <div class="detail-card">
+      <h4><span class="tag tag-accent">Flows Tab</span></h4>
+      <p>End-to-end regression tests. 8 pre-built flows: Block→Verify Hidden, Like→Verify Boosted, Dwell→Memory, Agent Chat Roundtrip, etc.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SECTION 18 — Security & Privacy
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="hld-section" id="security">
+  <div class="section-label"><span class="num">18</span> Security</div>
+  <h2>Security &amp; Privacy Model</h2>
+  <p class="lead">RecoMe's core principle: your data never leaves your device unless you explicitly opt in. Zero servers. Zero analytics. Zero tracking. Here's how that's enforced architecturally.</p>
+
+  <div class="step-flow">
+    <div class="step-item">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h4>Process Isolation</h4>
+        <p>Chrome enforces that the content script, background, and popup run in separate processes. A compromised content script can't access IndexedDB directly.</p>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h4>Shadow DOM Isolation</h4>
+        <p>The overlay renders in a Shadow DOM — the page's JavaScript can't access or manipulate RecoMe's UI, and RecoMe's CSS can't leak into the page.</p>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h4>Content Security Policy</h4>
+        <p>The manifest's CSP restricts what the extension can load: no inline scripts, no external resources except the user's chosen AI API endpoint.</p>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <h4>API Key Security</h4>
+        <p>If the user adds an AI API key, it's stored in chrome.storage.local (encrypted by Chrome). Requests go directly from the browser to the AI provider. RecoMe never proxies or sees the traffic.</p>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <h4>Guardian Agent</h4>
+        <p>The Guardian agent validates all outbound data, enforces rate limits on LLM calls, and ensures no personally identifiable information leaks into prompts.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SECTION 19 — End-to-End Data Flow
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="hld-section" id="e2e">
+  <div class="section-label"><span class="num">19</span> Flow</div>
+  <h2>End-to-End Data Flow</h2>
+  <p class="lead">Let's trace what happens when you open YouTube and a video card appears in your feed — from the first pixel to the card being hidden.</p>
+
+  <div class="diagram">
+    <div class="diagram-title">Complete Flow — YouTube Card Hidden</div>
+    <svg viewBox="0 0 900 500" xmlns="http://www.w3.org/2000/svg">
+      <!-- Step 1 -->
+      <rect class="d-box" x="20" y="20" width="200" height="50" />
+      <text class="d-text" x="120" y="40">YouTube loads feed</text>
+      <text class="d-text-sm" x="120" y="58">DOM renders video cards</text>
+
+      <!-- Step 2 -->
+      <rect class="d-box-cyan" x="20" y="100" width="200" height="50" />
+      <text class="d-text" x="120" y="120">MutationObserver fires</text>
+      <text class="d-text-sm" x="120" y="138">New nodes detected</text>
+
+      <!-- Step 3 -->
+      <rect class="d-box-cyan" x="20" y="180" width="200" height="50" />
+      <text class="d-text" x="120" y="200">YouTubeAdapter matches</text>
+      <text class="d-text-sm" x="120" y="218">ytd-rich-item-renderer</text>
+
+      <!-- Step 4 -->
+      <rect class="d-box-purple" x="260" y="180" width="200" height="50" />
+      <text class="d-text" x="360" y="200">Extract metadata</text>
+      <text class="d-text-sm" x="360" y="218">title, channel, topics</text>
+
+      <!-- Step 5 -->
+      <rect class="d-box-accent" x="260" y="260" width="200" height="50" />
+      <text class="d-text" x="360" y="280">PROCESS_CONTENT</text>
+      <text class="d-text-sm" x="360" y="298">Message → background</text>
+
+      <!-- Step 6 -->
+      <rect class="d-box-accent" x="500" y="260" width="200" height="50" />
+      <text class="d-text" x="600" y="280">dispatch() routes</text>
+      <text class="d-text-sm" x="600" y="298">→ processContent()</text>
+
+      <!-- Step 7 -->
+      <rect class="d-box-accent" x="500" y="340" width="200" height="70" />
+      <text class="d-text" x="600" y="360">5-Factor Scoring</text>
+      <text class="d-text-sm" x="600" y="380">directBlock: -1.0 (w:0.35)</text>
+      <text class="d-text-sm" x="600" y="398">finalScore: -0.62</text>
+
+      <!-- Step 8 -->
+      <rect class="d-box-orange" x="260" y="350" width="200" height="50" />
+      <text class="d-text" x="360" y="370">Action: HIDE</text>
+      <text class="d-text-sm" x="360" y="388">score &lt; -0.4 threshold</text>
+
+      <!-- Step 9 -->
+      <rect class="d-box-green" x="260" y="430" width="200" height="50" />
+      <text class="d-text" x="360" y="450">Card hidden via CSS</text>
+      <text class="d-text-sm" x="360" y="468">opacity: 0, height: 0</text>
+
+      <!-- Step 10 -->
+      <rect class="d-box" x="500" y="430" width="200" height="50" />
+      <text class="d-text" x="600" y="450">Memory + Stats updated</text>
+      <text class="d-text-sm" x="600" y="468">Decision logged</text>
+
+      <!-- Arrows -->
+      <line class="d-arrow" x1="120" y1="70" x2="120" y2="95" />
+      <line class="d-arrow" x1="120" y1="150" x2="120" y2="175" />
+      <line class="d-arrow" x1="220" y1="205" x2="255" y2="205" />
+      <line class="d-arrow" x1="360" y1="230" x2="360" y2="255" />
+      <line class="d-arrow-accent" x1="460" y1="285" x2="495" y2="285" />
+      <line class="d-arrow" x1="600" y1="310" x2="600" y2="335" />
+      <line class="d-arrow-green" x1="500" y1="375" x2="465" y2="375" />
+      <line class="d-arrow" x1="360" y1="400" x2="360" y2="425" />
+      <line class="d-arrow" x1="460" y1="455" x2="495" y2="455" />
+
+      <!-- Timing -->
+      <text class="d-text-mono" x="780" y="285">~2ms routing</text>
+      <text class="d-text-mono" x="780" y="375">~12ms scoring</text>
+      <text class="d-text-mono" x="780" y="455">~1ms apply</text>
+      <text class="d-label" x="780" y="490">TOTAL: ~15ms</text>
+    </svg>
+  </div>
+
+  <div class="callout">
+    <strong>Performance budget:</strong> The entire pipeline — from DOM mutation to card hidden — completes in under 15ms. That's faster than a single frame at 60fps (16.6ms). The user never sees the card flicker — it's hidden before the browser paints it.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SECTION 20 — Key Design Decisions
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="hld-section" id="decisions">
+  <div class="section-label"><span class="num">20</span> Decisions</div>
+  <h2>Key Design Decisions</h2>
+  <p class="lead">Every architecture involves tradeoffs. Here are the most important decisions made in RecoMe and why they were made.</p>
+
+  <table class="hld-table">
+    <thead>
+      <tr><th>Decision</th><th>Choice Made</th><th>Alternative Considered</th><th>Why This Way</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Processing location</td><td><strong>100% local</strong></td><td>Cloud AI processing</td><td>Privacy is the core value prop. Cloud adds latency, cost, and trust requirements.</td></tr>
+      <tr><td>Storage engine</td><td><strong>IndexedDB</strong></td><td>SQLite (via WASM)</td><td>IndexedDB is native to browsers, requires no WASM overhead, and supports structured data with indexes.</td></tr>
+      <tr><td>UI framework</td><td><strong>React 19</strong></td><td>Vanilla JS, Svelte</td><td>React's component model matches extension panels well. React 19's concurrent features help with large DevTools renders.</td></tr>
+      <tr><td>Message architecture</td><td><strong>Exhaustive switch</strong></td><td>EventEmitter, pub/sub</td><td>TypeScript's exhaustive switch guarantees every message type is handled — compile-time safety over runtime flexibility.</td></tr>
+      <tr><td>Monitoring data</td><td><strong>In-memory ring buffer</strong></td><td>Persistent logging</td><td>Monitoring is ephemeral — it shouldn't grow storage indefinitely. Ring buffer bounds memory use to 500 events.</td></tr>
+      <tr><td>Agent architecture</td><td><strong>Specialized agents</strong></td><td>Single monolithic agent</td><td>Specialized agents are independently testable, can run in parallel, and have clear performance budgets.</td></tr>
+      <tr><td>Selector resilience</td><td><strong>Self-healing discovery</strong></td><td>Hard-coded selectors only</td><td>Platforms change HTML frequently. Self-healing turns breakage into a self-correcting event.</td></tr>
+      <tr><td>LLM integration</td><td><strong>BYOK (Bring Your Own Key)</strong></td><td>Bundled API key</td><td>No recurring API costs for us. User controls their data. Works with any provider (Claude, GPT, Gemini).</td></tr>
+      <tr><td>Memory decay</td><td><strong>Exponential half-life</strong></td><td>Fixed expiration, sliding window</td><td>Exponential decay is more natural — strong signals persist, weak ones fade. Matches how human memory works.</td></tr>
+      <tr><td>Sync strategy</td><td><strong>CRDT merge</strong></td><td>Last-write-wins, manual merge</td><td>CRDTs guarantee conflict-free merges across devices without user intervention. Mathematically proven to converge.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-green">
+    <strong>The meta-principle:</strong> Every decision in RecoMe optimizes for <strong>user trust</strong>. Local processing over cloud. User API keys over bundled. Transparent scoring over black-box AI. Self-healing over manual updates. When in doubt, choose the option that gives the user more control.
+  </div>
+</section>
+
+</main>
+
+<!-- ═══════════════════ FOOTER ═══════════════════ -->
+<footer class="hld-footer">
+  <div class="container">
+    <p><strong>RecoMe High Level Design</strong> &mdash; Written as both a system design document and a learning resource.</p>
+    <p style="margin-top: 8px;"><a href="index.html">Back to RecoMe</a> &middot; <a href="manual.html">User Manual</a> &middot; <a href="privacy.html">Privacy Policy</a></p>
+    <p style="margin-top: 16px;">&copy; 2026 RecoMe. Your feed, your rules.</p>
+  </div>
+</footer>
+
+</body>
+</html>

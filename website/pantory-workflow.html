@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RecoMe SDK × Pantory — PDAC Patient Workflow</title>
+  <style>
+    :root {
+      --blue:      #1e6fc8;
+      --blue-lt:   #e8f2fd;
+      --teal:      #0d9488;
+      --teal-lt:   #e6f7f5;
+      --red:       #dc2626;
+      --red-lt:    #fef2f2;
+      --amber:     #d97706;
+      --amber-lt:  #fffbeb;
+      --green:     #16a34a;
+      --green-lt:  #f0fdf4;
+      --purple:    #7c3aed;
+      --purple-lt: #f5f3ff;
+      --gray-50:   #f9fafb;
+      --gray-100:  #f3f4f6;
+      --gray-200:  #e5e7eb;
+      --gray-400:  #9ca3af;
+      --gray-600:  #4b5563;
+      --gray-800:  #1f2937;
+      --gray-900:  #111827;
+      --font:      'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: #f0f4f8;
+      color: var(--gray-800);
+      line-height: 1.6;
+    }
+
+    /* ── HERO ─────────────────────────────────────────────── */
+    .hero {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0d9488 100%);
+      color: #fff;
+      padding: 64px 40px 56px;
+      text-align: center;
+    }
+    .hero .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 999px;
+      padding: 4px 16px;
+      font-size: 12px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 16px;
+    }
+    .hero h1 span { color: #5eead4; }
+    .hero p {
+      font-size: 18px;
+      opacity: 0.8;
+      max-width: 640px;
+      margin: 0 auto 32px;
+    }
+    .hero-tags { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .hero-tags span {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 6px;
+      padding: 5px 14px;
+      font-size: 13px;
+    }
+
+    /* ── LAYOUT ───────────────────────────────────────────── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+    section { padding: 56px 0; }
+    section + section { border-top: 1px solid var(--gray-200); }
+
+    h2 {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: 8px;
+    }
+    h2 .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px; height: 32px;
+      background: var(--blue);
+      color: #fff;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-right: 10px;
+    }
+    .section-sub {
+      color: var(--gray-600);
+      font-size: 16px;
+      margin-bottom: 36px;
+      max-width: 700px;
+    }
+
+    /* ── PATIENT CARD ─────────────────────────────────────── */
+    .patient-card {
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid var(--gray-200);
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    }
+    .patient-card-header {
+      background: linear-gradient(135deg, #1e3a5f, #1e6fc8);
+      color: #fff;
+      padding: 28px 32px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .avatar {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+    .patient-card-header h3 { font-size: 22px; margin-bottom: 4px; }
+    .patient-card-header p { opacity: 0.8; font-size: 14px; }
+    .patient-card-body {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0;
+    }
+    .patient-stat {
+      padding: 20px 24px;
+      border-right: 1px solid var(--gray-200);
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .patient-stat:last-child { border-right: none; }
+    .patient-stat .label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--gray-400); margin-bottom: 4px; }
+    .patient-stat .value { font-size: 16px; font-weight: 600; color: var(--gray-900); }
+    .patient-stat .value.critical { color: var(--red); }
+    .patient-stat .value.warning  { color: var(--amber); }
+    .patient-stat .value.good     { color: var(--green); }
+
+    /* ── CARDS GRID ───────────────────────────────────────── */
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid var(--gray-200);
+      padding: 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    }
+    .card-icon {
+      width: 44px; height: 44px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      margin-bottom: 14px;
+    }
+    .card h4 { font-size: 16px; font-weight: 700; margin-bottom: 8px; color: var(--gray-900); }
+    .card p  { font-size: 14px; color: var(--gray-600); line-height: 1.6; }
+
+    .card.blue   .card-icon { background: var(--blue-lt);   }
+    .card.teal   .card-icon { background: var(--teal-lt);   }
+    .card.purple .card-icon { background: var(--purple-lt); }
+    .card.amber  .card-icon { background: var(--amber-lt);  }
+    .card.green  .card-icon { background: var(--green-lt);  }
+    .card.red    .card-icon { background: var(--red-lt);    }
+
+    /* ── FLOWCHART ────────────────────────────────────────── */
+    .flowchart-wrap {
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid var(--gray-200);
+      padding: 36px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.05);
+      overflow-x: auto;
+    }
+    .flowchart-wrap svg { display: block; margin: 0 auto; }
+
+    /* ── PHASE TIMELINE ───────────────────────────────────── */
+    .phases { display: flex; flex-direction: column; gap: 0; }
+
+    .phase {
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      gap: 0;
+    }
+
+    .phase-marker {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-right: 24px;
+    }
+    .phase-dot {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+      z-index: 1;
+    }
+    .phase-line {
+      width: 2px;
+      flex: 1;
+      min-height: 40px;
+      margin: 6px 0;
+    }
+    .phase:last-child .phase-line { display: none; }
+
+    .phase-content {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid var(--gray-200);
+      padding: 24px 28px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .phase-content h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .phase-content .phase-meta {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--gray-400);
+      margin-bottom: 14px;
+    }
+    .phase-content p { font-size: 14px; color: var(--gray-600); margin-bottom: 14px; }
+
+    .sdk-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .sdk-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--blue-lt);
+      color: var(--blue);
+      border: 1px solid #bfdbfe;
+      border-radius: 999px;
+      padding: 3px 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .sdk-pill.teal   { background: var(--teal-lt);   color: var(--teal);   border-color: #99f6e4; }
+    .sdk-pill.purple { background: var(--purple-lt); color: var(--purple); border-color: #ddd6fe; }
+    .sdk-pill.amber  { background: var(--amber-lt);  color: var(--amber);  border-color: #fde68a; }
+    .sdk-pill.red    { background: var(--red-lt);    color: var(--red);    border-color: #fecaca; }
+    .sdk-pill.green  { background: var(--green-lt);  color: var(--green);  border-color: #bbf7d0; }
+
+    /* ── SCORING TABLE ────────────────────────────────────── */
+    .score-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    .score-table th {
+      background: var(--gray-50);
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--gray-600);
+      border-bottom: 2px solid var(--gray-200);
+    }
+    .score-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--gray-100);
+      vertical-align: top;
+    }
+    .score-table tr:last-child td { border-bottom: none; }
+    .score-table tr:hover td { background: var(--gray-50); }
+
+    .score-bar-wrap { display: flex; align-items: center; gap: 10px; }
+    .score-bar {
+      flex: 1;
+      height: 8px;
+      background: var(--gray-100);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .score-bar-fill { height: 100%; border-radius: 4px; }
+    .score-num { font-weight: 700; font-size: 13px; min-width: 36px; text-align: right; }
+
+    .priority-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .p-critical { background: #fee2e2; color: #991b1b; }
+    .p-high     { background: #fef3c7; color: #92400e; }
+    .p-medium   { background: #dbeafe; color: #1e40af; }
+    .p-low      { background: var(--gray-100); color: var(--gray-600); }
+
+    /* ── PATIENT OUTPUT ───────────────────────────────────── */
+    .patient-output {
+      background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+      border: 1px solid #86efac;
+      border-radius: 12px;
+      padding: 24px 28px;
+    }
+    .patient-output h4 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--teal);
+      margin-bottom: 16px;
+    }
+    .output-item {
+      display: flex;
+      gap: 12px;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(134, 239, 172, 0.4);
+    }
+    .output-item:last-child { border-bottom: none; }
+    .output-num {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+      color: #fff;
+    }
+    .output-item .title { font-weight: 700; font-size: 15px; color: var(--gray-900); margin-bottom: 4px; }
+    .output-item .body  { font-size: 14px; color: var(--gray-600); }
+
+    /* ── USER STORY ───────────────────────────────────────── */
+    .story-card {
+      background: #fff;
+      border-radius: 12px;
+      border-left: 4px solid var(--blue);
+      padding: 24px 28px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+    .story-card.teal   { border-color: var(--teal); }
+    .story-card.purple { border-color: var(--purple); }
+    .story-card.amber  { border-color: var(--amber); }
+
+    .story-card .who {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--gray-400);
+      margin-bottom: 6px;
+    }
+    .story-card h4 { font-size: 17px; font-weight: 700; margin-bottom: 12px; color: var(--gray-900); }
+    .story-card .what, .story-card .so-that {
+      font-size: 14px;
+      color: var(--gray-600);
+      margin-bottom: 6px;
+    }
+    .story-card .so-that strong { color: var(--gray-800); }
+
+    .ww-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+    .ww-item { background: var(--gray-50); border-radius: 8px; padding: 14px; }
+    .ww-item .ww-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--gray-400); margin-bottom: 4px; }
+    .ww-item .ww-val   { font-size: 14px; color: var(--gray-700); }
+
+    /* ── GRAPH VISUAL ─────────────────────────────────────── */
+    .graph-visual {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid var(--gray-200);
+      padding: 28px;
+      text-align: center;
+    }
+
+    /* ── COMPARISON TABLE ─────────────────────────────────── */
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    .compare-table th {
+      padding: 14px 18px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .compare-table td {
+      padding: 13px 18px;
+      border-top: 1px solid var(--gray-100);
+      text-align: center;
+    }
+    .compare-table td:first-child { text-align: left; color: var(--gray-700); }
+    .compare-table .yes { color: var(--green); font-weight: 700; }
+    .compare-table .no  { color: var(--red);   font-weight: 700; }
+    .compare-table thead th:nth-child(2) { background: var(--gray-50); }
+    .compare-table thead th:nth-child(3) { background: var(--blue-lt); color: var(--blue); }
+
+    /* ── CALLOUT ──────────────────────────────────────────── */
+    .callout {
+      border-radius: 12px;
+      padding: 20px 24px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+    .callout.blue   { background: var(--blue-lt);   border: 1px solid #bfdbfe; }
+    .callout.amber  { background: var(--amber-lt);  border: 1px solid #fde68a; }
+    .callout.green  { background: var(--green-lt);  border: 1px solid #bbf7d0; }
+    .callout.red    { background: var(--red-lt);    border: 1px solid #fecaca; }
+    .callout-icon { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
+    .callout h4 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .callout p  { font-size: 14px; opacity: 0.85; }
+
+    /* ── LIST ─────────────────────────────────────────────── */
+    .check-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+    .check-list li {
+      display: flex; gap: 10px; font-size: 14px; color: var(--gray-700);
+    }
+    .check-list li::before {
+      content: '✓';
+      color: var(--green);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    /* ── FOOTER ───────────────────────────────────────────── */
+    footer {
+      background: var(--gray-900);
+      color: rgba(255,255,255,0.5);
+      text-align: center;
+      padding: 28px;
+      font-size: 13px;
+    }
+    footer strong { color: rgba(255,255,255,0.8); }
+
+    @media (max-width: 640px) {
+      .phase { grid-template-columns: 48px 1fr; }
+      .phase-marker { padding-right: 12px; }
+      .ww-grid { grid-template-columns: 1fr; }
+      .patient-card-body { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════ HERO ══════════ -->
+<div class="hero">
+  <div class="badge">RecoMe SDK × Pantory</div>
+  <h1>How a <span>Preference Graph</span> Transforms<br>Pancreatic Cancer Report Understanding</h1>
+  <p>A full patient workflow showing how the RecoMe SDK's Interest Graph, OpportunityRanker, and Memory Pack can power deeply personalized medical report comprehension inside Pantory.</p>
+  <div class="hero-tags">
+    <span>Interest Graph</span>
+    <span>OpportunityRanker</span>
+    <span>Memory Pack</span>
+    <span>Profile Extractor</span>
+    <span>PDAC Patient Journey</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ══════════ THE PROBLEM ══════════ -->
+  <section>
+    <h2>Why Pancreatic Cancer Reports Are Uniquely Hard</h2>
+    <p class="section-sub">PDAC (Pancreatic Ductal Adenocarcinoma) reports arrive dense, multi-domain, and emotionally loaded. A plain LLM summary treats every patient — and every finding — identically.</p>
+
+    <div class="cards">
+      <div class="card red">
+        <div class="card-icon">📄</div>
+        <h4>Reports are multi-domain</h4>
+        <p>A single follow-up report combines CT imaging, tumor markers (CA 19-9), liver function, treatment response, staging, and surgical resectability — all with equal visual weight.</p>
+      </div>
+      <div class="card amber">
+        <div class="card-icon">🔄</div>
+        <h4>Context resets every visit</h4>
+        <p>Without memory across sessions, every simplification starts from scratch. Patients re-learn what CA 19-9 means on every visit. What changed since last time goes undetected.</p>
+      </div>
+      <div class="card blue">
+        <div class="card-icon">🎯</div>
+        <h4>All findings treated equally</h4>
+        <p>A new hepatic lesion (urgent) and stable fat stranding (background noise) get the same explanation weight. Patients don't know what to call their doctor about.</p>
+      </div>
+      <div class="card purple">
+        <div class="card-icon">👤</div>
+        <h4>No patient model exists</h4>
+        <p>The LLM doesn't know this patient is on FOLFIRINOX cycle 4, asked about CA 19-9 three times before, or that their caregiver is the one reading the report.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ PATIENT PROFILE ══════════ -->
+  <section>
+    <h2><span class="num">1</span>Meet James — Our Patient</h2>
+    <p class="section-sub">A real case to ground every workflow step. James is a 58-year-old diagnosed with Stage III PDAC, currently on chemotherapy. He uploads reports to Pantory to understand them before his oncologist appointments.</p>
+
+    <div class="patient-card">
+      <div class="patient-card-header">
+        <div class="avatar">👨</div>
+        <div>
+          <h3>James Mitchell, 58</h3>
+          <p>Stage III Pancreatic Ductal Adenocarcinoma &nbsp;·&nbsp; Diagnosed 4 months ago &nbsp;·&nbsp; FOLFIRINOX Cycle 4</p>
+        </div>
+      </div>
+      <div class="patient-card-body">
+        <div class="patient-stat">
+          <div class="label">Primary Concern</div>
+          <div class="value critical">PDAC — Head of Pancreas</div>
+        </div>
+        <div class="patient-stat">
+          <div class="label">Initial CA 19-9</div>
+          <div class="value critical">2,847 U/mL</div>
+        </div>
+        <div class="patient-stat">
+          <div class="label">Current CA 19-9</div>
+          <div class="value warning">647 U/mL</div>
+        </div>
+        <div class="patient-stat">
+          <div class="label">Tumor (latest CT)</div>
+          <div class="value warning">3.1 cm (was 4.2 cm)</div>
+        </div>
+        <div class="patient-stat">
+          <div class="label">Vascular Involvement</div>
+          <div class="value warning">SMV abutment &lt;180°</div>
+        </div>
+        <div class="patient-stat">
+          <div class="label">Hepatic Mets</div>
+          <div class="value good">None detected</div>
+        </div>
+        <div class="patient-stat">
+          <div class="label">Pantory Reports</div>
+          <div class="value">4 uploaded</div>
+        </div>
+        <div class="patient-stat">
+          <div class="label">Reading Behaviour</div>
+          <div class="value">Re-reads CA 19-9 sections 3×</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ SDK COMPONENTS ══════════ -->
+  <section>
+    <h2><span class="num">2</span>RecoMe SDK Components in Play</h2>
+    <p class="section-sub">Four backend modules work together to build the personalization layer Pantory needs.</p>
+
+    <div class="cards">
+      <div class="card blue">
+        <div class="card-icon">🧠</div>
+        <h4>Interest Graph</h4>
+        <p>A persistent knowledge graph of the patient's conditions, medications, interests, and confusion points — stored as weighted typed edges. Grows with every session.</p>
+        <div class="sdk-pills" style="margin-top:12px">
+          <span class="sdk-pill">entities + relations</span>
+          <span class="sdk-pill">weighted edges</span>
+        </div>
+      </div>
+      <div class="card teal">
+        <div class="card-icon">⚖️</div>
+        <h4>OpportunityRanker</h4>
+        <p>Scores each report finding using 4 signals: interest match, benefit clarity, timeliness, and novelty. Returns a ranked list — most important first.</p>
+        <div class="sdk-pills" style="margin-top:12px">
+          <span class="sdk-pill teal">4-signal scoring</span>
+          <span class="sdk-pill teal">threshold filter</span>
+        </div>
+      </div>
+      <div class="card purple">
+        <div class="card-icon">🗂️</div>
+        <h4>Memory Pack</h4>
+        <p>Short and mid-term memory cards per patient — tracks what terms were explained, what they re-read, and what comprehension gaps remain across sessions.</p>
+        <div class="sdk-pills" style="margin-top:12px">
+          <span class="sdk-pill purple">topic buckets</span>
+          <span class="sdk-pill purple">cross-session</span>
+        </div>
+      </div>
+      <div class="card amber">
+        <div class="card-icon">🔍</div>
+        <h4>Profile Extractor</h4>
+        <p>Parses structured data out of report text using registerable specialty modules — oncology, cardiology, labs — each knowing the report structure for that domain.</p>
+        <div class="sdk-pills" style="margin-top:12px">
+          <span class="sdk-pill amber">specialty modules</span>
+          <span class="sdk-pill amber">structured output</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ FULL WORKFLOW FLOWCHART ══════════ -->
+  <section>
+    <h2><span class="num">3</span>Full Patient Workflow</h2>
+    <p class="section-sub">End-to-end journey from first report upload through ongoing treatment monitoring — every touchpoint where the SDK adds intelligence.</p>
+
+    <div class="flowchart-wrap">
+      <svg viewBox="0 0 900 1380" width="100%" style="max-width:900px">
+        <defs>
+          <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#9ca3af"/>
+          </marker>
+          <marker id="arr-blue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#1e6fc8"/>
+          </marker>
+          <marker id="arr-red" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#dc2626"/>
+          </marker>
+          <marker id="arr-green" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#16a34a"/>
+          </marker>
+          <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+            <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.08"/>
+          </filter>
+        </defs>
+
+        <!-- ── PHASE LABELS ── -->
+        <!-- Phase 1: Cold Start -->
+        <text x="28" y="92" font-size="11" fill="#9ca3af" font-family="system-ui" letter-spacing="1" font-weight="600">PHASE 1</text>
+        <text x="28" y="107" font-size="13" fill="#1e3a5f" font-family="system-ui" font-weight="700">COLD START</text>
+
+        <!-- Phase 2: Processing -->
+        <text x="28" y="340" font-size="11" fill="#9ca3af" font-family="system-ui" letter-spacing="1" font-weight="600">PHASE 2</text>
+        <text x="28" y="355" font-size="13" fill="#1e3a5f" font-family="system-ui" font-weight="700">PROCESSING</text>
+
+        <!-- Phase 3: Ranking -->
+        <text x="28" y="640" font-size="11" fill="#9ca3af" font-family="system-ui" letter-spacing="1" font-weight="600">PHASE 3</text>
+        <text x="28" y="655" font-size="13" fill="#1e3a5f" font-family="system-ui" font-weight="700">RANKING</text>
+
+        <!-- Phase 4: Output -->
+        <text x="28" y="960" font-size="11" fill="#9ca3af" font-family="system-ui" letter-spacing="1" font-weight="600">PHASE 4</text>
+        <text x="28" y="975" font-size="13" fill="#1e3a5f" font-family="system-ui" font-weight="700">OUTPUT</text>
+
+        <!-- Phase 5: Feedback -->
+        <text x="28" y="1210" font-size="11" fill="#9ca3af" font-family="system-ui" letter-spacing="1" font-weight="600">PHASE 5</text>
+        <text x="28" y="1225" font-size="13" fill="#1e3a5f" font-family="system-ui" font-weight="700">LEARNING</text>
+
+        <!-- Phase dividers -->
+        <line x1="155" y1="75" x2="155" y2="1370" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="4,4"/>
+
+        <!-- ═══ PHASE 1: Cold Start ═══ -->
+
+        <!-- Box: Patient uploads report -->
+        <rect x="175" y="60" width="220" height="60" rx="10" fill="#1e6fc8" filter="url(#shadow)"/>
+        <text x="285" y="87" text-anchor="middle" font-size="14" font-weight="700" fill="white" font-family="system-ui">Patient Uploads</text>
+        <text x="285" y="105" text-anchor="middle" font-size="12" fill="rgba(255,255,255,0.85)" font-family="system-ui">CT Report + Blood Work</text>
+
+        <!-- Box: First time? -->
+        <polygon points="450,60 560,90 450,120 340,90" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1.5" filter="url(#shadow)"/>
+        <text x="450" y="87" text-anchor="middle" font-size="13" font-weight="700" fill="#374151" font-family="system-ui">First</text>
+        <text x="450" y="104" text-anchor="middle" font-size="13" font-weight="700" fill="#374151" font-family="system-ui">Upload?</text>
+
+        <!-- Yes path → cold start -->
+        <rect x="630" y="60" width="210" height="60" rx="10" fill="#7c3aed" filter="url(#shadow)"/>
+        <text x="735" y="87" text-anchor="middle" font-size="13" font-weight="700" fill="white" font-family="system-ui">Initialize Patient</text>
+        <text x="735" y="105" text-anchor="middle" font-size="12" fill="rgba(255,255,255,0.85)" font-family="system-ui">Interest Graph + Memory Pack</text>
+
+        <!-- Arrows Phase 1 -->
+        <line x1="395" y1="90" x2="338" y2="90" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="560" y1="90" x2="628" y2="90" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#arr)"/>
+        <text x="592" y="83" font-size="11" fill="#16a34a" font-weight="700" font-family="system-ui">YES</text>
+
+        <!-- No path → down -->
+        <line x1="450" y1="120" x2="450" y2="180" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#arr)"/>
+        <text x="458" y="155" font-size="11" fill="#dc2626" font-weight="700" font-family="system-ui">NO</text>
+
+        <!-- Load existing graph -->
+        <rect x="330" y="180" width="240" height="60" rx="10" fill="#0d9488" filter="url(#shadow)"/>
+        <text x="450" y="207" text-anchor="middle" font-size="13" font-weight="700" fill="white" font-family="system-ui">Load Patient Context</text>
+        <text x="450" y="225" text-anchor="middle" font-size="12" fill="rgba(255,255,255,0.85)" font-family="system-ui">Interest Graph + Memory Pack</text>
+
+        <!-- Cold start → load existing -->
+        <path d="M735,120 L735,150 L450,150 L450,178" stroke="#9ca3af" stroke-width="1.5" fill="none" stroke-dasharray="5,3" marker-end="url(#arr)"/>
+
+        <!-- ═══ PHASE 2: Processing ═══ -->
+        <line x1="450" y1="240" x2="450" y2="290" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- Profile Extractor -->
+        <rect x="175" y="290" width="550" height="65" rx="10" fill="#fff" stroke="#1e6fc8" stroke-width="2" filter="url(#shadow)"/>
+        <rect x="175" y="290" width="10" height="65" rx="5" fill="#1e6fc8"/>
+        <text x="215" y="318" font-size="13" font-weight="700" fill="#1e3a5f" font-family="system-ui">Profile Extractor</text>
+        <text x="215" y="338" font-size="12" fill="#6b7280" font-family="system-ui">Specialty module parses report → structured findings (tumor size, CA 19-9, staging...)</text>
+
+        <line x1="450" y1="355" x2="450" y2="400" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- Three parallel boxes -->
+        <!-- Box A: Extract findings -->
+        <rect x="175" y="400" width="160" height="80" rx="10" fill="#fff" stroke="#d1d5db" stroke-width="1.5" filter="url(#shadow)"/>
+        <text x="255" y="430" text-anchor="middle" font-size="12" font-weight="700" fill="#374151" font-family="system-ui">Extract</text>
+        <text x="255" y="447" text-anchor="middle" font-size="11" fill="#6b7280" font-family="system-ui">Findings as</text>
+        <text x="255" y="462" text-anchor="middle" font-size="11" fill="#6b7280" font-family="system-ui">structured entities</text>
+
+        <!-- Box B: Query Interest Graph -->
+        <rect x="360" y="400" width="180" height="80" rx="10" fill="#fff" stroke="#1e6fc8" stroke-width="2" filter="url(#shadow)"/>
+        <text x="450" y="430" text-anchor="middle" font-size="12" font-weight="700" fill="#1e6fc8" font-family="system-ui">Query Interest Graph</text>
+        <text x="450" y="447" text-anchor="middle" font-size="11" fill="#6b7280" font-family="system-ui">Get patient's weighted</text>
+        <text x="450" y="462" text-anchor="middle" font-size="11" fill="#6b7280" font-family="system-ui">topics + conditions</text>
+
+        <!-- Box C: Load Memory -->
+        <rect x="565" y="400" width="160" height="80" rx="10" fill="#fff" stroke="#7c3aed" stroke-width="1.5" filter="url(#shadow)"/>
+        <text x="645" y="430" text-anchor="middle" font-size="12" font-weight="700" fill="#7c3aed" font-family="system-ui">Load Memory Pack</text>
+        <text x="645" y="447" text-anchor="middle" font-size="11" fill="#6b7280" font-family="system-ui">What was explained</text>
+        <text x="645" y="462" text-anchor="middle" font-size="11" fill="#6b7280" font-family="system-ui">in prior sessions?</text>
+
+        <!-- Lines from extractor to three boxes -->
+        <line x1="355" y1="380" x2="255" y2="400" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="450" y1="380" x2="450" y2="398" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="545" y1="380" x2="645" y2="400" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#arr)"/>
+        <!-- Fake Y for fans -->
+        <line x1="255" y1="380" x2="645" y2="380" stroke="#9ca3af" stroke-width="1.5"/>
+        <line x1="450" y1="355" x2="450" y2="380" stroke="#9ca3af" stroke-width="1.5"/>
+
+        <!-- Converge to opportunity ranker -->
+        <line x1="255" y1="480" x2="255" y2="560" stroke="#9ca3af" stroke-width="1.5"/>
+        <line x1="450" y1="480" x2="450" y2="545" stroke="#9ca3af" stroke-width="1.5"/>
+        <line x1="645" y1="480" x2="645" y2="560" stroke="#9ca3af" stroke-width="1.5"/>
+        <line x1="255" y1="560" x2="645" y2="560" stroke="#9ca3af" stroke-width="1.5"/>
+        <line x1="450" y1="560" x2="450" y2="578" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- ═══ PHASE 3: Ranking ═══ -->
+
+        <!-- OpportunityRanker box -->
+        <rect x="175" y="578" width="550" height="130" rx="10" fill="#fff" stroke="#0d9488" stroke-width="2" filter="url(#shadow)"/>
+        <rect x="175" y="578" width="10" height="130" rx="5" fill="#0d9488"/>
+        <text x="215" y="605" font-size="13" font-weight="700" fill="#0d6860" font-family="system-ui">OpportunityRanker — 4-Signal Scoring per Finding</text>
+
+        <!-- 4 mini score bars -->
+        <!-- Interest Match -->
+        <rect x="215" y="618" width="115" height="36" rx="6" fill="#e8f2fd"/>
+        <text x="223" y="632" font-size="10" fill="#1e6fc8" font-weight="700" font-family="system-ui">Interest Match</text>
+        <text x="223" y="647" font-size="10" fill="#6b7280" font-family="system-ui">Condition relevance</text>
+        <text x="318" y="647" font-size="10" fill="#1e6fc8" font-weight="700" font-family="system-ui">35%</text>
+
+        <!-- Benefit Clarity -->
+        <rect x="340" y="618" width="115" height="36" rx="6" fill="#e6f7f5"/>
+        <text x="348" y="632" font-size="10" fill="#0d9488" font-weight="700" font-family="system-ui">Benefit Clarity</text>
+        <text x="348" y="647" font-size="10" fill="#6b7280" font-family="system-ui">Actionable insight?</text>
+        <text x="443" y="647" font-size="10" fill="#0d9488" font-weight="700" font-family="system-ui">25%</text>
+
+        <!-- Timeliness -->
+        <rect x="465" y="618" width="115" height="36" rx="6" fill="#fffbeb"/>
+        <text x="473" y="632" font-size="10" fill="#d97706" font-weight="700" font-family="system-ui">Timeliness</text>
+        <text x="473" y="647" font-size="10" fill="#6b7280" font-family="system-ui">Urgent / critical?</text>
+        <text x="568" y="647" font-size="10" fill="#d97706" font-weight="700" font-family="system-ui">20%</text>
+
+        <!-- Novelty -->
+        <rect x="590" y="618" width="115" height="36" rx="6" fill="#f5f3ff"/>
+        <text x="598" y="632" font-size="10" fill="#7c3aed" font-weight="700" font-family="system-ui">Novelty</text>
+        <text x="598" y="647" font-size="10" fill="#6b7280" font-family="system-ui">New since last report?</text>
+        <text x="693" y="647" font-size="10" fill="#7c3aed" font-weight="700" font-family="system-ui">20%</text>
+
+        <!-- Score output -->
+        <text x="215" y="688" font-size="12" fill="#374151" font-family="system-ui">→ Each finding gets a score 0–1.0.  Threshold filter removes low-relevance noise.  Top findings ranked.</text>
+
+        <line x1="450" y1="708" x2="450" y2="760" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- Diamond: Critical finding? -->
+        <polygon points="450,760 560,800 450,840 340,800" fill="#fff" stroke="#dc2626" stroke-width="2" filter="url(#shadow)"/>
+        <text x="450" y="797" text-anchor="middle" font-size="13" font-weight="700" fill="#dc2626" font-family="system-ui">Critical</text>
+        <text x="450" y="813" text-anchor="middle" font-size="13" font-weight="700" fill="#dc2626" font-family="system-ui">Finding?</text>
+
+        <!-- Yes → alert -->
+        <line x1="560" y1="800" x2="700" y2="800" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arr-red)"/>
+        <text x="620" y="792" font-size="11" fill="#dc2626" font-weight="700" font-family="system-ui">YES</text>
+        <rect x="700" y="770" width="170" height="60" rx="10" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+        <text x="785" y="797" text-anchor="middle" font-size="12" font-weight="700" fill="#dc2626" font-family="system-ui">Urgent Alert</text>
+        <text x="785" y="814" text-anchor="middle" font-size="11" fill="#9b1c1c" font-family="system-ui">Surface immediately</text>
+
+        <!-- No → continue -->
+        <line x1="450" y1="840" x2="450" y2="890" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#arr)"/>
+        <text x="458" y="870" font-size="11" fill="#374151" font-weight="700" font-family="system-ui">NO</text>
+
+        <!-- Fatigue check -->
+        <rect x="330" y="890" width="240" height="60" rx="10" fill="#fff" stroke="#d97706" stroke-width="1.5" filter="url(#shadow)"/>
+        <text x="450" y="917" text-anchor="middle" font-size="13" font-weight="700" fill="#92400e" font-family="system-ui">Fatigue Gate</text>
+        <text x="450" y="935" text-anchor="middle" font-size="12" fill="#6b7280" font-family="system-ui">Max insights reached? Threshold met?</text>
+
+        <line x1="450" y1="950" x2="450" y2="990" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- ═══ PHASE 4: Output ═══ -->
+
+        <!-- Ranked output box -->
+        <rect x="175" y="990" width="550" height="80" rx="10" fill="#0f172a" filter="url(#shadow)"/>
+        <text x="450" y="1023" text-anchor="middle" font-size="14" font-weight="700" fill="white" font-family="system-ui">Personalized Report for James</text>
+        <text x="450" y="1044" text-anchor="middle" font-size="12" fill="rgba(255,255,255,0.7)" font-family="system-ui">Top-ranked findings → plain language → patient-specific context</text>
+
+        <line x1="450" y1="1070" x2="450" y2="1110" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- Three output types -->
+        <rect x="175" y="1110" width="155" height="75" rx="10" fill="#16a34a" filter="url(#shadow)"/>
+        <text x="252" y="1140" text-anchor="middle" font-size="12" font-weight="700" fill="white" font-family="system-ui">Good News</text>
+        <text x="252" y="1158" text-anchor="middle" font-size="11" fill="rgba(255,255,255,0.85)" font-family="system-ui">CA 19-9 dropped 63%</text>
+        <text x="252" y="1174" text-anchor="middle" font-size="11" fill="rgba(255,255,255,0.85)" font-family="system-ui">Tumor shrinking</text>
+
+        <rect x="348" y="1110" width="204" height="75" rx="10" fill="#dc2626" filter="url(#shadow)"/>
+        <text x="450" y="1140" text-anchor="middle" font-size="12" font-weight="700" fill="white" font-family="system-ui">Watch / Ask Doctor</text>
+        <text x="450" y="1158" text-anchor="middle" font-size="11" fill="rgba(255,255,255,0.85)" font-family="system-ui">Bilirubin mildly elevated</text>
+        <text x="450" y="1174" text-anchor="middle" font-size="11" fill="rgba(255,255,255,0.85)" font-family="system-ui">→ Mention at appointment</text>
+
+        <rect x="570" y="1110" width="155" height="75" rx="10" fill="#6b7280" filter="url(#shadow)"/>
+        <text x="647" y="1140" text-anchor="middle" font-size="12" font-weight="700" fill="white" font-family="system-ui">Background</text>
+        <text x="647" y="1158" text-anchor="middle" font-size="11" fill="rgba(255,255,255,0.85)" font-family="system-ui">Stable fat stranding</text>
+        <text x="647" y="1174" text-anchor="middle" font-size="11" fill="rgba(255,255,255,0.85)" font-family="system-ui">No change needed</text>
+
+        <!-- ═══ PHASE 5: Learning ═══ -->
+        <line x1="450" y1="1185" x2="450" y2="1230" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <rect x="175" y="1230" width="550" height="65" rx="10" fill="#fff" stroke="#7c3aed" stroke-width="2" filter="url(#shadow)"/>
+        <rect x="175" y="1230" width="10" height="65" rx="5" fill="#7c3aed"/>
+        <text x="215" y="1258" font-size="13" font-weight="700" fill="#5b21b6" font-family="system-ui">Update Interest Graph + Memory Pack</text>
+        <text x="215" y="1277" font-size="12" fill="#6b7280" font-family="system-ui">Track what James re-reads · Log explained terms · Adjust weights for next report</text>
+
+        <!-- Feedback loop arrow back to top -->
+        <path d="M175,1262 L140,1262 L140,90 L173,90" stroke="#7c3aed" stroke-width="1.5" fill="none" stroke-dasharray="5,3" marker-end="url(#arr)"/>
+        <text x="116" y="680" font-size="11" fill="#7c3aed" font-weight="600" font-family="system-ui" transform="rotate(-90,116,680)">GRAPH IMPROVES WITH EVERY UPLOAD</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ══════════ PHASE BREAKDOWN ══════════ -->
+  <section>
+    <h2><span class="num">4</span>Phase-by-Phase Breakdown</h2>
+    <p class="section-sub">What the SDK does at each stage, why it matters for James, and which module is responsible.</p>
+
+    <div class="phases">
+
+      <!-- Phase 1 -->
+      <div class="phase">
+        <div class="phase-marker">
+          <div class="phase-dot" style="background:#1e6fc8">1</div>
+          <div class="phase-line" style="background:linear-gradient(#1e6fc8,#0d9488)"></div>
+        </div>
+        <div class="phase-content">
+          <div class="phase-meta">Cold Start · James's First Upload</div>
+          <h3>Building James's Medical Profile from Scratch</h3>
+          <p>James uploads his first CT report and blood work. There is no prior context. The SDK's <strong>Profile Extractor</strong> parses the report using an oncology specialty module, extracting structured findings: tumor location (head of pancreas, 4.2 cm), CA 19-9 at 2,847 U/mL, SMV abutment, no hepatic metastases.</p>
+          <p>The <strong>Interest Graph</strong> is initialized with these entities and their relationships to James. The <strong>Memory Pack</strong> is created empty — no prior explanations yet.</p>
+          <div class="callout amber" style="margin-top:16px">
+            <div class="callout-icon">💡</div>
+            <div>
+              <h4>Why this matters vs. plain LLM</h4>
+              <p>An LLM just summarizes text. The SDK builds a <em>model of James</em> — his conditions, their weights, what's clinically relevant to him. Every future session benefits from this foundation.</p>
+            </div>
+          </div>
+          <div class="sdk-pills" style="margin-top:16px">
+            <span class="sdk-pill">ProfileExtractor</span>
+            <span class="sdk-pill teal">InterestGraph.initialize()</span>
+            <span class="sdk-pill purple">MemoryPack.create()</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phase 2 -->
+      <div class="phase">
+        <div class="phase-marker">
+          <div class="phase-dot" style="background:#0d9488">2</div>
+          <div class="phase-line" style="background:linear-gradient(#0d9488,#7c3aed)"></div>
+        </div>
+        <div class="phase-content">
+          <div class="phase-meta">Cycle 2 Report · 6 Weeks Later</div>
+          <h3>Context-Aware Extraction on the Second Upload</h3>
+          <p>James uploads his cycle 2 CT + labs. This time the SDK loads his existing graph before doing anything. CA 19-9 is now 1,240 U/mL (down from 2,847). Tumor is 3.8 cm. Bilirubin slightly elevated.</p>
+          <p>The <strong>Interest Graph</strong> already knows James's conditions and the <strong>Memory Pack</strong> knows that CA 19-9 was explained to him last session. The extractor now outputs not just raw findings but <em>delta signals</em> — what changed, in which direction, by how much.</p>
+          <div class="callout blue" style="margin-top:16px">
+            <div class="callout-icon">🔄</div>
+            <div>
+              <h4>Delta detection in action</h4>
+              <p>CA 19-9 dropped 56%. The graph records this trajectory. The ranker will later use this as a strong "timeliness" and "interest match" signal — James has shown he cares about this marker, and it has meaningfully changed.</p>
+            </div>
+          </div>
+          <div class="sdk-pills" style="margin-top:16px">
+            <span class="sdk-pill">ProfileExtractor</span>
+            <span class="sdk-pill teal">InterestGraph.query()</span>
+            <span class="sdk-pill purple">MemoryPack.load()</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phase 3 -->
+      <div class="phase">
+        <div class="phase-marker">
+          <div class="phase-dot" style="background:#7c3aed">3</div>
+          <div class="phase-line" style="background:linear-gradient(#7c3aed,#d97706)"></div>
+        </div>
+        <div class="phase-content">
+          <div class="phase-meta">Core SDK Logic · Every Report</div>
+          <h3>OpportunityRanker Scores Every Finding</h3>
+          <p>The ranker receives all extracted findings as raw opportunities. It scores each one across four signals against James's interest graph. Here is how the cycle 4 report findings score:</p>
+
+          <div style="margin: 20px 0; overflow-x:auto">
+            <table class="score-table">
+              <thead>
+                <tr>
+                  <th>Finding</th>
+                  <th>Interest Match</th>
+                  <th>Benefit Clarity</th>
+                  <th>Timeliness</th>
+                  <th>Novelty</th>
+                  <th>Final Score</th>
+                  <th>Priority</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>CA 19-9: 647 → 312 U/mL</strong><br><small style="color:#6b7280">Dropped 52%</small></td>
+                  <td>
+                    <div class="score-bar-wrap">
+                      <div class="score-bar"><div class="score-bar-fill" style="width:95%;background:#1e6fc8"></div></div>
+                      <span class="score-num" style="color:#1e6fc8">0.95</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="score-bar-wrap">
+                      <div class="score-bar"><div class="score-bar-fill" style="width:90%;background:#0d9488"></div></div>
+                      <span class="score-num" style="color:#0d9488">0.90</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="score-bar-wrap">
+                      <div class="score-bar"><div class="score-bar-fill" style="width:80%;background:#d97706"></div></div>
+                      <span class="score-num" style="color:#d97706">0.80</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="score-bar-wrap">
+                      <div class="score-bar"><div class="score-bar-fill" style="width:85%;background:#7c3aed"></div></div>
+                      <span class="score-num" style="color:#7c3aed">0.85</span>
+                    </div>
+                  </td>
+                  <td style="font-weight:800;color:#16a34a;font-size:16px">0.89</td>
+                  <td><span class="priority-badge p-critical">CRITICAL</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Tumor: 3.1 cm (was 3.8 cm)</strong><br><small style="color:#6b7280">18% reduction</small></td>
+                  <td>
+                    <div class="score-bar-wrap">
+                      <div class="score-bar"><div class="score-bar-fill" style="width:88%;background:#1e6fc8"></div></div>
+                      <span class="score-num" style="color:#1e6fc8">0.88</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="score-bar-wrap">
+                      <div class="score-bar"><div class="score-bar-fill" style="width:85%;background:#0d9488"></div></div>
+                      <span class="score-num" style="color:#0d9488">0.85</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="score-bar-wrap">
+                      <div class="score-bar"><div class="score-bar-fill" style="width:75%;background:#d97706"></div></div>
+                      <span class="score-num" style="color:#d97706">0.75</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="score-bar-wrap">
+                      <div class="score-bar"><div class="score-bar-fill" style="width:80%;background:#7c3aed"></div></div>
+                      <span class="score-num" style="color:#7c3aed">0.80</span>
+                    </div>
+                  </td>
+                  <td style="font-weight:800;color:#16a34a;font-size:16px">0.83</td>
+                  <td><span class="priority-badge p-critical">CRITICAL</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Bilirubin: 1.8 mg/dL</strong><br><small style="color:#6b7280">Mildly elevated, new</small></td>
+                  <td>
+                    <div class="score-bar-wrap">
+                      <div class="score-bar"><div class="score-bar-fill" style="width:60%;background:#1e6fc8"></div></div>
+                      <span class="score-num" style="color:#1e6fc8">0.60</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="score-bar-wrap">
+                      <div class="score-bar"><div class="score-bar-fill" style="width:65%;background:#0d9488"></div></div>
+                      <span class="score-num" style="color:#0d9488">0.65</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="score-bar-wrap">
+                      <div class="score-bar"><div class="score-bar-fill" style="width:70%;background:#d97706"></div></div>
+                      <span class="score-num" style="color:#d97706">0.70</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="score-bar-wrap">
+                      <div class="score-bar"><div class="score-bar-fill" style="width:80%;background:#7c3aed"></div></div>
+                      <span class="score-num" style="color:#7c3aed">0.80</span>
+                    </div>
+                  </td>
+                  <td style="font-weight:800;color:#d97706;font-size:16px">0.67</td>
+                  <td><span class="priority-badge p-high">HIGH</span></td>
+                </tr>
+                <tr>
+                  <td><strong>SMV Abutment &lt;180°</strong><br><small style="color:#6b7280">Unchanged from prior CT</small></td>
+                  <td>
+                    <div class="score-bar-wrap">
+                      <div class="score-bar"><div class="score-bar-fill" style="width:55%;background:#1e6fc8"></div></div>
+                      <span class="score-num" style="color:#1e6fc8">0.55</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="score-bar-wrap">
+                      <div class="score-bar"><div class="score-bar-fill" style="width:50%;background:#0d9488"></div></div>
+                      <span class="score-num" style="color:#0d9488">0.50</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="score-bar-wrap">
+                      <div class="score-bar"><div class="score-bar-fill" style="width:30%;background:#d97706"></div></div>
+                      <span class="score-num" style="color:#d97706">0.30</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="score-bar-wrap">
+                      <div class="score-bar"><div class="score-bar-fill" style="width:10%;background:#7c3aed"></div></div>
+                      <span class="score-num" style="color:#7c3aed">0.10</span>
+                    </div>
+                  </td>
+                  <td style="font-weight:800;color:#6b7280;font-size:16px">0.38</td>
+                  <td><span class="priority-badge p-medium">MEDIUM</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Peripancreatic Fat Stranding</strong><br><small style="color:#6b7280">Stable, 4th consecutive report</small></td>
+                  <td>
+                    <div class="score-bar-wrap">
+                      <div class="score-bar"><div class="score-bar-fill" style="width:30%;background:#1e6fc8"></div></div>
+                      <span class="score-num" style="color:#1e6fc8">0.30</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="score-bar-wrap">
+                      <div class="score-bar"><div class="score-bar-fill" style="width:25%;background:#0d9488"></div></div>
+                      <span class="score-num" style="color:#0d9488">0.25</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="score-bar-wrap">
+                      <div class="score-bar"><div class="score-bar-fill" style="width:10%;background:#d97706"></div></div>
+                      <span class="score-num" style="color:#d97706">0.10</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="score-bar-wrap">
+                      <div class="score-bar"><div class="score-bar-fill" style="width:5%;background:#7c3aed"></div></div>
+                      <span class="score-num" style="color:#7c3aed">0.05</span>
+                    </div>
+                  </td>
+                  <td style="font-weight:800;color:#9ca3af;font-size:16px">0.18</td>
+                  <td><span class="priority-badge p-low">FILTERED OUT</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="sdk-pills">
+            <span class="sdk-pill teal">OpportunityRanker.rank()</span>
+            <span class="sdk-pill amber">FatigueGate — max 3 per session</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phase 4 -->
+      <div class="phase">
+        <div class="phase-marker">
+          <div class="phase-dot" style="background:#d97706">4</div>
+          <div class="phase-line" style="background:linear-gradient(#d97706,#16a34a)"></div>
+        </div>
+        <div class="phase-content">
+          <div class="phase-meta">Patient Output · What James Actually Sees</div>
+          <h3>Three Ranked Insights, Not Forty Findings</h3>
+          <p>The ranker's output drives Pantory's response. Instead of a wall of medical text, James sees three precisely ordered insights — the most important first, in plain language, tied to his specific situation.</p>
+
+          <div class="patient-output">
+            <h4>Pantory Output — Powered by RecoMe SDK</h4>
+            <div class="output-item">
+              <div class="output-num" style="background:#16a34a">1</div>
+              <div>
+                <div class="title">Your treatment is working — significantly</div>
+                <div class="body">Your CA 19-9 tumor marker dropped from 647 to 312 this cycle — that's a 52% drop. Combined with your tumor shrinking from 3.8 cm to 3.1 cm, this is the response your oncologist was targeting with FOLFIRINOX. This is meaningful progress.</div>
+              </div>
+            </div>
+            <div class="output-item">
+              <div class="output-num" style="background:#d97706">2</div>
+              <div>
+                <div class="title">One value to mention at your next appointment</div>
+                <div class="body">Your bilirubin is mildly elevated at 1.8 mg/dL (normal is under 1.2). This wasn't elevated in your last report. It may be nothing, but given your diagnosis, your doctor should know. It could indicate early pressure on your bile duct.</div>
+              </div>
+            </div>
+            <div class="output-item">
+              <div class="output-num" style="background:#6b7280">3</div>
+              <div>
+                <div class="title">Everything else is stable</div>
+                <div class="body">The blood vessel involvement near your pancreas (SMV abutment) hasn't changed — which is expected while on chemo. The background inflammation seen on previous scans is still there but unchanged. No new concerns in this area.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sdk-pills" style="margin-top:16px">
+            <span class="sdk-pill teal">Ranked output → Pantory LLM prompt</span>
+            <span class="sdk-pill purple">MemoryPack — skip re-explaining CA 19-9</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phase 5 -->
+      <div class="phase">
+        <div class="phase-marker">
+          <div class="phase-dot" style="background:#16a34a">5</div>
+          <div class="phase-line" style="background:#16a34a; opacity:0.3"></div>
+        </div>
+        <div class="phase-content">
+          <div class="phase-meta">Continuous Learning · Graph Updates</div>
+          <h3>Every Interaction Improves the Next Report</h3>
+          <p>After James reads his results, his behavior feeds back into the graph. He re-reads the CA 19-9 section three times — that node's weight increases. He clicks "explain more" on bilirubin — that topic gets added to his interest graph with a high weight. He never opens the fat stranding section — it stays suppressed in future reports.</p>
+          <p>By report 6, the Interest Graph knows James deeply: he cares about tumor markers and vascular status, he finds surgical resectability language confusing, and his caregiver reads the "background" section after him. The ranker gets sharper with every cycle.</p>
+
+          <div class="cards" style="margin-top:16px">
+            <div class="card green">
+              <div class="card-icon">📈</div>
+              <h4>Weight increases</h4>
+              <p>CA 19-9, tumor size, FOLFIRINOX response — James engages heavily. These get surfaced first, always.</p>
+            </div>
+            <div class="card blue">
+              <div class="card-icon">🔕</div>
+              <h4>Noise suppressed</h4>
+              <p>Fat stranding, routine neutrophil counts — James never engages. The ranker learns to filter these below the threshold.</p>
+            </div>
+            <div class="card purple">
+              <div class="card-icon">🧩</div>
+              <h4>Memory prevents repetition</h4>
+              <p>CA 19-9 was explained in session 1. The memory pack prevents Pantory from re-explaining it from scratch in session 4.</p>
+            </div>
+          </div>
+
+          <div class="sdk-pills" style="margin-top:16px">
+            <span class="sdk-pill teal">InterestGraph.updateWeights()</span>
+            <span class="sdk-pill purple">MemoryPack.addCard()</span>
+            <span class="sdk-pill amber">OpportunityRanker — weights recalibrate</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════ INTEREST GRAPH VISUAL ══════════ -->
+  <section>
+    <h2><span class="num">5</span>James's Interest Graph — After 4 Reports</h2>
+    <p class="section-sub">A visual of what the graph looks like after four uploads — what the SDK has learned about James as a patient.</p>
+
+    <div class="graph-visual">
+      <svg viewBox="0 0 800 480" width="100%" style="max-width:800px">
+        <defs>
+          <marker id="garr" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L7,3 z" fill="#9ca3af"/>
+          </marker>
+        </defs>
+
+        <!-- Center: James -->
+        <circle cx="400" cy="240" r="44" fill="#1e3a5f"/>
+        <text x="400" y="236" text-anchor="middle" font-size="14" font-weight="700" fill="white" font-family="system-ui">JAMES</text>
+        <text x="400" y="253" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.7)" font-family="system-ui">patient node</text>
+
+        <!-- Node: CA 19-9 -->
+        <circle cx="170" cy="100" r="36" fill="#16a34a"/>
+        <text x="170" y="96" text-anchor="middle" font-size="12" font-weight="700" fill="white" font-family="system-ui">CA 19-9</text>
+        <text x="170" y="112" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.8)" font-family="system-ui">w: 0.95</text>
+        <line x1="362" y1="208" x2="200" y2="128" stroke="#16a34a" stroke-width="3" marker-end="url(#garr)"/>
+        <text x="260" y="160" font-size="10" fill="#16a34a" font-weight="700" font-family="system-ui">interested_in</text>
+
+        <!-- Node: Tumor Size -->
+        <circle cx="620" cy="100" r="36" fill="#1e6fc8"/>
+        <text x="620" y="96" text-anchor="middle" font-size="11" font-weight="700" fill="white" font-family="system-ui">Tumor Size</text>
+        <text x="620" y="112" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.8)" font-family="system-ui">w: 0.88</text>
+        <line x1="438" y1="208" x2="590" y2="128" stroke="#1e6fc8" stroke-width="2.5" marker-end="url(#garr)"/>
+        <text x="540" y="160" font-size="10" fill="#1e6fc8" font-weight="700" font-family="system-ui">tracks</text>
+
+        <!-- Node: FOLFIRINOX -->
+        <circle cx="130" cy="280" r="36" fill="#0d9488"/>
+        <text x="130" y="276" text-anchor="middle" font-size="11" font-weight="700" fill="white" font-family="system-ui">FOLFIRINOX</text>
+        <text x="130" y="292" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.8)" font-family="system-ui">w: 0.82</text>
+        <line x1="357" y1="248" x2="163" y2="274" stroke="#0d9488" stroke-width="2.5" marker-end="url(#garr)"/>
+        <text x="220" y="258" font-size="10" fill="#0d9488" font-weight="700" font-family="system-ui">on_treatment</text>
+
+        <!-- Node: PDAC Diagnosis -->
+        <circle cx="400" cy="60" r="36" fill="#dc2626"/>
+        <text x="400" y="56" text-anchor="middle" font-size="11" font-weight="700" fill="white" font-family="system-ui">PDAC</text>
+        <text x="400" y="72" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.8)" font-family="system-ui">w: 1.0</text>
+        <line x1="400" y1="196" x2="400" y2="98" stroke="#dc2626" stroke-width="3" marker-end="url(#garr)"/>
+        <text x="408" y="148" font-size="10" fill="#dc2626" font-weight="700" font-family="system-ui">has_condition</text>
+
+        <!-- Node: Bilirubin -->
+        <circle cx="650" cy="280" r="36" fill="#d97706"/>
+        <text x="650" y="276" text-anchor="middle" font-size="11" font-weight="700" fill="white" font-family="system-ui">Bilirubin</text>
+        <text x="650" y="292" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.8)" font-family="system-ui">w: 0.67</text>
+        <line x1="443" y1="248" x2="617" y2="270" stroke="#d97706" stroke-width="2" marker-end="url(#garr)"/>
+        <text x="550" y="252" font-size="10" fill="#d97706" font-weight="700" font-family="system-ui">monitors</text>
+
+        <!-- Node: Fat Stranding (suppressed) -->
+        <circle cx="220" cy="400" r="32" fill="#d1d5db"/>
+        <text x="220" y="396" text-anchor="middle" font-size="10" fill="#6b7280" font-family="system-ui">Fat Stranding</text>
+        <text x="220" y="412" text-anchor="middle" font-size="10" fill="#9ca3af" font-family="system-ui">w: 0.08</text>
+        <line x1="370" y1="272" x2="248" y2="378" stroke="#d1d5db" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#garr)"/>
+        <text x="282" y="340" font-size="10" fill="#9ca3af" font-family="system-ui">suppressed</text>
+
+        <!-- Node: SMV Abutment -->
+        <circle cx="580" cy="400" r="32" fill="#7c3aed"/>
+        <text x="580" y="396" text-anchor="middle" font-size="10" font-weight="700" fill="white" font-family="system-ui">SMV Abutment</text>
+        <text x="580" y="412" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.8)" font-family="system-ui">w: 0.45</text>
+        <line x1="430" y1="272" x2="556" y2="378" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#garr)"/>
+        <text x="515" y="330" font-size="10" fill="#7c3aed" font-weight="700" font-family="system-ui">monitors</text>
+
+        <!-- Legend -->
+        <rect x="10" y="440" width="780" height="34" rx="6" fill="#f9fafb" stroke="#e5e7eb" stroke-width="1"/>
+        <circle cx="30" cy="457" r="6" fill="#16a34a"/>
+        <text x="42" y="461" font-size="11" fill="#374151" font-family="system-ui">High weight (actively engaged)</text>
+        <circle cx="210" cy="457" r="6" fill="#d97706"/>
+        <text x="222" y="461" font-size="11" fill="#374151" font-family="system-ui">Medium weight (emerging interest)</text>
+        <circle cx="420" cy="457" r="6" fill="#d1d5db"/>
+        <text x="432" y="461" font-size="11" fill="#374151" font-family="system-ui">Low weight (suppressed in output)</text>
+        <circle cx="620" cy="457" r="6" fill="#dc2626"/>
+        <text x="632" y="461" font-size="11" fill="#374151" font-family="system-ui">Core condition (always present)</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ══════════ USER STORIES ══════════ -->
+  <section>
+    <h2><span class="num">6</span>User Stories</h2>
+    <p class="section-sub">Three perspectives on the same workflow — patient, caregiver, and oncologist.</p>
+
+    <div class="story-card">
+      <div class="who">User Story 1 · The Patient</div>
+      <h4>"As James, I want to understand what changed in my latest report without having to decode medical jargon — so I can have an informed conversation with my oncologist tomorrow."</h4>
+      <div class="ww-grid">
+        <div class="ww-item">
+          <div class="ww-label">What</div>
+          <div class="ww-val">Ranked, plain-language explanation of the 3 most important findings from his cycle 4 CT + labs.</div>
+        </div>
+        <div class="ww-item">
+          <div class="ww-label">When</div>
+          <div class="ww-val">Immediately after uploading the report, the night before his oncology appointment.</div>
+        </div>
+        <div class="ww-item">
+          <div class="ww-label">Why it helps</div>
+          <div class="ww-val">James doesn't have to re-learn what CA 19-9 means. The SDK skips what was explained before and leads with what changed. He arrives at his appointment with specific, informed questions.</div>
+        </div>
+        <div class="ww-item">
+          <div class="ww-label">SDK role</div>
+          <div class="ww-val">Memory Pack skips re-explained terms. OpportunityRanker leads with the CA 19-9 drop. Interest Graph knows James tracks this marker obsessively.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="story-card teal">
+      <div class="who">User Story 2 · The Caregiver</div>
+      <h4>"As James's wife Linda, I want to know if there is anything urgent in this report that requires action before his next appointment — so I know whether to call the oncologist today."</h4>
+      <div class="ww-grid">
+        <div class="ww-item">
+          <div class="ww-label">What</div>
+          <div class="ww-val">A clear signal: "call now" vs. "mention at appointment" vs. "nothing to act on."</div>
+        </div>
+        <div class="ww-item">
+          <div class="ww-label">When</div>
+          <div class="ww-val">Same session — Linda reads the report alongside James, or on her own later that day.</div>
+        </div>
+        <div class="ww-item">
+          <div class="ww-label">Why it helps</div>
+          <div class="ww-val">The timeliness signal in the ranker explicitly flags critical vs. non-urgent findings. Linda doesn't need medical training to understand the priority triage — the SDK has already done it.</div>
+        </div>
+        <div class="ww-item">
+          <div class="ww-label">SDK role</div>
+          <div class="ww-val">Timeliness scoring (20% weight) distinguishes the bilirubin elevation (mention at appointment) from a hypothetical new hepatic lesion (call today). Caregiver sees the same ranked output as James.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="story-card purple">
+      <div class="who">User Story 3 · Longitudinal Tracking</div>
+      <h4>"As James, I want to see whether my CA 19-9 trend over 4 months suggests my treatment is working — so I can feel informed and emotionally grounded about my prognosis."</h4>
+      <div class="ww-grid">
+        <div class="ww-item">
+          <div class="ww-label">What</div>
+          <div class="ww-val">A treatment response trend across all 4 reports — not just the latest one in isolation.</div>
+        </div>
+        <div class="ww-item">
+          <div class="ww-label">When</div>
+          <div class="ww-val">Available after 2+ report uploads. The Interest Graph stores historical values as entity attribute history.</div>
+        </div>
+        <div class="ww-item">
+          <div class="ww-label">Why it helps</div>
+          <div class="ww-val">No other tool does this. An LLM reading report 4 in isolation cannot tell James that his CA 19-9 has dropped 89% from its peak. The graph remembers. That number is life-changing information for someone with PDAC.</div>
+        </div>
+        <div class="ww-item">
+          <div class="ww-label">SDK role</div>
+          <div class="ww-val">Interest Graph stores value history on entity nodes (CA 19-9: [2847, 1240, 647, 312]). The ranker's novelty signal detects the trend direction. Memory Pack prevents re-explaining the trend James already understands.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="story-card amber">
+      <div class="who">User Story 4 · Critical Event</div>
+      <h4>"As James, if a new finding appears that could change my treatment plan, I want to know immediately — not buried on page 3 of a summary."</h4>
+      <div class="ww-grid">
+        <div class="ww-item">
+          <div class="ww-label">What</div>
+          <div class="ww-val">Immediate prominent alert if a new hepatic lesion, peritoneal seeding, or SMA involvement appears for the first time.</div>
+        </div>
+        <div class="ww-item">
+          <div class="ww-label">When</div>
+          <div class="ww-val">The moment the ranker detects a new critical finding (timeliness: 1.0, novelty: 1.0) — it overrides the normal ranked output and surfaces this first, at the top.</div>
+        </div>
+        <div class="ww-item">
+          <div class="ww-label">Why it helps</div>
+          <div class="ww-val">A flat LLM summary can bury a new metastatic finding in paragraph 4. The ranker's timeliness × novelty combination makes this mathematically impossible — it will always score highest.</div>
+        </div>
+        <div class="ww-item">
+          <div class="ww-label">SDK role</div>
+          <div class="ww-val">OpportunityRanker detects score ≥ 0.90 + timeliness = 1.0 → triggers critical alert path. Memory Pack confirms: this entity has never appeared before, novelty = 1.0. Fatigue gate overridden for critical-class findings.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ VS PLAIN LLM ══════════ -->
+  <section>
+    <h2><span class="num">7</span>RecoMe SDK vs. Plain LLM + RAG</h2>
+    <p class="section-sub">Why James's fifth report is dramatically better with the SDK than without it.</p>
+
+    <div style="background:#fff; border-radius:16px; border:1px solid var(--gray-200); overflow:hidden; box-shadow:0 2px 16px rgba(0,0,0,0.05)">
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th style="text-align:left; padding:16px 18px">Capability</th>
+            <th>LLM + RAG alone</th>
+            <th style="background:#e8f2fd; color:#1e3a5f">RecoMe SDK + Pantory</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Knows patient's history before reading the report</td>
+            <td class="no">No — cold start every time</td>
+            <td class="yes" style="background:#f0fdf4">Yes — Interest Graph loaded</td>
+          </tr>
+          <tr>
+            <td>Detects what changed since last report</td>
+            <td class="no">No — only sees current document</td>
+            <td class="yes" style="background:#f0fdf4">Yes — delta via graph history</td>
+          </tr>
+          <tr>
+            <td>Ranks findings by relevance to this patient specifically</td>
+            <td class="no">No — equal weight to all</td>
+            <td class="yes" style="background:#f0fdf4">Yes — OpportunityRanker</td>
+          </tr>
+          <tr>
+            <td>Skips re-explaining terms already learned</td>
+            <td class="no">No — re-explains every session</td>
+            <td class="yes" style="background:#f0fdf4">Yes — Memory Pack</td>
+          </tr>
+          <tr>
+            <td>Surfaces critical findings immediately regardless of report order</td>
+            <td class="no">No — follows document structure</td>
+            <td class="yes" style="background:#f0fdf4">Yes — timeliness signal overrides</td>
+          </tr>
+          <tr>
+            <td>Improves with each upload without retraining</td>
+            <td class="no">No — stateless</td>
+            <td class="yes" style="background:#f0fdf4">Yes — graph weight updates</td>
+          </tr>
+          <tr>
+            <td>Limits information overload per session</td>
+            <td class="no">No — dumps all findings</td>
+            <td class="yes" style="background:#f0fdf4">Yes — fatigue gate</td>
+          </tr>
+          <tr>
+            <td>Shows longitudinal trend across multiple reports</td>
+            <td class="no">No — single document scope</td>
+            <td class="yes" style="background:#f0fdf4">Yes — entity history in graph</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ══════════ SUMMARY ══════════ -->
+  <section>
+    <h2><span class="num">8</span>What Pantory Gains</h2>
+    <p class="section-sub">In one sentence each — the concrete improvements to Pantory's product from integrating the RecoMe SDK backend.</p>
+
+    <div class="cards">
+      <div class="card green">
+        <div class="card-icon">🎯</div>
+        <h4>From summaries to triage</h4>
+        <p>Pantory stops giving patients a wall of equal-weight text and starts giving them a ranked answer to "what do I actually need to do with this?"</p>
+      </div>
+      <div class="card blue">
+        <div class="card-icon">🧠</div>
+        <h4>From stateless to personalized</h4>
+        <p>Every report builds on the last. By James's 4th upload, Pantory knows him better than a clinician seeing him for the first time.</p>
+      </div>
+      <div class="card teal">
+        <div class="card-icon">📅</div>
+        <h4>From document to journey</h4>
+        <p>Pantory can show James that his CA 19-9 has dropped 89% over 4 months. That's not a summary — that's hope, grounded in data.</p>
+      </div>
+      <div class="card red">
+        <div class="card-icon">🚨</div>
+        <h4>Critical findings, always first</h4>
+        <p>The scoring model makes it mathematically guaranteed that a new metastatic finding will never be buried in paragraph 4 of a summary.</p>
+      </div>
+      <div class="card purple">
+        <div class="card-icon">🔕</div>
+        <h4>Noise suppressed over time</h4>
+        <p>Stable, background findings that James never engages with get filtered out — so each report feels shorter and more focused, not longer.</p>
+      </div>
+      <div class="card amber">
+        <div class="card-icon">💬</div>
+        <h4>Better doctor conversations</h4>
+        <p>James arrives with specific, ranked questions from his report — not general anxiety. The oncologist's time is used on decisions, not re-explaining what CA 19-9 means.</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <strong>RecoMe SDK × Pantory</strong> &nbsp;—&nbsp; Preference Graph Infrastructure for Personalized Medical Report Comprehension<br>
+  <span style="margin-top:6px;display:block">Built on the RecoMe universal preference platform &nbsp;·&nbsp; Interest Graph · OpportunityRanker · Memory Pack · Profile Extractor</span>
+</footer>
+
+</body>
+</html>

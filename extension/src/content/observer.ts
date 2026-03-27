@@ -1,4 +1,5 @@
 import { createLogger } from '@shared/Logger';
+import { checkPageEligibility } from './PageEligibility';
 import type { Platform } from '@shared/types';
 import type { BaseAdapter } from './adapters/BaseAdapter';
 
@@ -22,6 +23,10 @@ export function detectPlatform(): Platform {
  * Waits for DOM ready, starts the adapter, then watches for SPA navigations.
  * Only re-inits when the pathname actually changes (ignores query-string-only changes
  * like Amazon filter updates).
+ *
+ * Re-checks page eligibility on each SPA navigation so the adapter is destroyed
+ * if the user navigates to a login, CAPTCHA, or other ineligible page within
+ * the same SPA session.
  */
 export async function initAdapter(adapter: BaseAdapter): Promise<void> {
   if (document.readyState === 'loading') {
@@ -39,6 +44,7 @@ export async function initAdapter(adapter: BaseAdapter): Promise<void> {
   // Track the last path we initialised for — only re-init on real page changes
   let lastPath = location.pathname;
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  let adapterSuppressed = false;
 
   const onNavigate = (): void => {
     const newPath = location.pathname;
@@ -47,7 +53,28 @@ export async function initAdapter(adapter: BaseAdapter): Promise<void> {
 
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
-      adapter.destroy();
+      // Re-check eligibility on every SPA navigation.
+      // The page may have transitioned to a login/CAPTCHA/error state.
+      const eligibility = checkPageEligibility();
+
+      if (!eligibility.eligible) {
+        log.info(
+          `Page became ineligible after navigation to ${newPath}: ${eligibility.reason} — destroying adapter`,
+        );
+        adapter.destroy();
+        adapterSuppressed = true;
+        return;
+      }
+
+      // If adapter was suppressed on a previous navigation but the new page
+      // is eligible, re-init it.
+      if (adapterSuppressed) {
+        log.info(`Page eligible again after navigation to ${newPath} — re-initing adapter`);
+        adapterSuppressed = false;
+      } else {
+        adapter.destroy();
+      }
+
       adapter.init();
       log.info(`Adapter re-init after navigation to ${newPath}`);
     }, 800);

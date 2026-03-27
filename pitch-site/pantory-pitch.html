@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RecoMe SDK × Pantory — Partnership Pitch</title>
+  <style>
+    :root {
+      --blue:      #1e6fc8;
+      --blue-lt:   #eff6ff;
+      --teal:      #0d9488;
+      --teal-lt:   #f0fdfa;
+      --amber:     #d97706;
+      --amber-lt:  #fffbeb;
+      --red:       #dc2626;
+      --red-lt:    #fef2f2;
+      --green:     #16a34a;
+      --green-lt:  #f0fdf4;
+      --purple:    #7c3aed;
+      --purple-lt: #faf5ff;
+      --gray-50:   #f9fafb;
+      --gray-100:  #f3f4f6;
+      --gray-200:  #e5e7eb;
+      --gray-400:  #9ca3af;
+      --gray-600:  #4b5563;
+      --gray-700:  #374151;
+      --gray-800:  #1f2937;
+      --gray-900:  #111827;
+      --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font); background: #f0f4f8; color: var(--gray-800); line-height: 1.65; }
+
+    /* NAV */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(15,23,42,0.97); backdrop-filter: blur(8px);
+      display: flex; align-items: center; padding: 0 32px; height: 52px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    nav .logo { font-size: 13px; font-weight: 700; color: #fff; letter-spacing: 0.5px; margin-right: auto; }
+    nav a { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 12px; padding: 0 14px; height: 52px; display: flex; align-items: center; transition: color 0.15s; }
+    nav a:hover { color: #fff; }
+
+    /* HERO */
+    .hero {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 55%, #0d9488 100%);
+      color: #fff; padding: 80px 40px 72px; text-align: center;
+    }
+    .badge {
+      display: inline-block; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 999px; padding: 6px 20px; font-size: 12px; letter-spacing: 1.5px;
+      text-transform: uppercase; margin-bottom: 28px; font-weight: 600;
+    }
+    .hero h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; max-width: 780px; margin: 0 auto 20px; }
+    .hero h1 span { color: #5eead4; }
+    .hero p { font-size: 1.1rem; color: rgba(255,255,255,0.72); max-width: 620px; margin: 0 auto 48px; line-height: 1.75; }
+    .hero-stats { display: flex; justify-content: center; gap: 48px; flex-wrap: wrap; }
+    .hero-stat .num { font-size: 2.4rem; font-weight: 800; color: #5eead4; line-height: 1; margin-bottom: 6px; }
+    .hero-stat .label { font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; }
+
+    /* WRAPPER + SECTIONS */
+    .wrapper { max-width: 1080px; margin: 0 auto; padding: 0 32px; }
+    section { padding: 72px 0; }
+    section + section { border-top: 1px solid var(--gray-200); }
+    .section-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--teal); margin-bottom: 12px; }
+    .section-title { font-size: clamp(1.6rem, 2.5vw, 2.2rem); font-weight: 800; color: var(--gray-900); line-height: 1.2; margin-bottom: 16px; }
+    .section-sub { font-size: 1.05rem; color: var(--gray-600); max-width: 700px; line-height: 1.75; }
+
+    /* PLAIN ENGLISH EXPLAINER — 3 BIG STEPS */
+    .steps-row { display: grid; grid-template-columns: 1fr 40px 1fr 40px 1fr; align-items: start; gap: 0; margin-top: 48px; }
+    .step-box { background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 28px 24px; text-align: center; }
+    .step-box .step-icon { font-size: 2.2rem; margin-bottom: 14px; }
+    .step-box h3 { font-size: 1rem; font-weight: 800; color: var(--gray-900); margin-bottom: 8px; }
+    .step-box p { font-size: 0.88rem; color: var(--gray-600); line-height: 1.65; }
+    .step-arrow { display: flex; align-items: center; justify-content: center; padding-top: 60px; color: var(--gray-400); font-size: 1.6rem; }
+
+    /* ANALOGY CARDS */
+    .analogy-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap: 20px; margin-top: 40px; }
+    .analogy-card { background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 24px; }
+    .analogy-card .tech-label {
+      display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1.2px; padding: 3px 10px; border-radius: 999px; margin-bottom: 12px;
+    }
+    .analogy-card .tech-label.blue   { background: var(--blue-lt);   color: var(--blue); }
+    .analogy-card .tech-label.teal   { background: var(--teal-lt);   color: var(--teal); }
+    .analogy-card .tech-label.amber  { background: var(--amber-lt);  color: var(--amber); }
+    .analogy-card .tech-label.purple { background: var(--purple-lt); color: var(--purple); }
+    .analogy-card .what-it-is { font-size: 1rem; font-weight: 800; color: var(--gray-900); margin-bottom: 4px; }
+    .analogy-card .analogy { font-size: 0.82rem; color: var(--teal); font-weight: 700; margin-bottom: 10px; font-style: italic; }
+    .analogy-card p { font-size: 0.88rem; color: var(--gray-600); line-height: 1.65; }
+
+    /* STORY FLOW — JAMES */
+    .story-flow { margin-top: 40px; }
+    .story-moment { display: flex; gap: 20px; margin-bottom: 28px; align-items: flex-start; }
+    .moment-dot {
+      width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0; display: flex;
+      align-items: center; justify-content: center; font-size: 1.2rem;
+      background: linear-gradient(135deg, var(--teal), var(--blue));
+      color: #fff; font-weight: 800; z-index: 1;
+    }
+    .moment-body { background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 20px 24px; flex: 1; }
+    .moment-time { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--teal); margin-bottom: 4px; }
+    .moment-body h4 { font-size: 0.95rem; font-weight: 700; color: var(--gray-900); margin-bottom: 6px; }
+    .moment-body p  { font-size: 0.88rem; color: var(--gray-600); line-height: 1.65; }
+    .moment-highlight {
+      margin-top: 12px; padding: 10px 14px; background: var(--teal-lt);
+      border-left: 3px solid var(--teal); border-radius: 6px;
+      font-size: 0.85rem; color: var(--teal); font-weight: 600;
+    }
+
+    /* PATIENT PROFILE */
+    .patient-card {
+      background: linear-gradient(135deg, #0f172a, #1e3a5f);
+      color: #fff; border-radius: var(--radius); padding: 40px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px;
+    }
+    .patient-card .profile h3 { font-size: 1.5rem; font-weight: 800; margin-bottom: 4px; }
+    .patient-card .diagnosis { font-size: 0.85rem; color: #5eead4; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; font-weight: 600; }
+    .profile-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 0.9rem; }
+    .profile-row:last-child { border-bottom: none; }
+    .profile-row .key { color: rgba(255,255,255,0.5); width: 140px; flex-shrink: 0; }
+    .profile-row .val { font-weight: 600; }
+    .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .metric-box { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 16px 18px; }
+    .metric-box .metric-label { font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .metric-box .metric-val { font-size: 1.4rem; font-weight: 800; color: #5eead4; line-height: 1; margin-bottom: 2px; }
+    .metric-box .metric-sub { font-size: 0.8rem; color: rgba(255,255,255,0.45); }
+
+    /* BEFORE / AFTER COMPARISON */
+    .ba-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 40px; }
+    .ba-card { background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius); overflow: hidden; }
+    .ba-header { padding: 16px 24px; font-size: 0.9rem; font-weight: 700; }
+    .ba-header.before { background: var(--red-lt); color: var(--red); }
+    .ba-header.after  { background: var(--green-lt); color: var(--green); }
+    .ba-body { padding: 20px 24px; }
+    .ba-row { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--gray-100); font-size: 0.88rem; color: var(--gray-700); }
+    .ba-row:last-child { border-bottom: none; }
+    .ba-row .ico { flex-shrink: 0; font-size: 1rem; margin-top: 1px; }
+
+    /* INSIGHT CARDS */
+    .insight-card {
+      background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius);
+      padding: 24px 28px; margin-bottom: 16px; display: flex; gap: 20px; align-items: flex-start;
+    }
+    .insight-rank { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 800; flex-shrink: 0; }
+    .insight-rank.r1 { background: var(--green-lt);  color: var(--green); }
+    .insight-rank.r2 { background: var(--amber-lt);  color: var(--amber); }
+    .insight-rank.r3 { background: var(--blue-lt);   color: var(--blue); }
+    .insight-body h4 { font-size: 1rem; font-weight: 700; color: var(--gray-900); margin-bottom: 6px; }
+    .insight-body p  { font-size: 0.88rem; color: var(--gray-600); line-height: 1.65; }
+    .insight-meta { margin-top: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 11px; }
+    .score-pill { background: var(--gray-100); color: var(--gray-600); font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+
+    /* SCORING TABLE */
+    .score-table { width: 100%; border-collapse: collapse; margin-top: 32px; background: #fff; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--gray-200); font-size: 0.88rem; }
+    .score-table thead { background: var(--gray-900); color: rgba(255,255,255,0.85); }
+    .score-table th { padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; }
+    .score-table th:not(:first-child) { text-align: center; }
+    .score-table td { padding: 13px 16px; border-bottom: 1px solid var(--gray-100); color: var(--gray-700); }
+    .score-table td:not(:first-child) { text-align: center; }
+    .score-table tr:last-child td { border-bottom: none; }
+    .score-table tr:hover td { background: var(--gray-50); }
+    .finding { font-weight: 600; color: var(--gray-900); }
+    .finding .change { display: block; font-size: 0.8rem; font-weight: 400; color: var(--gray-400); margin-top: 2px; }
+    .badge-critical { background: #fef2f2; color: var(--red); font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+    .badge-high     { background: var(--amber-lt); color: var(--amber); font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+    .badge-medium   { background: var(--blue-lt);  color: var(--blue);  font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+    .badge-filtered { background: var(--gray-100); color: var(--gray-400); font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+    .score-high { color: var(--green); font-weight: 700; }
+    .score-med  { color: var(--amber); font-weight: 700; }
+    .score-low  { color: var(--gray-400); }
+
+    /* WEB SCOUT — NEW SECTION */
+    .scout-hero {
+      background: linear-gradient(135deg, #1e1b4b, #312e81, #0d9488);
+      border-radius: var(--radius);
+      padding: 48px 40px;
+      color: #fff;
+      margin-top: 40px;
+      position: relative;
+      overflow: hidden;
+    }
+    .scout-hero::after {
+      content: '🔍';
+      position: absolute;
+      right: 40px; top: 50%;
+      transform: translateY(-50%);
+      font-size: 6rem;
+      opacity: 0.12;
+    }
+    .scout-hero .new-badge {
+      display: inline-block;
+      background: rgba(94,234,212,0.2);
+      border: 1px solid rgba(94,234,212,0.4);
+      color: #5eead4;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      padding: 4px 14px; border-radius: 999px;
+      margin-bottom: 16px;
+    }
+    .scout-hero h3 { font-size: 1.6rem; font-weight: 800; margin-bottom: 12px; }
+    .scout-hero p  { font-size: 1rem; color: rgba(255,255,255,0.75); max-width: 560px; line-height: 1.75; }
+
+    .scout-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap: 20px; margin-top: 28px; }
+    .scout-card {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 10px; padding: 22px;
+    }
+    .scout-card .scout-icon { font-size: 1.6rem; margin-bottom: 10px; }
+    .scout-card h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 6px; color: #fff; }
+    .scout-card p  { font-size: 0.85rem; color: rgba(255,255,255,0.65); line-height: 1.65; }
+
+    .scout-result-demo {
+      background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius);
+      margin-top: 28px; overflow: hidden;
+    }
+    .scout-result-header {
+      background: var(--gray-50); border-bottom: 1px solid var(--gray-200);
+      padding: 14px 20px; font-size: 0.82rem; color: var(--gray-500);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .scout-result-header .query { font-weight: 700; color: var(--gray-800); }
+    .scout-result-list { padding: 0; }
+    .scout-result-item {
+      padding: 18px 20px; border-bottom: 1px solid var(--gray-100);
+      display: flex; gap: 16px; align-items: flex-start;
+    }
+    .scout-result-item:last-child { border-bottom: none; }
+    .result-type {
+      flex-shrink: 0; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1px; padding: 3px 8px; border-radius: 999px; margin-top: 2px;
+    }
+    .result-type.trial   { background: var(--purple-lt); color: var(--purple); }
+    .result-type.case    { background: var(--green-lt);  color: var(--green); }
+    .result-type.forum   { background: var(--blue-lt);   color: var(--blue); }
+    .result-type.study   { background: var(--amber-lt);  color: var(--amber); }
+    .result-body h5 { font-size: 0.9rem; font-weight: 700; color: var(--gray-900); margin-bottom: 4px; }
+    .result-body p  { font-size: 0.82rem; color: var(--gray-600); line-height: 1.6; }
+    .result-why {
+      margin-top: 6px; font-size: 0.78rem; color: var(--teal); font-weight: 600;
+      display: flex; align-items: center; gap: 4px;
+    }
+
+    /* INTEREST GRAPH VISUAL */
+    .graph-card { background: #0f172a; border-radius: var(--radius); padding: 40px; margin-top: 40px; color: #fff; }
+    .graph-card h3 { font-size: 1.1rem; font-weight: 700; color: rgba(255,255,255,0.85); margin-bottom: 6px; }
+    .graph-card p  { font-size: 0.85rem; color: rgba(255,255,255,0.45); margin-bottom: 32px; }
+    .graph-nodes { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 28px; }
+    .gnode { border-radius: 999px; padding: 8px 18px; font-size: 0.82rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .gnode.center { background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.4); color: #fff; font-size: 1rem; padding: 12px 24px; }
+    .gnode.high   { background: rgba(94,234,212,0.15);  border: 1px solid rgba(94,234,212,0.4);  color: #5eead4; }
+    .gnode.medium { background: rgba(251,191,36,0.12);  border: 1px solid rgba(251,191,36,0.3);  color: #fbbf24; }
+    .gnode.low    { background: rgba(156,163,175,0.1);  border: 1px solid rgba(156,163,175,0.2); color: #6b7280; }
+    .gnode.core   { background: rgba(239,68,68,0.12);   border: 1px solid rgba(239,68,68,0.3);   color: #f87171; }
+    .gnode .weight { font-size: 0.75rem; font-weight: 400; opacity: 0.7; }
+    .graph-legend { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
+    .legend-item  { display: flex; align-items: center; gap: 6px; font-size: 11px; color: rgba(255,255,255,0.5); }
+    .legend-dot   { width: 10px; height: 10px; border-radius: 50%; }
+    .legend-dot.high   { background: #5eead4; }
+    .legend-dot.medium { background: #fbbf24; }
+    .legend-dot.low    { background: #6b7280; }
+    .legend-dot.core   { background: #f87171; }
+
+    /* GAINS */
+    .gain-card { background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 24px; display: flex; gap: 16px; align-items: flex-start; }
+    .gain-num { width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, var(--teal), var(--blue)); color: #fff; font-size: 0.9rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .gain-card h4 { font-size: 0.95rem; font-weight: 700; color: var(--gray-900); margin-bottom: 4px; }
+    .gain-card p  { font-size: 0.85rem; color: var(--gray-600); line-height: 1.6; }
+    .card-grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap: 20px; margin-top: 40px; }
+
+    /* CTA */
+    .cta-section { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 55%, #0d9488 100%); color: #fff; padding: 72px 40px; text-align: center; }
+    .cta-section h2 { font-size: clamp(1.8rem, 3vw, 2.6rem); font-weight: 800; margin-bottom: 16px; }
+    .cta-section p  { font-size: 1.05rem; color: rgba(255,255,255,0.7); max-width: 560px; margin: 0 auto 40px; line-height: 1.75; }
+    .cta-cards { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; max-width: 760px; margin: 0 auto; }
+    .cta-card { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: var(--radius); padding: 24px 28px; flex: 1; min-width: 200px; text-align: left; }
+    .cta-card .cta-icon { font-size: 1.5rem; margin-bottom: 12px; }
+    .cta-card h4 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+    .cta-card p  { font-size: 0.85rem; color: rgba(255,255,255,0.6); line-height: 1.55; }
+
+    footer { background: var(--gray-900); color: rgba(255,255,255,0.5); text-align: center; padding: 28px; font-size: 0.85rem; }
+
+    /* DATA SOURCES */
+    .source-tier { margin-top: 40px; }
+    .tier-header {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+    }
+    .tier-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
+      padding: 5px 14px; border-radius: 999px;
+    }
+    .tier-badge.free    { background: var(--green-lt); color: var(--green); }
+    .tier-badge.partner { background: var(--amber-lt); color: var(--amber); }
+    .tier-badge.future  { background: var(--purple-lt); color: var(--purple); }
+    .tier-header h3 { font-size: 1.1rem; font-weight: 800; color: var(--gray-900); }
+    .source-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px,1fr)); gap: 16px; }
+    .source-card {
+      background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius);
+      padding: 20px; display: flex; gap: 14px; align-items: flex-start;
+    }
+    .source-icon {
+      width: 40px; height: 40px; border-radius: 10px; display: flex;
+      align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;
+    }
+    .source-icon.green  { background: var(--green-lt); }
+    .source-icon.blue   { background: var(--blue-lt); }
+    .source-icon.amber  { background: var(--amber-lt); }
+    .source-icon.purple { background: var(--purple-lt); }
+    .source-icon.teal   { background: var(--teal-lt); }
+    .source-info h4 { font-size: 0.9rem; font-weight: 700; color: var(--gray-900); margin-bottom: 2px; }
+    .source-info .source-what { font-size: 0.82rem; color: var(--gray-600); line-height: 1.55; margin-bottom: 6px; }
+    .source-info .source-access {
+      font-size: 0.75rem; font-weight: 600; padding: 2px 8px;
+      border-radius: 999px; display: inline-block;
+    }
+    .source-access.free     { background: var(--green-lt); color: var(--green); }
+    .source-access.key      { background: var(--blue-lt); color: var(--blue); }
+    .source-access.license  { background: var(--amber-lt); color: var(--amber); }
+    .source-access.partner  { background: var(--purple-lt); color: var(--purple); }
+
+    .build-timeline { margin-top: 40px; }
+    .timeline-row {
+      display: flex; gap: 16px; align-items: flex-start; padding: 16px 0;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .timeline-row:last-child { border-bottom: none; }
+    .timeline-when {
+      width: 80px; flex-shrink: 0; font-size: 0.82rem; font-weight: 700;
+      color: var(--teal); text-transform: uppercase;
+    }
+    .timeline-what { flex: 1; }
+    .timeline-what h4 { font-size: 0.9rem; font-weight: 700; color: var(--gray-900); margin-bottom: 2px; }
+    .timeline-what p  { font-size: 0.82rem; color: var(--gray-600); line-height: 1.55; }
+    .pipeline-diagram {
+      background: #0f172a; border-radius: var(--radius); padding: 32px;
+      margin-top: 32px; color: #fff; overflow-x: auto;
+    }
+    .pipeline-diagram h4 { font-size: 0.9rem; font-weight: 700; color: rgba(255,255,255,0.7); margin-bottom: 20px; text-align: center; }
+    .pipeline-flow { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
+    .pipe-node {
+      padding: 10px 16px; border-radius: 8px; font-size: 0.78rem; font-weight: 600;
+      text-align: center; min-width: 120px;
+    }
+    .pipe-node.input   { background: rgba(94,234,212,0.15); border: 1px solid rgba(94,234,212,0.3); color: #5eead4; }
+    .pipe-node.process { background: rgba(129,140,248,0.15); border: 1px solid rgba(129,140,248,0.3); color: #818cf8; }
+    .pipe-node.api     { background: rgba(251,191,36,0.15); border: 1px solid rgba(251,191,36,0.3); color: #fbbf24; }
+    .pipe-node.output  { background: rgba(52,211,153,0.15); border: 1px solid rgba(52,211,153,0.3); color: #34d399; }
+    .pipe-arrow { color: rgba(255,255,255,0.3); font-size: 1.2rem; }
+
+    @media print { nav { display: none; } section { page-break-inside: avoid; } }
+    @media (max-width: 680px) {
+      .patient-card { grid-template-columns: 1fr; }
+      .ba-grid { grid-template-columns: 1fr; }
+      .steps-row { grid-template-columns: 1fr; }
+      .step-arrow { display: none; }
+      nav a { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <span class="logo">RecoMe SDK × Pantory</span>
+  <a href="#plain-english">How It Works</a>
+  <a href="#story">James's Journey</a>
+  <a href="#output">What He Sees</a>
+  <a href="#web-scout">Web Scout</a>
+  <a href="#data-sources">Data Sources</a>
+  <a href="#gains">Pantory Gains</a>
+  <a href="#cta">Partner</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="badge">Partnership Pitch · RecoMe SDK × Pantory</div>
+  <h1>Pantory tells James<br><span>what his report actually means — for him.</span></h1>
+  <p>Right now, Pantory summarizes medical reports. With the RecoMe SDK, it remembers James across every visit, tells him what changed, and finds other patients who've been exactly where he is right now.</p>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="num">89%</div>
+      <div class="label">Drop in James's tumor<br>marker — tracked automatically</div>
+    </div>
+    <div class="hero-stat">
+      <div class="num">3</div>
+      <div class="label">Things James needs<br>to know — not 40</div>
+    </div>
+    <div class="hero-stat">
+      <div class="num">0</div>
+      <div class="label">Times he re-explains<br>himself to Pantory</div>
+    </div>
+    <div class="hero-stat">
+      <div class="num">4 mo</div>
+      <div class="label">Of context remembered<br>from his first upload</div>
+    </div>
+  </div>
+</div>
+
+<!-- PLAIN ENGLISH — HOW IT WORKS -->
+<section id="plain-english" style="background:#fff;">
+  <div class="wrapper">
+    <div class="section-label">How It Works — Plain English</div>
+    <div class="section-title">Three things the SDK does.<br>No jargon, no fluff.</div>
+    <p class="section-sub">The RecoMe SDK is a backend service Pantory calls when a patient uploads a report. Here's exactly what happens — explained like you're talking to a 10-year-old.</p>
+    <div class="steps-row">
+      <div class="step-box">
+        <div class="step-icon">🧠</div>
+        <h3>It remembers the patient</h3>
+        <p>Every time James uploads a report, we remember everything — what his numbers were last time, what terms confuse him, what he keeps re-reading. Like a notebook that never forgets.</p>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step-box">
+        <div class="step-icon">🎯</div>
+        <h3>It figures out what matters most — for him</h3>
+        <p>A new tumor marker drop is critical. Fat stranding that hasn't changed in 4 reports? Not worth mentioning. The SDK sorts the findings by how much they actually matter to James specifically.</p>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step-box">
+        <div class="step-icon">🔍</div>
+        <h3>It finds similar cases and real answers online</h3>
+        <p>For each finding, the SDK searches clinical databases, patient forums, and medical studies — filtered to people with James's exact situation. No generic cancer results. His profile drives the search.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- THE FOUR PIECES — ANALOGIES -->
+<section id="components">
+  <div class="wrapper">
+    <div class="section-label">SDK Components — In Plain English</div>
+    <div class="section-title">Four building blocks.<br>Here's what each one actually does.</div>
+    <p class="section-sub">These are the four parts of the SDK. Each has a technical name, but we'll explain what it actually does in language that makes sense.</p>
+    <div class="analogy-grid">
+
+      <div class="analogy-card">
+        <span class="tech-label blue">Interest Graph</span>
+        <div class="what-it-is">James's Medical Memory</div>
+        <div class="analogy">"Like a doctor who remembers every conversation you've ever had with them"</div>
+        <p>Every time James reads a report section, clicks to learn more, or re-reads something, we record it. We build a map of everything he cares about — his tumor marker, his treatment progress, his vascular involvement. Each topic has a "weight" — how much he cares about it — and that weight grows each session. By visit 4, we know James better than a doctor who's only met him once.</p>
+      </div>
+
+      <div class="analogy-card">
+        <span class="tech-label teal">OpportunityRanker</span>
+        <div class="what-it-is">The "What Matters Most" Filter</div>
+        <div class="analogy">"Like a triage nurse who looks at 40 test results and says: call about these 3"</div>
+        <p>A typical CT report has 12–15 findings. Most are stable background noise. The ranker scores every single finding using four questions: Does James care about this? Is it actionable? Is it urgent? Is it new? Findings below the threshold get filtered out silently. James sees only what he needs to act on — ranked from most to least important.</p>
+      </div>
+
+      <div class="analogy-card">
+        <span class="tech-label amber">Memory Pack</span>
+        <div class="what-it-is">The "Skip What You Know" Tracker</div>
+        <div class="analogy">"Like a teacher who doesn't re-teach the same lesson twice"</div>
+        <p>We explained what CA 19-9 is in session 1. We know James re-read it twice, so he understands it now. In session 4, we don't re-explain it from scratch — we skip straight to "here's what your number means today." The Memory Pack tracks every term, explanation, and concept James has already encountered across all his sessions.</p>
+      </div>
+
+      <div class="analogy-card">
+        <span class="tech-label purple">Profile Extractor</span>
+        <div class="what-it-is">The Medical Report Reader</div>
+        <div class="analogy">"Like a medical scribe that turns 8 pages of doctor-speak into structured data"</div>
+        <p>Before any of the other pieces can work, someone has to read the PDF and pull out the facts — tumor size: 3.1cm, CA 19-9: 312, bilirubin: 1.8. The Profile Extractor does this using specialty modules for oncology, cardiology, and labs. It also computes what changed since last time — "CA 19-9 dropped 52% since cycle 3" — which no single-document LLM can do.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- JAMES'S STORY -->
+<section id="story" style="background:#fff;">
+  <div class="wrapper">
+    <div class="section-label">Patient Case Study</div>
+    <div class="section-title">Four months with James.<br>Here's what actually happens.</div>
+    <p class="section-sub">James is 58, has Stage III pancreatic cancer, and is in his fourth chemo cycle. Here's his journey through Pantory with the SDK — told as a story, not a spec sheet.</p>
+
+    <div class="patient-card">
+      <div class="profile">
+        <h3>James Mitchell</h3>
+        <div class="diagnosis">Stage III Pancreatic Cancer</div>
+        <div class="profile-row"><span class="key">Age</span><span class="val">58 years old</span></div>
+        <div class="profile-row"><span class="key">Treatment</span><span class="val">FOLFIRINOX chemo — Cycle 4</span></div>
+        <div class="profile-row"><span class="key">Reports uploaded</span><span class="val">4 CT scans + blood work</span></div>
+        <div class="profile-row"><span class="key">Key behavior</span><span class="val">Re-reads tumor marker section 3× per visit</span></div>
+      </div>
+      <div class="metric-grid">
+        <div class="metric-box">
+          <div class="metric-label">CA 19-9 at start</div>
+          <div class="metric-val">2,847</div>
+          <div class="metric-sub">U/mL — First upload</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-label">CA 19-9 now</div>
+          <div class="metric-val" style="color:#5eead4">312</div>
+          <div class="metric-sub">U/mL — 89% drop total</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-label">Tumor — First CT</div>
+          <div class="metric-val">4.2 cm</div>
+          <div class="metric-sub">Head of pancreas</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-label">Tumor — Latest CT</div>
+          <div class="metric-val" style="color:#5eead4">3.1 cm</div>
+          <div class="metric-sub">26% smaller</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="story-flow" style="margin-top:48px;">
+
+      <div class="story-moment">
+        <div class="moment-dot">1</div>
+        <div class="moment-body">
+          <div class="moment-time">Visit 1 — First Upload</div>
+          <h4>James uploads his first CT report. He's scared and confused.</h4>
+          <p>There's no history to load — this is day one. The Profile Extractor reads the PDF and pulls out the key facts. We create James's medical memory from scratch: tumor location, his CA 19-9 at 2,847, what his vascular involvement looks like. His Memory Pack is empty — nothing has been explained yet.</p>
+          <div class="moment-highlight">The SDK builds James's baseline. Every future session will compare against this.</div>
+        </div>
+      </div>
+
+      <div class="story-moment">
+        <div class="moment-dot">2</div>
+        <div class="moment-body">
+          <div class="moment-time">Visit 2 — Six Weeks Later</div>
+          <h4>CA 19-9 drops from 2,847 to 1,240. The SDK notices.</h4>
+          <p>We load James's existing memory. The Profile Extractor reads the new report and immediately computes the delta — CA 19-9 is down 56%. No plain LLM can do this because it only sees the current document. We know what it was last time. The ranker surfaces this as the top finding. James re-reads the CA 19-9 section twice — his memory weight for this topic goes up.</p>
+          <div class="moment-highlight">The SDK records: James cares deeply about CA 19-9. Future sessions will always lead with this.</div>
+        </div>
+      </div>
+
+      <div class="story-moment">
+        <div class="moment-dot">3</div>
+        <div class="moment-body">
+          <div class="moment-time">Visit 4 — Cycle 4 Report</div>
+          <h4>Three insights instead of 12. One new thing to watch.</h4>
+          <p>The ranker scores all 12 findings from James's latest CT. Two are critical — CA 19-9 dropped another 52%, and the tumor shrank from 3.8cm to 3.1cm. One is new and worth mentioning to his doctor — his bilirubin is slightly elevated for the first time. Everything else gets filtered: fat stranding is stable for the 4th consecutive report, so James doesn't need to hear about it again.</p>
+          <div class="moment-highlight">James arrives at his oncology appointment with three specific questions. Not general anxiety.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- OUTPUT -->
+<section id="output">
+  <div class="wrapper">
+    <div class="section-label">What James Actually Sees</div>
+    <div class="section-title">Three things. Plain language.<br>Written for him, not for a doctor.</div>
+    <p class="section-sub">This is the output Pantory renders from the SDK's ranked findings. James uploaded his report at 9pm. By 9:01, this is on his screen.</p>
+
+    <div style="margin-top:32px;">
+      <div class="insight-card">
+        <div class="insight-rank r1">1</div>
+        <div class="insight-body">
+          <h4>Your treatment is working — and significantly</h4>
+          <p>Your CA 19-9 tumor marker dropped from 647 to 312 this cycle — a 52% drop in six weeks. Your tumor also shrank from 3.8cm to 3.1cm. Over the past four months, your CA 19-9 has fallen from 2,847 to 312 — that's an 89% drop from where you started. This is the response your oncologist was hoping to see from FOLFIRINOX.</p>
+          <div class="insight-meta">
+            <span class="score-pill">Most important</span>
+            <span class="score-pill">Based on your history — you track this closely</span>
+            <span style="color:var(--green);font-size:11px;font-weight:700;">GOOD NEWS</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="insight-card">
+        <div class="insight-rank r2">2</div>
+        <div class="insight-body">
+          <h4>One thing to mention at your next appointment</h4>
+          <p>Your bilirubin is mildly elevated at 1.8 mg/dL — normal is below 1.2. This is the first time it's appeared in your reports. It may be nothing, but because of your diagnosis it's worth flagging — it can sometimes indicate early pressure on the bile duct. Your oncologist should know.</p>
+          <div class="insight-meta">
+            <span class="score-pill">New — wasn't in your last report</span>
+            <span style="color:var(--amber);font-size:11px;font-weight:700;">MENTION AT APPOINTMENT</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="insight-card">
+        <div class="insight-rank r3">3</div>
+        <div class="insight-body">
+          <h4>Everything else is stable — nothing new to worry about</h4>
+          <p>The blood vessel involvement near your pancreas hasn't changed from your last three scans — that's expected while on chemo. The background inflammation is still there but unchanged. Fat stranding is stable for the fourth report in a row. No new concerns.</p>
+          <div class="insight-meta">
+            <span class="score-pill">Filtered: 9 other findings were stable and not shown</span>
+            <span style="color:var(--blue);font-size:11px;font-weight:700;">STABLE</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW THE FILTER WORKS — SCORING TABLE -->
+<section style="background:#fff;">
+  <div class="wrapper">
+    <div class="section-label">How the Filter Works</div>
+    <div class="section-title">Why some findings surface and others don't</div>
+    <p class="section-sub">Behind those three insights, the SDK scored 12 findings from James's CT report. Here's what the scoring looked like for the top five — and which one got filtered out entirely.</p>
+    <p style="margin-top:16px; font-size:0.9rem; color:var(--gray-600); max-width:680px; line-height:1.7;">Each finding gets scored on four questions: <strong>Does James care about this?</strong> (35%) — <strong>Is there something actionable here?</strong> (25%) — <strong>Is this urgent?</strong> (20%) — <strong>Is this new since last time?</strong> (20%). Anything below 0.65 gets filtered.</p>
+    <table class="score-table">
+      <thead>
+        <tr>
+          <th>Finding</th>
+          <th>James cares?<br><span style="font-weight:400;opacity:0.6">Interest Match</span></th>
+          <th>Actionable?<br><span style="font-weight:400;opacity:0.6">Benefit Clarity</span></th>
+          <th>Urgent?<br><span style="font-weight:400;opacity:0.6">Timeliness</span></th>
+          <th>New?<br><span style="font-weight:400;opacity:0.6">Novelty</span></th>
+          <th>Score</th>
+          <th>Result</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="finding">CA 19-9 dropped 52% this cycle<span class="change">He's re-read this section 6× across 4 visits</span></span></td>
+          <td class="score-high">0.95</td><td class="score-high">0.90</td><td class="score-high">0.80</td><td class="score-high">0.85</td>
+          <td class="score-high">0.89</td><td><span class="badge-critical">SHOW FIRST</span></td>
+        </tr>
+        <tr>
+          <td><span class="finding">Tumor shrank from 3.8cm to 3.1cm<span class="change">18% reduction this cycle</span></span></td>
+          <td class="score-high">0.88</td><td class="score-high">0.85</td><td class="score-high">0.75</td><td class="score-high">0.80</td>
+          <td class="score-high">0.83</td><td><span class="badge-critical">SHOW FIRST</span></td>
+        </tr>
+        <tr>
+          <td><span class="finding">Bilirubin slightly elevated<span class="change">First time appearing — wasn't in prior 3 reports</span></span></td>
+          <td class="score-med">0.60</td><td class="score-med">0.65</td><td class="score-med">0.70</td><td class="score-high">0.80</td>
+          <td class="score-med">0.67</td><td><span class="badge-high">MENTION</span></td>
+        </tr>
+        <tr>
+          <td><span class="finding">Blood vessel involvement unchanged<span class="change">Same as prior 3 reports</span></span></td>
+          <td class="score-med">0.55</td><td class="score-low">0.50</td><td class="score-low">0.30</td><td class="score-low">0.10</td>
+          <td class="score-low">0.38</td><td><span class="badge-medium">BACKGROUND</span></td>
+        </tr>
+        <tr>
+          <td><span class="finding">Fat stranding — stable<span class="change">Stable 4th report in a row. James never reads this section.</span></span></td>
+          <td class="score-low">0.30</td><td class="score-low">0.25</td><td class="score-low">0.10</td><td class="score-low">0.05</td>
+          <td class="score-low">0.18</td><td><span class="badge-filtered">FILTERED OUT</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- JAMES'S MEMORY MAP -->
+<section>
+  <div class="wrapper">
+    <div class="section-label">James's Medical Memory — After 4 Visits</div>
+    <div class="section-title">What the SDK has learned<br>about James over four months</div>
+    <p class="section-sub">Each node is a topic the SDK knows about. The weight shows how much James has engaged with it. High-weight topics always surface first. Low-weight topics get suppressed — and eventually disappear from his reports entirely.</p>
+    <div class="graph-card">
+      <h3>James Mitchell — What the SDK Knows After 4 Uploads</h3>
+      <p>Weights are updated after every session based on re-reads, clicks, and engagement</p>
+      <div class="graph-nodes">
+        <div class="gnode center">👤 James</div>
+        <div class="gnode core">🔴 Pancreatic Cancer (PDAC) — always shown <span class="weight">w: 1.0</span></div>
+        <div class="gnode high">📊 CA 19-9 tumor marker — re-reads 3× per visit <span class="weight">w: 0.95</span></div>
+        <div class="gnode high">📐 Tumor size — tracks carefully <span class="weight">w: 0.88</span></div>
+        <div class="gnode high">💊 FOLFIRINOX chemo — his treatment <span class="weight">w: 0.82</span></div>
+        <div class="gnode medium">🩺 Bilirubin — new this session <span class="weight">w: 0.67</span></div>
+        <div class="gnode medium">🩹 Vascular involvement — monitors <span class="weight">w: 0.45</span></div>
+        <div class="gnode low">💭 Fat stranding — never reads this <span class="weight">w: 0.08 → being suppressed</span></div>
+      </div>
+      <div class="graph-legend">
+        <div class="legend-item"><div class="legend-dot core"></div>Always shown — core condition</div>
+        <div class="legend-item"><div class="legend-dot high"></div>High — surfaces first</div>
+        <div class="legend-item"><div class="legend-dot medium"></div>Medium — shown when relevant</div>
+        <div class="legend-item"><div class="legend-dot low"></div>Low — being filtered out</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WEB SCOUT — NEW FEATURE -->
+<section id="web-scout" style="background:#fff;">
+  <div class="wrapper">
+    <div class="section-label">New Feature</div>
+    <div class="section-title">Web Scout — Find people who've<br>been exactly where James is</div>
+    <p class="section-sub">Knowing what your numbers mean is one thing. Knowing that other patients with your exact situation got better — that's something else entirely. Web Scout uses James's medical memory to search for real cases, clinical trials, and patient communities that match his profile.</p>
+
+    <div class="scout-hero">
+      <div class="new-badge">Web Scout — Powered by RecoMe Interest Graph</div>
+      <h3>After reading James's report, we search the internet for him.</h3>
+      <p>Not generic pancreatic cancer results. Results filtered to people on FOLFIRINOX cycle 4, with Stage III PDAC, with a CA 19-9 trajectory similar to his. His profile drives every search query — automatically.</p>
+      <div class="scout-cards">
+        <div class="scout-card">
+          <div class="scout-icon">🏥</div>
+          <h4>Clinical Trial Finder</h4>
+          <p>Searches ClinicalTrials.gov for active trials matching James's diagnosis, stage, treatment history, and location. Surfaces trials he may qualify for — ranked by relevance to his graph.</p>
+        </div>
+        <div class="scout-card">
+          <div class="scout-icon">👥</div>
+          <h4>Similar Case Finder</h4>
+          <p>Finds documented cases, patient forums, and medical publications where patients had comparable starting markers and similar treatment response. "People who started where you are — here's how their journey went."</p>
+        </div>
+        <div class="scout-card">
+          <div class="scout-icon">📖</div>
+          <h4>Research Finder</h4>
+          <p>Surfaces recent studies on his specific combination: FOLFIRINOX response rates for Stage III PDAC head-of-pancreas, CA 19-9 as a prognostic marker, bilirubin in chemo patients. Filtered to things James will actually understand.</p>
+        </div>
+        <div class="scout-card">
+          <div class="scout-icon">💬</div>
+          <h4>Community Finder</h4>
+          <p>Finds patient communities and support groups where people are sharing experiences with the same diagnosis, treatment, and concerns. Not random cancer forums — matched to James's specific profile.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEMO RESULT PANEL -->
+    <div class="scout-result-demo">
+      <div class="scout-result-header">
+        <span>🔍</span>
+        <span>Web Scout results for:</span>
+        <span class="query">James Mitchell — Stage III PDAC, FOLFIRINOX Cycle 4, CA 19-9: 312 U/mL (was 2,847)</span>
+      </div>
+      <div class="scout-result-list">
+
+        <div class="scout-result-item">
+          <span class="result-type case">Patient Case</span>
+          <div class="result-body">
+            <h5>"My CA 19-9 went from 3,200 to 290 on FOLFIRINOX — here's what happened next"</h5>
+            <p>A Stage III PDAC patient on PanCAN forum documents their FOLFIRINOX response from diagnosis through surgical evaluation. Starting CA 19-9: 3,200. After 6 cycles: 290. Tumor reduction from 4.5cm to 2.9cm. Eventually deemed borderline resectable.</p>
+            <div class="result-why">✦ Matched because: similar starting CA 19-9, same treatment, similar response trajectory</div>
+          </div>
+        </div>
+
+        <div class="scout-result-item">
+          <span class="result-type trial">Clinical Trial</span>
+          <div class="result-body">
+            <h5>PRODIGE 29 — FOLFIRINOX conversion therapy for locally advanced PDAC (n=442)</h5>
+            <p>French multicenter trial showing 28% of locally advanced PDAC patients on FOLFIRINOX achieved resectability after 6 months. Median CA 19-9 response rate in responders: 87% reduction from baseline. James's trajectory (89%) is within the responder group.</p>
+            <div class="result-why">✦ Matched because: locally advanced PDAC, FOLFIRINOX, CA 19-9 as response marker</div>
+          </div>
+        </div>
+
+        <div class="scout-result-item">
+          <span class="result-type study">Research</span>
+          <div class="result-body">
+            <h5>Bilirubin elevation during FOLFIRINOX: incidence, causes, and clinical significance (2023)</h5>
+            <p>Retrospective study of 180 PDAC patients on FOLFIRINOX. Mild bilirubin elevation (1.5–2.5 mg/dL) occurred in 34% of patients. In 71% of cases, it was transient and resolved by next cycle. Persistent elevation (&gt;2 cycles) was associated with bile duct involvement in 18% of cases.</p>
+            <div class="result-why">✦ Matched because: James has new bilirubin elevation — this explains if it's common and what to watch for</div>
+          </div>
+        </div>
+
+        <div class="scout-result-item">
+          <span class="result-type forum">Community</span>
+          <div class="result-body">
+            <h5>PanCAN Patient Services — Stage III PDAC on FOLFIRINOX: active thread (312 members)</h5>
+            <p>An active community of patients and caregivers at the same stage and treatment. Weekly discussions on CA 19-9 interpretation, what to ask at appointments, managing chemo side effects, and navigating surgical evaluation conversations. A specialist volunteer moderates medical questions.</p>
+            <div class="result-why">✦ Matched because: James's diagnosis + treatment combination matches 312 active members</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <p style="margin-top:20px; font-size:0.85rem; color:var(--gray-400); line-height:1.7;">
+      <strong>How this works technically:</strong> After the ranker produces James's top findings, we generate search queries from those findings combined with his Interest Graph nodes — diagnosis type, treatment, marker values, trajectory. The results are re-ranked by relevance to his graph before Pantory renders them. James gets context that took a researcher hours to find — in seconds, tuned to his specific situation.
+    </p>
+  </div>
+</section>
+
+<!-- DATA SOURCES — WHERE THE DATA COMES FROM -->
+<section id="data-sources" style="background:#fff;">
+  <div class="wrapper">
+    <div class="section-label">Where the Data Actually Comes From</div>
+    <div class="section-title">Real APIs, real databases.<br>Most of them are free.</div>
+    <p class="section-sub">The Web Scout feature isn't hypothetical. These are production-ready data sources — many of them US government-funded and completely free to use. Here's what we plug into, how much it costs, and in what order we build it.</p>
+
+    <!-- PIPELINE DIAGRAM -->
+    <div class="pipeline-diagram">
+      <h4>How Web Scout queries flow through the system</h4>
+      <div class="pipeline-flow">
+        <div class="pipe-node input">Patient Report<br><span style="font-size:0.7rem;opacity:0.7;">CT scan, blood work</span></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-node process">Interest Graph<br><span style="font-size:0.7rem;opacity:0.7;">Builds search queries</span></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-node api">Free APIs<br><span style="font-size:0.7rem;opacity:0.7;">PubMed, ClinicalTrials, FDA</span></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-node process">Re-Rank by Graph<br><span style="font-size:0.7rem;opacity:0.7;">Filter to James's profile</span></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-node output">3–5 Results<br><span style="font-size:0.7rem;opacity:0.7;">Shown in Pantory</span></div>
+      </div>
+    </div>
+
+    <!-- TIER 1: FREE — USE TOMORROW -->
+    <div class="source-tier">
+      <div class="tier-header">
+        <span class="tier-badge free">Free — Use Tomorrow</span>
+        <h3>No contracts, no cost. Just API keys.</h3>
+      </div>
+      <div class="source-grid">
+
+        <div class="source-card">
+          <div class="source-icon green">🏥</div>
+          <div class="source-info">
+            <h4>ClinicalTrials.gov API v2</h4>
+            <p class="source-what">400,000+ clinical trials. Search by diagnosis, treatment, biomarker, location, phase. Returns eligibility criteria, study status, and contact info.</p>
+            <span class="source-access free">Free · No API key needed</span>
+          </div>
+        </div>
+
+        <div class="source-card">
+          <div class="source-icon green">📚</div>
+          <div class="source-info">
+            <h4>PubMed E-Utilities (NIH)</h4>
+            <p class="source-what">36 million+ medical papers. Search by condition, drug, marker. Returns abstracts, MeSH terms, citations. Filter by "Case Reports" to find individual patient journeys.</p>
+            <span class="source-access key">Free · API key for 10 req/sec</span>
+          </div>
+        </div>
+
+        <div class="source-card">
+          <div class="source-icon green">📖</div>
+          <div class="source-info">
+            <h4>PubMed Central — Full Text</h4>
+            <p class="source-what">4 million+ full-text open-access articles. Not just abstracts — entire papers. Our NLP pipeline reads these to extract treatment outcomes and patient case details.</p>
+            <span class="source-access free">Free · Open access subset</span>
+          </div>
+        </div>
+
+        <div class="source-card">
+          <div class="source-icon green">💊</div>
+          <div class="source-info">
+            <h4>OpenFDA API</h4>
+            <p class="source-what">Drug adverse events, side effects, labels, recalls. When James searches "FOLFIRINOX side effects", results come from real FDA adverse event reports.</p>
+            <span class="source-access key">Free · 240 req/min with key</span>
+          </div>
+        </div>
+
+        <div class="source-card">
+          <div class="source-icon blue">🧬</div>
+          <div class="source-info">
+            <h4>cBioPortal API</h4>
+            <p class="source-what">Cancer genomics + clinical outcomes from published studies. Includes the TCGA pancreatic cancer dataset (PAAD) — mutations, gene expression, survival data.</p>
+            <span class="source-access free">Free · No key needed</span>
+          </div>
+        </div>
+
+        <div class="source-card">
+          <div class="source-icon blue">📊</div>
+          <div class="source-info">
+            <h4>SEER Database (NCI)</h4>
+            <p class="source-what">Cancer survival rates and treatment patterns covering 48% of the US population. When we say "89% CA 19-9 drop is within the responder group" — this is where that stat comes from.</p>
+            <span class="source-access key">Free · Sign Data Use Agreement</span>
+          </div>
+        </div>
+
+        <div class="source-card">
+          <div class="source-icon teal">🤖</div>
+          <div class="source-info">
+            <h4>Semantic Scholar API</h4>
+            <p class="source-what">200 million papers with AI-generated TLDRs and citation graphs. We use this to find the most-cited, highest-impact studies for each finding — not just the most recent.</p>
+            <span class="source-access key">Free tier · 5K req / 5 min</span>
+          </div>
+        </div>
+
+        <div class="source-card">
+          <div class="source-icon teal">💉</div>
+          <div class="source-info">
+            <h4>RxNorm + DailyMed + NCI Drug Dict.</h4>
+            <p class="source-what">Drug name normalization, official FDA labels, cancer-specific drug definitions. Maps "FOLFIRINOX" to its component drugs and surfaces interactions.</p>
+            <span class="source-access free">Free · UMLS license (free)</span>
+          </div>
+        </div>
+
+        <div class="source-card">
+          <div class="source-icon green">🔬</div>
+          <div class="source-info">
+            <h4>bioRxiv / medRxiv APIs</h4>
+            <p class="source-what">Latest pre-print medical research — before peer review. Flagged as "preprint" in results. Useful for cutting-edge treatment data that hasn't published yet.</p>
+            <span class="source-access free">Free · CC-BY licensed</span>
+          </div>
+        </div>
+
+        <div class="source-card">
+          <div class="source-icon blue">🎯</div>
+          <div class="source-info">
+            <h4>OpenTargets GraphQL API</h4>
+            <p class="source-what">Disease-to-drug-target connections with evidence scores. Links pancreatic cancer to specific molecular targets and experimental treatments in the pipeline.</p>
+            <span class="source-access free">Free · Open source</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TIER 2: PARTNERSHIPS -->
+    <div class="source-tier">
+      <div class="tier-header">
+        <span class="tier-badge partner">Partnerships — Month 3+</span>
+        <h3>Patient communities and premium datasets</h3>
+      </div>
+      <p style="font-size:0.9rem; color:var(--gray-600); line-height:1.7; margin-bottom:20px;">Patient forums can't be scraped — ethically or legally. The right approach is partnerships with organizations that already have engaged patient communities and are looking for tools to help their members.</p>
+      <div class="source-grid">
+
+        <div class="source-card">
+          <div class="source-icon amber">👥</div>
+          <div class="source-info">
+            <h4>PanCAN (Pancreatic Cancer Action Network)</h4>
+            <p class="source-what">Largest pancreatic cancer patient advocacy org. Has active patient communities, treatment experience data, and survivor stories. Partnership gives us ethical access to real patient journeys.</p>
+            <span class="source-access partner">Partnership · Outreach in Month 3</span>
+          </div>
+        </div>
+
+        <div class="source-card">
+          <div class="source-icon amber">📋</div>
+          <div class="source-info">
+            <h4>PatientsLikeMe</h4>
+            <p class="source-what">Patient-reported outcomes, symptoms, treatments, side effects. They have a research partnership program. Gives us structured "people like James" data with consent built in.</p>
+            <span class="source-access partner">Partnership · Data-sharing agreement</span>
+          </div>
+        </div>
+
+        <div class="source-card">
+          <div class="source-icon amber">💬</div>
+          <div class="source-info">
+            <h4>Smart Patients / HealthUnlocked</h4>
+            <p class="source-what">Cancer-specific patient community platforms. Partnership lets us surface relevant community threads where patients are discussing the exact treatment James is on.</p>
+            <span class="source-access partner">Partnership · Months to negotiate</span>
+          </div>
+        </div>
+
+        <div class="source-card">
+          <div class="source-icon purple">💊</div>
+          <div class="source-info">
+            <h4>DrugBank (Commercial Tier)</h4>
+            <p class="source-what">Deep pharmacology, drug targets, interactions, pathways. Goes beyond what OpenFDA provides. The gold standard for drug intelligence data.</p>
+            <span class="source-access license">License · $10K–50K/yr</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TIER 3: SCALE (SERIES A) -->
+    <div class="source-tier">
+      <div class="tier-header">
+        <span class="tier-badge future">Scale — Series A+</span>
+        <h3>Enterprise-grade datasets that change the game</h3>
+      </div>
+      <div class="source-grid">
+
+        <div class="source-card">
+          <div class="source-icon purple">🏢</div>
+          <div class="source-info">
+            <h4>Flatiron Health (Roche)</h4>
+            <p class="source-what">Real-world oncology data from electronic health records — treatment patterns, outcomes, genomic data across hundreds of oncology practices. The gold standard for "what actually happens to patients like James."</p>
+            <span class="source-access license">Enterprise · $100K+/yr</span>
+          </div>
+        </div>
+
+        <div class="source-card">
+          <div class="source-icon purple">🧬</div>
+          <div class="source-info">
+            <h4>TCGA Controlled Access (NIH)</h4>
+            <p class="source-what">Individual-level genomic and clinical data for 33 cancer types. Requires IRB approval and NIH authorization. Gives us the deepest molecular view of each cancer type.</p>
+            <span class="source-access license">IRB + dbGaP approval · 3–6 months</span>
+          </div>
+        </div>
+
+        <div class="source-card">
+          <div class="source-icon purple">🌐</div>
+          <div class="source-info">
+            <h4>Pantory's Own Patient Community</h4>
+            <p class="source-what">As Pantory grows, patients voluntarily share anonymized journeys with consent. This becomes the most defensible moat — a proprietary dataset of real patient outcomes, tagged with Interest Graph profiles.</p>
+            <span class="source-access partner">Built in-house · Grows with user base</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- BUILD TIMELINE -->
+    <div class="build-timeline" style="background:#fff; border:1px solid var(--gray-200); border-radius:var(--radius); padding:28px; margin-top:40px;">
+      <h3 style="font-size:1rem; font-weight:800; color:var(--gray-900); margin-bottom:16px;">Build Order — What Gets Plugged In and When</h3>
+      <div class="timeline-row">
+        <div class="timeline-when">Week 1</div>
+        <div class="timeline-what">
+          <h4>Clinical Trials + Medical Literature</h4>
+          <p>ClinicalTrials.gov API + PubMed E-Utilities + OpenFDA. James can immediately find trials he qualifies for and research on his treatment.</p>
+        </div>
+      </div>
+      <div class="timeline-row">
+        <div class="timeline-when">Week 2</div>
+        <div class="timeline-what">
+          <h4>Drug Intelligence + Survival Data</h4>
+          <p>RxNorm + DailyMed + NCI Drug Dictionary + SEER. Drug interactions, official labels, and population-level survival statistics contextualize James's progress.</p>
+        </div>
+      </div>
+      <div class="timeline-row">
+        <div class="timeline-when">Week 3</div>
+        <div class="timeline-what">
+          <h4>Genomics + Target Discovery</h4>
+          <p>cBioPortal + OpenTargets + Semantic Scholar. Connects James's cancer type to molecular targets, experimental treatments, and the most-cited research.</p>
+        </div>
+      </div>
+      <div class="timeline-row">
+        <div class="timeline-when">Week 4</div>
+        <div class="timeline-what">
+          <h4>Case Report NLP Pipeline</h4>
+          <p>Build NLP that reads PubMed Case Reports (filter: pt[Case Reports]) and extracts structured patient journeys — diagnosis, treatment, markers, outcome. This powers the "Similar Case Finder."</p>
+        </div>
+      </div>
+      <div class="timeline-row">
+        <div class="timeline-when">Month 2</div>
+        <div class="timeline-what">
+          <h4>Pre-prints + Citation Graphs</h4>
+          <p>bioRxiv/medRxiv for cutting-edge research + Semantic Scholar citation ranking to surface the most impactful studies, not just the most recent.</p>
+        </div>
+      </div>
+      <div class="timeline-row">
+        <div class="timeline-when">Month 3</div>
+        <div class="timeline-what">
+          <h4>Patient Community Partnerships</h4>
+          <p>Begin outreach to PanCAN, PatientsLikeMe, Smart Patients. Goal: ethical access to real patient experiences — the most emotionally valuable part of Web Scout.</p>
+        </div>
+      </div>
+    </div>
+
+    <p style="margin-top:24px; font-size:0.88rem; color:var(--gray-600); line-height:1.7; max-width:700px;">
+      <strong>The key insight:</strong> ClinicalTrials.gov + PubMed + OpenFDA + cBioPortal gives us 80% of Web Scout's value at zero data cost. The remaining 20% — real patient stories and premium datasets — is a partnership and scale play that grows over time. We don't need to wait for anything. We can ship Web Scout in Week 1.
+    </p>
+  </div>
+</section>
+
+<!-- BEFORE / AFTER -->
+<section>
+  <div class="wrapper">
+    <div class="section-label">Before vs. After</div>
+    <div class="section-title">Pantory today vs. Pantory with the SDK</div>
+    <p class="section-sub">This is what changes for James — and for every other patient on Pantory — the moment the SDK goes live.</p>
+    <div class="ba-grid">
+      <div class="ba-card">
+        <div class="ba-header before">Pantory Today — Without SDK</div>
+        <div class="ba-body">
+          <div class="ba-row"><span class="ico">❌</span><span>James re-explains himself every single visit. Pantory has no memory of who he is.</span></div>
+          <div class="ba-row"><span class="ico">❌</span><span>Every finding gets equal attention. A new metastasis could sit in paragraph 4 of a summary.</span></div>
+          <div class="ba-row"><span class="ico">❌</span><span>CA 19-9 is explained from scratch every session. James already knows what it is.</span></div>
+          <div class="ba-row"><span class="ico">❌</span><span>No way to know that his CA 19-9 has dropped 89% since he started — Pantory only sees today's document.</span></div>
+          <div class="ba-row"><span class="ico">❌</span><span>No connection to other patients, clinical trials, or research that matches his specific situation.</span></div>
+          <div class="ba-row"><span class="ico">❌</span><span>James leaves with a wall of summarized text. He's still not sure what to call his doctor about.</span></div>
+        </div>
+      </div>
+      <div class="ba-card">
+        <div class="ba-header after">Pantory with RecoMe SDK</div>
+        <div class="ba-body">
+          <div class="ba-row"><span class="ico">✅</span><span>Pantory remembers James from visit one. By visit 4 it knows him better than a new clinician.</span></div>
+          <div class="ba-row"><span class="ico">✅</span><span>Findings are sorted by what matters to James. Critical findings are always first — guaranteed.</span></div>
+          <div class="ba-row"><span class="ico">✅</span><span>CA 19-9 isn't re-explained. Pantory picks up where James left off, every session.</span></div>
+          <div class="ba-row"><span class="ico">✅</span><span>"Your CA 19-9 has dropped 89% from your starting point four months ago." A single sentence that changes how a patient feels about their prognosis.</span></div>
+          <div class="ba-row"><span class="ico">✅</span><span>Web Scout finds cases, trials, and communities matched to James's exact profile. He's not alone.</span></div>
+          <div class="ba-row"><span class="ico">✅</span><span>James leaves with three specific things: good news, one thing to mention, everything stable. His doctor's time is used better.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT PANTORY GAINS -->
+<section id="gains" style="background:#fff;">
+  <div class="wrapper">
+    <div class="section-label">What Pantory Gains</div>
+    <div class="section-title">Six things that change in Pantory's product — concretely</div>
+    <p class="section-sub">Not buzzwords. Specific things that are different for patients the moment the SDK ships.</p>
+    <div class="card-grid-2" style="margin-top:32px;">
+      <div class="gain-card">
+        <div class="gain-num">1</div>
+        <div>
+          <h4>Summaries become triage</h4>
+          <p>Pantory stops giving patients a wall of equal-weight text and starts giving them a ranked answer to: "what do I actually do with this?" Three things, in order of importance.</p>
+        </div>
+      </div>
+      <div class="gain-card">
+        <div class="gain-num">2</div>
+        <div>
+          <h4>Every return visit is better than the last</h4>
+          <p>The SDK gets smarter with each upload. By session 4, it knows what James always re-reads, what confuses him, and what to filter. No retraining, no manual configuration — it learns from behavior.</p>
+        </div>
+      </div>
+      <div class="gain-card">
+        <div class="gain-num">3</div>
+        <div>
+          <h4>Pantory can show patients their journey — not just today's report</h4>
+          <p>"Your CA 19-9 has dropped 89% since you started." That's not in any single document. The SDK stores the history. Pantory can show it. That sentence is potentially life-changing for a cancer patient.</p>
+        </div>
+      </div>
+      <div class="gain-card">
+        <div class="gain-num">4</div>
+        <div>
+          <h4>Critical findings can never get buried</h4>
+          <p>If a new lesion appears, the scoring model guarantees it surfaces first — regardless of where it appears in the report document. Mathematically impossible to miss.</p>
+        </div>
+      </div>
+      <div class="gain-card">
+        <div class="gain-num">5</div>
+        <div>
+          <h4>Web Scout gives patients hope — grounded in data</h4>
+          <p>"Here's a patient who started where you are. Here's a trial you might qualify for." This turns Pantory from a report explainer into a full companion that connects patients to the wider world of people who've been exactly where they are.</p>
+        </div>
+      </div>
+      <div class="gain-card">
+        <div class="gain-num">6</div>
+        <div>
+          <h4>Doctors get better-prepared patients</h4>
+          <p>James arrives with specific, ranked questions — not general anxiety. His oncologist's time is spent on decisions, not explaining what CA 19-9 is. That's a real, measurable improvement in care quality.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta-section" id="cta">
+  <h2>Pantory + RecoMe SDK.<br>Drop-in, fast, and built for healthcare.</h2>
+  <p>The SDK is a backend API. Pantory keeps its existing product — we plug in behind it. The Interest Graph, ranker, memory, and Web Scout all run server-side. Patients just see a better Pantory.</p>
+  <div class="cta-cards">
+    <div class="cta-card">
+      <div class="cta-icon">⚡</div>
+      <h4>Fast to Integrate</h4>
+      <p>REST API + SDK client. Plugs into Pantory's existing pipeline. Days to integrate, not months.</p>
+    </div>
+    <div class="cta-card">
+      <div class="cta-icon">🔒</div>
+      <h4>HIPAA-Ready</h4>
+      <p>Patient graphs are isolated, encrypted at rest, and built for PHI-compliant environments from day one.</p>
+    </div>
+    <div class="cta-card">
+      <div class="cta-icon">📈</div>
+      <h4>Grows With Pantory</h4>
+      <p>Cardiology, radiology, and primary care modules available. One graph per patient, across all report types.</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <strong style="color:rgba(255,255,255,0.8)">RecoMe SDK × Pantory</strong> — Preference Graph Infrastructure for Personalized Medical Report Comprehension<br>
+  <span style="margin-top:8px; display:block; font-size:0.8rem;">Interest Graph · OpportunityRanker · Memory Pack · Profile Extractor · Web Scout</span>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>RecoMe Platform API — The Preference Graph Infrastructure Layer of the Internet</title>
+  <link rel="stylesheet" href="shared.css"/>
+  <style>
+    /* ── HERO ─────────────────────────────────────────────────────────── */
+    .hero {
+      min-height: 100vh; display: flex; align-items: center;
+      position: relative; overflow: hidden;
+    }
+    .hero .glow.a { width:640px;height:640px;background:#10b981;top:-180px;left:-140px; }
+    .hero .glow.b { width:420px;height:420px;background:#059669;bottom:-80px;right:-80px; }
+    .hero .glow.c { width:300px;height:300px;background:#34d399;top:30%;right:22%; }
+    .hero-inner { position:relative;z-index:1;max-width:840px;padding-top:80px; }
+
+    .hero-kicker {
+      display:inline-flex;align-items:center;gap:8px;
+      background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);
+      border-radius:999px;padding:6px 16px;
+      font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+      color:rgba(255,255,255,0.6);margin-bottom:28px;
+    }
+    .hero-kicker span { color:var(--infra); }
+
+    .hero-h1 {
+      font-size:clamp(38px,6vw,80px);font-weight:900;line-height:1.02;
+      letter-spacing:-3px;margin-bottom:24px;
+    }
+    .hero-h1 .grad {
+      background:linear-gradient(100deg,#fff 15%,#6ee7b7 85%);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    }
+    .hero-sub {
+      font-size:18px;color:rgba(255,255,255,0.55);
+      max-width:620px;line-height:1.7;margin-bottom:44px;
+    }
+    .hero-actions { display:flex;gap:14px;flex-wrap:wrap;margin-bottom:48px; }
+    .btn-primary {
+      background:#fff;color:var(--ink);
+      padding:13px 28px;border-radius:10px;font-weight:700;font-size:15px;
+      text-decoration:none;display:inline-block;transition:opacity .15s;
+    }
+    .btn-primary:hover { opacity:.9; }
+    .btn-outline {
+      background:transparent;color:#fff;
+      border:1px solid rgba(255,255,255,0.25);
+      padding:13px 28px;border-radius:10px;font-weight:600;font-size:15px;
+      text-decoration:none;display:inline-block;transition:all .15s;
+    }
+    .btn-outline:hover { background:rgba(255,255,255,0.06); }
+
+    /* ── PLATFORM LAYER CARDS ─────────────────────────────────────────── */
+    .layer-stack { display:flex;flex-direction:column;gap:16px; }
+    .layer-card {
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--line-dark);
+      border-radius:16px;padding:28px 32px;
+      display:grid;grid-template-columns:56px 1fr;gap:20px;align-items:flex-start;
+      transition:background .2s,border-color .2s;
+    }
+    .layer-card:hover { background:rgba(16,185,129,0.05);border-color:rgba(16,185,129,0.2); }
+    .layer-num {
+      width:48px;height:48px;border-radius:12px;
+      background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);
+      display:flex;align-items:center;justify-content:center;
+      font-size:20px;font-weight:900;color:var(--infra);flex-shrink:0;
+    }
+    .layer-body {}
+    .layer-label {
+      font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+      color:var(--infra);margin-bottom:5px;
+    }
+    .layer-body h3 { font-size:19px;font-weight:800;margin-bottom:8px; }
+    .layer-body p { font-size:14px;color:rgba(255,255,255,0.5);line-height:1.7;margin-bottom:12px; }
+    .layer-tags { display:flex;flex-wrap:wrap;gap:7px; }
+    @media(max-width:600px) { .layer-card { grid-template-columns:1fr; } }
+
+    /* ── API TABLE ────────────────────────────────────────────────────── */
+    .api-tbl { width:100%;border-collapse:collapse;font-size:13px; }
+    .api-tbl th {
+      padding:11px 14px;text-align:left;
+      font-size:11px;font-weight:700;text-transform:uppercase;
+      letter-spacing:.8px;color:rgba(255,255,255,0.3);
+      border-bottom:1px solid var(--line-dark);
+    }
+    .api-tbl td { padding:13px 14px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle; }
+    .api-tbl tr:last-child td { border-bottom:none; }
+    .api-tbl tr:hover td { background:rgba(16,185,129,0.04); }
+    .method {
+      display:inline-block;border-radius:5px;padding:2px 8px;
+      font-size:11px;font-weight:800;letter-spacing:.5px;font-family:var(--mono);
+    }
+    .method.get { background:rgba(16,185,129,0.15);color:#6ee7b7; }
+    .method.post { background:rgba(35,86,232,0.15);color:#93b4fd; }
+    .ep-path { font-family:var(--mono);font-size:12px;color:rgba(255,255,255,0.75); }
+    .ep-agent { font-size:12px;color:var(--infra);font-weight:600; }
+    .ep-desc { font-size:13px;color:rgba(255,255,255,0.45); }
+
+    /* ── OAUTH SCOPES ─────────────────────────────────────────────────── */
+    .scope-list { display:flex;flex-direction:column;gap:10px;margin-top:24px; }
+    .scope-item {
+      display:flex;align-items:flex-start;gap:14px;
+      background:rgba(255,255,255,0.03);border:1px solid var(--line-dark);
+      border-radius:10px;padding:14px 18px;
+    }
+    .scope-name {
+      font-family:var(--mono);font-size:12px;font-weight:700;
+      color:var(--infra);flex-shrink:0;min-width:280px;
+    }
+    .scope-desc { font-size:13px;color:rgba(255,255,255,0.45); }
+    @media(max-width:760px) { .scope-item { flex-direction:column; } .scope-name { min-width:unset; } }
+
+    /* ── AUDIENCE CARDS ───────────────────────────────────────────────── */
+    .audience-grid { display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px; }
+    @media(max-width:800px) { .audience-grid { grid-template-columns:1fr 1fr; } }
+    @media(max-width:520px) { .audience-grid { grid-template-columns:1fr; } }
+
+    .aud-card {
+      background:rgba(255,255,255,0.03);border:1px solid var(--line-dark);
+      border-radius:14px;padding:26px;
+      transition:background .2s,border-color .2s;
+    }
+    .aud-card:hover { background:rgba(16,185,129,0.06);border-color:rgba(16,185,129,0.2); }
+    .aud-ico { font-size:32px;margin-bottom:14px; }
+    .aud-card h3 { font-size:18px;font-weight:800;margin-bottom:8px; }
+    .aud-card .aud-tagline { font-size:13px;color:var(--infra);font-weight:700;margin-bottom:10px; }
+    .aud-card p { font-size:13px;color:rgba(255,255,255,0.45);line-height:1.65; }
+
+    /* ── MONETIZATION CARDS ───────────────────────────────────────────── */
+    .mono-grid { display:grid;grid-template-columns:1fr 1fr;gap:20px; }
+    @media(max-width:700px) { .mono-grid { grid-template-columns:1fr; } }
+
+    .mono-card {
+      background:rgba(255,255,255,0.03);border:1px solid var(--line-dark);
+      border-radius:14px;padding:26px;
+    }
+    .mono-card .mc-num {
+      font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+      color:rgba(255,255,255,0.25);margin-bottom:6px;
+    }
+    .mono-card h3 { font-size:17px;font-weight:800;margin-bottom:6px; }
+    .mono-card .mc-price { font-size:26px;font-weight:900;color:var(--infra);letter-spacing:-1px;margin-bottom:8px; }
+    .mono-card p { font-size:13px;color:rgba(255,255,255,0.45);line-height:1.65; }
+
+    /* ── COMPETITIVE TABLE HIGHLIGHT ─────────────────────────────────── */
+    .ctbl td.us-infra { background:rgba(16,185,129,0.07); }
+    .ctbl th.us-infra { background:rgba(16,185,129,0.07);color:var(--infra); }
+
+    /* ── RESULT BANNER ────────────────────────────────────────────────── */
+    .result-banner {
+      display:flex;align-items:center;gap:16px;
+      background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);
+      border-radius:12px;padding:18px 24px;margin-top:20px;
+    }
+    .result-banner .rb-ico { font-size:24px;flex-shrink:0; }
+    .result-banner .rb-text h5 { font-size:15px;font-weight:800;margin-bottom:4px;color:#6ee7b7; }
+    .result-banner .rb-text p  { font-size:13px;color:rgba(255,255,255,0.55);line-height:1.6; }
+
+    /* ── CODE BLOCK ───────────────────────────────────────────────────── */
+    .code-block {
+      background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.08);
+      border-radius:10px;padding:18px 20px;
+      font-family:var(--mono);font-size:12px;line-height:1.7;
+      color:rgba(255,255,255,0.6);overflow-x:auto;margin:12px 0;
+    }
+    .code-block .kw { color:#7c3aed; }
+    .code-block .str { color:#6ee7b7; }
+    .code-block .key { color:#93b4fd; }
+    .code-block .num { color:#fcd34d; }
+    .code-block .cmt { color:rgba(255,255,255,0.25);font-style:italic; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="topnav">
+  <a href="index.html" class="logo">Reco<span>Me</span></a>
+  <a href="extension.html" class="hide-sm"><span class="dot" style="background:var(--ext)"></span>Extension</a>
+  <a href="agents.html" class="hide-sm"><span class="dot" style="background:var(--agent)"></span>Agents</a>
+  <a href="app.html" class="hide-sm"><span class="dot" style="background:var(--app)"></span>App</a>
+  <a href="sdk.html" class="hide-sm"><span class="dot" style="background:var(--sdk)"></span>SDK</a>
+  <a href="platform.html" class="hide-sm active"><span class="dot" style="background:var(--infra)"></span>Platform</a>
+  <a href="financials.html" class="hide-sm">Financials</a>
+  <a href="financials.html#ask" class="cta">Investor Deck →</a>
+</nav>
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<!-- 1. HERO                                                              -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<div class="wrap">
+  <div class="hero">
+    <div class="glow a"></div>
+    <div class="glow b"></div>
+    <div class="glow c"></div>
+    <div class="hero-inner">
+      <div class="hero-kicker">Infrastructure &amp; Platform · V4 Roadmap · <span>Phase 3+</span></div>
+      <h1 class="hero-h1">
+        The <span class="grad">Preference Graph</span><br>Infrastructure Layer<br>of the Internet.
+      </h1>
+      <p class="hero-sub">
+        A universal, user-owned preference identity standard — with OAuth 2.0 scoped access, agent-powered API endpoints, B2B audience intelligence, and a federated global taste graph. The personalization layer every app on the internet will eventually need.
+      </p>
+      <div class="hero-actions">
+        <a href="demos/platform-demo.html" class="btn-primary">Live Demo →</a>
+        <a href="#platform-layers" class="btn-outline">Explore the Platform</a>
+        <a href="#api-endpoints" class="btn-outline">View API Docs</a>
+      </div>
+
+      <!-- Stats -->
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="sn" style="color:var(--infra)">7</div>
+          <div class="sl">API Endpoints</div>
+        </div>
+        <div class="stat-box">
+          <div class="sn" style="color:var(--infra)">OAuth</div>
+          <div class="sl">2.0 Scoped Access</div>
+        </div>
+        <div class="stat-box">
+          <div class="sn" style="color:var(--infra)" style="font-size:18px;line-height:1.3;">Sign in</div>
+          <div class="sl">with RecoMe</div>
+        </div>
+        <div class="stat-box">
+          <div class="sn" style="color:var(--infra);font-size:18px;line-height:1.3;">Global</div>
+          <div class="sl">Taste Graph</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<!-- 2. THE PLATFORM VISION                                               -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<div style="background:rgba(255,255,255,0.015);border-top:1px solid var(--line-dark);border-bottom:1px solid var(--line-dark);">
+  <div class="wrap">
+    <section>
+      <div class="eyebrow infra">Platform Vision</div>
+      <h2 class="h2" style="margin-bottom:20px;max-width:700px">Every app starts from zero.<br>RecoMe V4 ends that.</h2>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center">
+        <div>
+          <p class="sub" style="margin-bottom:24px">
+            Today, every app builds its own recommendation system from scratch. Netflix, Spotify, Amazon, YouTube — each one starts from zero when you sign up. Your preferences are siloed, duplicated, and lost when you switch services.
+          </p>
+          <p class="sub">
+            RecoMe V4 becomes the universal preference graph — a portable, user-owned taste identity that any service can read from (with permission) and write to.
+          </p>
+        </div>
+        <div>
+          <!-- Before/After comparison -->
+          <div class="card" style="margin-bottom:16px">
+            <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#f87171;margin-bottom:10px">Before RecoMe</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:rgba(255,255,255,0.5)">
+                <span style="color:#f87171;font-size:16px">&#x2715;</span> Netflix relearns your taste from zero
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:rgba(255,255,255,0.5)">
+                <span style="color:#f87171;font-size:16px">&#x2715;</span> Spotify doesn't know you love film scores
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:rgba(255,255,255,0.5)">
+                <span style="color:#f87171;font-size:16px">&#x2715;</span> Your preferences die when you switch apps
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:rgba(255,255,255,0.5)">
+                <span style="color:#f87171;font-size:16px">&#x2715;</span> Each platform rebuilds the cold start problem
+              </div>
+            </div>
+          </div>
+          <div class="card" style="border-color:rgba(16,185,129,0.25);background:rgba(16,185,129,0.06)">
+            <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--infra);margin-bottom:10px">After RecoMe V4</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:rgba(255,255,255,0.6)">
+                <span style="color:var(--infra);font-size:16px">&#x2713;</span> One OAuth login shares your taste graph
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:rgba(255,255,255,0.6)">
+                <span style="color:var(--infra);font-size:16px">&#x2713;</span> New apps personalize from day one
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:rgba(255,255,255,0.6)">
+                <span style="color:var(--infra);font-size:16px">&#x2713;</span> You choose exactly what each app sees
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:rgba(255,255,255,0.6)">
+                <span style="color:var(--infra);font-size:16px">&#x2713;</span> Your identity travels with you, forever
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<!-- 3. FIVE PLATFORM LAYERS                                              -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<div class="wrap" id="platform-layers">
+  <section>
+    <div class="eyebrow infra">Architecture</div>
+    <h2 class="h2" style="margin-bottom:10px">Five Platform Layers</h2>
+    <p class="sub" style="margin-bottom:40px">Each layer builds on the one below. Together they form a complete personalization infrastructure stack.</p>
+
+    <div class="layer-stack">
+
+      <!-- Layer 1 -->
+      <div class="layer-card">
+        <div class="layer-num">1</div>
+        <div class="layer-body">
+          <div class="layer-label">Layer 1</div>
+          <h3>Platform API</h3>
+          <p>The foundation. OAuth 2.0 scoped access gives third-party developers controlled, consent-gated reads and writes to user preference graphs. Seven agent-powered endpoints handle every interaction — from reading taste preferences to submitting behavioral signals. Metered pricing means developers pay only for what they use, scaling from indie side projects to enterprise products.</p>
+          <div class="layer-tags">
+            <span class="tag infra">OAuth 2.0</span>
+            <span class="tag infra">7 Endpoints</span>
+            <span class="tag infra">Agent-Powered</span>
+            <span class="tag gray">Metered Pricing</span>
+            <span class="tag gray">$0.001/call</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Layer 2 -->
+      <div class="layer-card">
+        <div class="layer-num">2</div>
+        <div class="layer-body">
+          <div class="layer-label">Layer 2</div>
+          <h3>Taste Identity — "Sign in with RecoMe"</h3>
+          <p>A portable preference identity standard, analogous to "Sign in with Google" but for taste. When a user authenticates via RecoMe, they carry their full knowledge graph with them. Critically, the consent model is granular: a user can share their music taste without exposing their shopping history. Each permission scope maps to a distinct subgraph. Users own their identity. Apps rent access to it — with explicit consent, every time.</p>
+          <div class="layer-tags">
+            <span class="tag infra">Portable Identity</span>
+            <span class="tag infra">Selective Sharing</span>
+            <span class="tag infra">Granular Consent</span>
+            <span class="tag gray">Zero Cold Start</span>
+            <span class="tag gray">User-Owned</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Layer 3 -->
+      <div class="layer-card">
+        <div class="layer-num">3</div>
+        <div class="layer-body">
+          <div class="layer-label">Layer 3</div>
+          <h3>B2B Audience Intelligence</h3>
+          <p>Businesses query anonymized, aggregated preference graphs without collecting any first-party data. Three primary products: Trend Radar identifies emerging interest clusters before they peak. Audience Insights profiles the taste graph of any product category's buyers. Product-Market Fit Score predicts whether a new product will resonate with a target audience, based on adjacent preference nodes. No cookies. No pixels. No first-party data collection required.</p>
+          <div class="layer-tags">
+            <span class="tag infra">Trend Radar</span>
+            <span class="tag infra">Audience Insights</span>
+            <span class="tag infra">PMF Score</span>
+            <span class="tag gray">Anonymized Data</span>
+            <span class="tag gray">$99–$499/mo</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Layer 4 -->
+      <div class="layer-card">
+        <div class="layer-num">4</div>
+        <div class="layer-body">
+          <div class="layer-label">Layer 4</div>
+          <h3>Decentralized Nodes</h3>
+          <p>Users and companies can self-host RecoMe nodes, keeping preference data within their own infrastructure. The FederationAgent handles synchronization: it syncs anonymized graph deltas — structural updates to the preference network — without transmitting raw personal data. A healthcare company can run a private node for patient wellness preferences. A government deployment can ensure data never crosses national borders. Data sovereignty by architecture, not just policy.</p>
+          <div class="layer-tags">
+            <span class="tag infra">Self-Hosted</span>
+            <span class="tag infra">FederationAgent</span>
+            <span class="tag infra">Graph Deltas Only</span>
+            <span class="tag gray">Data Sovereignty</span>
+            <span class="tag gray">Enterprise Ready</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Layer 5 -->
+      <div class="layer-card">
+        <div class="layer-num">5</div>
+        <div class="layer-body">
+          <div class="layer-label">Layer 5</div>
+          <h3>Global Taste Graph</h3>
+          <p>The aggregate of all anonymized, federated preference signals across every RecoMe node. This becomes the world's most comprehensive preference dataset. Applications: trend prediction surfaces emerging cultural interests 8–12 weeks before mainstream discovery. Cultural correlation analysis maps how tastes co-occur across demographics and geographies. Researchers and academics can query it for cultural preference studies. The Global Taste Graph is the long-term moat — it grows with every user, every app, every integration.</p>
+          <div class="layer-tags">
+            <span class="tag infra">Trend Prediction</span>
+            <span class="tag infra">Cultural Correlation</span>
+            <span class="tag infra">Research Access</span>
+            <span class="tag gray">Anonymized</span>
+            <span class="tag gray">Federated</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<!-- 4. API ENDPOINTS                                                     -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<div style="background:rgba(255,255,255,0.015);border-top:1px solid var(--line-dark);border-bottom:1px solid var(--line-dark);">
+  <div class="wrap" id="api-endpoints">
+    <section>
+      <div class="eyebrow infra">API Reference</div>
+      <h2 class="h2" style="margin-bottom:10px">7 Agent-Powered Endpoints</h2>
+      <p class="sub" style="margin-bottom:36px">Every endpoint is backed by a dedicated AI agent. The API is stateless from the developer's perspective; the intelligence lives inside the agent layer.</p>
+
+      <div style="overflow-x:auto">
+        <table class="api-tbl">
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Endpoint</th>
+              <th>Agent</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td><span class="ep-path">/api/v2/taste/preferences</span></td>
+              <td><span class="ep-agent">ScoutAgent</span></td>
+              <td class="ep-desc">Read a user's preference categories and weighted interest nodes from their knowledge graph.</td>
+            </tr>
+            <tr>
+              <td><span class="method post">POST</span></td>
+              <td><span class="ep-path">/api/v2/taste/signals</span></td>
+              <td><span class="ep-agent">IngestAgent</span></td>
+              <td class="ep-desc">Submit behavioral signals (views, purchases, completions) to update the user's preference graph in real time.</td>
+            </tr>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td><span class="ep-path">/api/v2/recommendations/content</span></td>
+              <td><span class="ep-agent">AdvisorAgent</span></td>
+              <td class="ep-desc">Get ranked content recommendations personalized to a user's current taste graph state.</td>
+            </tr>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td><span class="ep-path">/api/v2/recommendations/products</span></td>
+              <td><span class="ep-agent">ShopperAgent</span></td>
+              <td class="ep-desc">Get ranked product recommendations with purchase intent scoring and price-point matching.</td>
+            </tr>
+            <tr>
+              <td><span class="method post">POST</span></td>
+              <td><span class="ep-path">/api/v2/identity/permissions</span></td>
+              <td><span class="ep-agent">IdentityAgent + GuardianAgent</span></td>
+              <td class="ep-desc">Create, update, or revoke consent grants. GuardianAgent enforces scope boundaries and audit logs every access.</td>
+            </tr>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td><span class="ep-path">/api/v2/social/similar-users</span></td>
+              <td><span class="ep-agent">CommunityAgent</span></td>
+              <td class="ep-desc">Find anonymized users with statistically similar preference graphs for social discovery or collaborative filtering.</td>
+            </tr>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td><span class="ep-path">/api/v2/analytics/audience</span></td>
+              <td><span class="ep-agent">IntelligenceAgent</span></td>
+              <td class="ep-desc">B2B audience analytics: aggregate preference profiles, adjacent interest clusters, and taste segment breakdowns for any product category.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- OAuth Scopes -->
+      <div style="margin-top:56px">
+        <h3 class="h3" style="margin-bottom:6px">OAuth 2.0 Scopes</h3>
+        <p style="font-size:14px;color:rgba(255,255,255,0.45);margin-bottom:4px">Apps request only the scopes they need. Users approve each scope individually. GuardianAgent enforces scope boundaries at the API layer — no scope creep possible.</p>
+
+        <div class="scope-list">
+          <div class="scope-item">
+            <span class="scope-name">recome:preferences:read</span>
+            <span class="scope-desc">Read the user's preference categories, interest nodes, and weighted taste scores.</span>
+          </div>
+          <div class="scope-item">
+            <span class="scope-name">recome:preferences:write</span>
+            <span class="scope-desc">Update or extend the user's preference profile with new taste signals.</span>
+          </div>
+          <div class="scope-item">
+            <span class="scope-name">recome:graph:read</span>
+            <span class="scope-desc">Query the user's full knowledge graph — nodes, edges, and relationship weights.</span>
+          </div>
+          <div class="scope-item">
+            <span class="scope-name">recome:signals:write</span>
+            <span class="scope-desc">Submit behavioral signals (engagement, purchase, completion) to refine the user's graph.</span>
+          </div>
+          <div class="scope-item">
+            <span class="scope-name">recome:recommendations:read</span>
+            <span class="scope-desc">Retrieve personalized content and product recommendations powered by the user's graph.</span>
+          </div>
+          <div class="scope-item">
+            <span class="scope-name">recome:analytics:read</span>
+            <span class="scope-desc">B2B only. Access anonymized aggregate audience analytics for a specified product category.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<!-- 5. TARGET AUDIENCES                                                  -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<div class="wrap">
+  <section>
+    <div class="eyebrow infra">Who It's For</div>
+    <h2 class="h2" style="margin-bottom:10px">Three Distinct Audiences</h2>
+    <p class="sub" style="margin-bottom:36px">One platform infrastructure, three entirely different use cases — each with its own pricing model, integration path, and value proposition.</p>
+
+    <div class="audience-grid">
+
+      <div class="aud-card">
+        <div class="aud-ico">&#x1F9D1;&#x200D;&#x1F4BB;</div>
+        <h3>Platform Developers</h3>
+        <div class="aud-tagline">Personalization without building it</div>
+        <p>Apps that want to personalize their experience without designing, training, and maintaining a recommendation system. "Sign in with RecoMe" delivers a warm-start graph on day one. Zero cold start problem. Zero onboarding survey. Zero ML team required. The user's taste graph is ready the moment they authenticate.</p>
+      </div>
+
+      <div class="aud-card">
+        <div class="aud-ico">&#x1F3E2;</div>
+        <h3>B2B Companies</h3>
+        <div class="aud-tagline">Audience intelligence without first-party data</div>
+        <p>Brands, publishers, and retailers that need to understand their audience — not just what they bought, but what they fundamentally care about. No pixel. No cookie. No data collection program to build and maintain. Query anonymized, aggregated preference graphs to understand the taste profile of your buyers, adjacent interests to expand into, and segment breakdowns for targeting.</p>
+      </div>
+
+      <div class="aud-card">
+        <div class="aud-ico">&#x1F52C;</div>
+        <h3>Researchers &amp; Academics</h3>
+        <div class="aud-tagline">The world's most comprehensive preference dataset</div>
+        <p>Access to the anonymized Global Taste Graph for cultural preference research, behavioral economics studies, and trend forecasting. What does the taste graph of a 25-year-old in Seoul look like compared to one in Lagos? How do aesthetic preferences cluster around political affiliation? These questions have never been answerable with data at this scale and depth.</p>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<!-- 6. USE CASE 1: EduFlow                                               -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<div style="background:rgba(255,255,255,0.015);border-top:1px solid var(--line-dark);border-bottom:1px solid var(--line-dark);">
+  <div class="wrap">
+    <section>
+      <div class="eyebrow infra">Use Cases</div>
+      <h2 class="h2" style="margin-bottom:36px">Platform in the Wild</h2>
+
+      <!-- Use Case 1 -->
+      <div class="usecase" style="margin-bottom:32px">
+        <div class="usecase-header" style="background:rgba(16,185,129,0.08);border-bottom:1px solid rgba(16,185,129,0.15)">
+          <div class="uc-num" style="background:var(--infra)">1</div>
+          <div>
+            <h4>EduFlow — EdTech Platform</h4>
+            <p>From cold start to personalized curriculum in one OAuth login</p>
+          </div>
+          <span class="tag infra" style="margin-left:auto">Platform API</span>
+        </div>
+        <div class="usecase-body">
+
+          <div class="callout warn" style="margin-top:16px">
+            <div class="callout-ico">&#x26A0;</div>
+            <div>
+              <h4>The Problem</h4>
+              <p>EduFlow has 40,000 students. Every new signup gets the same generic onboarding. 68% drop off before completing their first course. The cold start problem is killing their activation funnel.</p>
+            </div>
+          </div>
+
+          <div class="wf" style="margin-top:24px">
+            <div class="wf-step">
+              <div class="wf-n" style="background:var(--infra)">1</div>
+              <div class="wf-txt">
+                <h5>2-day integration</h5>
+                <p>EduFlow adds the "Sign in with RecoMe" button. Two days of engineering, not two months of ML infrastructure.</p>
+              </div>
+            </div>
+            <div class="wf-arrow">&#x2193;</div>
+            <div class="wf-step">
+              <div class="wf-n" style="background:var(--infra)">2</div>
+              <div class="wf-txt">
+                <h5>Maya signs up</h5>
+                <p>New student Maya authenticates via RecoMe. Consent screen: "EduFlow wants to read your learning style preferences and top interest areas." She sees exactly what's being shared. [Allow] [Deny]</p>
+              </div>
+            </div>
+            <div class="wf-arrow">&#x2193;</div>
+            <div class="wf-step">
+              <div class="wf-n" style="background:var(--infra)">3</div>
+              <div class="wf-txt">
+                <h5>OAuth token issued</h5>
+                <p>Maya approves. EduFlow receives an OAuth token with scope: <code style="font-family:var(--mono);font-size:11px;color:var(--infra)">recome:preferences:read</code></p>
+              </div>
+            </div>
+            <div class="wf-arrow">&#x2193;</div>
+            <div class="wf-step">
+              <div class="wf-n" style="background:var(--infra)">4</div>
+              <div class="wf-txt">
+                <h5>Graph returned by ScoutAgent</h5>
+                <p>EduFlow calls <code style="font-family:var(--mono);font-size:11px;color:var(--infra)">GET /api/v2/taste/preferences</code> — ScoutAgent returns Maya's learning graph: <span style="color:rgba(255,255,255,0.7)">project-based-learning (w:0.92), dislikes-video-lectures (w:-0.65), interested-in[machine-learning, w:0.88], interested-in[product-design, w:0.71]</span></p>
+              </div>
+            </div>
+            <div class="wf-arrow">&#x2193;</div>
+            <div class="wf-step">
+              <div class="wf-n" style="background:var(--infra)">5</div>
+              <div class="wf-txt">
+                <h5>Instant personalization</h5>
+                <p>EduFlow immediately personalizes Maya's dashboard: hides lecture-heavy courses, surfaces project-based ML curriculum, recommends "Build a Recommender System" as her first course.</p>
+              </div>
+            </div>
+            <div class="wf-arrow">&#x2193;</div>
+            <div class="wf-step">
+              <div class="wf-n" style="background:var(--infra)">6</div>
+              <div class="wf-txt">
+                <h5>Completion signal written back</h5>
+                <p>Maya finishes her first course. EduFlow calls <code style="font-family:var(--mono);font-size:11px;color:var(--infra)">POST /api/v2/taste/signals</code> → updates Maya's graph with a project-completion signal via IngestAgent.</p>
+              </div>
+            </div>
+            <div class="wf-arrow">&#x2193;</div>
+            <div class="wf-step">
+              <div class="wf-n" style="background:var(--infra)">7</div>
+              <div class="wf-txt">
+                <h5>Network effect kicks in</h5>
+                <p>Maya's RecoMe graph now knows she prefers hands-on ML projects. This signal propagates — every other app she signs into with RecoMe is smarter from day one.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="result-banner">
+            <div class="rb-ico">&#x1F4CA;</div>
+            <div class="rb-text">
+              <h5>Result</h5>
+              <p>EduFlow's course completion rate for "Sign in with RecoMe" users: <strong>71%</strong> vs <strong>32%</strong> for standard signup. Zero cold start. Zero onboarding survey. Two days of integration engineering.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <!-- 7. USE CASE 2: RetailCo                                          -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <div class="usecase">
+        <div class="usecase-header" style="background:rgba(16,185,129,0.08);border-bottom:1px solid rgba(16,185,129,0.15)">
+          <div class="uc-num" style="background:var(--infra)">2</div>
+          <div>
+            <h4>RetailCo — E-Commerce Audience Intelligence</h4>
+            <p>Understanding what your customers care about — beyond what they buy</p>
+          </div>
+          <span class="tag infra" style="margin-left:auto">B2B Analytics</span>
+        </div>
+        <div class="usecase-body">
+
+          <p style="margin-top:16px">RetailCo sells mechanical keyboards. They want to understand their audience for product expansion — but they have no first-party data program, no content team, and no research budget for surveys.</p>
+
+          <div class="wf" style="margin-top:8px">
+            <div class="wf-step">
+              <div class="wf-n" style="background:var(--infra)">1</div>
+              <div class="wf-txt">
+                <h5>Subscribe to B2B Audience Intelligence</h5>
+                <p>RetailCo subscribes to the B2B Audience Intelligence API at $199/mo. No data collection infrastructure required.</p>
+              </div>
+            </div>
+            <div class="wf-arrow">&#x2193;</div>
+            <div class="wf-step">
+              <div class="wf-n" style="background:var(--infra)">2</div>
+              <div class="wf-txt">
+                <h5>Query the Global Taste Graph</h5>
+                <p>They call <code style="font-family:var(--mono);font-size:11px;color:var(--infra)">GET /api/v2/analytics/audience</code> with product category: <span style="color:rgba(255,255,255,0.7)">"mechanical keyboards, custom keycaps, desk peripherals"</span></p>
+              </div>
+            </div>
+            <div class="wf-arrow">&#x2193;</div>
+            <div class="wf-step">
+              <div class="wf-n" style="background:var(--infra)">3</div>
+              <div class="wf-txt">
+                <h5>IntelligenceAgent queries the graph</h5>
+                <p>IntelligenceAgent finds 47,000 anonymized users with keyboard-related interest nodes and aggregates their full preference profiles.</p>
+              </div>
+            </div>
+            <div class="wf-arrow">&#x2193;</div>
+            <div class="wf-step">
+              <div class="wf-n" style="background:var(--infra)">4</div>
+              <div class="wf-txt">
+                <h5>Audience profile returned</h5>
+                <p><strong style="color:rgba(255,255,255,0.8)">Adjacent interests:</strong> custom keycaps (0.91), desk setup aesthetics (0.88), productivity software (0.82), lo-fi music (0.76), mechanical watches (0.71)<br><br>
+                <strong style="color:rgba(255,255,255,0.8)">Content consumption:</strong> YouTube build videos (3.2× avg engagement), Reddit r/MechanicalKeyboards (daily), Twitch keyboard streams<br><br>
+                <strong style="color:rgba(255,255,255,0.8)">Purchase triggers:</strong> limited edition colorways, group buys, restock alerts<br><br>
+                <strong style="color:rgba(255,255,255,0.8)">Taste segments:</strong> Enthusiast Builder (45%), Office Aesthetic (35%), Minimalist Performer (20%)</p>
+              </div>
+            </div>
+            <div class="wf-arrow">&#x2193;</div>
+            <div class="wf-step">
+              <div class="wf-n" style="background:var(--infra)">5</div>
+              <div class="wf-txt">
+                <h5>Product line decision</h5>
+                <p>RetailCo's product team uses adjacent interest data (custom artisan keycaps, w:0.91) to plan their next product line — a natural extension of their existing buyers' taste graph.</p>
+              </div>
+            </div>
+            <div class="wf-arrow">&#x2193;</div>
+            <div class="wf-step">
+              <div class="wf-n" style="background:var(--infra)">6</div>
+              <div class="wf-txt">
+                <h5>Targeted marketing</h5>
+                <p>Marketing team targets the "Enthusiast Builder" segment (45%) with YouTube content showing the build process — exactly the content type their audience already consumes at 3.2× average engagement.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="result-banner">
+            <div class="rb-ico">&#x1F4B0;</div>
+            <div class="rb-text">
+              <h5>Result</h5>
+              <p>RetailCo launches artisan keycap line. <strong>34% higher conversion</strong> than previous product launches. <strong>$2.3M additional revenue</strong> in 90 days. No first-party data program. No survey. $199/mo API subscription.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<!-- 8. MONETIZATION                                                      -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<div class="wrap">
+  <section>
+    <div class="eyebrow infra">Revenue Model</div>
+    <h2 class="h2" style="margin-bottom:10px">Four Monetization Streams</h2>
+    <p class="sub" style="margin-bottom:36px">Platform API revenue is designed to be highly recurring and usage-driven. The more apps integrate, the more calls are made, the more revenue compounds.</p>
+
+    <div class="mono-grid">
+
+      <div class="mono-card">
+        <div class="mc-num">Stream 1</div>
+        <h3>API Metered Access</h3>
+        <div class="mc-price">$0.001/call</div>
+        <p>Pay-as-you-go for API calls across all 7 endpoints. Developer plan at $29/mo for up to 30,000 calls. Growth plan at $299/mo for up to 500,000 calls. Enterprise: custom volume pricing. Scales naturally with product adoption.</p>
+      </div>
+
+      <div class="mono-card">
+        <div class="mc-num">Stream 2</div>
+        <h3>B2B Analytics Subscriptions</h3>
+        <div class="mc-price">$99–$499/mo</div>
+        <p>Starter at $99/mo for 50 audience queries. Professional at $299/mo for 200 queries and trend alerts. Enterprise at $499/mo for unlimited queries, custom segments, and dedicated IntelligenceAgent compute. Monthly recurring, high-retention, high-margin.</p>
+      </div>
+
+      <div class="mono-card">
+        <div class="mc-num">Stream 3</div>
+        <h3>Taste Identity — Commercial Use</h3>
+        <div class="mc-price">$0.10/MAI</div>
+        <p>"Sign in with RecoMe" is free for basic integrations. For commercial apps, $0.10 per verified monthly active identity (MAI) — the user who authenticated and had their graph read at least once that month. Modeled on Stripe's per-transaction pricing. Zero upfront cost, scales with the developer's growth.</p>
+      </div>
+
+      <div class="mono-card">
+        <div class="mc-num">Stream 4</div>
+        <h3>Benchmark Reports</h3>
+        <div class="mc-price">$10K–$50K</div>
+        <p>Vertical deep-dive reports powered by the Global Taste Graph. A fashion brand buys a "2026 Aesthetic Preference Trends" report. A streaming service buys an "Audio Content Consumption Patterns by Demographic" study. High-ticket, low-volume, no incremental infrastructure cost. Produced by IntelligenceAgent with editorial overlay.</p>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<!-- 9. COMPETITIVE POSITIONING                                           -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<div style="background:rgba(255,255,255,0.015);border-top:1px solid var(--line-dark);border-bottom:1px solid var(--line-dark);">
+  <div class="wrap">
+    <section>
+      <div class="eyebrow infra">Competitive Position</div>
+      <h2 class="h2" style="margin-bottom:16px">The Neutral Preference Graph</h2>
+
+      <div class="callout infra" style="margin-bottom:36px">
+        <div class="callout-ico">&#x1F4AC;</div>
+        <div>
+          <h4>The positioning thesis</h4>
+          <p>Google's interest graph is locked inside Google. Meta's is locked inside Meta. Apple blocks personalization entirely. The Privacy Sandbox replaces cookies but gives no preference intelligence. RecoMe is the first neutral, user-owned preference graph any app can access — with consent, cross-domain, across every platform.</p>
+        </div>
+      </div>
+
+      <div style="overflow-x:auto">
+        <table class="ctbl">
+          <thead>
+            <tr>
+              <th>Capability</th>
+              <th>Google Topics API</th>
+              <th>Facebook Pixel</th>
+              <th>Apple SKAdNetwork</th>
+              <th>Segment CDP</th>
+              <th class="us-infra">RecoMe Platform</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>User owns the data</td>
+              <td class="cx">&#x2715;</td>
+              <td class="cx">&#x2715;</td>
+              <td class="cx">&#x2715;</td>
+              <td class="cx">&#x2715;</td>
+              <td class="ck us-infra">&#x2713;</td>
+            </tr>
+            <tr>
+              <td>Works cross-domain</td>
+              <td class="cp">Partial</td>
+              <td class="cx">&#x2715;</td>
+              <td class="cx">&#x2715;</td>
+              <td class="cp">Partial</td>
+              <td class="ck us-infra">&#x2713;</td>
+            </tr>
+            <tr>
+              <td>Consent-first</td>
+              <td class="cp">Partial</td>
+              <td class="cx">&#x2715;</td>
+              <td class="cx">&#x2715;</td>
+              <td class="cx">&#x2715;</td>
+              <td class="ck us-infra">&#x2713;</td>
+            </tr>
+            <tr>
+              <td>Preference graph (not just behavior)</td>
+              <td class="cx">&#x2715;</td>
+              <td class="cx">&#x2715;</td>
+              <td class="cx">&#x2715;</td>
+              <td class="cx">&#x2715;</td>
+              <td class="ck us-infra">&#x2713;</td>
+            </tr>
+            <tr>
+              <td>Works without third-party cookies</td>
+              <td class="ck">&#x2713;</td>
+              <td class="cx">&#x2715;</td>
+              <td class="ck">&#x2713;</td>
+              <td class="cp">Partial</td>
+              <td class="ck us-infra">&#x2713;</td>
+            </tr>
+            <tr>
+              <td>Developers can read AND write preferences</td>
+              <td class="cx">&#x2715;</td>
+              <td class="cx">&#x2715;</td>
+              <td class="cx">&#x2715;</td>
+              <td class="cp">Partial</td>
+              <td class="ck us-infra">&#x2713;</td>
+            </tr>
+            <tr>
+              <td>Portable across apps</td>
+              <td class="cx">&#x2715;</td>
+              <td class="cx">&#x2715;</td>
+              <td class="cx">&#x2715;</td>
+              <td class="cx">&#x2715;</td>
+              <td class="ck us-infra">&#x2713;</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout infra" style="margin-top:28px">
+        <div class="callout-ico">&#x1F512;</div>
+        <div>
+          <h4>Why Big Tech can't replicate the decentralized model</h4>
+          <p>If Google ships "preference graph as a service," it reinforces RecoMe's positioning: the market validates the thesis. More critically, the federated/decentralized architecture is structurally impossible for hyperscalers to replicate. Google, Meta, and Amazon require centralized data control — their business models depend on it. RecoMe's value proposition is precisely the opposite: data sovereignty, user ownership, federation. The moat is architectural.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<!-- 10. CRITICAL RISKS                                                   -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<div class="wrap">
+  <section>
+    <div class="eyebrow infra">Honest Assessment</div>
+    <h2 class="h2" style="margin-bottom:10px">Critical Risks</h2>
+    <p class="sub" style="margin-bottom:32px">The Platform API is the highest-ceiling product in the portfolio — and the highest risk. These are the honest failure modes and the mitigations designed into the architecture from day one.</p>
+
+    <div class="risk">
+      <div class="risk-ico">&#x26A0;</div>
+      <div>
+        <h5>Network Effect Dependency</h5>
+        <p>The Platform API is only valuable if users have rich, populated preference graphs. An empty graph is worthless to a third-party developer. This means the platform is dependent on prior adoption of the extension, the app, and the SDK — the consumer and B2B products that build the graph in the first place. <strong style="color:rgba(255,255,255,0.7)">Mitigation:</strong> Phase 1 is the extension and SDK. Platform API is a Phase 3+ play. The investor thesis is that Phases 1 and 2 build the graph, and Phase 3 monetizes it as infrastructure. The sequencing is intentional.</p>
+      </div>
+    </div>
+
+    <div class="risk">
+      <div class="risk-ico">&#x26A0;</div>
+      <div>
+        <h5>Regulatory Risk — GDPR Article 22</h5>
+        <p>GDPR Article 22 restricts automated decision-making based on personal data. If third-party apps use the RecoMe preference graph to make legally significant decisions (credit, employment, insurance), RecoMe could be implicated as the data source. <strong style="color:rgba(255,255,255,0.7)">Mitigation:</strong> GuardianAgent and the explicit consent model were designed around GDPR compliance from day one. The terms of service for the Platform API prohibit use in regulated decision-making contexts. Scope boundaries enforce what data can flow where. This was an architecture decision, not a legal afterthought.</p>
+      </div>
+    </div>
+
+    <div class="risk">
+      <div class="risk-ico">&#x26A0;</div>
+      <div>
+        <h5>Big Tech Response</h5>
+        <p>If Google ships a "preference graph as a service" product, it competes directly on the B2B analytics story. Google has the data, the distribution, and the developer ecosystem. <strong style="color:rgba(255,255,255,0.7)">Mitigation:</strong> The decentralized/federated model is structurally impossible for Google to replicate — their business model requires centralized data control. "Preference data lives on Google's servers" is the opposite of the RecoMe value proposition. Additionally, antitrust scrutiny of Google's data practices makes a new data product a legal risk for them. The window is 18–24 months. The goal is to build the network effect before that window closes.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- CTA -->
+<div style="background:rgba(16,185,129,0.06);border-top:1px solid rgba(16,185,129,0.15);border-bottom:1px solid rgba(16,185,129,0.15);">
+  <div class="wrap">
+    <section style="text-align:center">
+      <div class="eyebrow infra" style="justify-content:center">Next Steps</div>
+      <h2 class="h2" style="margin-bottom:16px">Explore the Full Ecosystem</h2>
+      <p class="sub" style="margin:0 auto 40px;text-align:center">The Platform API is Phase 3. See how Phases 1 and 2 build the graph that makes it possible.</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <a href="extension.html" class="btn-outline" style="border-color:rgba(35,86,232,0.4);color:#93b4fd">Extension (Phase 1)</a>
+        <a href="agents.html" class="btn-outline" style="border-color:rgba(124,58,237,0.4);color:#c4b5fd">AI Agents (Phase 1)</a>
+        <a href="sdk.html" class="btn-outline" style="border-color:rgba(217,119,6,0.4);color:#fcd34d">B2B SDK (Phase 2)</a>
+        <a href="financials.html" class="btn-primary">Financials &amp; The Ask &#x2192;</a>
+      </div>
+    </section>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <span class="logo">RecoMe</span>
+  <span>Pre-Seed Round 2026 · Confidential</span>
+</footer>
+
+</body>
+</html>

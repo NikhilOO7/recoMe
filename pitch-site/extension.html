@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Browser Extension — RecoMe</title>
+  <link rel="stylesheet" href="shared.css"/>
+  <style>
+    /* ── HERO ──────────────────────────── */
+    .hero-ext {
+      min-height: 92vh;
+      display: flex; align-items: center;
+      position: relative; overflow: hidden;
+      padding-top: 56px;
+    }
+    .hero-ext .glow.a { width:600px;height:600px;background:#2356e8;top:-180px;left:-120px; }
+    .hero-ext .glow.b { width:400px;height:400px;background:#7c3aed;bottom:-60px;right:-80px; }
+    .hero-inner { position:relative;z-index:1;max-width:860px;padding-top:48px; }
+
+    .hero-h1 {
+      font-size:clamp(44px,7vw,86px);font-weight:900;line-height:1.0;
+      letter-spacing:-3px;margin-bottom:22px;
+    }
+    .hero-h1 .grad {
+      background:linear-gradient(100deg,#fff 20%,#93b4fd 80%);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    }
+    .hero-sub { font-size:18px;color:rgba(255,255,255,0.52);max-width:620px;line-height:1.7;margin-bottom:40px; }
+    .hero-actions { display:flex;gap:14px;flex-wrap:wrap;margin-bottom:52px; }
+    .btn-primary {
+      background:#fff;color:var(--ink);
+      padding:13px 28px;border-radius:10px;font-weight:700;font-size:15px;
+      text-decoration:none;display:inline-block;transition:opacity .15s;
+    }
+    .btn-primary:hover { opacity:.88; }
+    .btn-outline {
+      background:transparent;color:#fff;
+      border:1px solid rgba(255,255,255,0.22);
+      padding:13px 28px;border-radius:10px;font-weight:600;font-size:15px;
+      text-decoration:none;display:inline-block;transition:all .15s;
+    }
+    .btn-outline:hover { background:rgba(255,255,255,0.06); }
+
+    /* ── WHAT IT IS ─────────────────────── */
+    .feature-grid {
+      display:grid;grid-template-columns:1fr 1fr;gap:16px;
+    }
+    @media(max-width:700px){ .feature-grid { grid-template-columns:1fr; } }
+
+    .fcard {
+      background:rgba(255,255,255,0.04);
+      border:1px solid var(--line-dark);
+      border-radius:14px;padding:26px;
+      transition:background .2s;
+    }
+    .fcard:hover { background:rgba(255,255,255,0.065); }
+    .fcard .fc-icon {
+      width:42px;height:42px;border-radius:10px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:20px;margin-bottom:16px;
+      background:rgba(35,86,232,0.12);border:1px solid rgba(35,86,232,0.2);
+    }
+    .fcard h4 { font-size:16px;font-weight:700;margin-bottom:8px;color:#fff; }
+    .fcard p  { font-size:14px;color:rgba(255,255,255,0.48);line-height:1.65; }
+    .fcard .fc-detail {
+      margin-top:12px;font-size:12px;color:rgba(255,255,255,0.28);
+      line-height:1.6;font-family:var(--mono);
+    }
+
+    /* ── PERSONA CARDS ──────────────────── */
+    .persona-grid { display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px; }
+    @media(max-width:800px){ .persona-grid { grid-template-columns:1fr 1fr; } }
+    @media(max-width:520px){ .persona-grid { grid-template-columns:1fr; } }
+
+    .persona-card {
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--line-dark);
+      border-radius:14px;padding:24px;
+    }
+    .persona-card .pa-label {
+      font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+      color:var(--ext);margin-bottom:14px;
+    }
+    .persona-card .pa-avatar {
+      width:48px;height:48px;border-radius:12px;
+      background:rgba(35,86,232,0.15);border:1px solid rgba(35,86,232,0.25);
+      display:flex;align-items:center;justify-content:center;
+      font-size:22px;margin-bottom:14px;
+    }
+    .persona-card h4 { font-size:16px;font-weight:700;margin-bottom:4px; }
+    .persona-card .pa-sub { font-size:13px;color:rgba(255,255,255,0.35);margin-bottom:14px; }
+    .persona-card p  { font-size:13px;color:rgba(255,255,255,0.5);line-height:1.65; }
+    .persona-card .pa-pain {
+      margin-top:14px;padding-top:14px;
+      border-top:1px solid var(--line-dark);
+      font-size:12px;color:rgba(255,255,255,0.3);
+    }
+
+    /* ── PRICING ────────────────────────── */
+    .pricing-grid { display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px; }
+    @media(max-width:800px){ .pricing-grid { grid-template-columns:1fr 1fr; } }
+    @media(max-width:520px){ .pricing-grid { grid-template-columns:1fr; } }
+
+    /* ── USE CASE WORKFLOW ──────────────── */
+    .uc-layout { display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start; }
+    @media(max-width:900px){ .uc-layout { grid-template-columns:1fr; } }
+
+    .uc-result {
+      background:rgba(35,86,232,0.08);
+      border:1px solid rgba(35,86,232,0.2);
+      border-radius:12px;padding:18px 22px;margin-top:20px;
+    }
+    .uc-result .uc-res-label {
+      font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+      color:#93b4fd;margin-bottom:6px;
+    }
+    .uc-result p { font-size:14px;color:rgba(255,255,255,0.65);line-height:1.65; }
+
+    .uc2-result {
+      background:rgba(94,234,212,0.07);
+      border:1px solid rgba(94,234,212,0.2);
+      border-radius:12px;padding:18px 22px;margin-top:20px;
+    }
+    .uc2-result .uc-res-label { color:#5eead4; }
+
+    /* ── COMPARISON TABLE ───────────────── */
+    .tbl-wrap { overflow-x:auto; }
+    .ctbl th.highlight { color:#93b4fd; }
+    .ctbl td.highlight { color:#fff; font-weight:600; }
+    .ctbl tr:hover td { background:rgba(255,255,255,0.02); }
+
+    /* ── BIG TECH ───────────────────────── */
+    .bigtech-grid { display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:28px; }
+    @media(max-width:700px){ .bigtech-grid { grid-template-columns:1fr; } }
+
+    .bt-card {
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--line-dark);
+      border-radius:12px;padding:20px;
+    }
+    .bt-card .bt-who {
+      font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+      color:rgba(255,255,255,0.3);margin-bottom:8px;
+    }
+    .bt-card h5 { font-size:14px;font-weight:700;margin-bottom:6px;color:rgba(255,255,255,0.6); }
+    .bt-card p  { font-size:13px;color:rgba(255,255,255,0.38);line-height:1.6; }
+
+    .bt-reco {
+      background:rgba(35,86,232,0.08);
+      border:1px solid rgba(35,86,232,0.25);
+      border-radius:12px;padding:20px;
+      grid-column:1/-1;
+    }
+    .bt-reco .bt-who { color:#93b4fd; }
+    .bt-reco h5 { color:#fff;font-size:16px; }
+    .bt-reco p  { color:rgba(255,255,255,0.55); }
+
+    /* ── FINANCIAL CONTRIBUTION ─────────── */
+    .fin-row { display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:28px; }
+    @media(max-width:700px){ .fin-row { grid-template-columns:1fr; } }
+
+    .fin-card {
+      background:rgba(255,255,255,0.04);
+      border:1px solid var(--line-dark);
+      border-radius:14px;padding:24px;text-align:center;
+    }
+    .fin-card .fc-year {
+      font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+      color:rgba(255,255,255,0.35);margin-bottom:10px;
+    }
+    .fin-card .fc-arr {
+      font-size:36px;font-weight:900;line-height:1;letter-spacing:-1px;
+      color:var(--ext);margin-bottom:8px;
+    }
+    .fin-card p { font-size:12px;color:rgba(255,255,255,0.35);line-height:1.6; }
+
+    /* ── INLINE SVG DIAGRAM ─────────────── */
+    .diagram-wrap { background:rgba(255,255,255,0.02);border:1px solid var(--line-dark);border-radius:16px;padding:24px; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="topnav">
+  <a href="index.html" class="logo">Reco<span>Me</span></a>
+  <a href="extension.html" class="hide-sm active"><span class="dot" style="background:var(--ext)"></span>Extension</a>
+  <a href="agents.html" class="hide-sm"><span class="dot" style="background:var(--agent)"></span>Agents</a>
+  <a href="app.html" class="hide-sm"><span class="dot" style="background:var(--app)"></span>App</a>
+  <a href="sdk.html" class="hide-sm"><span class="dot" style="background:var(--sdk)"></span>SDK</a>
+  <a href="platform.html" class="hide-sm"><span class="dot" style="background:var(--infra)"></span>Platform</a>
+  <a href="financials.html" class="hide-sm">Financials</a>
+  <a href="financials.html#ask" class="cta">Investor Deck →</a>
+</nav>
+
+<!-- ── SECTION 1: HERO ─────────────────────────────────────────────── -->
+<div class="wrap">
+  <div class="hero-ext">
+    <div class="glow a"></div>
+    <div class="glow b"></div>
+    <div class="hero-inner">
+
+      <div class="prod-badge" style="background:rgba(35,86,232,0.12);border:1px solid rgba(35,86,232,0.25);color:#93b4fd;">
+        <span class="dot" style="background:var(--ext)"></span>
+        Browser Extension
+      </div>
+
+      <h1 class="hero-h1">
+        Your Feed.<br>
+        <span class="grad">Filtered by You.</span>
+      </h1>
+      <p class="hero-sub">
+        A browser extension that observes 8 platforms, builds a private interest graph entirely on-device, and surfaces inline insights that platform algorithms never will — because they serve the platform, not you.
+      </p>
+      <div class="hero-actions">
+        <a href="demos/extension-demo.html" class="btn-primary">Live Demo →</a>
+        <a href="#use-cases" class="btn-outline">See It In Action</a>
+        <a href="#monetization" class="btn-outline">Pricing Model</a>
+      </div>
+
+      <!-- Stat Row -->
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="sn" style="color:#93b4fd">8</div>
+          <div class="sl">Platforms supported</div>
+        </div>
+        <div class="stat-box">
+          <div class="sn" style="color:#5eead4">&lt;15ms</div>
+          <div class="sl">Filter decision time</div>
+        </div>
+        <div class="stat-box">
+          <div class="sn" style="color:#6ee7b7">0</div>
+          <div class="sl">Server calls — all local</div>
+        </div>
+        <div class="stat-box">
+          <div class="sn" style="color:#fcd34d">Freemium</div>
+          <div class="sl">Pricing model</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── SECTION 2: WHAT IT IS ───────────────────────────────────────── -->
+<div style="background:rgba(255,255,255,0.015);border-top:1px solid var(--line-dark);border-bottom:1px solid var(--line-dark);">
+  <div class="wrap">
+    <section>
+      <div class="eyebrow ext">Core Capabilities</div>
+      <h2 class="h2" style="margin-bottom:12px">What the Extension Does</h2>
+      <p class="sub" style="margin-bottom:36px">Four interconnected systems that run entirely in the browser — no data ever leaves the device.</p>
+
+      <div class="feature-grid">
+
+        <div class="fcard">
+          <div class="fc-icon">🧠</div>
+          <h4>Feed Intelligence</h4>
+          <p>Filters content across 8 platforms based on your personal preference graph — not keyword blocklists. The filter learns what you genuinely care about and dims everything else without removing it.</p>
+          <div class="fc-detail">Platforms: Amazon · YouTube · Twitter · Instagram · Facebook · LinkedIn · eBay · Walmart</div>
+        </div>
+
+        <div class="fcard">
+          <div class="fc-icon">🕸️</div>
+          <h4>Interest Graph Builder</h4>
+          <p>Every scroll, click, and dwell time writes to a weighted entity graph stored locally. Entities are connected by typed edges — interested_in, blocked, related_to — with numeric weights that decay or strengthen over time.</p>
+          <div class="fc-detail">e.g. interested_in[Rust, w:0.91] · blocked[crypto, w:0.95]</div>
+        </div>
+
+        <div class="fcard">
+          <div class="fc-icon">💡</div>
+          <h4>Inline Insights</h4>
+          <p>OpportunityRanker scores every item on the current page and surfaces the top 3 insights as non-intrusive inline cards — directly in the platform you're already browsing, no tab switching required.</p>
+          <div class="fc-detail">Signals: relevance · evidence quality · urgency · novelty vs past views</div>
+        </div>
+
+        <div class="fcard">
+          <div class="fc-icon">🔄</div>
+          <h4>Multi-Platform Sync</h4>
+          <p>One interest graph spans all 8 platforms. A preference learned from your LinkedIn browsing affects Amazon recommendations. Affinity propagation automatically extends your known interests to adjacent topics without explicit user action.</p>
+          <div class="fc-detail">Graph sync: device-local · optional encrypted backup · never sold</div>
+        </div>
+
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ── SECTION 3: TARGET AUDIENCE ─────────────────────────────────── -->
+<div class="wrap">
+  <section>
+    <div class="eyebrow ext">Target Audience</div>
+    <h2 class="h2" style="margin-bottom:12px">Three Primary Personas</h2>
+    <p class="sub" style="margin-bottom:36px">Each persona has a distinct, high-intensity pain point that existing tools completely fail to address.</p>
+
+    <div class="persona-grid">
+
+      <div class="persona-card">
+        <div class="pa-label">Persona 1</div>
+        <div class="pa-avatar">💼</div>
+        <h4>The Power User</h4>
+        <div class="pa-sub">Age 25–40 · Professional · 3+ platforms daily</div>
+        <p>Uses Twitter, LinkedIn, YouTube, and Amazon every day. Algorithmic feeds serve engagement bait, not signal. Spends 40–60 min/day scrolling — roughly 80% of it noise. Wants control back without manually curating every feed.</p>
+        <div class="pa-pain">Pain: time lost to platform-optimized noise · no cross-platform preference system</div>
+      </div>
+
+      <div class="persona-card">
+        <div class="pa-label">Persona 2</div>
+        <div class="pa-avatar">🏥</div>
+        <h4>The Researcher / Patient</h4>
+        <div class="pa-sub">Like James — PDAC patient, health content on Amazon</div>
+        <p>Searching Amazon and health platforms for trustworthy information about supplements, treatments, and side-effect management. Faces a sea of low-evidence claims, affiliate content, and condition-irrelevant listings. Stakes are high — misinformation has real consequences.</p>
+        <div class="pa-pain">Pain: cannot distinguish clinical evidence from marketing · no domain-aware filter exists</div>
+      </div>
+
+      <div class="persona-card">
+        <div class="pa-label">Persona 3</div>
+        <div class="pa-avatar">🛒</div>
+        <h4>The Shopper / Enthusiast</h4>
+        <div class="pa-sub">Amazon · eBay · Walmart · deal tracking</div>
+        <p>Actively shopping across Amazon, eBay, and Walmart. Wants preference-aware results — not just "popular items" but items that match their established taste profile. ShopperAgent intelligence tracks price movements and flags deals relevant to their interest graph.</p>
+        <div class="pa-pain">Pain: generic search results ignore purchase history patterns · no cross-platform deal awareness</div>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<!-- ── SECTION 4: MONETIZATION ─────────────────────────────────────── -->
+<div id="monetization" style="background:rgba(255,255,255,0.015);border-top:1px solid var(--line-dark);border-bottom:1px solid var(--line-dark);">
+  <div class="wrap">
+    <section>
+      <div class="eyebrow ext">Monetization</div>
+      <h2 class="h2" style="margin-bottom:12px">Two Revenue Streams. One Flywheel.</h2>
+      <p class="sub" style="margin-bottom:36px">SaaS subscription plus affiliate commission — the more the extension helps users find and buy the right things, the more it earns on both dimensions.</p>
+
+      <div class="pricing-grid" style="margin-bottom:28px;">
+
+        <div class="price-card">
+          <div class="pn">Free</div>
+          <div class="pa">$<span>0</span></div>
+          <div class="pm">forever</div>
+          <div class="pd">Basic access. Get started, see the value.</div>
+          <ul>
+            <li>2 platforms (Amazon + 1 choice)</li>
+            <li>Basic feed filter</li>
+            <li>Interest graph (limited depth)</li>
+            <li class="off">Full 8-platform coverage</li>
+            <li class="off">Inline insights (OpportunityRanker)</li>
+            <li class="off">Affinity propagation</li>
+            <li class="off">Priority graph sync</li>
+          </ul>
+        </div>
+
+        <div class="price-card featured" style="border-color:var(--ext);box-shadow:0 0 40px rgba(35,86,232,0.12);">
+          <div class="pn" style="color:#93b4fd">Pro</div>
+          <div class="pa" style="color:#fff"><sup>$</sup>9</div>
+          <div class="pm">/month · billed monthly</div>
+          <div class="pd">Full capability. The complete experience.</div>
+          <ul>
+            <li>All 8 platforms</li>
+            <li>Full interest graph + affinity propagation</li>
+            <li>Inline insights via OpportunityRanker</li>
+            <li>ShopperAgent + ScoutAgent active</li>
+            <li>GuardianAgent privacy audit</li>
+            <li>Encrypted graph backup</li>
+            <li>Priority updates when platforms change</li>
+          </ul>
+        </div>
+
+        <div class="price-card">
+          <div class="pn">Team</div>
+          <div class="pa"><sup>$</sup>19</div>
+          <div class="pm">/month per seat</div>
+          <div class="pd">Shared intelligence for teams and households.</div>
+          <ul>
+            <li>Everything in Pro</li>
+            <li>Shared interest graphs (opt-in per node)</li>
+            <li>Team preference overlays</li>
+            <li>Collective filtering rules</li>
+            <li>Admin dashboard</li>
+            <li>Up to 10 seats</li>
+            <li>Volume pricing available</li>
+          </ul>
+        </div>
+
+      </div>
+
+      <div class="callout ext">
+        <div class="callout-ico">💰</div>
+        <div>
+          <h4>Affiliate Commission Stream — 3–8% on purchases</h4>
+          <p>When ShopperAgent intelligence surfaces a product on Amazon, eBay, or Walmart that a user then purchases, RecoMe earns 3–8% affiliate commission. This stream scales with user engagement and purchase intent — the better the recommendations, the more it earns. Zero cost to the user.</p>
+        </div>
+      </div>
+
+    </section>
+  </div>
+</div>
+
+<!-- ── SECTION 5: USE CASE 1 — JAMES ──────────────────────────────── -->
+<div id="use-cases" class="wrap">
+  <section>
+    <div class="eyebrow ext">Use Case 1 of 2</div>
+    <h2 class="h2" style="margin-bottom:8px">A cancer patient finding trustworthy health information in a sea of noise</h2>
+    <p class="sub" style="margin-bottom:36px">James, 58, PDAC Stage III. Searches Amazon for "supplements for chemotherapy side effects." Stakes are not abstract — misinformation has real consequences.</p>
+
+    <div class="uc-layout">
+
+      <!-- Workflow Steps -->
+      <div>
+        <div class="wf">
+
+          <div class="wf-step">
+            <div class="wf-n" style="background:var(--ext)">1</div>
+            <div class="wf-txt">
+              <h5>James types search on Amazon</h5>
+              <p>AmazonAdapter activates on page load. DOM observation begins. 48 supplement listings rendered.</p>
+            </div>
+          </div>
+          <div class="wf-arrow">↓</div>
+
+          <div class="wf-step">
+            <div class="wf-n" style="background:var(--ext)">2</div>
+            <div class="wf-txt">
+              <h5>Extension reads James's browsing-built interest graph</h5>
+              <p>Reads local graph built from weeks of health browsing: searched_for[chemo side effects, w:0.94], read_articles[cancer treatment, w:0.91], watched[clinical trial updates, w:0.82].</p>
+            </div>
+          </div>
+          <div class="wf-arrow">↓</div>
+
+          <div class="wf-step">
+            <div class="wf-n" style="background:var(--ext)">3</div>
+            <div class="wf-txt">
+              <h5>OpportunityRanker scores all 48 listings</h5>
+              <p>Scoring: medical relevance vs conditions (35%) · clinical evidence clarity (25%) · urgency signals (20%) · novelty vs past searches (20%).</p>
+            </div>
+          </div>
+          <div class="wf-arrow">↓</div>
+
+          <div class="wf-step">
+            <div class="wf-n" style="background:var(--ext)">4</div>
+            <div class="wf-txt">
+              <h5>FilterAgent dims 31 low-scoring listings</h5>
+              <p>31 listings scoring below 0.35 dimmed: low-evidence claims, irrelevant conditions, unverified supplement stacks. Not removed — just deprioritized.</p>
+            </div>
+          </div>
+          <div class="wf-arrow">↓</div>
+
+          <div class="wf-step">
+            <div class="wf-n" style="background:var(--ext)">5</div>
+            <div class="wf-txt">
+              <h5>Top 3 insights surface as inline cards</h5>
+              <p>"Ginger extract — matches your 3-week search pattern on chemo nausea (3 trials in articles you read)" · "Vitamin D — you've browsed 4 articles on this topic in the last 2 weeks" · "This listing makes unverified claims — 6 red flags vs clinical evidence in your graph."</p>
+            </div>
+          </div>
+          <div class="wf-arrow">↓</div>
+
+          <div class="wf-step">
+            <div class="wf-n" style="background:#10b981">6</div>
+            <div class="wf-txt">
+              <h5>GuardianAgent confirms: zero data left the device</h5>
+              <p>All computation ran locally. James's medical profile never touched a server. Privacy audit log available in extension panel.</p>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="uc-result">
+          <div class="uc-res-label">Result</div>
+          <p>James spends <strong style="color:#93b4fd">8 minutes</strong> finding clinically-relevant information instead of <strong style="color:#f87171">45 minutes</strong> lost in misinformation. Time saved per session: 37 minutes. Stakes: real.</p>
+        </div>
+      </div>
+
+      <!-- SVG Workflow Diagram -->
+      <div>
+        <div class="diagram-wrap">
+          <p style="font-size:12px;color:rgba(255,255,255,0.3);margin-bottom:16px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;">System Diagram — James's Session</p>
+          <svg viewBox="0 0 380 520" width="100%" style="display:block;">
+            <defs>
+              <marker id="arr-ext" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                <path d="M0,1 L7,4 L0,7 L2,4 Z" fill="rgba(35,86,232,0.6)"/>
+              </marker>
+              <marker id="arr-grn" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                <path d="M0,1 L7,4 L0,7 L2,4 Z" fill="rgba(16,185,129,0.6)"/>
+              </marker>
+              <marker id="arr-red" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                <path d="M0,1 L7,4 L0,7 L2,4 Z" fill="rgba(248,113,113,0.6)"/>
+              </marker>
+            </defs>
+
+            <!-- Amazon search box -->
+            <rect x="80" y="10" width="220" height="46" rx="8"
+              fill="rgba(35,86,232,0.1)" stroke="rgba(35,86,232,0.35)" stroke-width="1.5"/>
+            <text x="190" y="28" text-anchor="middle" font-size="11" font-weight="700" fill="#93b4fd" font-family="system-ui">Amazon Search</text>
+            <text x="190" y="44" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.35)" font-family="system-ui">"supplements for chemo side effects"</text>
+
+            <!-- Arrow down -->
+            <line x1="190" y1="56" x2="190" y2="86" stroke="rgba(35,86,232,0.5)" stroke-width="1.5" marker-end="url(#arr-ext)"/>
+
+            <!-- AmazonAdapter -->
+            <rect x="100" y="90" width="180" height="36" rx="8"
+              fill="rgba(35,86,232,0.08)" stroke="rgba(35,86,232,0.25)" stroke-width="1"/>
+            <text x="190" y="108" text-anchor="middle" font-size="11" font-weight="700" fill="#93b4fd" font-family="system-ui">AmazonAdapter</text>
+            <text x="190" y="120" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.3)" font-family="system-ui">48 listings observed</text>
+
+            <line x1="190" y1="126" x2="190" y2="156" stroke="rgba(35,86,232,0.5)" stroke-width="1.5" marker-end="url(#arr-ext)"/>
+
+            <!-- ProfileExtractor reads local graph -->
+            <rect x="80" y="160" width="220" height="46" rx="8"
+              fill="rgba(124,58,237,0.08)" stroke="rgba(124,58,237,0.25)" stroke-width="1"/>
+            <text x="190" y="178" text-anchor="middle" font-size="11" font-weight="700" fill="#c4b5fd" font-family="system-ui">Interest Graph (from browsing)</text>
+            <text x="190" y="194" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.3)" font-family="system-ui">chemo side effects(w:0.94) · nausea remedies(w:0.88)</text>
+
+            <line x1="190" y1="206" x2="190" y2="236" stroke="rgba(35,86,232,0.5)" stroke-width="1.5" marker-end="url(#arr-ext)"/>
+
+            <!-- OpportunityRanker -->
+            <rect x="70" y="240" width="240" height="52" rx="8"
+              fill="rgba(217,119,6,0.08)" stroke="rgba(217,119,6,0.25)" stroke-width="1"/>
+            <text x="190" y="258" text-anchor="middle" font-size="11" font-weight="700" fill="#fcd34d" font-family="system-ui">OpportunityRanker</text>
+            <text x="190" y="272" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.3)" font-family="system-ui">Scores 48 listings · 4-signal model</text>
+            <text x="190" y="284" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.2)" font-family="system-ui">&lt;15ms total</text>
+
+            <!-- Fork: FilterAgent left, top 3 right -->
+            <line x1="130" y1="292" x2="100" y2="340" stroke="rgba(248,113,113,0.5)" stroke-width="1.5" marker-end="url(#arr-red)"/>
+            <line x1="250" y1="292" x2="280" y2="340" stroke="rgba(16,185,129,0.5)" stroke-width="1.5" marker-end="url(#arr-grn)"/>
+
+            <!-- FilterAgent — dims 31 -->
+            <rect x="20" y="344" width="150" height="46" rx="8"
+              fill="rgba(248,113,113,0.08)" stroke="rgba(248,113,113,0.2)" stroke-width="1"/>
+            <text x="95" y="362" text-anchor="middle" font-size="10" font-weight="700" fill="#fca5a5" font-family="system-ui">FilterAgent</text>
+            <text x="95" y="376" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.3)" font-family="system-ui">31 listings dimmed (&lt;0.35)</text>
+
+            <!-- Inline Insights — top 3 -->
+            <rect x="210" y="344" width="150" height="46" rx="8"
+              fill="rgba(16,185,129,0.08)" stroke="rgba(16,185,129,0.2)" stroke-width="1"/>
+            <text x="285" y="362" text-anchor="middle" font-size="10" font-weight="700" fill="#6ee7b7" font-family="system-ui">Inline Insights</text>
+            <text x="285" y="376" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.3)" font-family="system-ui">Top 3 cards surfaced</text>
+
+            <!-- GuardianAgent -->
+            <line x1="190" y1="390" x2="190" y2="420" stroke="rgba(16,185,129,0.5)" stroke-width="1.5" marker-end="url(#arr-grn)"/>
+            <rect x="95" y="424" width="190" height="36" rx="8"
+              fill="rgba(16,185,129,0.08)" stroke="rgba(16,185,129,0.25)" stroke-width="1"/>
+            <text x="190" y="442" text-anchor="middle" font-size="11" font-weight="700" fill="#6ee7b7" font-family="system-ui">GuardianAgent</text>
+            <text x="190" y="454" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.3)" font-family="system-ui">Zero data left device ✓</text>
+
+            <!-- Lines merging to Guardian -->
+            <line x1="95" y1="390" x2="95" y2="410" stroke="rgba(16,185,129,0.3)" stroke-width="1"/>
+            <line x1="95" y1="410" x2="190" y2="424" stroke="rgba(16,185,129,0.3)" stroke-width="1"/>
+            <line x1="285" y1="390" x2="285" y2="410" stroke="rgba(16,185,129,0.3)" stroke-width="1"/>
+            <line x1="285" y1="410" x2="190" y2="424" stroke="rgba(16,185,129,0.3)" stroke-width="1"/>
+
+            <!-- Result label -->
+            <text x="190" y="478" text-anchor="middle" font-size="10" fill="rgba(147,180,253,0.6)" font-family="system-ui" font-weight="700">8 min to find signal · was 45 min</text>
+            <text x="190" y="494" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.2)" font-family="system-ui">37 minutes saved per session</text>
+          </svg>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<!-- ── SECTION 6: USE CASE 2 — SARAH ─────────────────────────────── -->
+<div style="background:rgba(255,255,255,0.015);border-top:1px solid var(--line-dark);border-bottom:1px solid var(--line-dark);">
+  <div class="wrap">
+    <section>
+      <div class="eyebrow ext">Use Case 2 of 2</div>
+      <h2 class="h2" style="margin-bottom:8px">Reclaiming 33 minutes a day from algorithmic noise</h2>
+      <p class="sub" style="margin-bottom:36px">Sarah, 31, senior software engineer. Spends ~45 min/day scrolling Twitter and LinkedIn. The algorithm serves engagement, not her career or interests.</p>
+
+      <div class="uc-layout">
+
+        <div>
+          <div class="wf">
+
+            <div class="wf-step">
+              <div class="wf-n" style="background:var(--ext)">1</div>
+              <div class="wf-txt">
+                <h5>Day 1: Sarah installs the extension</h5>
+                <p>InterestGraph is empty. GenericAdapter activates on Twitter and LinkedIn. Passive observation begins — no user configuration required.</p>
+              </div>
+            </div>
+            <div class="wf-arrow">↓</div>
+
+            <div class="wf-step">
+              <div class="wf-n" style="background:var(--ext)">2</div>
+              <div class="wf-txt">
+                <h5>Week 1: Dwell-time signals accumulate</h5>
+                <p>TwitterAdapter + LinkedInAdapter track reading patterns. Sarah spends 8+ seconds on Rust, distributed systems, system design posts. Spends under 2 seconds on crypto, NFTs, marketing content.</p>
+              </div>
+            </div>
+            <div class="wf-arrow">↓</div>
+
+            <div class="wf-step">
+              <div class="wf-n" style="background:var(--ext)">3</div>
+              <div class="wf-txt">
+                <h5>Interest graph builds automatically</h5>
+                <p>Graph nodes crystallize: interested_in[Rust, w:0.91] · interested_in[distributed-systems, w:0.87] · blocked[crypto, w:0.95]. No manual input required.</p>
+              </div>
+            </div>
+            <div class="wf-arrow">↓</div>
+
+            <div class="wf-step">
+              <div class="wf-n" style="background:var(--ext)">4</div>
+              <div class="wf-txt">
+                <h5>Week 2: FilterAgent activates — and propagates</h5>
+                <p>All crypto/NFT content automatically dimmed. Affinity propagation extends blocked topics to adjacent nodes: web3, blockchain, DeFi — without Sarah explicitly blocking them.</p>
+              </div>
+            </div>
+            <div class="wf-arrow">↓</div>
+
+            <div class="wf-step">
+              <div class="wf-n" style="background:var(--ext)">5</div>
+              <div class="wf-txt">
+                <h5>ScoutAgent discovers proactive opportunity</h5>
+                <p>"RustConf CFP deadline in 3 days — matches your Rust interest (w:0.91)." Surfaced inline on LinkedIn feed. She would have missed it in the noise.</p>
+              </div>
+            </div>
+            <div class="wf-arrow">↓</div>
+
+            <div class="wf-step">
+              <div class="wf-n" style="background:#10b981">6</div>
+              <div class="wf-txt">
+                <h5>Week 3: Measurable outcome</h5>
+                <p>Daily scroll time drops from 45 min → 12 min. Signal-to-noise ratio: 3.8×. The graph is still learning — the ratio keeps improving.</p>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="uc2-result">
+            <div class="uc-res-label">Result</div>
+            <p>Sarah gets back <strong style="color:#5eead4">245 hours per year</strong>. That's 33 minutes/day × 365 days. The algorithm served the platform. RecoMe serves Sarah.</p>
+          </div>
+        </div>
+
+        <!-- Stats panel -->
+        <div>
+          <div style="display:flex;flex-direction:column;gap:14px;">
+
+            <div class="card">
+              <h4 style="color:#5eead4;margin-bottom:10px;">Graph State — End of Week 2</h4>
+              <div style="font-family:var(--mono);font-size:12px;color:rgba(255,255,255,0.5);line-height:2;">
+                interested_in[Rust, w:0.91]<br>
+                interested_in[distributed-systems, w:0.87]<br>
+                interested_in[system-design, w:0.83]<br>
+                interested_in[open-source, w:0.74]<br>
+                blocked[crypto, w:0.95]<br>
+                blocked[NFT, w:0.93]<br>
+                <span style="color:rgba(255,255,255,0.25)">— propagated via affinity:</span><br>
+                blocked[web3, w:0.81]<br>
+                blocked[blockchain, w:0.78]<br>
+                blocked[DeFi, w:0.71]
+              </div>
+            </div>
+
+            <div class="card">
+              <h4 style="margin-bottom:12px;">Before vs After</h4>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div style="text-align:center;padding:12px;background:rgba(248,113,113,0.07);border:1px solid rgba(248,113,113,0.15);border-radius:10px;">
+                  <div style="font-size:28px;font-weight:900;color:#f87171;">45</div>
+                  <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:4px;">min/day before</div>
+                </div>
+                <div style="text-align:center;padding:12px;background:rgba(94,234,212,0.07);border:1px solid rgba(94,234,212,0.15);border-radius:10px;">
+                  <div style="font-size:28px;font-weight:900;color:#5eead4;">12</div>
+                  <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:4px;">min/day after</div>
+                </div>
+                <div style="text-align:center;padding:12px;background:rgba(35,86,232,0.07);border:1px solid rgba(35,86,232,0.15);border-radius:10px;">
+                  <div style="font-size:28px;font-weight:900;color:#93b4fd;">3.8×</div>
+                  <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:4px;">signal-to-noise</div>
+                </div>
+                <div style="text-align:center;padding:12px;background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.15);border-radius:10px;">
+                  <div style="font-size:28px;font-weight:900;color:#6ee7b7;">245h</div>
+                  <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:4px;">reclaimed/year</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="callout ext">
+              <div class="callout-ico">🔮</div>
+              <div>
+                <h4>Proactive, not just reactive</h4>
+                <p>ScoutAgent doesn't wait for Sarah to ask. It monitors her interest graph and watches for time-sensitive opportunities that match high-weight nodes — CFP deadlines, early-access opens, relevant job postings. This is the difference between a filter and an agent.</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ── SECTION 7: USP VS COMPETITORS ─────────────────────────────── -->
+<div class="wrap">
+  <section>
+    <div class="eyebrow ext">Competitive Landscape</div>
+    <h2 class="h2" style="margin-bottom:12px">No One Else Does This</h2>
+    <p class="sub" style="margin-bottom:32px">Every alternative either serves the platform, blocks bluntly, or doesn't cross platforms. RecoMe is the only cross-platform, user-owned, proactive preference layer.</p>
+
+    <div class="tbl-wrap">
+      <table class="ctbl">
+        <thead>
+          <tr>
+            <th>Capability</th>
+            <th>Chrome Built-in</th>
+            <th>uBlock Origin</th>
+            <th>YouTube Algorithm</th>
+            <th>Browser History AI</th>
+            <th class="highlight">RecoMe Extension</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Builds interest graph</td>
+            <td class="cx">✗</td>
+            <td class="cx">✗</td>
+            <td class="cp">Platform-only</td>
+            <td class="cp">Partial</td>
+            <td class="ck highlight">✓ Full weighted graph</td>
+          </tr>
+          <tr>
+            <td>Cross-platform</td>
+            <td class="cx">✗</td>
+            <td class="cx">✗</td>
+            <td class="cx">✗</td>
+            <td class="cp">Browser only</td>
+            <td class="ck highlight">✓ 8 platforms</td>
+          </tr>
+          <tr>
+            <td>Inline insights</td>
+            <td class="cx">✗</td>
+            <td class="cx">✗</td>
+            <td class="cx">✗</td>
+            <td class="cx">✗</td>
+            <td class="ck highlight">✓ OpportunityRanker</td>
+          </tr>
+          <tr>
+            <td>User-owned data</td>
+            <td class="cp">Partial</td>
+            <td class="ck">✓</td>
+            <td class="cx">✗ (Google's)</td>
+            <td class="cp">Varies</td>
+            <td class="ck highlight">✓ 100% local</td>
+          </tr>
+          <tr>
+            <td>Works from session 1</td>
+            <td class="ck">✓</td>
+            <td class="ck">✓</td>
+            <td class="cp">Partial</td>
+            <td class="cp">Partial</td>
+            <td class="ck highlight">✓ + improves over time</td>
+          </tr>
+          <tr>
+            <td>Privacy-first (local only)</td>
+            <td class="cp">Partial</td>
+            <td class="ck">✓</td>
+            <td class="cx">✗</td>
+            <td class="cp">Varies</td>
+            <td class="ck highlight">✓ GuardianAgent audited</td>
+          </tr>
+          <tr>
+            <td>Affinity propagation</td>
+            <td class="cx">✗</td>
+            <td class="cx">✗</td>
+            <td class="cp">Platform serves it</td>
+            <td class="cx">✗</td>
+            <td class="ck highlight">✓ Auto-extends graph</td>
+          </tr>
+          <tr>
+            <td>Proactive (not just reactive)</td>
+            <td class="cx">✗</td>
+            <td class="cx">✗</td>
+            <td class="cp">Engagement-driven</td>
+            <td class="cx">✗</td>
+            <td class="ck highlight">✓ ScoutAgent active</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<!-- ── SECTION 8: BIG TECH POSITIONING ───────────────────────────── -->
+<div style="background:rgba(255,255,255,0.015);border-top:1px solid var(--line-dark);border-bottom:1px solid var(--line-dark);">
+  <div class="wrap">
+    <section>
+      <div class="eyebrow ext">Big Tech Positioning</div>
+      <h2 class="h2" style="margin-bottom:12px">Every Platform Has a Graph. None of Them Are Yours.</h2>
+      <p class="sub" style="margin-bottom:0">The hyperscalers have built the most sophisticated interest graphs in history. They just serve them to advertisers, not users.</p>
+
+      <div class="bigtech-grid">
+
+        <div class="bt-card">
+          <div class="bt-who">Chrome / Safari</div>
+          <h5>Browsing-only. No cross-platform graph.</h5>
+          <p>Browsing history stays in the browser. There is no interest graph — just a URL list. Cannot observe what you do on Amazon or Twitter. Cannot surface insights. Cannot filter feeds. Passive storage, not intelligence.</p>
+        </div>
+
+        <div class="bt-card">
+          <div class="bt-who">YouTube Algorithm</div>
+          <h5>Engagement-optimized. Platform's interests, not yours.</h5>
+          <p>YouTube has a sophisticated watch-time graph. It is calibrated to maximize session length for Google's ad revenue — not to surface what you actually want to see. The graph is locked inside YouTube and optimized against you.</p>
+        </div>
+
+        <div class="bt-card">
+          <div class="bt-who">Meta (Facebook / Instagram)</div>
+          <h5>Interest graph sold to advertisers. Locked in ecosystem.</h5>
+          <p>Meta's interest profile is the most detailed behavioral graph on the internet. It is not available to you — only to advertisers. It cannot leave Meta's ecosystem, cannot inform your Amazon searches, cannot help you on LinkedIn. It is your data, used without you.</p>
+        </div>
+
+        <div class="bt-reco">
+          <div class="bt-who">RecoMe Extension</div>
+          <h5>User-owned. Cross-platform. Never sold.</h5>
+          <p>RecoMe builds the same quality of interest graph — weighted entities, typed edges, temporal decay — and gives it entirely to the user. It crosses all 8 platforms. It never touches a server unless the user explicitly enables encrypted backup. It is the only interest graph that belongs to the person it describes.</p>
+        </div>
+
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ── SECTION 9: CRITICAL RISKS ─────────────────────────────────── -->
+<div class="wrap">
+  <section>
+    <div class="eyebrow ext">Honest Assessment</div>
+    <h2 class="h2" style="margin-bottom:12px">Critical Risks</h2>
+    <p class="sub" style="margin-bottom:32px">Three real risks, each with a mitigation strategy. We'd rather surface these clearly than have an investor discover them post-investment.</p>
+
+    <div class="risk">
+      <div class="risk-ico">⚠️</div>
+      <div>
+        <h5>Platform DOM Changes</h5>
+        <p>Amazon, Twitter, and other platforms update their HTML structure without warning. When they do, the relevant adapter breaks until it is patched. This is the most operationally intensive ongoing risk. Mitigation: automated DOM-change monitoring CI/CD pipeline, fast-patch release cadence (target: &lt;24h patch turnaround), adapter modular design so one platform breaking does not affect others.</p>
+      </div>
+    </div>
+
+    <div class="risk">
+      <div class="risk-ico">⚠️</div>
+      <div>
+        <h5>Browser Policy Changes (MV3 Restrictions)</h5>
+        <p>Chrome's Manifest V3 transition restricts certain extension capabilities — particularly around persistent background scripts and network request interception. Some planned capabilities may require architecture changes to remain compliant. Mitigation: MV3-first architecture already implemented. Monitoring W3C and browser vendor working groups. Firefox as secondary distribution channel maintains flexibility if Chrome restrictions tighten further.</p>
+      </div>
+    </div>
+
+    <div class="risk">
+      <div class="risk-ico">⚠️</div>
+      <div>
+        <h5>Cold-Start UX</h5>
+        <p>For the first 3–5 browsing sessions, the interest graph is sparse. The filter doesn't do much. Inline insights are limited. New users experience a "why am I paying for this?" moment before the graph is rich enough to deliver value. Mitigation: onboarding flow that shows graph-building progress visually, optional interest seed questionnaire, explicit Day-1 vs Week-2 expectation setting in the UI, free tier gives users time to see value before paying.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ── SECTION 10: FINANCIAL CONTRIBUTION ────────────────────────── -->
+<div style="background:rgba(255,255,255,0.015);border-top:1px solid var(--line-dark);border-bottom:1px solid var(--line-dark);">
+  <div class="wrap">
+    <section>
+      <div class="eyebrow ext">Financial Contribution</div>
+      <h2 class="h2" style="margin-bottom:12px">Extension Revenue Trajectory</h2>
+      <p class="sub" style="margin-bottom:0">The extension is the customer acquisition engine for the entire product suite. It also generates direct ARR through subscriptions and grows affiliate revenue as the user base scales.</p>
+
+      <div class="fin-row">
+
+        <div class="fin-card">
+          <div class="fc-year">Year 1 · 2026</div>
+          <div class="fc-arr">$120K</div>
+          <p>500 Pro users × $9/mo ($54K) + 200 Team seats × $19/mo ($45.6K) + early affiliate commissions (~$20K). Focus: product-market fit validation, adapter stability across all 8 platforms.</p>
+        </div>
+
+        <div class="fin-card">
+          <div class="fc-year">Year 2 · 2027</div>
+          <div class="fc-arr">$680K</div>
+          <p>Expanded Pro + Team user base. Affiliate revenue growing as ShopperAgent matures and purchase-intent signals sharpen. Word-of-mouth from power users drives growth without paid acquisition.</p>
+        </div>
+
+        <div class="fin-card">
+          <div class="fc-year">Year 3 · 2028</div>
+          <div class="fc-arr">$2.1M</div>
+          <p>5,000+ Pro users, scaled Team accounts, affiliate revenue compounding as the graph gets richer and purchase recommendations improve. Extension feeds qualified leads to SDK and Platform API.</p>
+        </div>
+
+      </div>
+
+      <div class="callout ext" style="margin-top:24px;">
+        <div class="callout-ico">🔗</div>
+        <div>
+          <h4>The Extension Is Also a Customer Acquisition Channel</h4>
+          <p>Every user who installs the extension and builds their interest graph is a warm lead for the mobile app, a potential SDK customer (for their employer), and an onramp to the Platform API. The extension's LTV is not just its subscription revenue — it is the gateway to the entire product ecosystem.</p>
+        </div>
+      </div>
+
+    </section>
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="wrap">
+  <section style="text-align:center;">
+    <div class="eyebrow ext" style="justify-content:center;">Explore the Ecosystem</div>
+    <h2 class="h2" style="margin-bottom:16px;">The Extension Is the Foundation.<br>See What It Enables.</h2>
+    <p class="sub" style="margin:0 auto 40px;text-align:center;">The interest graph built here powers every other product in the RecoMe suite.</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <a href="agents.html" class="btn-outline" style="border-color:rgba(124,58,237,0.4);color:#c4b5fd;">AI Agents →</a>
+      <a href="app.html" class="btn-outline" style="border-color:rgba(13,148,136,0.4);color:#5eead4;">Mobile App →</a>
+      <a href="sdk.html" class="btn-outline" style="border-color:rgba(217,119,6,0.4);color:#fcd34d;">B2B SDK →</a>
+      <a href="platform.html" class="btn-outline" style="border-color:rgba(16,185,129,0.4);color:#6ee7b7;">Platform API →</a>
+      <a href="financials.html" class="btn-primary">Full Financials & The Ask →</a>
+    </div>
+  </section>
+</div>
+
+<footer class="site-footer">
+  <span class="logo">RecoMe</span>
+  <span>Pre-Seed Round 2026 · Confidential</span>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>RecoMe — Financials & Investor Ask</title>
+  <link rel="stylesheet" href="shared.css"/>
+  <style>
+    /* ── HERO ───────────────────────── */
+    .fin-hero {
+      min-height: 72vh; display: flex; align-items: center;
+      position: relative; overflow: hidden;
+      border-bottom: 1px solid var(--line-dark);
+    }
+    .fin-hero .glow.a { width:700px;height:700px;background:#2356e8;top:-200px;left:-200px;position:absolute;pointer-events:none;border-radius:50%;filter:blur(120px);opacity:.09; }
+    .fin-hero .glow.b { width:500px;height:500px;background:#d97706;bottom:-150px;right:-100px;position:absolute;pointer-events:none;border-radius:50%;filter:blur(120px);opacity:.09; }
+    .fin-hero .glow.c { width:300px;height:300px;background:#10b981;top:25%;right:15%;position:absolute;pointer-events:none;border-radius:50%;filter:blur(100px);opacity:.07; }
+    .fin-hero-inner { position:relative;z-index:1;max-width:860px;padding-top:80px; }
+    .fin-hero-kicker {
+      display:inline-flex;align-items:center;gap:8px;
+      background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);
+      border-radius:999px;padding:6px 18px;
+      font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;
+      color:rgba(255,255,255,0.5);margin-bottom:28px;
+    }
+    .fin-hero-kicker span { color:#fcd34d; }
+    .fin-hero-h1 {
+      font-size:clamp(38px,6vw,76px);font-weight:900;line-height:1.04;
+      letter-spacing:-2.5px;margin-bottom:22px;
+    }
+    .fin-hero-h1 em { font-style:normal;color:#fcd34d; }
+    .fin-hero-sub { font-size:17px;color:rgba(255,255,255,0.5);max-width:660px;line-height:1.75;margin-bottom:48px; }
+
+    /* hero stat row override — larger numbers */
+    .hero-stat-row { display:flex;flex-wrap:wrap;gap:14px;margin-top:0; }
+    .hero-stat-box {
+      background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
+      border-radius:14px;padding:20px 28px;flex:1;min-width:150px;text-align:center;
+    }
+    .hero-stat-box .hsn { font-size:34px;font-weight:900;line-height:1;letter-spacing:-1px; }
+    .hero-stat-box .hsl { font-size:12px;color:rgba(255,255,255,0.38);margin-top:6px;line-height:1.4; }
+
+    /* ── REVENUE TABLE ──────────────────── */
+    .rev-table-wrap { overflow-x:auto; }
+    .rev-table {
+      width:100%;border-collapse:collapse;font-size:14px;
+      border:1px solid var(--line-dark);border-radius:14px;overflow:hidden;
+    }
+    .rev-table th {
+      padding:12px 18px;text-align:right;
+      font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;
+      color:rgba(255,255,255,0.35);
+      background:rgba(255,255,255,0.03);
+      border-bottom:1px solid var(--line-dark);
+    }
+    .rev-table th:first-child { text-align:left; }
+    .rev-table td {
+      padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.04);
+      text-align:right;
+    }
+    .rev-table td:first-child { text-align:left;color:rgba(255,255,255,0.7);font-weight:500; }
+    .rev-table .row-total td {
+      background:rgba(255,255,255,0.05);font-weight:800;font-size:15px;
+      border-top:1px solid rgba(255,255,255,0.12);border-bottom:none;
+      color:#fff;
+    }
+    .rev-table .row-total td:first-child { color:#fff; }
+    .rev-table .row-cost td {
+      color:rgba(255,255,255,0.45);
+    }
+    .rev-table .row-cost td:first-child { color:rgba(255,255,255,0.55); }
+    .rev-table .row-cost-total td {
+      background:rgba(232,50,50,0.05);font-weight:800;
+      border-top:1px solid rgba(232,50,50,0.15);border-bottom:none;color:#fca5a5;
+    }
+    .rev-table .row-cost-total td:first-child { color:#fca5a5; }
+    .rev-table .row-net td {
+      background:rgba(16,185,129,0.06);font-weight:800;font-size:15px;
+      border-top:1px solid rgba(16,185,129,0.2);color:#6ee7b7;
+    }
+    .rev-table .row-net td:first-child { color:#6ee7b7; }
+    .rev-table .row-margin td { color:rgba(255,255,255,0.45);font-size:13px; }
+    .rev-table .row-section-header td {
+      padding:10px 18px 6px;
+      font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;
+      color:rgba(255,255,255,0.25);background:rgba(255,255,255,0.02);
+      border-bottom:1px solid var(--line-dark);
+    }
+    .rev-table .row-section-header td:first-child { color:rgba(255,255,255,0.25); }
+    .y1 { color:rgba(255,255,255,0.6); }
+    .y2 { color:rgba(255,255,255,0.85); }
+    .y3 { color:#fff;font-weight:700; }
+
+    /* product color accent dots in table */
+    .prod-dot { display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:middle; }
+
+    /* ── UNIT ECONOMICS ──────────────────── */
+    .ue-product-block { margin-bottom:28px; }
+    .ue-product-label {
+      display:flex;align-items:center;gap:10px;
+      font-size:14px;font-weight:800;
+      margin-bottom:14px;padding-bottom:10px;
+      border-bottom:1px solid var(--line-dark);
+    }
+    .ue-metrics { display:grid;grid-template-columns:repeat(4,1fr);gap:12px; }
+    @media(max-width:900px){ .ue-metrics { grid-template-columns:1fr 1fr; } }
+    @media(max-width:500px){ .ue-metrics { grid-template-columns:1fr 1fr; } }
+    .ue-card {
+      background:rgba(255,255,255,0.04);border:1px solid var(--line-dark);
+      border-radius:12px;padding:16px 18px;
+    }
+    .ue-card .ue-label { font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.3);margin-bottom:6px; }
+    .ue-card .ue-val { font-size:26px;font-weight:900;letter-spacing:-0.5px;line-height:1; }
+    .ue-card .ue-sub { font-size:11px;color:rgba(255,255,255,0.35);margin-top:4px; }
+
+    /* ── FLYWHEEL ──────────────────────── */
+    .flywheel-quote {
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--line-dark);
+      border-radius:16px;padding:32px 36px;
+      font-size:16px;line-height:1.85;color:rgba(255,255,255,0.65);
+      position:relative;
+    }
+    .flywheel-quote strong { color:#fff; }
+    .flywheel-quote .fq-accent { color:#fcd34d;font-weight:700; }
+    .flywheel-chain {
+      display:flex;flex-wrap:wrap;gap:0;margin-top:28px;
+      border:1px solid var(--line-dark);border-radius:14px;overflow:hidden;
+    }
+    .fc-step {
+      flex:1;min-width:180px;padding:22px 20px;
+      border-right:1px solid var(--line-dark);
+      position:relative;
+    }
+    .fc-step:last-child { border-right:none; }
+    .fc-step .fc-arrow {
+      position:absolute;right:-14px;top:50%;transform:translateY(-50%);
+      font-size:18px;color:rgba(255,255,255,0.2);z-index:1;
+    }
+    .fc-step:last-child .fc-arrow { display:none; }
+    .fc-step .fc-prod { font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px; }
+    .fc-step .fc-cac { font-size:22px;font-weight:900;line-height:1;margin-bottom:4px; }
+    .fc-step .fc-note { font-size:11px;color:rgba(255,255,255,0.35);line-height:1.5; }
+
+    /* ── USE OF FUNDS ──────────────────── */
+    .uof-grid { display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:32px; }
+    @media(max-width:700px){ .uof-grid { grid-template-columns:1fr; } }
+    .uof-card {
+      border-radius:14px;padding:26px 28px;
+      background:rgba(255,255,255,0.03);border:1px solid var(--line-dark);
+    }
+    .uof-card .uof-pct {
+      font-size:42px;font-weight:900;line-height:1;letter-spacing:-1.5px;
+      margin-bottom:4px;
+    }
+    .uof-card .uof-amt {
+      font-size:14px;font-weight:700;margin-bottom:12px;
+    }
+    .uof-card h4 { font-size:16px;font-weight:800;margin-bottom:8px; }
+    .uof-card ul {
+      list-style:none;display:flex;flex-direction:column;gap:6px;
+      padding:0;margin:0;
+    }
+    .uof-card ul li {
+      font-size:13px;color:rgba(255,255,255,0.5);
+      display:flex;align-items:flex-start;gap:8px;
+    }
+    .uof-card ul li::before { content:'—';flex-shrink:0;color:rgba(255,255,255,0.2); }
+    .uof-bar {
+      height:5px;border-radius:999px;margin-bottom:20px;
+      background:rgba(255,255,255,0.08);overflow:hidden;
+    }
+    .uof-bar-fill { height:100%;border-radius:999px; }
+
+    /* ── MILESTONES ──────────────────────── */
+    .timeline { display:flex;flex-direction:column;gap:0;margin-top:32px; }
+    .tl-item {
+      display:grid;grid-template-columns:160px 1fr;gap:24px;
+      padding:20px 0;border-bottom:1px solid rgba(255,255,255,0.05);
+      align-items:flex-start;
+    }
+    .tl-item:last-child { border-bottom:none; }
+    .tl-phase {
+      background:rgba(255,255,255,0.04);border:1px solid var(--line-dark);
+      border-radius:10px;padding:10px 14px;text-align:center;
+    }
+    .tl-phase .tp-months { font-size:12px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:.5px;margin-bottom:3px; }
+    .tl-phase .tp-label { font-size:13px;font-weight:800; }
+    .tl-milestones { display:flex;flex-direction:column;gap:7px;padding-top:4px; }
+    .tl-milestones .tm {
+      font-size:13px;color:rgba(255,255,255,0.55);
+      display:flex;align-items:flex-start;gap:8px;
+    }
+    .tl-milestones .tm::before { content:'→';color:rgba(255,255,255,0.2);flex-shrink:0;font-size:12px;margin-top:1px; }
+    .tl-milestones .tm strong { color:rgba(255,255,255,0.85); }
+    @media(max-width:640px){
+      .tl-item { grid-template-columns:1fr;gap:10px; }
+    }
+
+    /* ── MOAT ──────────────────────────── */
+    .moat-grid { display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:32px; }
+    @media(max-width:700px){ .moat-grid { grid-template-columns:1fr; } }
+    .moat-card {
+      background:rgba(255,255,255,0.03);border:1px solid var(--line-dark);
+      border-radius:14px;padding:24px;
+    }
+    .moat-card .mc-label {
+      font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;
+      color:rgba(255,255,255,0.3);margin-bottom:8px;
+    }
+    .moat-card h4 { font-size:16px;font-weight:800;margin-bottom:6px; }
+    .moat-card p { font-size:13px;color:rgba(255,255,255,0.5);line-height:1.7;margin-bottom:16px; }
+    .moat-strength {
+      display:flex;align-items:center;gap:10px;margin-top:auto;
+    }
+    .moat-strength .ms-label { font-size:11px;font-weight:700;color:rgba(255,255,255,0.3);white-space:nowrap; }
+    .moat-bar { flex:1;height:6px;border-radius:999px;background:rgba(255,255,255,0.08);overflow:hidden; }
+    .moat-bar-fill { height:100%;border-radius:999px; }
+    .moat-strength .ms-rating { font-size:11px;font-weight:700;white-space:nowrap; }
+
+    /* ── DUE DILIGENCE ───────────────────── */
+    .risk-block {
+      border-radius:14px;padding:24px 26px;margin-bottom:16px;
+      border:1px solid;
+    }
+    .risk-block.high   { background:rgba(232,50,50,0.05);  border-color:rgba(232,50,50,0.18); }
+    .risk-block.medium { background:rgba(217,119,6,0.05);  border-color:rgba(217,119,6,0.18); }
+    .risk-block.low    { background:rgba(16,185,129,0.04); border-color:rgba(16,185,129,0.15); }
+    .risk-header { display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:10px; }
+    .risk-header h4 { font-size:15px;font-weight:800; }
+    .risk-tags { display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap; }
+    .risk-tag {
+      font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;
+      padding:3px 9px;border-radius:6px;white-space:nowrap;
+    }
+    .rt-impact-high   { background:rgba(232,50,50,0.2);  color:#fca5a5; }
+    .rt-impact-med    { background:rgba(217,119,6,0.2);  color:#fcd34d; }
+    .rt-prob-high     { background:rgba(232,50,50,0.2);  color:#fca5a5; }
+    .rt-prob-med      { background:rgba(217,119,6,0.2);  color:#fcd34d; }
+    .rt-prob-low      { background:rgba(16,185,129,0.15);color:#6ee7b7; }
+    .risk-desc { font-size:13px;color:rgba(255,255,255,0.5);line-height:1.7;margin-bottom:10px; }
+    .risk-mitigation-label {
+      font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;
+      color:rgba(255,255,255,0.25);margin-bottom:6px;
+    }
+    .risk-mitigation { font-size:13px;color:rgba(255,255,255,0.6);line-height:1.7; }
+
+    /* ── THESIS BULLETS ──────────────────── */
+    .thesis-list { display:flex;flex-direction:column;gap:14px;margin-top:28px; }
+    .thesis-item {
+      display:flex;align-items:flex-start;gap:16px;
+      background:rgba(255,255,255,0.03);border:1px solid var(--line-dark);
+      border-radius:12px;padding:20px 22px;
+    }
+    .thesis-num {
+      width:36px;height:36px;border-radius:10px;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;
+      font-size:16px;font-weight:900;color:#fff;background:rgba(255,255,255,0.08);
+    }
+    .thesis-item p { font-size:15px;line-height:1.7;color:rgba(255,255,255,0.65); }
+    .thesis-item p strong { color:#fff; }
+
+    /* ── ASK (dramatic CTA) ──────────────── */
+    #ask {
+      padding:0;margin:0;border:none;
+      background:linear-gradient(160deg,#080f20 0%,#0b1525 40%,#0a1228 100%);
+      position:relative;overflow:hidden;
+    }
+    #ask .ask-glow-a {
+      position:absolute;width:800px;height:800px;border-radius:50%;
+      background:#d97706;filter:blur(160px);opacity:.06;
+      top:-200px;right:-200px;pointer-events:none;
+    }
+    #ask .ask-glow-b {
+      position:absolute;width:600px;height:600px;border-radius:50%;
+      background:#2356e8;filter:blur(140px);opacity:.07;
+      bottom:-150px;left:-100px;pointer-events:none;
+    }
+    #ask .ask-glow-c {
+      position:absolute;width:400px;height:400px;border-radius:50%;
+      background:#10b981;filter:blur:120px;opacity:.05;
+      top:40%;left:40%;pointer-events:none;
+    }
+    .ask-inner {
+      position:relative;z-index:1;
+      padding:120px 0 100px;
+      text-align:center;
+    }
+    .ask-eyebrow {
+      display:inline-flex;align-items:center;gap:8px;
+      background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
+      border-radius:999px;padding:6px 20px;
+      font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;
+      color:rgba(255,255,255,0.4);margin-bottom:32px;
+    }
+    .ask-amount {
+      font-size:clamp(80px,14vw,160px);font-weight:900;line-height:0.9;
+      letter-spacing:-5px;color:#fff;margin-bottom:16px;
+      background:linear-gradient(135deg,#fff 0%,#fcd34d 60%,#f59e0b 100%);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    }
+    .ask-terms {
+      font-size:18px;font-weight:600;color:rgba(255,255,255,0.4);
+      letter-spacing:0.5px;margin-bottom:56px;
+    }
+    .ask-terms span { color:rgba(255,255,255,0.7); }
+    .ask-cols {
+      display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;
+      max-width:900px;margin:0 auto 72px;
+      text-align:left;
+    }
+    @media(max-width:760px){ .ask-cols { grid-template-columns:1fr; } }
+    .ask-col {
+      background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);
+      border-radius:16px;padding:26px;
+    }
+    .ask-col h5 {
+      font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;
+      color:rgba(255,255,255,0.3);margin-bottom:14px;
+    }
+    .ask-col ul {
+      list-style:none;display:flex;flex-direction:column;gap:8px;padding:0;margin:0;
+    }
+    .ask-col ul li {
+      font-size:13px;color:rgba(255,255,255,0.55);
+      display:flex;align-items:flex-start;gap:8px;line-height:1.5;
+    }
+    .ask-col ul li::before { content:'→';color:rgba(255,255,255,0.2);flex-shrink:0;font-size:12px;margin-top:1px; }
+    .ask-col ul li strong { color:rgba(255,255,255,0.85); }
+    .ask-quote {
+      max-width:800px;margin:0 auto;
+      font-size:clamp(17px,2.4vw,22px);font-weight:600;
+      line-height:1.65;color:rgba(255,255,255,0.55);
+      font-style:italic;
+    }
+    .ask-quote strong { color:#fff;font-style:normal; }
+    .ask-quote .aq-line {
+      display:block;width:48px;height:3px;border-radius:2px;
+      background:linear-gradient(90deg,#fcd34d,#d97706);
+      margin:0 auto 28px;
+    }
+
+    /* ── MISC ──────────────────────────── */
+    .section-intro { max-width:660px;margin-bottom:36px; }
+    .divider { border:none;border-top:1px solid var(--line-dark);margin:0; }
+    .teal { color:#5eead4; }
+    .gold { color:#fcd34d; }
+    .green { color:#6ee7b7; }
+    .red-lt { color:#fca5a5; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="topnav">
+  <a href="index.html" class="logo">Reco<span>Me</span></a>
+  <a href="extension.html" class="hide-sm"><span class="dot" style="background:var(--ext)"></span>Extension</a>
+  <a href="agents.html" class="hide-sm"><span class="dot" style="background:var(--agent)"></span>Agents</a>
+  <a href="app.html" class="hide-sm"><span class="dot" style="background:var(--app)"></span>App</a>
+  <a href="sdk.html" class="hide-sm"><span class="dot" style="background:var(--sdk)"></span>SDK</a>
+  <a href="platform.html" class="hide-sm"><span class="dot" style="background:var(--infra)"></span>Platform</a>
+  <a href="financials.html" class="hide-sm active">Financials</a>
+  <a href="#ask" class="cta">Investor Ask →</a>
+</nav>
+
+<!-- ── HERO ──────────────────────────────────────────────────── -->
+<div class="fin-hero">
+  <div class="glow a"></div>
+  <div class="glow b"></div>
+  <div class="glow c"></div>
+  <div class="wrap" style="width:100%">
+    <div class="fin-hero-inner">
+      <div class="fin-hero-kicker">Investor Materials 2026 · <span>Pre-Seed Round</span></div>
+      <h1 class="fin-hero-h1">
+        The Financial Model.<br>
+        The Due Diligence.<br>
+        <em>The Ask.</em>
+      </h1>
+      <p class="fin-hero-sub">
+        Five products. Three years. Path to <strong style="color:#fff">$28M ARR</strong>. Here is every number, every risk, and exactly what we're asking for.
+      </p>
+      <div class="hero-stat-row">
+        <div class="hero-stat-box">
+          <div class="hsn" style="color:#fcd34d">$2M</div>
+          <div class="hsl">Pre-Seed Ask</div>
+        </div>
+        <div class="hero-stat-box">
+          <div class="hsn" style="color:#93b4fd">$10M</div>
+          <div class="hsl">Pre-Money Valuation</div>
+        </div>
+        <div class="hero-stat-box">
+          <div class="hsn" style="color:#5eead4">18 mo</div>
+          <div class="hsl">Runway</div>
+        </div>
+        <div class="hero-stat-box">
+          <div class="hsn" style="color:#6ee7b7">Series A</div>
+          <div class="hsl">Readiness at Month 18</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── COMBINED REVENUE MODEL ─────────────────────────────────── -->
+<div class="wrap">
+  <section>
+    <div class="eyebrow white">Section 01</div>
+    <h2 class="h2" style="margin-bottom:12px">Combined Revenue Model</h2>
+    <p class="sub section-intro">All five products, fully modeled across three years. Revenue, costs, and net margin at each stage.</p>
+
+    <div class="rev-table-wrap">
+      <table class="rev-table">
+        <thead>
+          <tr>
+            <th style="width:40%">Product / Line Item</th>
+            <th>Year 1</th>
+            <th>Year 2</th>
+            <th>Year 3</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="row-section-header">
+            <td colspan="4">Revenue</td>
+          </tr>
+          <tr>
+            <td><span class="prod-dot" style="background:var(--ext)"></span>Browser Extension <span style="font-size:11px;color:rgba(255,255,255,0.3)">(subscriptions + affiliate)</span></td>
+            <td class="y1">$120K</td>
+            <td class="y2">$680K</td>
+            <td class="y3">$2.1M</td>
+          </tr>
+          <tr>
+            <td><span class="prod-dot" style="background:var(--agent)"></span>AI Agents <span style="font-size:11px;color:rgba(255,255,255,0.3)">(Pro/Team tiers + marketplace)</span></td>
+            <td class="y1">$48K</td>
+            <td class="y2">$320K</td>
+            <td class="y3">$1.4M</td>
+          </tr>
+          <tr>
+            <td><span class="prod-dot" style="background:var(--app)"></span>Mobile / Web App <span style="font-size:11px;color:rgba(255,255,255,0.3)">(subscriptions + in-app)</span></td>
+            <td class="y1">$36K</td>
+            <td class="y2">$240K</td>
+            <td class="y3">$980K</td>
+          </tr>
+          <tr>
+            <td><span class="prod-dot" style="background:var(--sdk)"></span>B2B SDK <span style="font-size:11px;color:rgba(255,255,255,0.3)">(subscriptions + enterprise + modules)</span></td>
+            <td class="y1">$612K</td>
+            <td class="y2">$4.18M</td>
+            <td class="y3">$18.4M</td>
+          </tr>
+          <tr>
+            <td><span class="prod-dot" style="background:var(--infra)"></span>Platform API <span style="font-size:11px;color:rgba(255,255,255,0.3)">(metered + B2B analytics + identity)</span></td>
+            <td class="y1">$0</td>
+            <td class="y2">$180K</td>
+            <td class="y3">$5.2M</td>
+          </tr>
+          <tr class="row-total">
+            <td>Total Revenue</td>
+            <td>$816K</td>
+            <td>$5.6M</td>
+            <td>$28.08M</td>
+          </tr>
+
+          <tr class="row-section-header">
+            <td colspan="4">Costs</td>
+          </tr>
+          <tr class="row-cost">
+            <td>Engineering <span style="font-size:11px">(2 → 8 → 18 people)</span></td>
+            <td>$420K</td>
+            <td>$1.44M</td>
+            <td>$3.24M</td>
+          </tr>
+          <tr class="row-cost">
+            <td>Infrastructure</td>
+            <td>$60K</td>
+            <td>$310K</td>
+            <td>$980K</td>
+          </tr>
+          <tr class="row-cost">
+            <td>Sales &amp; Marketing</td>
+            <td>$100K</td>
+            <td>$560K</td>
+            <td>$2.8M</td>
+          </tr>
+          <tr class="row-cost">
+            <td>Compliance <span style="font-size:11px">(HIPAA / SOC2)</span></td>
+            <td>$60K</td>
+            <td>$90K</td>
+            <td>$120K</td>
+          </tr>
+          <tr class="row-cost">
+            <td>G&amp;A</td>
+            <td>$50K</td>
+            <td>$150K</td>
+            <td>$360K</td>
+          </tr>
+          <tr class="row-cost-total">
+            <td>Total Costs</td>
+            <td>$690K</td>
+            <td>$2.55M</td>
+            <td>$7.5M</td>
+          </tr>
+
+          <tr class="row-net">
+            <td>Net Income</td>
+            <td>$126K</td>
+            <td>$3.05M</td>
+            <td>$20.58M</td>
+          </tr>
+          <tr class="row-margin">
+            <td>Net Margin</td>
+            <td>15%</td>
+            <td>54%</td>
+            <td>73%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<!-- ── UNIT ECONOMICS ──────────────────────────────────────────── -->
+<div style="background:rgba(255,255,255,0.015);border-top:1px solid var(--line-dark);border-bottom:1px solid var(--line-dark)">
+  <div class="wrap">
+    <section>
+      <div class="eyebrow white">Section 02</div>
+      <h2 class="h2" style="margin-bottom:12px">Unit Economics Per Product</h2>
+      <p class="sub section-intro">CAC, LTV, LTV:CAC ratio, and payback period for each of the five products.</p>
+
+      <!-- Extension -->
+      <div class="ue-product-block">
+        <div class="ue-product-label">
+          <span style="width:10px;height:10px;border-radius:50%;background:var(--ext);display:inline-block;flex-shrink:0"></span>
+          Browser Extension
+        </div>
+        <div class="ue-metrics">
+          <div class="ue-card">
+            <div class="ue-label">CAC</div>
+            <div class="ue-val" style="color:#93b4fd">$18</div>
+            <div class="ue-sub">Organic / viral acquisition</div>
+          </div>
+          <div class="ue-card">
+            <div class="ue-label">LTV</div>
+            <div class="ue-val" style="color:#93b4fd">$108</div>
+            <div class="ue-sub">12-month average</div>
+          </div>
+          <div class="ue-card">
+            <div class="ue-label">LTV:CAC</div>
+            <div class="ue-val" style="color:#93b4fd">6:1</div>
+            <div class="ue-sub">Healthy at seed stage</div>
+          </div>
+          <div class="ue-card">
+            <div class="ue-label">Payback</div>
+            <div class="ue-val" style="color:#93b4fd">2 mo</div>
+            <div class="ue-sub">CAC recovered in 2 months</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Agents -->
+      <div class="ue-product-block">
+        <div class="ue-product-label">
+          <span style="width:10px;height:10px;border-radius:50%;background:var(--agent);display:inline-block;flex-shrink:0"></span>
+          AI Agents
+        </div>
+        <div class="ue-metrics">
+          <div class="ue-card">
+            <div class="ue-label">CAC</div>
+            <div class="ue-val" style="color:#c4b5fd">$25</div>
+            <div class="ue-sub">Bundled with extension</div>
+          </div>
+          <div class="ue-card">
+            <div class="ue-label">LTV</div>
+            <div class="ue-val" style="color:#c4b5fd">$198</div>
+            <div class="ue-sub">Team plans increase retention</div>
+          </div>
+          <div class="ue-card">
+            <div class="ue-label">LTV:CAC</div>
+            <div class="ue-val" style="color:#c4b5fd">8:1</div>
+            <div class="ue-sub">Strong cross-sell ratio</div>
+          </div>
+          <div class="ue-card">
+            <div class="ue-label">Payback</div>
+            <div class="ue-val" style="color:#c4b5fd">1.5 mo</div>
+            <div class="ue-sub">Fastest in the portfolio</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- App -->
+      <div class="ue-product-block">
+        <div class="ue-product-label">
+          <span style="width:10px;height:10px;border-radius:50%;background:var(--app);display:inline-block;flex-shrink:0"></span>
+          Mobile / Web App
+        </div>
+        <div class="ue-metrics">
+          <div class="ue-card">
+            <div class="ue-label">CAC</div>
+            <div class="ue-val" style="color:#5eead4">$22</div>
+            <div class="ue-sub">Extension upsell path</div>
+          </div>
+          <div class="ue-card">
+            <div class="ue-label">LTV</div>
+            <div class="ue-val" style="color:#5eead4">$162</div>
+            <div class="ue-sub">Mobile subscription + in-app</div>
+          </div>
+          <div class="ue-card">
+            <div class="ue-label">LTV:CAC</div>
+            <div class="ue-val" style="color:#5eead4">7:1</div>
+            <div class="ue-sub">Upsell makes CAC trivial</div>
+          </div>
+          <div class="ue-card">
+            <div class="ue-label">Payback</div>
+            <div class="ue-val" style="color:#5eead4">2 mo</div>
+            <div class="ue-sub">Consistent with extension</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SDK -->
+      <div class="ue-product-block">
+        <div class="ue-product-label">
+          <span style="width:10px;height:10px;border-radius:50%;background:var(--sdk);display:inline-block;flex-shrink:0"></span>
+          B2B SDK
+        </div>
+        <div class="ue-metrics">
+          <div class="ue-card">
+            <div class="ue-label">CAC</div>
+            <div class="ue-val" style="color:#fcd34d">$1,200</div>
+            <div class="ue-sub">Developer-led motion</div>
+          </div>
+          <div class="ue-card">
+            <div class="ue-label">LTV</div>
+            <div class="ue-val" style="color:#fcd34d">$21,560</div>
+            <div class="ue-sub">High switching costs drive LTV</div>
+          </div>
+          <div class="ue-card">
+            <div class="ue-label">LTV:CAC</div>
+            <div class="ue-val" style="color:#fcd34d">18:1</div>
+            <div class="ue-sub">Best B2B ratio in cohort</div>
+          </div>
+          <div class="ue-card">
+            <div class="ue-label">Payback</div>
+            <div class="ue-val" style="color:#fcd34d">4 mo</div>
+            <div class="ue-sub">Annual contracts help</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Platform API -->
+      <div class="ue-product-block">
+        <div class="ue-product-label">
+          <span style="width:10px;height:10px;border-radius:50%;background:var(--infra);display:inline-block;flex-shrink:0"></span>
+          Platform API
+        </div>
+        <div class="ue-metrics">
+          <div class="ue-card">
+            <div class="ue-label">CAC</div>
+            <div class="ue-val" style="color:#6ee7b7">$8,000</div>
+            <div class="ue-sub">Enterprise sales motion</div>
+          </div>
+          <div class="ue-card">
+            <div class="ue-label">LTV</div>
+            <div class="ue-val" style="color:#6ee7b7">$180K</div>
+            <div class="ue-sub">3-year enterprise contract</div>
+          </div>
+          <div class="ue-card">
+            <div class="ue-label">LTV:CAC</div>
+            <div class="ue-val" style="color:#6ee7b7">22:1</div>
+            <div class="ue-sub">Infrastructure-tier retention</div>
+          </div>
+          <div class="ue-card">
+            <div class="ue-label">Payback</div>
+            <div class="ue-val" style="color:#6ee7b7">6 mo</div>
+            <div class="ue-sub">Upfront annual contracts</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ── THE FLYWHEEL (financial) ───────────────────────────────── -->
+<div class="wrap">
+  <section>
+    <div class="eyebrow white">Section 03</div>
+    <h2 class="h2" style="margin-bottom:12px">The Compounding Flywheel</h2>
+    <p class="sub section-intro">The five products compound on each other financially — dramatically lowering blended CAC across the portfolio.</p>
+
+    <div class="flywheel-quote">
+      <p>The five products compound on each other financially. An extension user <span class="fq-accent">(CAC: $18)</span> becomes an app subscriber <span class="fq-accent">(incremental CAC: $4</span> — they already trust the product<span class="fq-accent">)</span>. An app subscriber becomes an SDK-curious developer at their startup <span class="fq-accent">(CAC: effectively $0</span> — they're already a user<span class="fq-accent">)</span>. An SDK customer generates enterprise referrals <span class="fq-accent">(CAC: $400</span> — warm intro<span class="fq-accent">)</span>. <strong>The total blended CAC is dramatically lower than any product in isolation.</strong></p>
+    </div>
+
+    <div class="flywheel-chain" style="margin-top:28px">
+      <div class="fc-step">
+        <div class="fc-prod" style="color:var(--ext)">Extension</div>
+        <div class="fc-cac" style="color:#93b4fd">$18</div>
+        <div class="fc-note">Organic / viral<br>acquisition</div>
+        <div class="fc-arrow">→</div>
+      </div>
+      <div class="fc-step">
+        <div class="fc-prod" style="color:var(--app)">App Upsell</div>
+        <div class="fc-cac" style="color:#5eead4">+$4</div>
+        <div class="fc-note">Incremental only<br>(trust already built)</div>
+        <div class="fc-arrow">→</div>
+      </div>
+      <div class="fc-step">
+        <div class="fc-prod" style="color:var(--sdk)">SDK (Dev User)</div>
+        <div class="fc-cac" style="color:#fcd34d">~$0</div>
+        <div class="fc-note">Developer is already<br>a power user</div>
+        <div class="fc-arrow">→</div>
+      </div>
+      <div class="fc-step">
+        <div class="fc-prod" style="color:var(--infra)">Enterprise Referral</div>
+        <div class="fc-cac" style="color:#6ee7b7">$400</div>
+        <div class="fc-note">Warm intro from<br>SDK customer</div>
+        <div class="fc-arrow">→</div>
+      </div>
+      <div class="fc-step">
+        <div class="fc-prod" style="color:#fcd34d">Blended Portfolio</div>
+        <div class="fc-cac" style="color:#fcd34d">&lt;$200</div>
+        <div class="fc-note">Avg across all 5<br>products at scale</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ── USE OF FUNDS ────────────────────────────────────────────── -->
+<div style="background:rgba(255,255,255,0.015);border-top:1px solid var(--line-dark);border-bottom:1px solid var(--line-dark)">
+  <div class="wrap">
+    <section>
+      <div class="eyebrow white">Section 04</div>
+      <h2 class="h2" style="margin-bottom:12px">Use of Funds</h2>
+      <p class="sub section-intro">$2M allocated to four buckets. Every dollar mapped to a milestone.</p>
+
+      <div class="uof-grid">
+        <div class="uof-card" style="border-color:rgba(35,86,232,0.3)">
+          <div class="uof-bar"><div class="uof-bar-fill" style="width:60%;background:linear-gradient(90deg,#2356e8,#93b4fd)"></div></div>
+          <div class="uof-pct" style="color:#93b4fd">60%</div>
+          <div class="uof-amt" style="color:rgba(255,255,255,0.5)">$1.2M</div>
+          <h4>Engineering</h4>
+          <ul>
+            <li>Backend graph infrastructure engineer</li>
+            <li>Mobile developer (iOS / React Native)</li>
+            <li>DevOps &amp; security engineer</li>
+            <li>Full-stack SDK/API engineer</li>
+          </ul>
+        </div>
+
+        <div class="uof-card" style="border-color:rgba(232,50,50,0.25)">
+          <div class="uof-bar"><div class="uof-bar-fill" style="width:20%;background:linear-gradient(90deg,#e83232,#fca5a5)"></div></div>
+          <div class="uof-pct" style="color:#fca5a5">20%</div>
+          <div class="uof-amt" style="color:rgba(255,255,255,0.5)">$400K</div>
+          <h4>Compliance</h4>
+          <ul>
+            <li>HIPAA BAA process — $120K</li>
+            <li>SOC2 Type II audit — $180K</li>
+            <li>Legal review &amp; IP counsel — $60K</li>
+            <li>Privacy certification (GDPR/CCPA) — $40K</li>
+          </ul>
+        </div>
+
+        <div class="uof-card" style="border-color:rgba(16,185,129,0.25)">
+          <div class="uof-bar"><div class="uof-bar-fill" style="width:15%;background:linear-gradient(90deg,#10b981,#6ee7b7)"></div></div>
+          <div class="uof-pct" style="color:#6ee7b7">15%</div>
+          <div class="uof-amt" style="color:rgba(255,255,255,0.5)">$300K</div>
+          <h4>Go-To-Market</h4>
+          <ul>
+            <li>4 vertical conferences — $80K</li>
+            <li>Developer community &amp; DX — $80K</li>
+            <li>Content &amp; SEO marketing — $60K</li>
+            <li>PR for Pantory case study — $40K</li>
+            <li>Paid developer acquisition — $40K</li>
+          </ul>
+        </div>
+
+        <div class="uof-card" style="border-color:rgba(255,255,255,0.1)">
+          <div class="uof-bar"><div class="uof-bar-fill" style="width:5%;background:rgba(255,255,255,0.3)"></div></div>
+          <div class="uof-pct" style="color:rgba(255,255,255,0.5)">5%</div>
+          <div class="uof-amt" style="color:rgba(255,255,255,0.4)">$100K</div>
+          <h4>G&amp;A</h4>
+          <ul>
+            <li>Legal entity formation</li>
+            <li>Operations tooling</li>
+            <li>Accounting &amp; finance setup</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ── 18-MONTH MILESTONES ────────────────────────────────────── -->
+<div class="wrap">
+  <section>
+    <div class="eyebrow white">Section 05</div>
+    <h2 class="h2" style="margin-bottom:12px">18-Month Milestones</h2>
+    <p class="sub section-intro">Six phases. Each phase builds the foundation for the next. Series A readiness is a deliverable, not a hope.</p>
+
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-phase">
+          <div class="tp-months">Months 1–3</div>
+          <div class="tp-label" style="color:#93b4fd">Foundation</div>
+        </div>
+        <div class="tl-milestones">
+          <div class="tm"><strong>SDK v1.0 shipped</strong> — production-ready with all 4 core modules</div>
+          <div class="tm"><strong>Pantory closes</strong> as first paying SDK customer</div>
+          <div class="tm"><strong>Extension v2</strong> launched with enhanced interest graph and new adapters</div>
+          <div class="tm">HIPAA BAA process initiated with legal counsel</div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-phase">
+          <div class="tp-months">Months 4–6</div>
+          <div class="tp-label" style="color:#c4b5fd">Growth Ignition</div>
+        </div>
+        <div class="tl-milestones">
+          <div class="tm"><strong>Pantory case study</strong> published — healthcare vertical reference customer</div>
+          <div class="tm">Legal vertical outreach begins — 10 target accounts in pipeline</div>
+          <div class="tm"><strong>40 SDK customers</strong> on Growth tier ($499/mo)</div>
+          <div class="tm"><strong>Extension MAU: 2,000</strong> — organic growth via product-led</div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-phase">
+          <div class="tp-months">Months 7–9</div>
+          <div class="tp-label" style="color:#5eead4">Enterprise Entry</div>
+        </div>
+        <div class="tl-milestones">
+          <div class="tm"><strong>First 3 enterprise contracts signed</strong> — regulated verticals</div>
+          <div class="tm"><strong>On-premise tier</strong> launched for HIPAA-sensitive customers</div>
+          <div class="tm"><strong>Mobile app beta</strong> with 500 closed beta users</div>
+          <div class="tm">SOC2 Type II audit process begins</div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-phase">
+          <div class="tp-months">Months 10–12</div>
+          <div class="tp-label" style="color:#fcd34d">Marketplace</div>
+        </div>
+        <div class="tl-milestones">
+          <div class="tm"><strong>Module marketplace launched</strong> — 20+ domain-specific modules at launch</div>
+          <div class="tm"><strong>SDK: 250 customers</strong> across Growth and Enterprise tiers</div>
+          <div class="tm"><strong>Series A fundraise begins</strong> — deck, data room, outreach</div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-phase">
+          <div class="tp-months">Months 13–15</div>
+          <div class="tp-label" style="color:#6ee7b7">Second Vertical</div>
+        </div>
+        <div class="tl-milestones">
+          <div class="tm"><strong>Financial vertical entry</strong> — wealth management, fintech apps</div>
+          <div class="tm"><strong>App public launch</strong> on iOS and Android</div>
+          <div class="tm"><strong>SOC2 Type II achieved</strong> — enables Fortune 500 procurement</div>
+          <div class="tm"><strong>$8M ARR run rate</strong></div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-phase">
+          <div class="tp-months">Months 16–18</div>
+          <div class="tp-label" style="color:#fca5a5">Series A Close</div>
+        </div>
+        <div class="tl-milestones">
+          <div class="tm"><strong>Platform API beta</strong> — 5 design partners, "Sign in with RecoMe"</div>
+          <div class="tm"><strong>$12M ARR run rate</strong> — Series A-ready by any standard</div>
+          <div class="tm"><strong>Series A close</strong> — $12–15M at $50M+ valuation</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ── COMPETITIVE MOAT ───────────────────────────────────────── -->
+<div style="background:rgba(255,255,255,0.015);border-top:1px solid var(--line-dark);border-bottom:1px solid var(--line-dark)">
+  <div class="wrap">
+    <section>
+      <div class="eyebrow white">Section 06</div>
+      <h2 class="h2" style="margin-bottom:12px">Competitive Moat</h2>
+      <p class="sub section-intro">Four structural advantages that compound with time. Each moat reinforces the others.</p>
+
+      <div class="moat-grid">
+        <div class="moat-card">
+          <div class="mc-label">Moat 01</div>
+          <h4>Switching Cost</h4>
+          <p>The interest graph data accumulated over 6+ months doesn't port to another tool. Switching means resetting every user's intelligence to zero. The longer a customer uses RecoMe, the more painful — and therefore unlikely — it becomes to leave.</p>
+          <div class="moat-strength">
+            <span class="ms-label">Strength</span>
+            <div class="moat-bar"><div class="moat-bar-fill" style="width:95%;background:linear-gradient(90deg,#fca5a5,#e83232)"></div></div>
+            <span class="ms-rating" style="color:#fca5a5">Very High</span>
+          </div>
+        </div>
+
+        <div class="moat-card">
+          <div class="mc-label">Moat 02</div>
+          <h4>Data Network Effect</h4>
+          <p>More customers per vertical generates better aggregate signals, which produces better cold-start defaults for new customers entering that vertical. Every new SDK customer in healthcare makes the next healthcare customer's onboarding measurably better. Compounds every quarter.</p>
+          <div class="moat-strength">
+            <span class="ms-label">Strength</span>
+            <div class="moat-bar"><div class="moat-bar-fill" style="width:78%;background:linear-gradient(90deg,#93b4fd,#2356e8)"></div></div>
+            <span class="ms-rating" style="color:#93b4fd">High</span>
+          </div>
+        </div>
+
+        <div class="moat-card">
+          <div class="mc-label">Moat 03</div>
+          <h4>Compliance Certification</h4>
+          <p>HIPAA BAA + SOC2 Type II creates an 18-month lead in regulated verticals. A new competitor doesn't just need to build the technology — they need 12–18 months just to reach the starting line for healthcare and financial services procurement.</p>
+          <div class="moat-strength">
+            <span class="ms-label">Strength</span>
+            <div class="moat-bar"><div class="moat-bar-fill" style="width:95%;background:linear-gradient(90deg,#fca5a5,#e83232)"></div></div>
+            <span class="ms-rating" style="color:#fca5a5">Very High</span>
+          </div>
+        </div>
+
+        <div class="moat-card">
+          <div class="mc-label">Moat 04</div>
+          <h4>Ecosystem &amp; Marketplace</h4>
+          <p>The module marketplace and third-party agent marketplace creates expert-contributed domain knowledge we didn't pay to build. A healthcare consultant builds a FHIR integration module. A retail analyst builds a seasonal demand module. The ecosystem grows with every new contributor.</p>
+          <div class="moat-strength">
+            <span class="ms-label">Strength</span>
+            <div class="moat-bar"><div class="moat-bar-fill" style="width:55%;background:linear-gradient(90deg,#6ee7b7,#10b981)"></div></div>
+            <span class="ms-rating" style="color:#6ee7b7">Medium → High</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ── DUE DILIGENCE ──────────────────────────────────────────── -->
+<div class="wrap">
+  <section>
+    <div class="eyebrow white">Section 07</div>
+    <h2 class="h2" style="margin-bottom:8px">What Could Go Wrong</h2>
+    <p style="font-size:15px;color:rgba(255,255,255,0.35);margin-bottom:8px;font-style:italic">And Why We've Thought Through It</p>
+    <p class="sub section-intro">Honest critical analysis. No startup is risk-free. These are the real risks — and the mitigations we've already built or planned.</p>
+
+    <div class="risk-block high">
+      <div class="risk-header">
+        <h4>Risk 1 — Platform DOM Fragility</h4>
+        <div class="risk-tags">
+          <span class="risk-tag rt-impact-high">Impact: High</span>
+          <span class="risk-tag rt-prob-med">Probability: Medium</span>
+        </div>
+      </div>
+      <p class="risk-desc">Amazon, Twitter, and YouTube update their HTML regularly. Extension adapters break when DOM selectors change. User experience degrades until adapters are patched. At scale, even a 24-hour breakage window creates churn risk.</p>
+      <div class="risk-mitigation-label">Mitigation</div>
+      <div class="risk-mitigation">Automated selector health monitoring (<code style="font-size:12px;background:rgba(255,255,255,0.08);padding:1px 6px;border-radius:4px">SelectorHealth.ts</code> already built and in production). Fast-update CI/CD pipeline reduces patch window to under 2 hours. GenericAdapter fallback keeps core functionality alive even when site-specific adapters break. Monitoring alerts fire before users notice.</div>
+    </div>
+
+    <div class="risk-block high">
+      <div class="risk-header">
+        <h4>Risk 2 — Big Tech Enters the Space</h4>
+        <div class="risk-tags">
+          <span class="risk-tag rt-impact-high">Impact: High</span>
+          <span class="risk-tag rt-prob-low">Probability: Low–Medium</span>
+        </div>
+      </div>
+      <p class="risk-desc">Google ships "interest graph as a service." OpenAI ships persistent preference memory across all apps. A single hyperscaler announcement creates a perception problem, even before a viable product exists.</p>
+      <div class="risk-mitigation-label">Mitigation</div>
+      <div class="risk-mitigation">18–24 month first-mover window is the core thesis. Compliance certifications (HIPAA/SOC2) take 12–18 months for any competitor to replicate. Switching costs from graph data create stickiness that survives a competitive announcement. Decentralized architecture is structurally impossible for Google to replicate — it requires centralized data control. The user-ownership model is politically untenable for Big Tech to copy given their regulatory environment.</div>
+    </div>
+
+    <div class="risk-block medium">
+      <div class="risk-header">
+        <h4>Risk 3 — Cold Start Problem</h4>
+        <div class="risk-tags">
+          <span class="risk-tag rt-impact-med">Impact: Medium</span>
+          <span class="risk-tag rt-prob-high">Probability: High</span>
+        </div>
+      </div>
+      <p class="risk-desc">The first 3 sessions feel basic. New users don't yet have enough graph data to experience the product's full value. They churn before the graph is rich enough to deliver the "aha" moment. This is the most likely failure mode for consumer acquisition.</p>
+      <div class="risk-mitigation-label">Mitigation</div>
+      <div class="risk-mitigation">Import from Spotify, Netflix, YouTube, and Reddit data takeouts on Day 1 — graph is pre-seeded before the user even browses. Onboarding questionnaire seeds initial interest nodes immediately. Vertical-calibrated defaults for SDK customers (healthcare users get healthcare-relevant defaults). "Quick wins" — visible preference cards and agent actions — are designed into the first-session flow to demonstrate value before the graph is rich.</div>
+    </div>
+
+    <div class="risk-block medium">
+      <div class="risk-header">
+        <h4>Risk 4 — Enterprise Sales Cycle Length</h4>
+        <div class="risk-tags">
+          <span class="risk-tag rt-impact-med">Impact: Medium</span>
+          <span class="risk-tag rt-prob-med">Probability: Medium</span>
+        </div>
+      </div>
+      <p class="risk-desc">HIPAA-regulated enterprise customers take 6–9 months to close. Security reviews, legal review, procurement cycles, and budget approval all extend the sales cycle. Cash flow risk if the pipeline is enterprise-heavy in Year 1.</p>
+      <div class="risk-mitigation-label">Mitigation</div>
+      <div class="risk-mitigation">Self-serve Growth tier ($499/mo) creates revenue without enterprise sales cycles — developers can start immediately with a credit card. Pantory as a reference customer shortens healthcare deal cycles by an estimated 60% (peer reference dramatically reduces security review burden). Upfront annual contracts reduce duration risk once deals close. Pipeline is intentionally seeded with mid-market accounts alongside enterprise targets.</div>
+    </div>
+
+    <div class="risk-block medium">
+      <div class="risk-header">
+        <h4>Risk 5 — SDK Commoditization</h4>
+        <div class="risk-tags">
+          <span class="risk-tag rt-impact-med">Impact: Medium</span>
+          <span class="risk-tag rt-prob-low">Probability: Low</span>
+        </div>
+      </div>
+      <p class="risk-desc">OpenAI or Anthropic add preference graph features to their core APIs in 2027. Developers ask: "Why buy the RecoMe SDK when the LLM API already has memory?" The SDK's differentiation erodes at the commodity layer.</p>
+      <div class="risk-mitigation-label">Mitigation</div>
+      <div class="risk-mitigation">By 2027, RecoMe SDK customers have 2 years of accumulated, structured graph data that doesn't migrate to a new system. Compliance certifications (HIPAA/SOC2) are in place — LLM providers cannot easily match regulated-vertical requirements. The module marketplace will have 100+ domain-specific modules representing expert-contributed knowledge. The product becomes infrastructure — not a feature someone would replace without significant cost and disruption.</div>
+    </div>
+
+    <div class="risk-block high">
+      <div class="risk-header">
+        <h4>Risk 6 — Consumer Retention</h4>
+        <div class="risk-tags">
+          <span class="risk-tag rt-impact-high">Impact: High</span>
+          <span class="risk-tag rt-prob-med">Probability: Medium</span>
+        </div>
+      </div>
+      <p class="risk-desc">Extension and app users churn after initial interest fades. Consumer SaaS churn is notoriously high. The product is novel but novelty doesn't sustain subscriptions. Month 3–6 is the churn danger window.</p>
+      <div class="risk-mitigation-label">Mitigation</div>
+      <div class="risk-mitigation">The graph gets more valuable over time — compounding value model means the longer a user stays, the more they'd lose by leaving (switching cost builds automatically). ShopperAgent price alerts create habit-forming push notifications that bring users back daily. Weekly digest emails from ScoutAgent create regular touchpoints even for passive users. Team plans lock in via shared graph utility — churning affects colleagues, not just oneself. Annual subscription pricing reduces payment churn.</div>
+    </div>
+  </section>
+</div>
+
+<!-- ── INVESTMENT THESIS ───────────────────────────────────────── -->
+<div style="background:rgba(255,255,255,0.015);border-top:1px solid var(--line-dark);border-bottom:1px solid var(--line-dark)">
+  <div class="wrap">
+    <section>
+      <div class="eyebrow white">Section 08</div>
+      <h2 class="h2" style="margin-bottom:12px">Why RecoMe Wins</h2>
+      <p class="sub section-intro">The investment thesis in five sentences. Each one is load-bearing.</p>
+
+      <div class="thesis-list">
+        <div class="thesis-item">
+          <div class="thesis-num" style="background:rgba(35,86,232,0.2);color:#93b4fd">1</div>
+          <p><strong>The market gap is verified:</strong> zero competitors offer a per-user interest graph SDK with typed edges, delta detection, and cross-session memory. We have checked every major player, every API, every open-source project.</p>
+        </div>
+        <div class="thesis-item">
+          <div class="thesis-num" style="background:rgba(124,58,237,0.2);color:#c4b5fd">2</div>
+          <p><strong>The technology is built:</strong> all 4 core SDK modules, 8 agents, browser extension for 8 platforms — this is not a prototype. It is production code running in a real browser with real users today.</p>
+        </div>
+        <div class="thesis-item">
+          <div class="thesis-num" style="background:rgba(13,148,136,0.2);color:#5eead4">3</div>
+          <p><strong>The flywheel is structural:</strong> 5 products compound on each other's data, distribution, and switching costs. The blended CAC across the portfolio is lower than any single product in isolation.</p>
+        </div>
+        <div class="thesis-item">
+          <div class="thesis-num" style="background:rgba(217,119,6,0.2);color:#fcd34d">4</div>
+          <p><strong>The window is 18–24 months:</strong> hyperscalers haven't noticed this layer, but they will. The moats — compliance certification, graph data accumulation, marketplace ecosystem — take 18+ months to replicate and must be built now.</p>
+        </div>
+        <div class="thesis-item">
+          <div class="thesis-num" style="background:rgba(16,185,129,0.2);color:#6ee7b7">5</div>
+          <p><strong>The first customer exists:</strong> Pantory's full workflow is mapped, the value is quantified, and the deal is ready to close. The first dollar of B2B revenue is not hypothetical — it is a conversation already in progress.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ── THE ASK ─────────────────────────────────────────────────── -->
+<section id="ask">
+  <div class="ask-glow-a"></div>
+  <div class="ask-glow-b"></div>
+  <div class="ask-glow-c"></div>
+
+  <div class="wrap">
+    <div class="ask-inner">
+      <div class="ask-eyebrow">Pre-Seed Round 2026 · Investor Ask</div>
+
+      <div class="ask-amount">$2M</div>
+      <div class="ask-terms">
+        Pre-Seed Round &nbsp;·&nbsp; <span>Pre-Money: $10M</span> &nbsp;·&nbsp; <span>18-Month Runway</span>
+      </div>
+
+      <div class="ask-cols">
+        <div class="ask-col">
+          <h5>Use of Funds</h5>
+          <ul>
+            <li><strong>$1.2M (60%)</strong> Engineering — 4 hires: backend graph, mobile, DevOps/security, SDK/API</li>
+            <li><strong>$400K (20%)</strong> Compliance — HIPAA BAA, SOC2 Type II, GDPR/CCPA, legal</li>
+            <li><strong>$300K (15%)</strong> GTM — conferences, developer community, PR, content, paid acquisition</li>
+            <li><strong>$100K (5%)</strong> G&amp;A — legal entity, ops tooling, accounting</li>
+          </ul>
+        </div>
+
+        <div class="ask-col">
+          <h5>18-Month Milestones</h5>
+          <ul>
+            <li>SDK v1.0 shipped + Pantory as first customer</li>
+            <li>40 → 250 SDK customers across 2 verticals</li>
+            <li>Extension MAU: 2,000 → 15,000</li>
+            <li>HIPAA BAA + SOC2 Type II both achieved</li>
+            <li>Module marketplace: 20+ modules live</li>
+            <li>$12M ARR run rate at Month 18</li>
+          </ul>
+        </div>
+
+        <div class="ask-col">
+          <h5>What Series A Looks Like</h5>
+          <ul>
+            <li><strong>$12–15M ARR</strong> at time of raise</li>
+            <li><strong>114%+ NRR</strong> from expansion revenue</li>
+            <li><strong>3 verticals</strong> — healthcare, legal, fintech</li>
+            <li><strong>HIPAA + SOC2 Type II</strong> both certified</li>
+            <li><strong>Module marketplace live</strong> with 3rd-party contributors</li>
+            <li>Target: $12–15M raise at $50M+ valuation</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="ask-quote">
+        <span class="aq-line"></span>
+        <strong>"Every app built in the AI era starts from zero every session.</strong> We are building the layer that makes that stop. The technology exists. The market gap is real. The window is open. <strong>We are asking for $2M to become infrastructure before anyone else notices."</strong>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+  <span class="logo">RecoMe</span>
+  <span>Pre-Seed Round 2026 · Confidential — Not for Distribution</span>
+</footer>
+
+</body>
+</html>

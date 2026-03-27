@@ -13,6 +13,8 @@ import { createProactiveDwellTracker, createSmartPromptTrackers } from './DwellT
 import { PlatformIntelligenceEngine } from './intelligence/PlatformIntelligenceEngine';
 import { migrateLegacyCache } from './adapters/SelectorDiscovery';
 import { buildPathPattern, loadPathAwareCache } from './adapters/PathPatternCache';
+import { checkPageEligibility, getMinCardThreshold, publishDebugSnapshot } from './PageEligibility';
+import type { DebugSnapshot } from './PageEligibility';
 import { createLogger } from '@shared/Logger';
 import { showToast } from './ui/Toast';
 import { showConfetti } from './ui/Confetti';
@@ -69,6 +71,15 @@ async function bootstrap(): Promise<void> {
   // Never run on pure chat/messaging sites
   if (isChatOnlySite()) {
     log.info(`Chat-only site detected (${location.hostname}), skipping`);
+    return;
+  }
+
+  // ── P0 Fix: Page eligibility gate ─────────────────────────────────────────
+  // Run strict checks BEFORE creating any adapter, overlay, or UI.
+  // Blocks: CAPTCHA, anti-bot, login/signup, logged-out social, error pages.
+  const eligibility = checkPageEligibility();
+  if (!eligibility.eligible) {
+    log.info(`Page ineligible: ${eligibility.reason} — suppressing all RecoMe UI`);
     return;
   }
 
@@ -132,8 +143,23 @@ async function bootstrap(): Promise<void> {
 
   await initAdapter(adapter);
 
-  // First-action nudge — show a welcome toast on first page where RecoMe activates
-  showFirstActionNudge();
+  // ── P1 Fix: Per-platform health threshold ─────────────────────────────────
+  // After adapter init, check if enough cards were found. If not, wait a bit
+  // and recheck before showing the overlay. This prevents "activation without
+  // usable controls" — the core P0 issue from the QA report.
+  const minCards = getMinCardThreshold(platform);
+  const cardCount = countDetectedCards(adapter);
+  let overlayDeferred = false;
+
+  if (cardCount < minCards) {
+    log.info(`Only ${cardCount} cards found (need ${minCards}) — deferring overlay, will recheck`);
+    overlayDeferred = true;
+  }
+
+  // Show first-action nudge only when we have cards to act on
+  if (!overlayDeferred) {
+    showFirstActionNudge();
+  }
 
   // Run a GenericAdapter as a supplement on known platforms to catch widgets,
   // carousels, video overlays, and other elements the specific adapter misses.
@@ -162,11 +188,86 @@ async function bootstrap(): Promise<void> {
   // Search query monitoring — learn from what the user searches for
   setupSearchTracking(resolvedPlatform);
 
-  // Floating overlay — inject after everything else is ready
-  injectOverlay(resolvedPlatform, adapter);
+  // ── Overlay injection with health gating ──────────────────────────────────
+  // If cards were found immediately, inject overlay right away.
+  // Otherwise, wait up to 5 seconds for cards to appear (MutationObserver may
+  // detect them async). If still nothing, stay hidden — the extension is active
+  // but there's nothing useful to show on this page.
+  if (!overlayDeferred) {
+    injectOverlay(resolvedPlatform, adapter);
+    setupPlatformIntelligence(resolvedPlatform);
+  } else {
+    // Recheck at 2s, 5s, and 8s intervals — cards may load asynchronously
+    const recheckIntervals = [2000, 5000, 8000];
+    let injected = false;
 
-  // Platform intelligence — proactive insights (runs in background after page settles)
-  setupPlatformIntelligence(resolvedPlatform);
+    for (const delay of recheckIntervals) {
+      setTimeout(() => {
+        if (injected) return;
+        const currentCount = countDetectedCards(adapter);
+
+        // Also re-run eligibility check (page may have changed via SPA)
+        const recheck = checkPageEligibility();
+        if (!recheck.eligible) {
+          log.info(`Page became ineligible during recheck: ${recheck.reason}`);
+          return;
+        }
+
+        if (currentCount >= minCards) {
+          log.info(`Recheck: ${currentCount} cards found (need ${minCards}) — activating overlay`);
+          injected = true;
+          injectOverlay(resolvedPlatform, adapter);
+          setupPlatformIntelligence(resolvedPlatform);
+          showFirstActionNudge();
+        } else if (delay === recheckIntervals[recheckIntervals.length - 1]) {
+          log.info(
+            `Final recheck: ${currentCount} cards found (need ${minCards}) — staying hidden. ` +
+              `Extension is running but no usable controls on this page.`,
+          );
+          // Still inject the overlay so the user can access the dashboard/agent,
+          // but DON'T show the first-action nudge (nothing actionable on the page).
+          injectOverlay(resolvedPlatform, adapter);
+          setupPlatformIntelligence(resolvedPlatform);
+        }
+      }, delay);
+    }
+  }
+
+  // ── Debug snapshot — dev-only diagnostics ─────────────────────────────────
+  // Set `recome_debug: true` in chrome.storage.local to enable.
+  // Then inspect `window.__RECOME_DEBUG` in the console for a full status report.
+  publishDebugSnapshot({
+    url: location.href,
+    timestamp: new Date().toISOString(),
+    eligibility,
+    platform,
+    pageType:
+      (adapter as unknown as { detectPageType?: () => string }).detectPageType?.() ?? 'unknown',
+    activeCardSelector: adapter.getCardSelector(),
+    detectedCards: cardCount,
+    minCardThreshold: minCards,
+    overlayInjected: !overlayDeferred,
+    checks: {
+      isChatOnly: false,
+      isEnabled: settings.enabled,
+      isPlatformEnabled: settings.platforms[platform] !== false,
+      hasEnoughCards: cardCount >= minCards,
+    },
+  } satisfies DebugSnapshot);
+}
+
+/**
+ * Count how many cards the adapter has detected on the current page.
+ * Uses the adapter's active card selector to query the DOM.
+ */
+function countDetectedCards(adapter: BaseAdapter): number {
+  const selector = adapter.getCardSelector();
+  if (!selector) return 0;
+  try {
+    return document.querySelectorAll(selector).length;
+  } catch {
+    return 0;
+  }
 }
 
 function setupDwellTracking(adapter: BaseAdapter, platform: Platform): void {

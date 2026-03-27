@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>RecoMe Extension — Live Demo</title>
+  <style>
+    :root {
+      --ink:       #060d1a;
+      --ink2:      #0d1a30;
+      --ink3:      #1a2540;
+      --surface:   #f6f8fc;
+      --white:     #ffffff;
+      --muted:     #5a6a85;
+      --faint:     #8a96aa;
+      --line:      #e2e8f0;
+      --ext:       #2356e8;
+      --ext-lt:    #eff4ff;
+      --teal:      #5eead4;
+      --teal-dark: #0d9488;
+      --green:     #10b981;
+      --amber:     #d97706;
+      --red:       #e83232;
+      --amz-orange:#FF9900;
+      --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      --mono: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: var(--ink);
+      color: var(--white);
+      line-height: 1.65;
+      font-size: 15px;
+      min-height: 100vh;
+    }
+
+    /* ── PAGE HEADER ────────────────────────────────────────────── */
+    .page-header {
+      padding: 28px 48px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .back-link {
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.45);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color .15s;
+    }
+    .back-link:hover { color: var(--teal); }
+    .page-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.7);
+      letter-spacing: -0.3px;
+    }
+    .page-title span { color: var(--teal); }
+
+    /* ── MAIN LAYOUT ─────────────────────────────────────────────── */
+    .main-wrap {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 32px 48px 64px;
+    }
+
+    /* ── CONTEXT BAR ─────────────────────────────────────────────── */
+    .context-bar {
+      background: linear-gradient(135deg, rgba(13,148,136,0.18) 0%, rgba(94,234,212,0.08) 100%);
+      border: 1px solid rgba(94,234,212,0.25);
+      border-radius: 12px;
+      padding: 14px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .context-icon {
+      width: 32px;
+      height: 32px;
+      background: rgba(94,234,212,0.15);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .context-text {
+      font-size: 13.5px;
+      color: rgba(255,255,255,0.85);
+      line-height: 1.55;
+    }
+    .context-text strong { color: var(--teal); }
+    .ctx-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(94,234,212,0.12);
+      border: 1px solid rgba(94,234,212,0.2);
+      border-radius: 999px;
+      padding: 2px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--teal);
+      margin: 0 2px;
+    }
+    .ctx-weight {
+      font-size: 11px;
+      opacity: 0.7;
+      font-family: var(--mono);
+    }
+
+    /* ── DEMO CONTAINER (browser + side panel) ───────────────────── */
+    .demo-container {
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      gap: 20px;
+      align-items: start;
+    }
+
+    /* ── BROWSER WINDOW ──────────────────────────────────────────── */
+    .browser-window {
+      background: #1e2330;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06);
+    }
+
+    /* Chrome frame */
+    .browser-chrome {
+      background: #2a2f3d;
+      padding: 0;
+    }
+    .browser-titlebar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px 8px;
+    }
+    .window-dots {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .dot-red   { background: #ff5f56; }
+    .dot-amber { background: #ffbd2e; }
+    .dot-green { background: #27c93f; }
+
+    /* Tabs */
+    .browser-tabs {
+      display: flex;
+      padding: 0 16px;
+      gap: 0;
+    }
+    .browser-tab {
+      background: #1e2330;
+      border-radius: 8px 8px 0 0;
+      padding: 7px 18px;
+      font-size: 12px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.8);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 200px;
+    }
+    .browser-tab .tab-favicon {
+      width: 14px;
+      height: 14px;
+      border-radius: 2px;
+      background: var(--amz-orange);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      font-weight: 900;
+      color: #000;
+    }
+    .browser-tab .tab-close {
+      margin-left: auto;
+      color: rgba(255,255,255,0.3);
+      font-size: 14px;
+      line-height: 1;
+      cursor: default;
+    }
+
+    /* Address bar row */
+    .browser-addressbar {
+      background: #1e2330;
+      padding: 6px 16px 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .nav-btns {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: rgba(255,255,255,0.4);
+      cursor: default;
+    }
+    .address-pill {
+      flex: 1;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.7);
+      font-family: var(--mono);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .address-lock {
+      font-size: 10px;
+      color: var(--green);
+    }
+    .reco-ext-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(35,86,232,0.2);
+      border: 1px solid rgba(35,86,232,0.4);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #7ba7ff;
+      cursor: default;
+    }
+    .reco-ext-badge .dot-active {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+    }
+
+    /* ── AMAZON VIEWPORT ─────────────────────────────────────────── */
+    .amazon-viewport {
+      background: #fff;
+      min-height: 600px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Amazon header */
+    .amz-header {
+      background: #131921;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .amz-logo {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--amz-orange);
+      letter-spacing: -1px;
+      font-style: italic;
+      flex-shrink: 0;
+    }
+    .amz-logo span { color: #fff; font-size: 10px; font-style: normal; vertical-align: super; }
+    .amz-search-bar {
+      flex: 1;
+      display: flex;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .amz-search-select {
+      background: #f3f3f3;
+      border: none;
+      padding: 0 8px;
+      font-size: 11px;
+      color: #333;
+      border-right: 1px solid #cdcdcd;
+      cursor: default;
+    }
+    .amz-search-input {
+      flex: 1;
+      border: none;
+      padding: 8px 12px;
+      font-size: 13px;
+      color: #333;
+      outline: none;
+      background: #fff;
+      pointer-events: none;
+    }
+    .amz-search-btn {
+      background: var(--amz-orange);
+      border: none;
+      padding: 0 14px;
+      cursor: default;
+      display: flex;
+      align-items: center;
+    }
+    .amz-search-btn svg { width: 16px; height: 16px; fill: #333; }
+    .amz-nav {
+      background: #232f3e;
+      padding: 5px 16px;
+      display: flex;
+      gap: 16px;
+    }
+    .amz-nav-item {
+      font-size: 12px;
+      color: #fff;
+      padding: 3px 0;
+      cursor: default;
+    }
+
+    /* Results area */
+    .amz-results {
+      padding: 12px 16px;
+      background: #eaeded;
+    }
+    .amz-results-header {
+      font-size: 14px;
+      color: #333;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+    .amz-results-header em { font-style: normal; font-weight: 700; }
+
+    /* Product grid */
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    /* Product card */
+    .product-card {
+      background: #fff;
+      border-radius: 6px;
+      overflow: visible;
+      position: relative;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transition: box-shadow .2s;
+    }
+    .product-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.18); }
+    .product-card.dimmed {
+      filter: grayscale(80%) opacity(0.35);
+    }
+    .product-card.dimmed .reco-badge { filter: none; opacity: 1; }
+
+    .card-image {
+      width: 100%;
+      height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      background: #f7f7f7;
+      border-radius: 6px 6px 0 0;
+    }
+    .card-body {
+      padding: 10px 12px 12px;
+    }
+    .card-title {
+      font-size: 12.5px;
+      color: #0f1111;
+      line-height: 1.4;
+      font-weight: 500;
+      margin-bottom: 6px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .card-stars {
+      color: var(--amz-orange);
+      font-size: 13px;
+      letter-spacing: -1px;
+    }
+    .card-reviews {
+      font-size: 11px;
+      color: #007185;
+      margin-left: 4px;
+    }
+    .card-rating-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .card-price {
+      font-size: 17px;
+      font-weight: 700;
+      color: #0f1111;
+    }
+    .card-price .dollar { font-size: 12px; vertical-align: super; font-weight: 400; }
+    .card-prime {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #00A8E1;
+      margin-top: 4px;
+    }
+    .card-add-btn {
+      display: block;
+      width: 100%;
+      margin-top: 8px;
+      background: var(--amz-orange);
+      border: none;
+      border-radius: 20px;
+      padding: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #0f1111;
+      cursor: default;
+      text-align: center;
+    }
+
+    /* ── RECO BADGE OVERLAY ──────────────────────────────────────── */
+    .reco-badge {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      z-index: 10;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+      white-space: nowrap;
+      cursor: default;
+    }
+    .badge-green {
+      background: #10b981;
+      color: #fff;
+    }
+    .badge-amber {
+      background: #d97706;
+      color: #fff;
+    }
+    .badge-red {
+      background: #e83232;
+      color: #fff;
+    }
+
+    .reco-score {
+      background: rgba(0,0,0,0.2);
+      border-radius: 999px;
+      padding: 1px 6px;
+      font-size: 10px;
+      font-family: var(--mono);
+      font-weight: 700;
+    }
+
+    /* Reco tooltip / insight strip below card image */
+    .reco-insight {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(6,13,26,0.92);
+      border-top: 2px solid;
+      padding: 6px 10px;
+      font-size: 10.5px;
+      color: rgba(255,255,255,0.85);
+      line-height: 1.45;
+      border-radius: 0 0 6px 6px;
+      backdrop-filter: blur(4px);
+    }
+    .reco-insight.green  { border-color: #10b981; }
+    .reco-insight.amber  { border-color: #d97706; }
+    .reco-insight.red    { border-color: #e83232; }
+    .reco-insight.neutral{ border-color: #64748b; }
+
+    /* ── SCORE BREAKDOWN OVERLAY ─────────────────────────────────── */
+    .score-breakdown {
+      display: none;
+      position: absolute;
+      top: 32px;
+      right: -8px;
+      z-index: 20;
+      background: #0d1a30;
+      border: 1px solid rgba(35,86,232,0.3);
+      border-radius: 10px;
+      padding: 10px 14px;
+      min-width: 220px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    .score-breakdown.visible { display: block; }
+    .sb-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 3px 0;
+      font-size: 11px;
+    }
+    .sb-label { color: rgba(255,255,255,0.6); }
+    .sb-val {
+      font-family: var(--mono);
+      font-weight: 700;
+      color: var(--teal);
+    }
+    .sb-divider {
+      border: none;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      margin: 5px 0;
+    }
+    .sb-total .sb-label { color: #fff; font-weight: 700; }
+    .sb-total .sb-val { color: var(--teal); font-size: 13px; }
+
+    /* ── TOGGLE BUTTON ───────────────────────────────────────────── */
+    .controls-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .demo-label {
+      font-size: 13px;
+      color: rgba(255,255,255,0.45);
+    }
+    .toggle-btn {
+      background: rgba(35,86,232,0.15);
+      border: 1px solid rgba(35,86,232,0.35);
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #7ba7ff;
+      cursor: pointer;
+      transition: all .18s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .toggle-btn:hover {
+      background: rgba(35,86,232,0.28);
+      border-color: rgba(35,86,232,0.55);
+      color: #a8c4ff;
+    }
+    .toggle-btn.active {
+      background: rgba(35,86,232,0.35);
+      border-color: #2356e8;
+      color: #fff;
+    }
+    .toggle-icon { font-size: 14px; transition: transform .2s; }
+    .toggle-btn.active .toggle-icon { transform: rotate(180deg); }
+
+    /* ── SIDE PANEL ──────────────────────────────────────────────── */
+    .side-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .panel-card {
+      background: var(--ink2);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 18px;
+    }
+    .panel-card h3 {
+      font-size: 13px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.5);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 14px;
+    }
+
+    /* Status */
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      flex-shrink: 0;
+    }
+    .status-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .status-sub {
+      font-size: 12px;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 4px;
+    }
+
+    /* Interest bars */
+    .interest-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 14px;
+    }
+    .interest-item {
+      margin-bottom: 10px;
+    }
+    .interest-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    .interest-name {
+      font-size: 12px;
+      color: rgba(255,255,255,0.75);
+    }
+    .interest-weight {
+      font-size: 11px;
+      font-family: var(--mono);
+      color: var(--teal);
+      font-weight: 700;
+    }
+    .interest-bar-track {
+      height: 5px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .interest-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--ext), var(--teal));
+      border-radius: 999px;
+      transition: width .6s cubic-bezier(0.34,1.56,0.64,1);
+    }
+
+    /* Filter/guardian items */
+    .panel-stat {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+    .panel-stat:last-child { margin-bottom: 0; }
+    .stat-icon { font-size: 14px; }
+    .stat-text { font-size: 12px; color: rgba(255,255,255,0.65); line-height: 1.4; }
+    .stat-text strong { color: #fff; }
+
+    /* ── INSIGHT CARD ────────────────────────────────────────────── */
+    .insight-section {
+      margin-top: 20px;
+    }
+    .insight-card {
+      background: linear-gradient(135deg, rgba(35,86,232,0.15) 0%, rgba(124,58,237,0.1) 100%);
+      border: 1px solid rgba(35,86,232,0.25);
+      border-radius: 14px;
+      padding: 22px 28px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .insight-icon-wrap {
+      width: 48px;
+      height: 48px;
+      background: rgba(35,86,232,0.2);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+    .insight-content { flex: 1; }
+    .insight-kicker {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #7ba7ff;
+      margin-bottom: 5px;
+    }
+    .insight-text {
+      font-size: 14px;
+      color: rgba(255,255,255,0.85);
+      line-height: 1.55;
+    }
+    .insight-text strong { color: #fff; }
+    .insight-meta {
+      font-size: 12px;
+      color: rgba(255,255,255,0.4);
+      margin-top: 4px;
+    }
+    .insight-meta .match-score {
+      color: var(--teal);
+      font-weight: 700;
+      font-family: var(--mono);
+    }
+    .insight-meta .deadline {
+      color: var(--amber);
+      font-weight: 600;
+    }
+    .btn-view-webinar {
+      background: var(--ext);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: all .18s;
+    }
+    .btn-view-webinar:hover {
+      background: #1a45d4;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(35,86,232,0.4);
+    }
+
+    /* ── FOOTER ──────────────────────────────────────────────────── */
+    .page-footer {
+      text-align: center;
+      padding: 32px 48px 48px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .page-footer a {
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.35);
+      text-decoration: none;
+      transition: color .15s;
+    }
+    .page-footer a:hover { color: var(--teal); }
+
+    /* ── RESPONSIVE ──────────────────────────────────────────────── */
+    @media (max-width: 1100px) {
+      .demo-container { grid-template-columns: 1fr; }
+      .side-panel { flex-direction: row; flex-wrap: wrap; }
+      .panel-card { flex: 1; min-width: 240px; }
+      .product-grid { grid-template-columns: repeat(2, 1fr); }
+      .main-wrap { padding: 24px 20px 48px; }
+      .page-header { padding: 20px; }
+    }
+    @media (max-width: 640px) {
+      .product-grid { grid-template-columns: 1fr; }
+      .insight-card { flex-direction: column; align-items: flex-start; }
+      .btn-view-webinar { align-self: flex-start; }
+      .context-bar { flex-direction: column; align-items: flex-start; gap: 8px; }
+    }
+
+    /* Pulse animation on active dot */
+    @keyframes pulse-green {
+      0%   { box-shadow: 0 0 0 0 rgba(16,185,129,0.6); }
+      70%  { box-shadow: 0 0 0 8px rgba(16,185,129,0); }
+      100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+    }
+    .status-dot { animation: pulse-green 2.5s infinite; }
+
+    /* Filtered card warning strip */
+    .filter-warning {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(232,50,50,0.92);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+      text-align: center;
+      white-space: nowrap;
+      z-index: 15;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── PAGE HEADER ─────────────────────────────────────────── -->
+  <header class="page-header">
+    <a href="../../pitch-site/index.html" class="back-link">
+      ← Back to pitch site
+    </a>
+    <div class="page-title">RecoMe Extension — <span>Live Demo</span></div>
+  </header>
+
+  <!-- ── MAIN CONTENT ────────────────────────────────────────── -->
+  <div class="main-wrap">
+
+    <!-- Context bar -->
+    <div class="context-bar">
+      <div class="context-icon">🧬</div>
+      <div class="context-text">
+        <strong>James</strong> is searching for <strong>"supplements during chemotherapy"</strong> on Amazon.
+        His interest graph — built from 3 weeks of browsing health content — is loaded:
+        <span class="ctx-tag">chemo side effects <span class="ctx-weight">w:0.94</span></span>
+        <span class="ctx-tag">nausea remedies <span class="ctx-weight">w:0.88</span></span>
+        <span class="ctx-tag">cancer treatment research <span class="ctx-weight">w:0.91</span></span>
+      </div>
+    </div>
+
+    <!-- Controls row -->
+    <div class="controls-row">
+      <div class="demo-label">Interactive simulation — hover cards to explore</div>
+      <button class="toggle-btn" id="graphToggle" onclick="toggleGraphWeights()">
+        <span class="toggle-icon" id="toggleIcon">⬡</span>
+        Show graph weights
+      </button>
+    </div>
+
+    <!-- Demo container: browser + side panel -->
+    <div class="demo-container">
+
+      <!-- ── BROWSER SIMULATION ──────────────────────────── -->
+      <div class="browser-window">
+
+        <!-- Chrome frame -->
+        <div class="browser-chrome">
+          <!-- Title bar -->
+          <div class="browser-titlebar">
+            <div class="window-dots">
+              <div class="dot dot-red"></div>
+              <div class="dot dot-amber"></div>
+              <div class="dot dot-green"></div>
+            </div>
+          </div>
+
+          <!-- Tabs -->
+          <div class="browser-tabs">
+            <div class="browser-tab">
+              <div class="tab-favicon">a</div>
+              supplements during chemo... — Amazon
+              <div class="tab-close">×</div>
+            </div>
+          </div>
+
+          <!-- Address bar -->
+          <div class="browser-addressbar">
+            <div class="nav-btns">
+              <div class="nav-btn">←</div>
+              <div class="nav-btn">→</div>
+              <div class="nav-btn">↻</div>
+            </div>
+            <div class="address-pill">
+              <span class="address-lock">🔒</span>
+              amazon.com/s?k=supplements+during+chemotherapy
+            </div>
+            <div class="reco-ext-badge">
+              <div class="dot-active"></div>
+              RecoMe
+            </div>
+          </div>
+        </div>
+
+        <!-- Amazon viewport -->
+        <div class="amazon-viewport">
+
+          <!-- Amazon header -->
+          <div class="amz-header">
+            <div class="amz-logo">amazon<span>.com</span></div>
+            <div class="amz-search-bar">
+              <div class="amz-search-select">All ▾</div>
+              <input class="amz-search-input" type="text" value="supplements during chemotherapy" readonly/>
+              <div class="amz-search-btn">
+                <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.293 14.293l4.707 4.707 1.414-1.414-4.707-4.707A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="amz-nav">
+            <div class="amz-nav-item">Departments</div>
+            <div class="amz-nav-item">Best Sellers</div>
+            <div class="amz-nav-item">Prime</div>
+            <div class="amz-nav-item">New Arrivals</div>
+            <div class="amz-nav-item">Health &amp; Household</div>
+          </div>
+
+          <!-- Results -->
+          <div class="amz-results">
+            <div class="amz-results-header">
+              1–16 of 847 results for <em>"supplements during chemotherapy"</em>
+            </div>
+
+            <div class="product-grid">
+
+              <!-- CARD 1 — Ginger Root -->
+              <div class="product-card" id="card1">
+                <div class="reco-badge badge-green">
+                  ✓ Relevant
+                  <span class="reco-score">0.89</span>
+                </div>
+                <div class="score-breakdown" id="sb1">
+                  <div class="sb-row">
+                    <span class="sb-label">Interest Match</span>
+                    <span class="sb-val">0.94</span>
+                  </div>
+                  <div class="sb-row">
+                    <span class="sb-label">Benefit Clarity</span>
+                    <span class="sb-val">0.88</span>
+                  </div>
+                  <div class="sb-row">
+                    <span class="sb-label">Timeliness</span>
+                    <span class="sb-val">0.91</span>
+                  </div>
+                  <div class="sb-row">
+                    <span class="sb-label">Novelty</span>
+                    <span class="sb-val">0.74</span>
+                  </div>
+                  <hr class="sb-divider"/>
+                  <div class="sb-row sb-total">
+                    <span class="sb-label">Total Score</span>
+                    <span class="sb-val">0.89</span>
+                  </div>
+                </div>
+                <div class="card-image">🫚</div>
+                <div class="card-body">
+                  <div class="card-title">Ginger Root Extract 1000mg — 120 Capsules, Standardized</div>
+                  <div class="card-rating-row">
+                    <span class="card-stars">★★★★½</span>
+                    <span class="card-reviews">847</span>
+                  </div>
+                  <div class="card-price"><span class="dollar">$</span>18.99</div>
+                  <div class="card-prime">✓ Prime</div>
+                  <div class="card-add-btn">Add to Cart</div>
+                </div>
+                <div class="reco-insight green">
+                  Matches your 3-week search pattern on nausea management during chemo. 3 clinical trials cited in articles you read.
+                </div>
+              </div>
+
+              <!-- CARD 2 — Vitamin D3 -->
+              <div class="product-card" id="card2">
+                <div class="reco-badge badge-green">
+                  ✓ Relevant
+                  <span class="reco-score">0.81</span>
+                </div>
+                <div class="score-breakdown" id="sb2">
+                  <div class="sb-row">
+                    <span class="sb-label">Interest Match</span>
+                    <span class="sb-val">0.87</span>
+                  </div>
+                  <div class="sb-row">
+                    <span class="sb-label">Benefit Clarity</span>
+                    <span class="sb-val">0.82</span>
+                  </div>
+                  <div class="sb-row">
+                    <span class="sb-label">Timeliness</span>
+                    <span class="sb-val">0.79</span>
+                  </div>
+                  <div class="sb-row">
+                    <span class="sb-label">Novelty</span>
+                    <span class="sb-val">0.68</span>
+                  </div>
+                  <hr class="sb-divider"/>
+                  <div class="sb-row sb-total">
+                    <span class="sb-label">Total Score</span>
+                    <span class="sb-val">0.81</span>
+                  </div>
+                </div>
+                <div class="card-image">☀️</div>
+                <div class="card-body">
+                  <div class="card-title">Vitamin D3 + K2 5000 IU — High Potency Formula, 360 Softgels</div>
+                  <div class="card-rating-row">
+                    <span class="card-stars">★★★★</span>
+                    <span class="card-reviews">2,341</span>
+                  </div>
+                  <div class="card-price"><span class="dollar">$</span>14.99</div>
+                  <div class="card-prime">✓ Prime</div>
+                  <div class="card-add-btn">Add to Cart</div>
+                </div>
+                <div class="reco-insight green">
+                  You've browsed 4 articles on Vitamin D and cancer treatment in the last 2 weeks — strong browse correlation.
+                </div>
+              </div>
+
+              <!-- CARD 3 — Curcumin -->
+              <div class="product-card" id="card3">
+                <div class="reco-badge badge-amber">
+                  ⚠ Caution
+                  <span class="reco-score">0.52</span>
+                </div>
+                <div class="score-breakdown" id="sb3">
+                  <div class="sb-row">
+                    <span class="sb-label">Interest Match</span>
+                    <span class="sb-val">0.71</span>
+                  </div>
+                  <div class="sb-row">
+                    <span class="sb-label">Benefit Clarity</span>
+                    <span class="sb-val">0.55</span>
+                  </div>
+                  <div class="sb-row">
+                    <span class="sb-label">Timeliness</span>
+                    <span class="sb-val">0.42</span>
+                  </div>
+                  <div class="sb-row">
+                    <span class="sb-label">Novelty</span>
+                    <span class="sb-val">0.38</span>
+                  </div>
+                  <hr class="sb-divider"/>
+                  <div class="sb-row sb-total">
+                    <span class="sb-label">Total Score</span>
+                    <span class="sb-val">0.52</span>
+                  </div>
+                </div>
+                <div class="card-image">🌿</div>
+                <div class="card-body">
+                  <div class="card-title">Curcumin Turmeric Complex Ultra — BioPerine Enhanced, 90 Caps</div>
+                  <div class="card-rating-row">
+                    <span class="card-stars">★★★★½</span>
+                    <span class="card-reviews">5,102</span>
+                  </div>
+                  <div class="card-price"><span class="dollar">$</span>24.99</div>
+                  <div class="card-prime">✓ Prime</div>
+                  <div class="card-add-btn">Add to Cart</div>
+                </div>
+                <div class="reco-insight amber">
+                  Conflicting signals in your research history — articles you read show mixed evidence on this supplement type during treatment.
+                </div>
+              </div>
+
+              <!-- CARD 4 — MIRACLE CURE (FILTERED) -->
+              <div class="product-card dimmed" id="card4">
+                <div class="reco-badge badge-red" style="filter:none;opacity:1;">
+                  ✗ Filtered
+                </div>
+                <div class="filter-warning">FilterAgent blocked</div>
+                <div class="card-image">⚠️</div>
+                <div class="card-body">
+                  <div class="card-title">MIRACLE CURE CANCER FIGHTER MAX — Premium Blend 180 Caps</div>
+                  <div class="card-rating-row">
+                    <span class="card-stars">★★★★★</span>
+                    <span class="card-reviews">12</span>
+                  </div>
+                  <div class="card-price"><span class="dollar">$</span>89.99</div>
+                  <div class="card-add-btn">Add to Cart</div>
+                </div>
+                <div class="reco-insight red" style="filter:none;opacity:1;">
+                  6 red flags: unverified claims, no clinical backing, new seller. Hidden by FilterAgent.
+                </div>
+              </div>
+
+              <!-- CARD 5 — Omega-3 -->
+              <div class="product-card" id="card5">
+                <div class="reco-badge badge-green">
+                  ✓ Relevant
+                  <span class="reco-score">0.75</span>
+                </div>
+                <div class="score-breakdown" id="sb5">
+                  <div class="sb-row">
+                    <span class="sb-label">Interest Match</span>
+                    <span class="sb-val">0.79</span>
+                  </div>
+                  <div class="sb-row">
+                    <span class="sb-label">Benefit Clarity</span>
+                    <span class="sb-val">0.77</span>
+                  </div>
+                  <div class="sb-row">
+                    <span class="sb-label">Timeliness</span>
+                    <span class="sb-val">0.72</span>
+                  </div>
+                  <div class="sb-row">
+                    <span class="sb-label">Novelty</span>
+                    <span class="sb-val">0.62</span>
+                  </div>
+                  <hr class="sb-divider"/>
+                  <div class="sb-row sb-total">
+                    <span class="sb-label">Total Score</span>
+                    <span class="sb-val">0.75</span>
+                  </div>
+                </div>
+                <div class="card-image">🐟</div>
+                <div class="card-body">
+                  <div class="card-title">Omega-3 Fish Oil 2400mg EPA+DHA — Triple Strength, 180 Softgels</div>
+                  <div class="card-rating-row">
+                    <span class="card-stars">★★★★</span>
+                    <span class="card-reviews">8,943</span>
+                  </div>
+                  <div class="card-price"><span class="dollar">$</span>22.99</div>
+                  <div class="card-prime">✓ Prime</div>
+                  <div class="card-add-btn">Add to Cart</div>
+                </div>
+                <div class="reco-insight green">
+                  Anti-inflammatory properties — aligns with your research on managing treatment side effects and fatigue. High evidence quality.
+                </div>
+              </div>
+
+              <!-- CARD 6 — Probiotic -->
+              <div class="product-card" id="card6">
+                <div class="reco-badge badge-amber" style="background:#475569;">
+                  ~ Neutral
+                  <span class="reco-score">0.41</span>
+                </div>
+                <div class="score-breakdown" id="sb6">
+                  <div class="sb-row">
+                    <span class="sb-label">Interest Match</span>
+                    <span class="sb-val">0.48</span>
+                  </div>
+                  <div class="sb-row">
+                    <span class="sb-label">Benefit Clarity</span>
+                    <span class="sb-val">0.39</span>
+                  </div>
+                  <div class="sb-row">
+                    <span class="sb-label">Timeliness</span>
+                    <span class="sb-val">0.44</span>
+                  </div>
+                  <div class="sb-row">
+                    <span class="sb-label">Novelty</span>
+                    <span class="sb-val">0.31</span>
+                  </div>
+                  <hr class="sb-divider"/>
+                  <div class="sb-row sb-total">
+                    <span class="sb-label">Total Score</span>
+                    <span class="sb-val">0.41</span>
+                  </div>
+                </div>
+                <div class="card-image">🦠</div>
+                <div class="card-body">
+                  <div class="card-title">Probiotic 50 Billion CFU — 12 Strains, Delayed Release Capsules</div>
+                  <div class="card-rating-row">
+                    <span class="card-stars">★★★★</span>
+                    <span class="card-reviews">4,211</span>
+                  </div>
+                  <div class="card-price"><span class="dollar">$</span>29.99</div>
+                  <div class="card-prime">✓ Prime</div>
+                  <div class="card-add-btn">Add to Cart</div>
+                </div>
+                <div class="reco-insight neutral">
+                  Limited evidence in your specific context. Not harmful, not strongly indicated.
+                </div>
+              </div>
+
+            </div><!-- /product-grid -->
+          </div><!-- /amz-results -->
+        </div><!-- /amazon-viewport -->
+      </div><!-- /browser-window -->
+
+      <!-- ── SIDE PANEL ──────────────────────────────────── -->
+      <div class="side-panel">
+
+        <!-- Status card -->
+        <div class="panel-card">
+          <div class="status-row">
+            <div class="status-dot"></div>
+            <div class="status-label">RecoMe Active</div>
+          </div>
+          <div class="status-sub">Interest Graph: 47 nodes loaded</div>
+          <div class="status-sub" style="color:rgba(255,255,255,0.3);font-size:11px;">Session: local-only · 0ms latency</div>
+        </div>
+
+        <!-- Interest graph card -->
+        <div class="panel-card">
+          <h3>Interest Graph</h3>
+          <div class="interest-label">Built from James's browsing behavior</div>
+
+          <div class="interest-item">
+            <div class="interest-item-header">
+              <span class="interest-name">Chemo side effects</span>
+              <span class="interest-weight">0.94</span>
+            </div>
+            <div class="interest-bar-track">
+              <div class="interest-bar-fill" style="width:94%"></div>
+            </div>
+          </div>
+
+          <div class="interest-item">
+            <div class="interest-item-header">
+              <span class="interest-name">Cancer treatment research</span>
+              <span class="interest-weight">0.91</span>
+            </div>
+            <div class="interest-bar-track">
+              <div class="interest-bar-fill" style="width:91%"></div>
+            </div>
+          </div>
+
+          <div class="interest-item">
+            <div class="interest-item-header">
+              <span class="interest-name">Nausea remedies</span>
+              <span class="interest-weight">0.88</span>
+            </div>
+            <div class="interest-bar-track">
+              <div class="interest-bar-fill" style="width:88%"></div>
+            </div>
+          </div>
+
+          <div class="interest-item">
+            <div class="interest-item-header">
+              <span class="interest-name">Clinical trial news</span>
+              <span class="interest-weight">0.79</span>
+            </div>
+            <div class="interest-bar-track">
+              <div class="interest-bar-fill" style="width:79%"></div>
+            </div>
+          </div>
+
+          <div class="interest-item">
+            <div class="interest-item-header">
+              <span class="interest-name">Vitamin &amp; supplement research</span>
+              <span class="interest-weight">0.71</span>
+            </div>
+            <div class="interest-bar-track">
+              <div class="interest-bar-fill" style="width:71%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter / Guardian card -->
+        <div class="panel-card">
+          <h3>Agents</h3>
+          <div class="panel-stat">
+            <div class="stat-icon">🛡️</div>
+            <div class="stat-text">
+              <strong>FilterAgent:</strong> 1 product dimmed — unverified claims detected
+            </div>
+          </div>
+          <div class="panel-stat">
+            <div class="stat-icon">🔒</div>
+            <div class="stat-text">
+              <strong>GuardianAgent:</strong> All data local. <strong style="color:var(--green);">0 server calls.</strong>
+            </div>
+          </div>
+          <div class="panel-stat">
+            <div class="stat-icon">🔭</div>
+            <div class="stat-text">
+              <strong>ScoutAgent:</strong> 1 proactive insight ready
+            </div>
+          </div>
+          <div class="panel-stat">
+            <div class="stat-icon">⚡</div>
+            <div class="stat-text">
+              <strong>RankerAgent:</strong> Re-scored 16 results in 34ms
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /side-panel -->
+    </div><!-- /demo-container -->
+
+    <!-- ── INSIGHT CARD ──────────────────────────────────── -->
+    <div class="insight-section">
+      <div class="insight-card">
+        <div class="insight-icon-wrap">💡</div>
+        <div class="insight-content">
+          <div class="insight-kicker">Proactive Insight from ScoutAgent</div>
+          <div class="insight-text">
+            Based on your interest graph: <strong>"Integrative oncology for PDAC"</strong> — a free webinar by ASCO matches your profile with high confidence.
+          </div>
+          <div class="insight-meta">
+            Interest match: <span class="match-score">0.91</span>
+            &nbsp;·&nbsp;
+            <span class="deadline">Registration closes in 3 days</span>
+            &nbsp;·&nbsp;
+            Found via ScoutAgent (local graph traversal only)
+          </div>
+        </div>
+        <button class="btn-view-webinar" onclick="alert('Opening ASCO Webinar registration — in a real session this would open the event page.')">
+          View Webinar
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /main-wrap -->
+
+  <!-- ── FOOTER ──────────────────────────────────────────── -->
+  <footer class="page-footer">
+    <a href="../demos/index.html">← Back to demos</a>
+  </footer>
+
+  <script>
+    // ── GRAPH WEIGHT TOGGLE ────────────────────────────────────
+    var graphVisible = false;
+    var scoreCardIds = ['sb1','sb2','sb3','sb5','sb6']; // no sb4 (filtered card)
+
+    function toggleGraphWeights() {
+      graphVisible = !graphVisible;
+
+      var btn = document.getElementById('graphToggle');
+      var icon = document.getElementById('toggleIcon');
+
+      if (graphVisible) {
+        btn.classList.add('active');
+        btn.innerHTML = '<span class="toggle-icon" id="toggleIcon" style="transform:rotate(180deg)">⬡</span> Hide graph weights';
+        scoreCardIds.forEach(function(id) {
+          var el = document.getElementById(id);
+          if (el) el.classList.add('visible');
+        });
+      } else {
+        btn.classList.remove('active');
+        btn.innerHTML = '<span class="toggle-icon" id="toggleIcon">⬡</span> Show graph weights';
+        scoreCardIds.forEach(function(id) {
+          var el = document.getElementById(id);
+          if (el) el.classList.remove('visible');
+        });
+      }
+    }
+
+    // Close score breakdowns when clicking outside cards
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.product-card') && !e.target.closest('#graphToggle')) {
+        if (graphVisible) {
+          // Keep them open if toggle is active; individual click outside closes only if toggle inactive
+        }
+      }
+    });
+
+    // Animate interest bars on load
+    window.addEventListener('load', function() {
+      // Bars already set via inline style — just ensure they animate in
+      var fills = document.querySelectorAll('.interest-bar-fill');
+      fills.forEach(function(fill) {
+        var target = fill.style.width;
+        fill.style.width = '0%';
+        setTimeout(function() {
+          fill.style.width = target;
+        }, 200);
+      });
+    });
+  </script>
+
+</body>
+</html>

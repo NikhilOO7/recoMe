@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>RecoMe — Investor Pitch Document</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink: #060d1a;
+      --ink2: #1e293b;
+      --text: #334155;
+      --muted: #64748b;
+      --light: #94a3b8;
+      --line: #e2e8f0;
+      --bg: #f8fafc;
+      --white: #ffffff;
+      --blue: #2356e8;
+      --teal: #0d9488;
+      --purple: #7c3aed;
+      --amber: #d97706;
+      --emerald: #10b981;
+      --red: #ef4444;
+      --green: #22c55e;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* ── PRINT / PDF ── */
+    @media print {
+      .no-print { display: none !important; }
+      .page-break { page-break-before: always; }
+      body { background: #fff; }
+      .cover { min-height: auto; padding: 60px 0; }
+    }
+
+    /* ── NAV BAR ── */
+    .topbar {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(248,250,252,0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--line);
+      padding: 0 48px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .topbar-logo { font-size: 15px; font-weight: 800; color: var(--ink); letter-spacing: -0.5px; }
+    .topbar-logo span { color: var(--teal); }
+    .topbar-links { display: flex; gap: 4px; }
+    .topbar-links a {
+      font-size: 12px; font-weight: 600; color: var(--muted); text-decoration: none;
+      padding: 5px 12px; border-radius: 6px; transition: all 0.15s;
+    }
+    .topbar-links a:hover { background: var(--line); color: var(--ink); }
+    .topbar-cta {
+      font-size: 12px; font-weight: 700; background: var(--ink); color: #fff;
+      padding: 7px 16px; border-radius: 8px; text-decoration: none; transition: opacity 0.15s;
+    }
+    .topbar-cta:hover { opacity: 0.85; }
+
+    /* ── WRAPPER ── */
+    .wrap { max-width: 900px; margin: 0 auto; padding: 0 48px; }
+    .wrap-wide { max-width: 1100px; margin: 0 auto; padding: 0 48px; }
+
+    /* ── COVER ── */
+    .cover {
+      min-height: 100vh; display: flex; flex-direction: column; justify-content: center;
+      background: var(--ink); color: #fff;
+      padding: 120px 48px 80px;
+      position: relative; overflow: hidden;
+    }
+    .cover::before {
+      content: '';
+      position: absolute; top: -200px; left: -150px;
+      width: 700px; height: 700px;
+      background: var(--blue); border-radius: 50%;
+      filter: blur(140px); opacity: 0.12; pointer-events: none;
+    }
+    .cover::after {
+      content: '';
+      position: absolute; bottom: -100px; right: -100px;
+      width: 500px; height: 500px;
+      background: var(--teal); border-radius: 50%;
+      filter: blur(120px); opacity: 0.1; pointer-events: none;
+    }
+    .cover-inner { position: relative; z-index: 1; max-width: 760px; }
+    .cover-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 999px; padding: 6px 18px;
+      font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+      color: rgba(255,255,255,0.55); margin-bottom: 28px;
+    }
+    .cover-badge span { color: #5eead4; }
+    .cover-h1 {
+      font-size: clamp(40px, 6vw, 72px); font-weight: 900; line-height: 1.0;
+      letter-spacing: -2.5px; margin-bottom: 20px;
+    }
+    .cover-h1 em { font-style: normal; color: #5eead4; }
+    .cover-sub {
+      font-size: 17px; color: rgba(255,255,255,0.55); max-width: 600px;
+      line-height: 1.75; margin-bottom: 48px;
+    }
+    .cover-stats {
+      display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 60px;
+    }
+    .cs-box {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px; padding: 18px 24px; text-align: center; min-width: 140px;
+    }
+    .cs-num { font-size: 28px; font-weight: 900; line-height: 1; letter-spacing: -1px; color: #5eead4; }
+    .cs-label { font-size: 11px; color: rgba(255,255,255,0.38); margin-top: 5px; line-height: 1.3; }
+    .cover-meta {
+      font-size: 12px; color: rgba(255,255,255,0.3); letter-spacing: 0.5px;
+      border-top: 1px solid rgba(255,255,255,0.08); padding-top: 24px;
+    }
+    .cover-meta strong { color: rgba(255,255,255,0.5); }
+
+    /* ── SECTIONS ── */
+    section { padding: 72px 0; border-bottom: 1px solid var(--line); }
+    section:last-child { border-bottom: none; }
+
+    .section-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase;
+      color: var(--teal); margin-bottom: 12px;
+    }
+    h2 {
+      font-size: clamp(26px, 3.5vw, 38px); font-weight: 900; color: var(--ink);
+      letter-spacing: -1.5px; line-height: 1.1; margin-bottom: 14px;
+    }
+    h3 { font-size: 18px; font-weight: 700; color: var(--ink); margin-bottom: 10px; }
+    .lead {
+      font-size: 16px; color: var(--muted); max-width: 680px; line-height: 1.7; margin-bottom: 40px;
+    }
+
+    /* ── PROBLEM ── */
+    .problem-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+    .problem-card {
+      background: var(--white); border: 1px solid var(--line);
+      border-radius: 14px; padding: 24px;
+    }
+    .problem-card .pc-icon { font-size: 28px; margin-bottom: 12px; }
+    .problem-card h4 { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+    .problem-card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+    /* ── SOLUTION CALLOUT ── */
+    .solution-callout {
+      background: var(--ink); color: #fff; border-radius: 18px; padding: 40px 44px;
+      margin: 32px 0; position: relative; overflow: hidden;
+    }
+    .solution-callout::before {
+      content: ''; position: absolute; top: -80px; right: -80px;
+      width: 300px; height: 300px; background: var(--teal); border-radius: 50%;
+      filter: blur(80px); opacity: 0.15;
+    }
+    .solution-callout .sc-inner { position: relative; z-index: 1; }
+    .solution-callout h3 { font-size: 22px; margin-bottom: 10px; color: #fff; }
+    .solution-callout p { color: rgba(255,255,255,0.6); font-size: 15px; line-height: 1.7; }
+
+    /* ── PRODUCTS ── */
+    .product-block {
+      background: var(--white); border: 1px solid var(--line);
+      border-radius: 16px; padding: 32px; margin-bottom: 20px;
+      display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: start;
+    }
+    .pb-left { }
+    .pb-badge {
+      display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; padding: 4px 10px; border-radius: 6px; margin-bottom: 12px;
+    }
+    .pb-status {
+      font-size: 11px; font-weight: 600; color: var(--muted); margin-top: 8px;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .pb-status-dot { width: 7px; height: 7px; border-radius: 50%; }
+    .dot-built { background: var(--green); }
+    .dot-beta { background: var(--amber); }
+    .dot-planned { background: var(--light); }
+    .pb-right .pb-title { font-size: 20px; font-weight: 800; color: var(--ink); margin-bottom: 6px; }
+    .pb-right .pb-tagline { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+    .pb-features { list-style: none; margin-bottom: 20px; }
+    .pb-features li {
+      font-size: 13px; color: var(--text); padding: 5px 0;
+      border-bottom: 1px solid #f1f5f9; display: flex; align-items: flex-start; gap: 8px;
+    }
+    .pb-features li:last-child { border-bottom: none; }
+    .pb-features li::before { content: '→'; color: var(--teal); font-weight: 700; flex-shrink: 0; }
+    .pb-metrics { display: flex; gap: 12px; flex-wrap: wrap; }
+    .pb-metric {
+      background: #f8fafc; border: 1px solid var(--line); border-radius: 10px;
+      padding: 10px 14px; text-align: center; min-width: 90px;
+    }
+    .pb-metric .pm-num { font-size: 16px; font-weight: 800; color: var(--ink); }
+    .pb-metric .pm-label { font-size: 10px; color: var(--light); margin-top: 2px; }
+
+    /* ── FLYWHEEL ── */
+    .flywheel-wrap {
+      background: var(--white); border: 1px solid var(--line);
+      border-radius: 18px; padding: 40px; margin: 32px 0;
+    }
+    .flywheel-steps {
+      display: flex; gap: 0; align-items: stretch; margin-top: 28px;
+    }
+    .fw-step {
+      flex: 1; padding: 20px 16px; text-align: center;
+      border-right: 1px solid var(--line);
+      position: relative;
+    }
+    .fw-step:last-child { border-right: none; }
+    .fw-arrow {
+      position: absolute; right: -13px; top: 50%; transform: translateY(-50%);
+      width: 25px; height: 25px; background: var(--teal); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; color: #fff; font-weight: 700; z-index: 1;
+    }
+    .fw-last .fw-arrow { display: none; }
+    .fw-num { font-size: 11px; font-weight: 700; color: var(--teal); margin-bottom: 6px; letter-spacing: 1px; }
+    .fw-label { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+    .fw-desc { font-size: 11px; color: var(--muted); line-height: 1.5; }
+    .fw-cac { font-size: 11px; font-weight: 700; color: var(--green); margin-top: 6px; }
+
+    /* ── UNIT ECONOMICS ── */
+    .ue-table {
+      width: 100%; border-collapse: collapse; font-size: 13px;
+    }
+    .ue-table th {
+      background: var(--ink); color: #fff; padding: 12px 16px;
+      text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+    }
+    .ue-table th:first-child { border-radius: 10px 0 0 0; }
+    .ue-table th:last-child { border-radius: 0 10px 0 0; }
+    .ue-table td {
+      padding: 12px 16px; border-bottom: 1px solid var(--line); vertical-align: top;
+    }
+    .ue-table tr:last-child td { border-bottom: none; }
+    .ue-table tr:nth-child(even) td { background: #f8fafc; }
+    .ue-table .product-name { font-weight: 700; color: var(--ink); }
+    .good { color: var(--green); font-weight: 700; }
+    .great { color: var(--teal); font-weight: 700; }
+
+    /* ── REVENUE TABLE ── */
+    .rev-table-wrap { overflow-x: auto; margin: 24px 0; }
+    .rev-table {
+      width: 100%; border-collapse: collapse; font-size: 13px;
+      border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+    }
+    .rev-table th {
+      background: var(--ink); color: #fff;
+      padding: 12px 18px; text-align: right; font-size: 11px; font-weight: 700;
+    }
+    .rev-table th:first-child { text-align: left; }
+    .rev-table td {
+      padding: 11px 18px; text-align: right;
+      border-bottom: 1px solid var(--line); font-size: 13px;
+    }
+    .rev-table td:first-child { text-align: left; font-weight: 600; color: var(--ink); }
+    .rev-table tr:last-child td { border-bottom: none; }
+    .rev-table .total-row td {
+      background: var(--ink); color: #fff; font-weight: 800; font-size: 14px;
+    }
+    .rev-table .total-row td:first-child { color: #5eead4; }
+    .rev-yr1 { color: var(--muted); }
+    .rev-yr2 { color: var(--blue); font-weight: 700; }
+    .rev-yr3 { color: var(--teal); font-weight: 800; }
+
+    /* ── USE OF FUNDS ── */
+    .funds-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0; }
+    .fund-card {
+      background: var(--white); border: 1px solid var(--line);
+      border-radius: 14px; padding: 24px; border-left: 4px solid;
+    }
+    .fund-card.engineering { border-color: var(--blue); }
+    .fund-card.compliance { border-color: var(--purple); }
+    .fund-card.gtm { border-color: var(--amber); }
+    .fund-card.ga { border-color: var(--emerald); }
+    .fund-amount { font-size: 26px; font-weight: 900; color: var(--ink); letter-spacing: -1px; }
+    .fund-pct { font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 8px; }
+    .fund-title { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+    .fund-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+    /* ── MILESTONES ── */
+    .milestone-track { position: relative; padding: 0 0 0 32px; }
+    .milestone-track::before {
+      content: ''; position: absolute; left: 11px; top: 0; bottom: 0;
+      width: 2px; background: var(--line);
+    }
+    .milestone-group { margin-bottom: 32px; position: relative; }
+    .milestone-dot {
+      position: absolute; left: -32px; top: 4px;
+      width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line);
+      background: var(--white); display: flex; align-items: center; justify-content: center;
+    }
+    .milestone-dot.active { background: var(--teal); border-color: var(--teal); }
+    .milestone-period {
+      font-size: 11px; font-weight: 700; color: var(--teal); letter-spacing: 1px;
+      text-transform: uppercase; margin-bottom: 8px;
+    }
+    .milestone-items { list-style: none; }
+    .milestone-items li {
+      font-size: 13px; color: var(--text); padding: 5px 0;
+      border-bottom: 1px solid #f1f5f9; display: flex; align-items: flex-start; gap: 8px;
+    }
+    .milestone-items li:last-child { border-bottom: none; }
+    .milestone-items li::before { content: '✦'; color: var(--teal); font-size: 9px; flex-shrink: 0; margin-top: 4px; }
+
+    /* ── RISKS ── */
+    .risk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .risk-card {
+      background: var(--white); border: 1px solid var(--line);
+      border-radius: 12px; padding: 20px;
+    }
+    .risk-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .risk-label {
+      font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 5px;
+      text-transform: uppercase; letter-spacing: 1px;
+    }
+    .risk-high { background: #fee2e2; color: var(--red); }
+    .risk-med { background: #fef3c7; color: var(--amber); }
+    .risk-title { font-size: 13px; font-weight: 700; color: var(--ink); }
+    .risk-mitigation { font-size: 12px; color: var(--muted); line-height: 1.55; }
+    .risk-mit-label { font-size: 10px; font-weight: 700; color: var(--teal); letter-spacing: 0.5px; margin-bottom: 3px; margin-top: 8px; text-transform: uppercase; }
+
+    /* ── COMPETITIVE ── */
+    .comp-table {
+      width: 100%; border-collapse: collapse; font-size: 12px;
+    }
+    .comp-table th {
+      padding: 12px 14px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+      background: var(--ink); color: #fff; text-align: center;
+    }
+    .comp-table th:first-child { text-align: left; border-radius: 10px 0 0 0; }
+    .comp-table th:last-child { border-radius: 0 10px 0 0; background: var(--teal); }
+    .comp-table td {
+      padding: 11px 14px; border-bottom: 1px solid var(--line); text-align: center; vertical-align: middle;
+    }
+    .comp-table td:first-child { text-align: left; font-weight: 600; color: var(--ink); }
+    .comp-table tr:last-child td { border-bottom: none; }
+    .comp-table .recome-col { background: rgba(13,148,136,0.06); font-weight: 700; }
+    .check { color: var(--green); font-size: 15px; }
+    .cross { color: #d1d5db; font-size: 15px; }
+    .partial { color: var(--amber); font-size: 13px; }
+
+    /* ── ASK CALLOUT ── */
+    .ask-callout {
+      background: linear-gradient(135deg, var(--ink) 0%, #0f2a40 100%);
+      border-radius: 20px; padding: 52px; color: #fff;
+      text-align: center; position: relative; overflow: hidden;
+    }
+    .ask-callout::before {
+      content: ''; position: absolute; top: -100px; left: -100px;
+      width: 400px; height: 400px; background: var(--blue); border-radius: 50%;
+      filter: blur(120px); opacity: 0.15;
+    }
+    .ask-callout::after {
+      content: ''; position: absolute; bottom: -100px; right: -100px;
+      width: 300px; height: 300px; background: var(--teal); border-radius: 50%;
+      filter: blur(100px); opacity: 0.12;
+    }
+    .ask-inner { position: relative; z-index: 1; }
+    .ask-callout .ask-num {
+      font-size: clamp(52px, 8vw, 88px); font-weight: 900; letter-spacing: -4px;
+      line-height: 1; color: #5eead4; margin-bottom: 8px;
+    }
+    .ask-callout .ask-sub { font-size: 16px; color: rgba(255,255,255,0.5); margin-bottom: 32px; }
+    .ask-terms {
+      display: inline-flex; gap: 32px; margin-top: 12px; flex-wrap: wrap; justify-content: center;
+    }
+    .ask-term { text-align: center; }
+    .ask-term .at-num { font-size: 22px; font-weight: 800; color: #fff; }
+    .ask-term .at-label { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 3px; }
+
+    /* ── THESIS GRID ── */
+    .thesis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; }
+    .thesis-card {
+      background: var(--white); border: 1px solid var(--line);
+      border-radius: 14px; padding: 24px;
+    }
+    .thesis-num { font-size: 28px; font-weight: 900; color: #e2e8f0; letter-spacing: -1px; margin-bottom: 8px; }
+    .thesis-title { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+    .thesis-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+    /* ── FOOTER ── */
+    .doc-footer {
+      background: var(--ink); color: rgba(255,255,255,0.35);
+      text-align: center; padding: 28px; font-size: 12px;
+    }
+    .doc-footer strong { color: rgba(255,255,255,0.55); }
+
+    /* Product color utils */
+    .c-blue { color: var(--blue); }
+    .c-teal { color: var(--teal); }
+    .c-purple { color: var(--purple); }
+    .c-amber { color: var(--amber); }
+    .c-emerald { color: var(--emerald); }
+    .bg-blue { background: rgba(35,86,232,0.08); }
+    .bg-teal { background: rgba(13,148,136,0.08); }
+    .bg-purple { background: rgba(124,58,237,0.08); }
+    .bg-amber { background: rgba(217,119,6,0.08); }
+    .bg-emerald { background: rgba(16,185,129,0.08); }
+
+    @media (max-width: 700px) {
+      .problem-grid, .funds-grid, .risk-grid, .thesis-grid { grid-template-columns: 1fr; }
+      .flywheel-steps { flex-direction: column; }
+      .fw-step { border-right: none; border-bottom: 1px solid var(--line); }
+      .fw-arrow { display: none; }
+      .product-block { grid-template-columns: 1fr; }
+      .wrap, .wrap-wide { padding: 0 24px; }
+      .cover { padding: 80px 24px 60px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav class="topbar no-print">
+  <div class="topbar-logo">Reco<span>Me</span></div>
+  <div class="topbar-links">
+    <a href="#problem">Problem</a>
+    <a href="#products">Products</a>
+    <a href="#financials">Financials</a>
+    <a href="#ask">The Ask</a>
+  </div>
+  <a href="financials.html" class="topbar-cta">Full Deck →</a>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- COVER                                                        -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="cover">
+  <div class="wrap cover-inner">
+    <div class="cover-badge"><span>●</span> Pre-Seed Round 2026 &nbsp;·&nbsp; Confidential</div>
+    <h1 class="cover-h1">
+      The <em>Preference Layer</em><br>of the Internet
+    </h1>
+    <p class="cover-sub">
+      Five interconnected products — a browser extension, AI agents, a mobile app, a B2B SDK, and a platform API — that together form the world's first portable user intelligence infrastructure.
+    </p>
+    <div class="cover-stats">
+      <div class="cs-box">
+        <div class="cs-num">$2M</div>
+        <div class="cs-label">Pre-Seed Ask</div>
+      </div>
+      <div class="cs-box">
+        <div class="cs-num">$10M</div>
+        <div class="cs-label">Pre-Money Valuation</div>
+      </div>
+      <div class="cs-box">
+        <div class="cs-num">18mo</div>
+        <div class="cs-label">Runway</div>
+      </div>
+      <div class="cs-box">
+        <div class="cs-num">$28M</div>
+        <div class="cs-label">Year 3 Revenue</div>
+      </div>
+      <div class="cs-box">
+        <div class="cs-num">$12M</div>
+        <div class="cs-label">Series A Target ARR</div>
+      </div>
+    </div>
+    <div class="cover-meta">
+      <strong>RecoMe Inc.</strong> &nbsp;·&nbsp; Pre-Seed Round 2026 &nbsp;·&nbsp;
+      This document is confidential and intended solely for accredited investors. Not for distribution.
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 1. PROBLEM                                                   -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section id="problem">
+  <div class="wrap">
+    <div class="section-label">The Problem</div>
+    <h2>Every app starts from zero.<br>Your preferences die at the tab.</h2>
+    <p class="lead">
+      Every social feed, e-commerce site, and AI assistant treats you as a stranger every time you arrive.
+      Your interest signals are trapped inside platform silos, invisible to the apps that could use them,
+      and invisible to you.
+    </p>
+
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="pc-icon">🔒</div>
+        <h4>Preference Data is Imprisoned</h4>
+        <p>Amazon knows your shopping patterns. YouTube knows your viewing habits. LinkedIn knows your career trajectory. None of them talk to each other — and none of them tell you.</p>
+      </div>
+      <div class="problem-card">
+        <div class="pc-icon">🔄</div>
+        <h4>Cold Start Never Ends</h4>
+        <p>Every new app asks you to start over. There is no portable preference identity. Developers spend months building personalization infrastructure that's been solved before.</p>
+      </div>
+      <div class="problem-card">
+        <div class="pc-icon">🎯</div>
+        <h4>Zero Transparency</h4>
+        <p>You can't see your own interest graph. You can't edit it. You can't take it with you. Recommendations are delivered from a black box you neither own nor control.</p>
+      </div>
+    </div>
+
+    <div class="solution-callout" style="margin-top: 40px;">
+      <div class="sc-inner">
+        <h3>The Insight</h3>
+        <p>
+          Preferences are behavioral infrastructure, not product features. The moment any app can call a single API and receive a structured, weighted interest graph for any user — cold start disappears, personalization becomes a commodity, and the user finally owns their identity. That's the layer we're building.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 2. PRODUCTS                                                  -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section id="products">
+  <div class="wrap">
+    <div class="section-label">The Products</div>
+    <h2>Five products. One compounding flywheel.</h2>
+    <p class="lead">
+      Each product generates preference signals, enriches a shared interest graph, and feeds the next product in the stack.
+      Consumer traction drives developer adoption. Developer adoption grows the platform.
+    </p>
+
+    <!-- Product 1: Extension -->
+    <div class="product-block">
+      <div class="pb-left">
+        <div class="pb-badge bg-blue c-blue">01 · Extension</div>
+        <div style="font-size: 28px; margin: 8px 0;">🔌</div>
+        <div class="pb-status"><span class="pb-status-dot dot-built"></span> Built · Live</div>
+        <div style="margin-top: 16px;">
+          <div style="font-size: 11px; color: var(--muted); margin-bottom: 6px; font-weight: 600;">PRICING</div>
+          <div style="font-size: 12px; color: var(--text); margin-bottom: 4px;">Free: 2 platforms</div>
+          <div style="font-size: 12px; color: var(--text); margin-bottom: 4px;"><strong>Pro: $9/mo</strong></div>
+          <div style="font-size: 12px; color: var(--text);">Team: $19/seat/mo</div>
+        </div>
+      </div>
+      <div class="pb-right">
+        <div class="pb-title">Browser Extension</div>
+        <div class="pb-tagline">Watches 8 platforms in real-time. Builds your interest graph passively. Surfaces inline insights before you miss them.</div>
+        <ul class="pb-features">
+          <li>Monitors Amazon, YouTube, Twitter, Instagram, Facebook, LinkedIn, eBay, Walmart simultaneously</li>
+          <li>Builds a weighted entity interest graph locally — zero server calls, zero data leaving your device</li>
+          <li>OpportunityRanker fires in &lt;15ms to annotate every page with context-aware insights</li>
+          <li>8 AI agents active in the background — filtering, scouting, price-tracking, guarding privacy</li>
+          <li>Cross-platform sync via encrypted graph export</li>
+        </ul>
+        <div class="pb-metrics">
+          <div class="pb-metric"><div class="pm-num">&lt;15ms</div><div class="pm-label">Filter decision</div></div>
+          <div class="pb-metric"><div class="pm-num">8</div><div class="pm-label">Platforms</div></div>
+          <div class="pb-metric"><div class="pm-num">0</div><div class="pm-label">Server calls</div></div>
+          <div class="pb-metric"><div class="pm-num">$9/mo</div><div class="pm-label">Pro price</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Product 2: AI Agents -->
+    <div class="product-block">
+      <div class="pb-left">
+        <div class="pb-badge bg-purple c-purple">02 · Agents</div>
+        <div style="font-size: 28px; margin: 8px 0;">🧠</div>
+        <div class="pb-status"><span class="pb-status-dot dot-built"></span> Built · Live</div>
+        <div style="margin-top: 16px;">
+          <div style="font-size: 11px; color: var(--muted); margin-bottom: 6px; font-weight: 600;">REVENUE</div>
+          <div style="font-size: 12px; color: var(--text); margin-bottom: 4px;">Bundled with Pro/Team</div>
+          <div style="font-size: 12px; color: var(--text); margin-bottom: 4px;">API: $0.002/call</div>
+          <div style="font-size: 12px; color: var(--text);">Enterprise: $50K+</div>
+        </div>
+      </div>
+      <div class="pb-right">
+        <div class="pb-title">AI Agents — Mnemosyne Brain</div>
+        <div class="pb-tagline">8 specialized agents sharing one persistent memory. Not a chatbot — a cognitive layer that runs continuously in the background.</div>
+        <ul class="pb-features">
+          <li><strong>FilterAgent</strong> (15ms) — Show/dim/hide decisions on every feed item</li>
+          <li><strong>ScoutAgent</strong> (500ms) — Proactively hunts opportunities matching your graph</li>
+          <li><strong>AdvisorAgent</strong> (3s) — Conversational interface; can explain any graph node</li>
+          <li><strong>ShopperAgent</strong> (2s) — Price tracking, deal discovery, alert triggering</li>
+          <li><strong>GuardianAgent</strong> (&lt;1ms) — Privacy veto power over every agent call</li>
+          <li>Shared Mnemosyne memory — single knowledge graph, affinity propagation, forgetting curves</li>
+        </ul>
+        <div class="pb-metrics">
+          <div class="pb-metric"><div class="pm-num">8</div><div class="pm-label">Agents</div></div>
+          <div class="pb-metric"><div class="pm-num">1</div><div class="pm-label">Shared brain</div></div>
+          <div class="pb-metric"><div class="pm-num">$9/mo</div><div class="pm-label">vs $19–$20 competition</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Product 3: Mobile App -->
+    <div class="product-block">
+      <div class="pb-left">
+        <div class="pb-badge bg-teal c-teal">03 · Mobile App</div>
+        <div style="font-size: 28px; margin: 8px 0;">📱</div>
+        <div class="pb-status"><span class="pb-status-dot dot-beta"></span> Beta</div>
+        <div style="margin-top: 16px;">
+          <div style="font-size: 11px; color: var(--muted); margin-bottom: 6px; font-weight: 600;">PRICING</div>
+          <div style="font-size: 12px; color: var(--text); margin-bottom: 4px;">Free: 2 platforms</div>
+          <div style="font-size: 12px; color: var(--text); margin-bottom: 4px;"><strong>Pro: $9/mo</strong></div>
+          <div style="font-size: 12px; color: var(--text);">Team: $19/mo (5 seats)</div>
+        </div>
+      </div>
+      <div class="pb-right">
+        <div class="pb-title">Mobile App</div>
+        <div class="pb-tagline">The only consumer app that shows you your complete preference graph in real-time — and lets you actually edit it.</div>
+        <ul class="pb-features">
+          <li><strong>Dashboard</strong> — Live taste graph: 127 nodes, 340 weighted edges, real-time agent activity</li>
+          <li><strong>Agent Chat</strong> — Ask AdvisorAgent to explain any node, find content, or delegate tasks</li>
+          <li><strong>Insights</strong> — ScoutAgent-curated cards: conferences, books, podcasts ranked by match score</li>
+          <li><strong>Preferences</strong> — Edit your own interest graph. Block topics. Tune weights. Unique in the industry.</li>
+          <li><strong>Watchlist</strong> — ShopperAgent price alerts; $45 saved for James this week</li>
+          <li><strong>Settings</strong> — GuardianAgent audit log. Zero unauthorized calls. Local-only graph storage.</li>
+        </ul>
+        <div class="pb-metrics">
+          <div class="pb-metric"><div class="pm-num">6</div><div class="pm-label">Screens</div></div>
+          <div class="pb-metric"><div class="pm-num">847KB</div><div class="pm-label">On-device graph</div></div>
+          <div class="pb-metric"><div class="pm-num">$9/mo</div><div class="pm-label">Pro price</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Product 4: SDK -->
+    <div class="product-block">
+      <div class="pb-left">
+        <div class="pb-badge bg-amber c-amber">04 · B2B SDK</div>
+        <div style="font-size: 28px; margin: 8px 0;">⚙️</div>
+        <div class="pb-status"><span class="pb-status-dot dot-built"></span> Ready</div>
+        <div style="margin-top: 16px;">
+          <div style="font-size: 11px; color: var(--muted); margin-bottom: 6px; font-weight: 600;">PRICING</div>
+          <div style="font-size: 12px; color: var(--text); margin-bottom: 4px;">Starter: $49/mo</div>
+          <div style="font-size: 12px; color: var(--text); margin-bottom: 4px;"><strong>Growth: $499/mo</strong></div>
+          <div style="font-size: 12px; color: var(--text);">Enterprise: $3–8K+/yr</div>
+        </div>
+      </div>
+      <div class="pb-right">
+        <div class="pb-title">B2B SDK</div>
+        <div class="pb-tagline">Drop-in personalization infrastructure. 4-hour integration. No ML team required. Works for healthcare, legal, fintech, e-commerce.</div>
+        <ul class="pb-features">
+          <li><strong>InterestGraph module</strong> — Per-user entity graph with typed weighted edges; vertical-calibrated cold start</li>
+          <li><strong>OpportunityRanker module</strong> — 4-signal scoring: Interest Match 35%, Benefit Clarity 25%, Timeliness 20%, Novelty 20%</li>
+          <li><strong>MemoryPack module</strong> — Short-term + mid-term memory cards; prevents re-explaining context across sessions</li>
+          <li><strong>ProfileExtractor module</strong> — Pluggable specialty registry (healthcare, legal, fintech verticals built-in)</li>
+          <li>First customer: Pantory (healthcare) — deal mapped, contract ready to close</li>
+        </ul>
+        <div class="pb-metrics">
+          <div class="pb-metric"><div class="pm-num">4hrs</div><div class="pm-label">Integration time</div></div>
+          <div class="pb-metric"><div class="pm-num">18:1</div><div class="pm-label">LTV:CAC</div></div>
+          <div class="pb-metric"><div class="pm-num">4mo</div><div class="pm-label">Payback period</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Product 5: Platform API -->
+    <div class="product-block">
+      <div class="pb-left">
+        <div class="pb-badge bg-emerald c-emerald">05 · Platform API</div>
+        <div style="font-size: 28px; margin: 8px 0;">🌐</div>
+        <div class="pb-status"><span class="pb-status-dot dot-planned"></span> Planned — Month 16</div>
+        <div style="margin-top: 16px;">
+          <div style="font-size: 11px; color: var(--muted); margin-bottom: 6px; font-weight: 600;">PRICING</div>
+          <div style="font-size: 12px; color: var(--text); margin-bottom: 4px;">API: $0.001/call</div>
+          <div style="font-size: 12px; color: var(--text); margin-bottom: 4px;">Trends: $99–$499/mo</div>
+          <div style="font-size: 12px; color: var(--text);">Enterprise: custom</div>
+        </div>
+      </div>
+      <div class="pb-right">
+        <div class="pb-title">Platform API</div>
+        <div class="pb-tagline">"Sign in with RecoMe" — a portable preference identity standard. The OAuth layer for taste intelligence.</div>
+        <ul class="pb-features">
+          <li>OAuth 2.0 consent flow with granular scope: <code style="background:#f1f5f9;padding:1px 5px;border-radius:4px;font-size:11px">interests.read</code>, <code style="background:#f1f5f9;padding:1px 5px;border-radius:4px;font-size:11px">preferences.summary</code></li>
+          <li>7 agent-powered endpoints: GET preferences, POST signals, rank candidates, and more</li>
+          <li>B2B Audience Intelligence: anonymized trend radar, product-market fit scoring ($99–$499/mo)</li>
+          <li>Decentralized Node option: self-hosted with FederationAgent for data sovereignty</li>
+          <li>Global Taste Graph: aggregate anonymized signals for trend prediction and research</li>
+        </ul>
+        <div class="pb-metrics">
+          <div class="pb-metric"><div class="pm-num">$0.001</div><div class="pm-label">Per API call</div></div>
+          <div class="pb-metric"><div class="pm-num">22:1</div><div class="pm-label">LTV:CAC</div></div>
+          <div class="pb-metric"><div class="pm-num">Zero PII</div><div class="pm-label">B2B insights</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 3. FLYWHEEL                                                  -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section id="flywheel" style="background: var(--white);">
+  <div class="wrap">
+    <div class="section-label">Business Model</div>
+    <h2>The CAC flywheel</h2>
+    <p class="lead">
+      Each product in the stack dramatically reduces the customer acquisition cost for the next.
+      A consumer user who trusts RecoMe becomes a developer customer almost for free.
+    </p>
+
+    <div class="flywheel-wrap">
+      <div style="font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 4px;">Blended portfolio CAC: <span style="color: var(--teal);">&lt;$200</span> — vs individual product CACs of up to $8,000</div>
+      <div style="font-size: 13px; color: var(--muted); margin-bottom: 24px;">Once the graph exists, every subsequent product sells itself.</div>
+      <div class="flywheel-steps">
+        <div class="fw-step">
+          <div class="fw-arrow">→</div>
+          <div class="fw-num">STEP 1</div>
+          <div class="fw-label">Extension User</div>
+          <div class="fw-desc">Organic / viral. Passive install, immediate value from feed filtering.</div>
+          <div class="fw-cac">CAC: $18</div>
+        </div>
+        <div class="fw-step">
+          <div class="fw-arrow">→</div>
+          <div class="fw-num">STEP 2</div>
+          <div class="fw-label">App Upsell</div>
+          <div class="fw-desc">Extension user downloads app for mobile graph view + agent chat.</div>
+          <div class="fw-cac">Incremental CAC: $4</div>
+        </div>
+        <div class="fw-step">
+          <div class="fw-arrow">→</div>
+          <div class="fw-num">STEP 3</div>
+          <div class="fw-label">SDK Developer</div>
+          <div class="fw-desc">App user is a developer. They integrate SDK into their product. Word of mouth.</div>
+          <div class="fw-cac">CAC: ~$0</div>
+        </div>
+        <div class="fw-step fw-last">
+          <div class="fw-arrow">→</div>
+          <div class="fw-num">STEP 4</div>
+          <div class="fw-label">Enterprise Referral</div>
+          <div class="fw-desc">SDK customer refers enterprise team. Pantory case study does the selling.</div>
+          <div class="fw-cac">CAC: $400 (vs $8K cold)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 4. UNIT ECONOMICS                                            -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section id="economics">
+  <div class="wrap">
+    <div class="section-label">Unit Economics</div>
+    <h2>Strong at every tier</h2>
+    <p class="lead">Consumer products build the graph. B2B products monetize it. Both have healthy unit economics independently — the flywheel makes them exceptional together.</p>
+
+    <table class="ue-table">
+      <thead>
+        <tr>
+          <th style="border-radius:10px 0 0 0; padding:12px 16px;">Product</th>
+          <th style="padding:12px 16px;">CAC</th>
+          <th style="padding:12px 16px;">LTV</th>
+          <th style="padding:12px 16px;">LTV:CAC</th>
+          <th style="padding:12px 16px;">Payback</th>
+          <th style="padding:12px 16px; border-radius:0 10px 0 0;">Driver</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="product-name c-blue">Browser Extension</span></td>
+          <td>$18</td>
+          <td>$108</td>
+          <td class="good">6:1</td>
+          <td>2 months</td>
+          <td>Organic / viral</td>
+        </tr>
+        <tr>
+          <td><span class="product-name c-purple">AI Agents</span></td>
+          <td>$25</td>
+          <td>$198</td>
+          <td class="good">8:1</td>
+          <td>1.5 months</td>
+          <td>Bundled w/ Extension</td>
+        </tr>
+        <tr>
+          <td><span class="product-name c-teal">Mobile App</span></td>
+          <td>$22</td>
+          <td>$162</td>
+          <td class="good">7:1</td>
+          <td>2 months</td>
+          <td>App stores + extension</td>
+        </tr>
+        <tr>
+          <td><span class="product-name c-amber">B2B SDK</span></td>
+          <td>$1,200</td>
+          <td>$21,560</td>
+          <td class="great">18:1</td>
+          <td>4 months</td>
+          <td>Developer-led growth</td>
+        </tr>
+        <tr>
+          <td><span class="product-name c-emerald">Platform API</span></td>
+          <td>$8,000</td>
+          <td>$180,000</td>
+          <td class="great">22:1</td>
+          <td>6 months</td>
+          <td>Enterprise / B2B</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 5. COMPETITIVE LANDSCAPE                                     -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section id="competitive" style="background: var(--white);">
+  <div class="wrap">
+    <div class="section-label">Competitive Landscape</div>
+    <h2>Zero direct competitors</h2>
+    <p class="lead">
+      The major players are either building general AI assistants (OpenAI, Google), consumer apps without B2B infrastructure (Spotify, Pinterest), or data management tools without preference intelligence (Segment, mParticle). None of them build a per-user interest graph that developers can call.
+    </p>
+
+    <div style="overflow-x: auto; margin: 24px 0;">
+      <table class="comp-table">
+        <thead>
+          <tr>
+            <th>Capability</th>
+            <th>OpenAI</th>
+            <th>Google Discover</th>
+            <th>Spotify</th>
+            <th>Segment</th>
+            <th>RecoMe ✦</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Per-user interest graph with typed edges</td>
+            <td><span class="cross">✗</span></td>
+            <td><span class="cross">✗</span></td>
+            <td><span class="partial">~</span></td>
+            <td><span class="cross">✗</span></td>
+            <td class="recome-col"><span class="check">✓</span></td>
+          </tr>
+          <tr>
+            <td>User can view + edit their graph</td>
+            <td><span class="cross">✗</span></td>
+            <td><span class="cross">✗</span></td>
+            <td><span class="cross">✗</span></td>
+            <td><span class="cross">✗</span></td>
+            <td class="recome-col"><span class="check">✓</span></td>
+          </tr>
+          <tr>
+            <td>Cross-session persistent memory</td>
+            <td><span class="partial">~ (chat only)</span></td>
+            <td><span class="cross">✗</span></td>
+            <td><span class="cross">✗</span></td>
+            <td><span class="cross">✗</span></td>
+            <td class="recome-col"><span class="check">✓</span></td>
+          </tr>
+          <tr>
+            <td>Developer SDK (drop-in personalization)</td>
+            <td><span class="partial">~ (general LLM)</span></td>
+            <td><span class="cross">✗</span></td>
+            <td><span class="cross">✗</span></td>
+            <td><span class="partial">~ (events only)</span></td>
+            <td class="recome-col"><span class="check">✓</span></td>
+          </tr>
+          <tr>
+            <td>Privacy veto by architecture (local-first)</td>
+            <td><span class="cross">✗</span></td>
+            <td><span class="cross">✗</span></td>
+            <td><span class="cross">✗</span></td>
+            <td><span class="cross">✗</span></td>
+            <td class="recome-col"><span class="check">✓</span></td>
+          </tr>
+          <tr>
+            <td>Compliance-ready (HIPAA/SOC2 path)</td>
+            <td><span class="partial">~</span></td>
+            <td><span class="cross">✗</span></td>
+            <td><span class="cross">✗</span></td>
+            <td><span class="check">✓</span></td>
+            <td class="recome-col"><span class="check">✓</span></td>
+          </tr>
+          <tr>
+            <td>Multi-platform signal ingestion (8 sources)</td>
+            <td><span class="cross">✗</span></td>
+            <td><span class="partial">~ (Google only)</span></td>
+            <td><span class="partial">~ (Spotify only)</span></td>
+            <td><span class="partial">~ (events only)</span></td>
+            <td class="recome-col"><span class="check">✓</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 20px 24px; margin-top: 16px;">
+      <div style="font-size: 13px; font-weight: 700; color: #15803d; margin-bottom: 6px;">The 18-Month Window</div>
+      <div style="font-size: 13px; color: #166534; line-height: 1.6;">
+        Hyperscalers (Google, Meta, Amazon) have the distribution but not the architecture — their graphs are siloed, opaque, and non-portable. Building a cross-platform, privacy-first, developer-accessible preference layer requires a structural commitment they are unlikely to make. We have 18–24 months before this becomes a priority for them.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 6. FINANCIALS                                                -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section id="financials" class="page-break">
+  <div class="wrap">
+    <div class="section-label">Financials</div>
+    <h2>Three-year revenue projection</h2>
+    <p class="lead">SDK revenue dominates by Year 2. Consumer products compound the graph and reduce blended CAC. Platform API becomes the highest-margin product in Year 3.</p>
+
+    <div class="rev-table-wrap">
+      <table class="rev-table">
+        <thead>
+          <tr>
+            <th style="text-align:left;">Product</th>
+            <th>Year 1</th>
+            <th>Year 2</th>
+            <th>Year 3</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Browser Extension</td>
+            <td class="rev-yr1">$120K</td>
+            <td class="rev-yr2">$680K</td>
+            <td class="rev-yr3">$2.1M</td>
+          </tr>
+          <tr>
+            <td>AI Agents</td>
+            <td class="rev-yr1">$48K</td>
+            <td class="rev-yr2">$320K</td>
+            <td class="rev-yr3">$1.4M</td>
+          </tr>
+          <tr>
+            <td>Mobile App</td>
+            <td class="rev-yr1">$36K</td>
+            <td class="rev-yr2">$240K</td>
+            <td class="rev-yr3">$980K</td>
+          </tr>
+          <tr>
+            <td>B2B SDK</td>
+            <td class="rev-yr1">$612K</td>
+            <td class="rev-yr2">$4.18M</td>
+            <td class="rev-yr3">$18.4M</td>
+          </tr>
+          <tr>
+            <td>Platform API</td>
+            <td class="rev-yr1">$0</td>
+            <td class="rev-yr2">$180K</td>
+            <td class="rev-yr3">$5.2M</td>
+          </tr>
+          <tr class="total-row">
+            <td>Total Revenue</td>
+            <td>$816K</td>
+            <td>$5.6M</td>
+            <td>$28.08M</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 24px;">
+      <div style="background: var(--white); border: 1px solid var(--line); border-radius: 14px; padding: 24px; text-align: center;">
+        <div style="font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Year 1 Net Margin</div>
+        <div style="font-size: 32px; font-weight: 900; color: var(--ink);">15%</div>
+        <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">$126K net income</div>
+      </div>
+      <div style="background: var(--white); border: 1px solid var(--line); border-radius: 14px; padding: 24px; text-align: center;">
+        <div style="font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Year 2 Net Margin</div>
+        <div style="font-size: 32px; font-weight: 900; color: var(--blue);">54%</div>
+        <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">$3.05M net income</div>
+      </div>
+      <div style="background: var(--white); border: 1px solid var(--line); border-radius: 14px; padding: 24px; text-align: center;">
+        <div style="font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Year 3 Net Margin</div>
+        <div style="font-size: 32px; font-weight: 900; color: var(--teal);">73%</div>
+        <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">$20.58M net income</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 7. USE OF FUNDS                                              -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section id="funds" style="background: var(--white);">
+  <div class="wrap">
+    <div class="section-label">Use of Funds</div>
+    <h2>$2M deployed over 18 months</h2>
+    <p class="lead">The allocation is sequenced: compliance investment front-loads the moat that takes competitors 18+ months to replicate. Engineering spend ships the SDK first — the highest-LTV product.</p>
+
+    <div class="funds-grid">
+      <div class="fund-card engineering">
+        <div class="fund-amount">$1.2M</div>
+        <div class="fund-pct">60% of raise</div>
+        <div class="fund-title">Engineering</div>
+        <div class="fund-desc">
+          Backend graph engine, mobile app (iOS + Android), DevOps/infrastructure, and a dedicated SDK/API engineer.
+          Team grows from 2 to 5 by Month 12.
+        </div>
+      </div>
+      <div class="fund-card compliance">
+        <div class="fund-amount">$400K</div>
+        <div class="fund-pct">20% of raise</div>
+        <div class="fund-title">Compliance</div>
+        <div class="fund-desc">
+          HIPAA BAA ($120K), SOC2 Type II ($180K), privacy certifications GDPR/CCPA ($40K), legal review ($60K).
+          The moat that closes healthcare enterprise deals.
+        </div>
+      </div>
+      <div class="fund-card gtm">
+        <div class="fund-amount">$300K</div>
+        <div class="fund-pct">15% of raise</div>
+        <div class="fund-title">Go-to-Market</div>
+        <div class="fund-desc">
+          Developer conferences, community building, technical content, PR, and paid developer acquisition.
+          SDK-first GTM: developers are the distribution.
+        </div>
+      </div>
+      <div class="fund-card ga">
+        <div class="fund-amount">$100K</div>
+        <div class="fund-pct">5% of raise</div>
+        <div class="fund-title">G&amp;A</div>
+        <div class="fund-desc">
+          Legal entity, ops tooling, accounting, and admin. Kept lean — the team is engineering-heavy by design.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 8. MILESTONES                                                -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section id="milestones">
+  <div class="wrap">
+    <div class="section-label">18-Month Roadmap</div>
+    <h2>From pre-seed to Series A</h2>
+    <p class="lead">Milestones are sequenced to derisk the Series A: first customer closes early, compliance runs in parallel, consumer traction validates the brand before enterprise outreach.</p>
+
+    <div style="margin-top: 36px;" class="milestone-track">
+
+      <div class="milestone-group">
+        <div class="milestone-dot active"></div>
+        <div class="milestone-period">Months 1–3 · Foundation</div>
+        <ul class="milestone-items">
+          <li>SDK v1.0 shipped and documented</li>
+          <li>Pantory closes as first paying SDK customer (Healthcare vertical)</li>
+          <li>Extension v2 launched with all 8 agents active</li>
+          <li>HIPAA BAA process initiated with compliance counsel</li>
+        </ul>
+      </div>
+
+      <div class="milestone-group">
+        <div class="milestone-dot"></div>
+        <div class="milestone-period">Months 4–6 · Growth Ignition</div>
+        <ul class="milestone-items">
+          <li>Pantory case study published — reduces enterprise sales cycle by 60%</li>
+          <li>40 SDK customers on Growth tier ($499/mo) — $240K ARR from SDK alone</li>
+          <li>Extension MAU: 2,000 active users</li>
+          <li>App alpha released to extension Pro users</li>
+        </ul>
+      </div>
+
+      <div class="milestone-group">
+        <div class="milestone-dot"></div>
+        <div class="milestone-period">Months 7–9 · Enterprise Entry</div>
+        <ul class="milestone-items">
+          <li>3 enterprise contracts signed (Healthcare + Legal verticals)</li>
+          <li>On-premise deployment tier launched for regulated industries</li>
+          <li>App beta: 500 users — taste graph editing feature in public beta</li>
+          <li>SOC2 Type II audit begins</li>
+        </ul>
+      </div>
+
+      <div class="milestone-group">
+        <div class="milestone-dot"></div>
+        <div class="milestone-period">Months 10–12 · Marketplace Launch</div>
+        <ul class="milestone-items">
+          <li>Module marketplace launched — 20+ modules, 30% rev-share for third-party contributors</li>
+          <li>SDK: 250 paying customers across 3 verticals</li>
+          <li>Series A fundraise process begins — $8M ARR run rate</li>
+          <li>Team: 8 people</li>
+        </ul>
+      </div>
+
+      <div class="milestone-group">
+        <div class="milestone-dot"></div>
+        <div class="milestone-period">Months 13–18 · Series A Readiness</div>
+        <ul class="milestone-items">
+          <li>Financial services vertical entry — 4th SDK vertical</li>
+          <li>Mobile App public launch on iOS + Android</li>
+          <li>SOC2 Type II certified — compliance moat complete</li>
+          <li>Platform API beta — "Sign in with RecoMe" in developer preview</li>
+          <li>$12M ARR run rate</li>
+          <li>Series A closes: $12–15M at $50M+ valuation</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 9. RISKS                                                     -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section id="risks" style="background: var(--white);">
+  <div class="wrap">
+    <div class="section-label">Risk Analysis</div>
+    <h2>Known risks, concrete mitigations</h2>
+
+    <div class="risk-grid">
+      <div class="risk-card">
+        <div class="risk-header">
+          <span class="risk-label risk-high">High</span>
+          <span class="risk-title">Platform DOM Fragility</span>
+        </div>
+        <div class="risk-mitigation">
+          <div class="risk-mit-label">Risk</div>
+          Amazon or YouTube updates their DOM, breaking selector-based signal capture.
+          <div class="risk-mit-label">Mitigation</div>
+          Automated selector monitoring with &lt;2hr patch window. GenericAdapter fallback captures signals even when specific adapters fail. Alert system triggers on &gt;10% signal drop per platform.
+        </div>
+      </div>
+      <div class="risk-card">
+        <div class="risk-header">
+          <span class="risk-label risk-high">High</span>
+          <span class="risk-title">Big Tech Competition</span>
+        </div>
+        <div class="risk-mitigation">
+          <div class="risk-mit-label">Risk</div>
+          Google or Apple builds a native preference layer into Chrome/iOS.
+          <div class="risk-mit-label">Mitigation</div>
+          18–24 month structural window — their graphs are siloed by design. Compliance certifications (HIPAA/SOC2) take 18+ months to replicate and block regulated enterprise deals. Decentralized architecture is antithetical to their business models.
+        </div>
+      </div>
+      <div class="risk-card">
+        <div class="risk-header">
+          <span class="risk-label risk-med">Medium</span>
+          <span class="risk-title">Cold Start Problem</span>
+        </div>
+        <div class="risk-mitigation">
+          <div class="risk-mit-label">Risk</div>
+          New users have no graph data. Personalization is weak until sufficient signals accumulate.
+          <div class="risk-mit-label">Mitigation</div>
+          One-click data imports from Spotify, Netflix, YouTube, Reddit. Onboarding questionnaire seeds 15+ initial nodes. Vertical-calibrated defaults (healthcare, legal) provide instant relevance. Value visible from Day 1 via feed filtering.
+        </div>
+      </div>
+      <div class="risk-card">
+        <div class="risk-header">
+          <span class="risk-label risk-med">Medium</span>
+          <span class="risk-title">Enterprise Sales Cycle</span>
+        </div>
+        <div class="risk-mitigation">
+          <div class="risk-mit-label">Risk</div>
+          Healthcare enterprise deals take 6–12 months. Cash flow risk in Year 1.
+          <div class="risk-mit-label">Mitigation</div>
+          Self-serve Growth tier ($499/mo) generates revenue immediately. Pantory reference customer reduces deal cycles by 60%. SDK starter tier ($49/mo) creates a bottom-up land-and-expand motion that doesn't require enterprise procurement.
+        </div>
+      </div>
+      <div class="risk-card">
+        <div class="risk-header">
+          <span class="risk-label risk-med">Medium</span>
+          <span class="risk-title">SDK Commoditization</span>
+        </div>
+        <div class="risk-mitigation">
+          <div class="risk-mit-label">Risk</div>
+          OpenAI or AWS releases a competing personalization SDK.
+          <div class="risk-mit-label">Mitigation</div>
+          2+ years of accumulated per-user graph data creates switching costs competitors can't replicate. Compliance moat. 100+ marketplace modules create ecosystem lock-in. Domain-specific vertical modules (oncology, legal research) aren't built by general AI providers.
+        </div>
+      </div>
+      <div class="risk-card">
+        <div class="risk-header">
+          <span class="risk-label risk-med">Medium</span>
+          <span class="risk-title">Consumer Retention</span>
+        </div>
+        <div class="risk-mitigation">
+          <div class="risk-mit-label">Risk</div>
+          Consumer users churn before the graph becomes valuable enough to retain them.
+          <div class="risk-mit-label">Mitigation</div>
+          Graph value compounds — early churners leave a weaker product than they arrived with. ShopperAgent alerts create habitual re-engagement. Weekly digest emails surface graph insights. Team plans increase switching cost by adding social graph layer.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 10. INVESTMENT THESIS                                        -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section id="thesis">
+  <div class="wrap">
+    <div class="section-label">Why Now · Why Us</div>
+    <h2>Five reasons this works</h2>
+
+    <div class="thesis-grid">
+      <div class="thesis-card">
+        <div class="thesis-num">01</div>
+        <div class="thesis-title">Market gap verified</div>
+        <div class="thesis-desc">Zero competitors offer a per-user interest graph SDK that any app can call. AWS, OpenAI, and Segment all have adjacent products; none of them have this. The gap is real and currently uncontested.</div>
+      </div>
+      <div class="thesis-card">
+        <div class="thesis-num">02</div>
+        <div class="thesis-title">Technology is built</div>
+        <div class="thesis-desc">All four SDK modules, 8 AI agents, and a browser extension spanning 8 platforms exist in production code with real users. This is not a slide deck — it's a working product. The ask funds distribution, not development.</div>
+      </div>
+      <div class="thesis-card">
+        <div class="thesis-num">03</div>
+        <div class="thesis-title">Flywheel is structural</div>
+        <div class="thesis-desc">Five products compound at decreasing marginal CAC. An extension user becomes an app user for $4 incremental spend. An app user who's a developer becomes an SDK customer for near-zero. The economics improve as the system grows.</div>
+      </div>
+      <div class="thesis-card">
+        <div class="thesis-num">04</div>
+        <div class="thesis-title">18–24 month window</div>
+        <div class="thesis-desc">Hyperscalers notice this category after it's proven. We have a structural window before that. HIPAA/SOC2 certifications take 18+ months — we begin that investment on Day 1 with this capital.</div>
+      </div>
+      <div class="thesis-card" style="grid-column: span 2;">
+        <div class="thesis-num">05</div>
+        <div class="thesis-title">First customer exists</div>
+        <div class="thesis-desc">Pantory (healthcare) has been mapped, value quantified, and the deal is ready to close pending SDK v1.0 delivery. This de-risks the most critical assumption: that healthcare organizations will pay for a per-user interest graph SDK. The first check validates the entire B2B thesis.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 11. THE ASK                                                  -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section id="ask" style="padding: 72px 0;">
+  <div class="wrap">
+    <div class="section-label">The Ask</div>
+    <h2>Pre-Seed Round</h2>
+
+    <div class="ask-callout">
+      <div class="ask-inner">
+        <div class="ask-num">$2M</div>
+        <div class="ask-sub">Pre-Seed Round · 18-month runway to Series A</div>
+        <div class="ask-terms">
+          <div class="ask-term">
+            <div class="at-num">$10M</div>
+            <div class="at-label">Pre-Money Valuation</div>
+          </div>
+          <div class="ask-term">
+            <div class="at-num">18 mo</div>
+            <div class="at-label">Runway</div>
+          </div>
+          <div class="ask-term">
+            <div class="at-num">$12M ARR</div>
+            <div class="at-label">Series A Target</div>
+          </div>
+          <div class="ask-term">
+            <div class="at-num">$50M+</div>
+            <div class="at-label">Series A Valuation Target</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 32px; background: var(--white); border: 1px solid var(--line); border-radius: 16px; padding: 32px;">
+      <h3 style="margin-bottom: 16px;">What you're funding</h3>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div>
+          <div style="font-size: 12px; font-weight: 700; color: var(--teal); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">By Month 6</div>
+          <ul style="list-style: none; font-size: 13px; color: var(--text);">
+            <li style="padding: 5px 0; border-bottom: 1px solid #f1f5f9; display:flex;gap:8px;"><span style="color:var(--teal);font-weight:700;">→</span>SDK v1.0 shipped and documented</li>
+            <li style="padding: 5px 0; border-bottom: 1px solid #f1f5f9; display:flex;gap:8px;"><span style="color:var(--teal);font-weight:700;">→</span>Pantory deal closed — first revenue</li>
+            <li style="padding: 5px 0; border-bottom: 1px solid #f1f5f9; display:flex;gap:8px;"><span style="color:var(--teal);font-weight:700;">→</span>40 Growth-tier SDK customers</li>
+            <li style="padding: 5px 0; display:flex;gap:8px;"><span style="color:var(--teal);font-weight:700;">→</span>HIPAA BAA process initiated</li>
+          </ul>
+        </div>
+        <div>
+          <div style="font-size: 12px; font-weight: 700; color: var(--teal); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">By Month 18 (Series A)</div>
+          <ul style="list-style: none; font-size: 13px; color: var(--text);">
+            <li style="padding: 5px 0; border-bottom: 1px solid #f1f5f9; display:flex;gap:8px;"><span style="color:var(--teal);font-weight:700;">→</span>$12M ARR — 3 verticals</li>
+            <li style="padding: 5px 0; border-bottom: 1px solid #f1f5f9; display:flex;gap:8px;"><span style="color:var(--teal);font-weight:700;">→</span>HIPAA BAA + SOC2 Type II certified</li>
+            <li style="padding: 5px 0; border-bottom: 1px solid #f1f5f9; display:flex;gap:8px;"><span style="color:var(--teal);font-weight:700;">→</span>114%+ NRR from expansion revenue</li>
+            <li style="padding: 5px 0; display:flex;gap:8px;"><span style="color:var(--teal);font-weight:700;">→</span>Platform API live — 4th revenue stream</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 24px; padding: 28px 32px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 14px;">
+      <div style="font-size: 14px; font-weight: 700; color: #92400e; margin-bottom: 6px;">The closing argument</div>
+      <div style="font-size: 14px; color: #78350f; line-height: 1.7;">
+        We've built the technology. We've mapped the first customer. The market gap is verified and uncontested. We have 18–24 months before the window closes. We're asking for $2M to build the moat — compliance certifications, SDK distribution, and developer community — that makes this defensible at Series A and beyond.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- FOOTER                                                       -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<footer class="doc-footer">
+  <strong>RecoMe Inc.</strong> &nbsp;·&nbsp; Pre-Seed Round 2026 &nbsp;·&nbsp; Confidential &amp; Proprietary &nbsp;·&nbsp;
+  Not for distribution. For information contact the founding team.
+  <br><br>
+  <a href="index.html" style="color: rgba(255,255,255,0.4); text-decoration: none; margin: 0 10px;">Home</a>
+  <a href="extension.html" style="color: rgba(255,255,255,0.4); text-decoration: none; margin: 0 10px;">Extension</a>
+  <a href="agents.html" style="color: rgba(255,255,255,0.4); text-decoration: none; margin: 0 10px;">Agents</a>
+  <a href="sdk.html" style="color: rgba(255,255,255,0.4); text-decoration: none; margin: 0 10px;">SDK</a>
+  <a href="platform.html" style="color: rgba(255,255,255,0.4); text-decoration: none; margin: 0 10px;">Platform</a>
+  <a href="financials.html" style="color: rgba(255,255,255,0.4); text-decoration: none; margin: 0 10px;">Financials</a>
+  <a href="demos/index.html" style="color: rgba(255,255,255,0.4); text-decoration: none; margin: 0 10px;">Live Demos</a>
+</footer>
+
+</body>
+</html>

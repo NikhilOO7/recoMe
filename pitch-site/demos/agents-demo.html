@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RecoMe AI Agents — Interactive Demo</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #060d1a;
+    --bg2: #0c1628;
+    --bg3: #111e35;
+    --bg4: #162340;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8edf5;
+    --text-muted: #7a8ba8;
+    --text-dim: #4a5d75;
+    --purple: #7c3aed;
+    --purple-light: #9d5ff0;
+    --purple-dim: rgba(124,58,237,0.15);
+    --blue: #2356e8;
+    --blue-light: #3b6df0;
+    --green: #22c55e;
+    --green-dim: rgba(34,197,94,0.12);
+    --red: #ef4444;
+    --orange: #f59e0b;
+    --agent-bubble: rgba(255,255,255,0.07);
+    --user-bubble: #2356e8;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    overflow: hidden;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+
+  .back-link {
+    color: var(--purple-light);
+    text-decoration: none;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    opacity: 0.85;
+    transition: opacity 0.2s;
+  }
+  .back-link:hover { opacity: 1; }
+  .back-link svg { width: 14px; height: 14px; }
+
+  .header-center { flex: 1; }
+  .header-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.2px;
+  }
+  .header-subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 1px;
+  }
+
+  .header-badge {
+    background: var(--purple-dim);
+    border: 1px solid rgba(124,58,237,0.35);
+    color: var(--purple-light);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 100px;
+    letter-spacing: 0.3px;
+  }
+
+  /* LAYOUT */
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* LEFT PANEL — CHAT */
+  .left-panel {
+    width: 60%;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  .chat-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  .agent-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 2px rgba(124,58,237,0.3);
+  }
+
+  .chat-header-text { flex: 1; }
+  .chat-header-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .active-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    display: inline-block;
+    box-shadow: 0 0 6px rgba(34,197,94,0.6);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(0.85); }
+  }
+  .active-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--green);
+  }
+  .chat-header-sub {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  /* CHAT MESSAGES */
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 20px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    scroll-behavior: smooth;
+  }
+
+  .chat-messages::-webkit-scrollbar { width: 4px; }
+  .chat-messages::-webkit-scrollbar-track { background: transparent; }
+  .chat-messages::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+  .message-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-width: 80%;
+    animation: msg-in 0.25s ease-out both;
+  }
+  @keyframes msg-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .message-row.user {
+    align-self: flex-end;
+    align-items: flex-end;
+  }
+  .message-row.agent {
+    align-self: flex-start;
+    align-items: flex-start;
+  }
+
+  .message-label {
+    font-size: 10.5px;
+    color: var(--text-dim);
+    padding: 0 4px;
+    letter-spacing: 0.2px;
+  }
+
+  .bubble {
+    padding: 10px 14px;
+    border-radius: 16px;
+    font-size: 13.5px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+  }
+
+  .bubble.user {
+    background: var(--user-bubble);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+
+  .bubble.agent {
+    background: var(--agent-bubble);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    border-bottom-left-radius: 4px;
+  }
+
+  /* TYPING INDICATOR */
+  .typing-indicator {
+    display: none;
+    align-items: center;
+    gap: 5px;
+    padding: 10px 14px;
+    background: var(--agent-bubble);
+    border: 1px solid var(--border2);
+    border-radius: 16px;
+    border-bottom-left-radius: 4px;
+    width: fit-content;
+  }
+  .typing-indicator.visible { display: flex; }
+  .typing-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    animation: bounce 1.2s ease-in-out infinite;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+    30% { transform: translateY(-5px); opacity: 1; }
+  }
+
+  /* CHAT INPUT */
+  .chat-input-area {
+    padding: 14px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--bg2);
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    flex-shrink: 0;
+  }
+
+  .chat-input {
+    flex: 1;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    color: var(--text);
+    font-size: 13.5px;
+    font-family: inherit;
+    padding: 10px 14px;
+    resize: none;
+    outline: none;
+    min-height: 42px;
+    max-height: 100px;
+    line-height: 1.5;
+    transition: border-color 0.2s;
+  }
+  .chat-input::placeholder { color: var(--text-dim); }
+  .chat-input:focus { border-color: rgba(124,58,237,0.5); }
+
+  .send-btn {
+    background: var(--purple);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    cursor: pointer;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    transition: background 0.15s, transform 0.1s;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .send-btn:hover { background: var(--purple-light); }
+  .send-btn:active { transform: scale(0.97); }
+  .send-btn svg { width: 14px; height: 14px; }
+
+  .input-hint {
+    font-size: 11px;
+    color: var(--text-dim);
+    padding: 0 4px;
+    margin-top: 4px;
+    flex-basis: 100%;
+  }
+
+  .chat-input-wrapper { flex: 1; display: flex; flex-direction: column; }
+
+  /* RIGHT PANEL */
+  .right-panel {
+    width: 40%;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    overflow: hidden;
+  }
+
+  .right-panel-inner {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .right-panel-inner::-webkit-scrollbar { width: 4px; }
+  .right-panel-inner::-webkit-scrollbar-track { background: transparent; }
+  .right-panel-inner::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+  /* SHOPPER SECTION */
+  .shopper-header {
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .shopper-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .shopper-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #1a6b3a, #22c55e22);
+    border: 1px solid rgba(34,197,94,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+
+  .shopper-name {
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .shopper-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 1px;
+  }
+
+  .monitoring-badge {
+    background: rgba(34,197,94,0.12);
+    border: 1px solid rgba(34,197,94,0.25);
+    color: var(--green);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 100px;
+  }
+
+  /* WATCHLIST */
+  .watchlist {
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .watchlist-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 2px;
+  }
+
+  .watch-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 13px;
+    transition: border-color 0.2s;
+  }
+  .watch-card:hover { border-color: var(--border2); }
+
+  .watch-card.alert {
+    background: rgba(34,197,94,0.05);
+    border-color: rgba(34,197,94,0.4);
+    box-shadow: 0 0 16px rgba(34,197,94,0.1);
+    animation: alert-pulse 3s ease-in-out infinite;
+  }
+  @keyframes alert-pulse {
+    0%, 100% { box-shadow: 0 0 16px rgba(34,197,94,0.1); }
+    50% { box-shadow: 0 0 24px rgba(34,197,94,0.2); }
+  }
+
+  .watch-card.in-range {
+    border-color: rgba(124,58,237,0.3);
+    background: rgba(124,58,237,0.04);
+  }
+
+  .watch-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 5px;
+  }
+
+  .watch-name {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.3;
+  }
+
+  .watch-price-badge {
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .watch-price-badge.alert { color: var(--green); }
+  .watch-price-badge.normal { color: var(--text-muted); }
+  .watch-price-badge.in-range { color: var(--purple-light); }
+  .watch-price-badge.near { color: var(--orange); }
+
+  .watch-meta {
+    font-size: 11px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .watch-meta .sep { color: var(--bg4); }
+
+  .watch-alert-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 7px;
+    padding-top: 7px;
+    border-top: 1px solid rgba(34,197,94,0.2);
+    gap: 8px;
+  }
+
+  .alert-text {
+    font-size: 11.5px;
+    color: var(--green);
+    font-weight: 500;
+  }
+
+  .buy-btn {
+    background: var(--green);
+    color: #000;
+    border: none;
+    border-radius: 7px;
+    padding: 5px 11px;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+  }
+  .buy-btn:hover { opacity: 0.85; }
+
+  .watch-status {
+    font-size: 11px;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .status-dot.green { background: var(--green); }
+  .status-dot.gray { background: var(--text-dim); }
+  .status-dot.orange { background: var(--orange); }
+  .status-dot.purple { background: var(--purple-light); }
+
+  /* SPARKLINE */
+  .sparkline-wrap {
+    margin-top: 5px;
+  }
+  .sparkline-wrap svg {
+    display: block;
+    width: 100%;
+    height: 26px;
+  }
+
+  /* DEADLINE BADGE */
+  .deadline-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(245,158,11,0.1);
+    border: 1px solid rgba(245,158,11,0.25);
+    color: var(--orange);
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 5px;
+    margin-top: 4px;
+  }
+
+  /* GUARDIAN SECTION */
+  .guardian-section {
+    border-top: 1px solid var(--border);
+    padding: 12px 14px 14px;
+    flex-shrink: 0;
+    background: var(--bg);
+  }
+
+  .guardian-header {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 9px;
+  }
+
+  .guardian-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: rgba(239,68,68,0.12);
+    border: 1px solid rgba(239,68,68,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+  }
+
+  .guardian-title {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+
+  .guardian-log {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .log-entry {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 10.5px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    padding: 4px 8px;
+    background: var(--bg2);
+    border-radius: 5px;
+    border-left: 2px solid transparent;
+  }
+
+  .log-entry.approved {
+    border-left-color: var(--green);
+    color: #5a8a6a;
+  }
+  .log-entry.approved .log-check { color: var(--green); }
+
+  .log-entry.denied {
+    border-left-color: var(--red);
+    color: #8a5a5a;
+    background: rgba(239,68,68,0.05);
+  }
+  .log-entry.denied .log-check { color: var(--red); }
+
+  /* NOTIFICATION */
+  .notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 300px;
+    background: #1a2540;
+    border: 1px solid rgba(34,197,94,0.35);
+    border-radius: 14px;
+    padding: 14px 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+    z-index: 1000;
+    transform: translateX(340px);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    backdrop-filter: blur(10px);
+  }
+  .notification.visible { transform: translateX(0); }
+  .notification.dismissing {
+    transform: translateX(340px);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 1, 1);
+  }
+
+  .notif-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  .notif-app {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--green);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .notif-close {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 2px;
+    transition: color 0.15s;
+  }
+  .notif-close:hover { color: var(--text); }
+
+  .notif-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+
+  .notif-body {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    line-height: 1.4;
+  }
+
+  .notif-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .notif-btn {
+    flex: 1;
+    padding: 6px 12px;
+    border-radius: 7px;
+    border: none;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s;
+  }
+  .notif-btn:hover { opacity: 0.85; }
+  .notif-btn.primary { background: var(--green); color: #000; }
+  .notif-btn.secondary { background: var(--bg4); color: var(--text-muted); }
+
+  .notif-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    background: var(--green);
+    border-radius: 0 0 14px 14px;
+    width: 100%;
+    transform-origin: left;
+    animation: notif-timer 5s linear forwards;
+  }
+  @keyframes notif-timer {
+    from { transform: scaleX(1); }
+    to { transform: scaleX(0); }
+  }
+
+  /* SCROLLBAR GLOBAL */
+  * { scrollbar-width: thin; scrollbar-color: var(--bg4) transparent; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <a href="../index.html" class="back-link">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10 3L5 8l5 5"/>
+      </svg>
+      Back
+    </a>
+    <div class="header-center">
+      <div class="header-title">RecoMe AI Agents — Interactive Demo</div>
+      <div class="header-subtitle">Chat with AdvisorAgent · ShopperAgent price monitoring · GuardianAgent audit trail</div>
+    </div>
+    <div class="header-badge">Live Demo</div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- LEFT PANEL: CHAT -->
+    <div class="left-panel">
+
+      <div class="chat-header">
+        <div class="agent-avatar">🤖</div>
+        <div class="chat-header-text">
+          <div class="chat-header-name">
+            AdvisorAgent
+            <span class="active-dot"></span>
+            <span class="active-label">Active</span>
+          </div>
+          <div class="chat-header-sub">Powered by Mnemosyne Memory + Knowledge Graph</div>
+        </div>
+      </div>
+
+      <div class="chat-messages" id="chatMessages">
+
+        <!-- Pre-loaded message 1: User -->
+        <div class="message-row user">
+          <div class="message-label">You</div>
+          <div class="bubble user">What does my interest graph say about my reading habits?</div>
+        </div>
+
+        <!-- Pre-loaded message 1: Agent -->
+        <div class="message-row agent">
+          <div class="message-label">AdvisorAgent</div>
+          <div class="bubble agent">Based on your last 30 days, here's what your graph shows:
+
+📚 Your deepest interest: Distributed Systems (w: 0.93) — you spend 4.2× longer on this content than any other topic.
+🦀 Rising fast: Rust programming (w: 0.88, ↑ from 0.71 last month)
+📉 Fading: Docker/Kubernetes tutorials (w: 0.41, ↓ — you've moved past beginner content)
+🚫 Blocked: Crypto/Web3 (w: -0.89) — you explicitly blocked this 3 weeks ago</div>
+        </div>
+
+        <!-- Pre-loaded message 2: User -->
+        <div class="message-row user">
+          <div class="message-label">You</div>
+          <div class="bubble user">Why did you recommend that Rustconf talk?</div>
+        </div>
+
+        <!-- Pre-loaded message 2: Agent -->
+        <div class="message-row agent">
+          <div class="message-label">AdvisorAgent</div>
+          <div class="bubble agent">Three reasons:
+① Your Rust interest weight hit 0.88 — that's strong enough to trigger proactive suggestions
+② The speaker's work on async runtimes directly overlaps with your distributed systems interest (affinity propagation matched these two nodes)
+③ It's 3 days before the CFP deadline — timeliness score: 0.94
+
+Combined score: 0.91 → above my 0.65 threshold for surfacing suggestions</div>
+        </div>
+
+        <!-- Typing indicator -->
+        <div class="typing-indicator" id="typingIndicator">
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+        </div>
+
+      </div>
+
+      <div class="chat-input-area">
+        <div class="chat-input-wrapper">
+          <textarea
+            class="chat-input"
+            id="chatInput"
+            placeholder='Try: "rust", "privacy", "recommend", "shop"...'
+            rows="1"
+          ></textarea>
+          <div class="input-hint">Press Enter to send · Shift+Enter for newline</div>
+        </div>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+          Send
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 8h12M9 3l5 5-5 5"/>
+          </svg>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- RIGHT PANEL: SHOPPER + GUARDIAN -->
+    <div class="right-panel">
+      <div class="right-panel-inner">
+
+        <!-- SHOPPER HEADER -->
+        <div class="shopper-header">
+          <div class="shopper-title-row">
+            <div class="shopper-icon">🛒</div>
+            <div>
+              <div class="shopper-name">ShopperAgent</div>
+              <div class="shopper-sub">Real-time price monitoring</div>
+            </div>
+          </div>
+          <div class="monitoring-badge">Monitoring 6 items</div>
+        </div>
+
+        <!-- WATCHLIST -->
+        <div class="watchlist">
+          <div class="watchlist-label">Watchlist</div>
+
+          <!-- Item 1: ALERT -->
+          <div class="watch-card alert">
+            <div class="watch-top">
+              <div>
+                <div class="watch-name">Air Jordan 4 Bred (Size 11.5)</div>
+                <div class="watch-meta">
+                  Target: &lt;$280
+                  <span class="sep">·</span>
+                  GOAT · DS condition
+                </div>
+              </div>
+              <div class="watch-price-badge alert">$265</div>
+            </div>
+            <div class="watch-alert-row">
+              <div class="alert-text">🔔 ALERT: Price hit $265 — $15 below your threshold!</div>
+              <button class="buy-btn">Buy on GOAT →</button>
+            </div>
+          </div>
+
+          <!-- Item 2: Headphones -->
+          <div class="watch-card">
+            <div class="watch-top">
+              <div>
+                <div class="watch-name">Sony WH-1000XM6 Headphones</div>
+                <div class="watch-meta">
+                  Target: &lt;$300
+                  <span class="sep">·</span>
+                  Amazon, Best Buy
+                </div>
+              </div>
+              <div class="watch-price-badge normal">$349</div>
+            </div>
+            <div class="watch-status">
+              <div class="status-dot gray"></div>
+              <span style="color:var(--text-dim)">Watching... tracking 14-day trend</span>
+            </div>
+            <div class="sparkline-wrap">
+              <svg viewBox="0 0 200 26" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="spark-grad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.3"/>
+                    <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M0 18 L15 16 L30 20 L45 14 L60 17 L75 10 L90 13 L105 8 L120 12 L135 9 L150 14 L165 11 L180 16 L200 19" fill="none" stroke="#7c3aed" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M0 18 L15 16 L30 20 L45 14 L60 17 L75 10 L90 13 L105 8 L120 12 L135 9 L150 14 L165 11 L180 16 L200 19 L200 26 L0 26Z" fill="url(#spark-grad)"/>
+                <circle cx="200" cy="19" r="2.5" fill="#7c3aed"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Item 3: Book -->
+          <div class="watch-card in-range">
+            <div class="watch-top">
+              <div>
+                <div class="watch-name">"Designing Data-Intensive Applications"</div>
+                <div class="watch-meta">
+                  Target: &lt;$40
+                  <span class="sep">·</span>
+                  Book · O'Reilly
+                </div>
+              </div>
+              <div class="watch-price-badge in-range">$38.99</div>
+            </div>
+            <div class="watch-status">
+              <div class="status-dot purple"></div>
+              <span style="color:var(--purple-light)">✓ In range — Buy now?</span>
+            </div>
+          </div>
+
+          <!-- Item 4: Desk Mat -->
+          <div class="watch-card">
+            <div class="watch-top">
+              <div>
+                <div class="watch-name">Standing Desk Mat</div>
+                <div class="watch-meta">
+                  Target: &lt;$60
+                  <span class="sep">·</span>
+                  Various retailers
+                </div>
+              </div>
+              <div class="watch-price-badge normal">$72</div>
+            </div>
+            <div class="watch-status">
+              <div class="status-dot orange"></div>
+              <span style="color:var(--orange)">-12% from peak · still above target</span>
+            </div>
+          </div>
+
+          <!-- Item 5: Keyboard -->
+          <div class="watch-card in-range">
+            <div class="watch-top">
+              <div>
+                <div class="watch-name">Mechanical Keyboard (Keychron Q1)</div>
+                <div class="watch-meta">
+                  Target: &lt;$180
+                  <span class="sep">·</span>
+                  Keychron, Amazon
+                </div>
+              </div>
+              <div class="watch-price-badge in-range">$169</div>
+            </div>
+            <div class="watch-status">
+              <div class="status-dot purple"></div>
+              <span style="color:var(--purple-light)">In range · $11 below threshold</span>
+            </div>
+          </div>
+
+          <!-- Item 6: Rustconf Ticket -->
+          <div class="watch-card">
+            <div class="watch-top">
+              <div>
+                <div class="watch-name">Rustconf 2026 Ticket</div>
+                <div class="watch-meta">
+                  Target: &lt;$400
+                  <span class="sep">·</span>
+                  Rustconf.com
+                </div>
+              </div>
+              <div class="watch-price-badge in-range">$299</div>
+            </div>
+            <div class="deadline-badge">
+              ⏱ Early bird ends in 2 days
+            </div>
+          </div>
+
+        </div>
+
+        <!-- GUARDIAN SECTION -->
+        <div class="guardian-section">
+          <div class="guardian-header">
+            <div class="guardian-icon">🛡</div>
+            <div class="guardian-title">GuardianAgent — Audit Trail</div>
+          </div>
+          <div class="guardian-log">
+            <div class="log-entry approved">
+              <span class="log-check">✓</span> ShopperAgent → GOAT price check — <strong>APPROVED</strong> (user authorized shopping data)
+            </div>
+            <div class="log-entry approved">
+              <span class="log-check">✓</span> AdvisorAgent → knowledge graph query — <strong>APPROVED</strong> (local only)
+            </div>
+            <div class="log-entry denied">
+              <span class="log-check">✗</span> [Blocked] External analytics call — <strong>DENIED</strong> (no consent)
+            </div>
+            <div class="log-entry approved">
+              <span class="log-check">✓</span> ScoutAgent → PubMed scan — <strong>APPROVED</strong> (research scope)
+            </div>
+            <div class="log-entry approved">
+              <span class="log-check">✓</span> FilterAgent → 847 content items scored — <strong>APPROVED</strong> (local computation)
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- NOTIFICATION -->
+<div class="notification" id="notification">
+  <div class="notif-header">
+    <div class="notif-app">📱 ShopperAgent Alert</div>
+    <button class="notif-close" onclick="dismissNotification()">✕</button>
+  </div>
+  <div class="notif-title">Air Jordan 4 Bred — $265 on GOAT</div>
+  <div class="notif-body">$15 below your threshold · DS condition · Size 11.5 available</div>
+  <div class="notif-actions">
+    <button class="notif-btn primary" onclick="dismissNotification()">View</button>
+    <button class="notif-btn secondary" onclick="dismissNotification()">Dismiss</button>
+  </div>
+  <div class="notif-progress" id="notifProgress"></div>
+</div>
+
+<script>
+  // ─── SCRIPTED RESPONSES ───────────────────────────────────────────────────
+
+  const responses = [
+    {
+      keywords: ['rust', 'programming'],
+      reply: `Your Rust interest has grown 24% in 30 days. Top content:\n• "Async Rust in Practice" (dwell: 8.3 min)\n• "Writing a Database in Rust" (dwell: 12.1 min)\n\nScoutAgent found 2 open-source Rust projects that match your level — want me to surface them?`
+    },
+    {
+      keywords: ['privacy', 'data', 'guardian'],
+      reply: `GuardianAgent has processed 2,847 operations this month. Zero external data calls without your consent.\n\nYour complete interest graph lives in your local IndexedDB — 847KB. You can export or delete it any time from Settings.\n\nLast audit: 2 minutes ago.\nStatus: ✓ Clean`
+    },
+    {
+      keywords: ['recommend', 'suggestion'],
+      reply: `Based on your current graph, here are 3 suggestions:\n\n① "Designing Data-Intensive Applications" — aligns with your distributed systems cluster (w:0.93)\n② Rustconf 2026 CFP — deadline in 3 days, Rust weight 0.88\n③ "Systems Design Interview" course — 71% of engineers with your profile completed this before senior promotions.`
+    },
+    {
+      keywords: ['shop', 'price', 'buy'],
+      reply: `I've handed this to ShopperAgent — check the panel on the right. It's monitoring 6 items for you.\n\nThe Air Jordan 4 Bred is $15 below your threshold on GOAT right now. 🔥`
+    }
+  ];
+
+  const fallbackReply = `I'm processing your query against your knowledge graph...\n\nYour graph has 127 entities and 340 weighted edges. For this topic, your top related interests are:\n• Distributed Systems (w: 0.93)\n• Async programming (w: 0.79)\n\nWant me to search for relevant content or opportunities?`;
+
+  function getResponse(input) {
+    const lower = input.toLowerCase();
+    for (const r of responses) {
+      if (r.keywords.some(k => lower.includes(k))) {
+        return r.reply;
+      }
+    }
+    return fallbackReply;
+  }
+
+  // ─── CHAT ENGINE ─────────────────────────────────────────────────────────
+
+  const chatMessages = document.getElementById('chatMessages');
+  const chatInput = document.getElementById('chatInput');
+  const typingIndicator = document.getElementById('typingIndicator');
+
+  function appendMessage(role, text) {
+    const row = document.createElement('div');
+    row.className = `message-row ${role}`;
+
+    const label = document.createElement('div');
+    label.className = 'message-label';
+    label.textContent = role === 'user' ? 'You' : 'AdvisorAgent';
+
+    const bubble = document.createElement('div');
+    bubble.className = `bubble ${role}`;
+    bubble.textContent = text;
+
+    row.appendChild(label);
+    row.appendChild(bubble);
+
+    chatMessages.insertBefore(row, typingIndicator);
+    scrollToBottom();
+  }
+
+  function showTyping() {
+    typingIndicator.classList.add('visible');
+    scrollToBottom();
+  }
+
+  function hideTyping() {
+    typingIndicator.classList.remove('visible');
+  }
+
+  function scrollToBottom() {
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  function sendMessage() {
+    const text = chatInput.value.trim();
+    if (!text) return;
+
+    appendMessage('user', text);
+    chatInput.value = '';
+    chatInput.style.height = 'auto';
+
+    showTyping();
+
+    const delay = 900 + Math.random() * 700;
+    setTimeout(() => {
+      hideTyping();
+      const reply = getResponse(text);
+      appendMessage('agent', reply);
+    }, delay);
+  }
+
+  // Input: Enter to send, Shift+Enter for newline
+  chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  // Auto-resize textarea
+  chatInput.addEventListener('input', () => {
+    chatInput.style.height = 'auto';
+    chatInput.style.height = Math.min(chatInput.scrollHeight, 100) + 'px';
+  });
+
+  // ─── NOTIFICATION ─────────────────────────────────────────────────────────
+
+  const notification = document.getElementById('notification');
+  const notifProgress = document.getElementById('notifProgress');
+  let notifTimeout = null;
+
+  function showNotification() {
+    notification.classList.add('visible');
+    notification.classList.remove('dismissing');
+
+    // Restart the progress bar animation
+    notifProgress.style.animation = 'none';
+    notifProgress.offsetHeight; // force reflow
+    notifProgress.style.animation = 'notif-timer 5s linear forwards';
+
+    notifTimeout = setTimeout(dismissNotification, 5000);
+  }
+
+  function dismissNotification() {
+    if (notifTimeout) clearTimeout(notifTimeout);
+    notification.classList.remove('visible');
+    notification.classList.add('dismissing');
+  }
+
+  // Show notification after 3 seconds
+  setTimeout(showNotification, 3000);
+
+  // ─── SCROLL TO BOTTOM ON LOAD ─────────────────────────────────────────────
+  window.addEventListener('load', () => {
+    scrollToBottom();
+  });
+</script>
+
+</body>
+</html>

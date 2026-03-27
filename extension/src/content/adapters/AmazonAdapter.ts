@@ -5,63 +5,153 @@ import type { ContentMetadata } from '@shared/types';
 import type { CandidateEntity } from '@schema/entities';
 import type { PageContext } from '@schema/decisions';
 
-export type AmazonPageType = 'search' | 'product' | 'feed' | 'home' | 'unknown';
+export type AmazonPageType = 'search' | 'product' | 'feed' | 'home' | 'deals' | 'unknown';
+
+// ── Page-type-specific selectors ──────────────────────────────────────────────
+// QA fix: Two-step detection — classify page type FIRST, then use only relevant
+// selectors. Reduces false positives and improves hit rate on each surface.
+
+const SEARCH_CARD_SELECTORS = [
+  '[data-component-type="s-search-result"]',
+  '.s-result-item[data-asin]:not(.AdHolder)',
+  '[data-component-type="s-impression-counter"]',
+  // Newer React-based search results
+  '[data-cel-widget^="search_result_"]',
+  '[cel_widget_id^="MAIN-SEARCH_RESULTS-"]',
+];
+
+const PRODUCT_PAGE_CARD_SELECTORS = [
+  // "Customers also bought" / "Frequently bought together"
+  'li[data-asin]:not([data-asin=""])',
+  '.a-carousel-card[data-asin]',
+  '#anonCarousel1 .a-carousel-card',
+  '#anonCarousel2 .a-carousel-card',
+  // "Compare with similar items" table rows
+  '[data-comparison-table-row]',
+  'div.comparison_table_image_row div.a-section',
+  // Related products widgets
+  '[data-csa-c-item-id]',
+  '[data-csa-c-type="item"]',
+  // "Customers who viewed this also viewed"
+  '#sp-cc .a-carousel-card',
+  '#rhf .a-carousel-card',
+  '#similarities_feature_div .a-carousel-card',
+  '#day0-btf-recommendations .a-carousel-card',
+];
+
+const BESTSELLER_CARD_SELECTORS = [
+  'li.zg-item-immersion',
+  'div.p13n-sc-uncoverable-faceout',
+  '[class*="zg-item"]',
+  '.zg-grid-general-faceout',
+  // New releases / movers & shakers share the same structure
+  '#gridItemRoot',
+];
+
+const HOMEPAGE_CARD_SELECTORS = [
+  // Homepage recommendation tiles & cards
+  '.a-cardui-content[data-asin]',
+  '.a-cardui[data-asin]',
+  '.feed-carousel-card',
+  '.rhf-card',
+  '.feed-card',
+  '.octopus-pc-category-card-v2',
+  // Homepage grid items (deals, browsing history)
+  '[data-component-type="s-personalize-widget"] .a-carousel-card',
+  // "Keep shopping for" / "Inspired by your browsing history"
+  'div[data-a-carousel-options] .a-carousel-card',
+  // Hero deal cards
+  '.deals-shoveler .a-section[data-deal-id]',
+  'div.DealContent-module_dealContainer__mask',
+];
+
+const DEALS_CARD_SELECTORS = [
+  // Deal cards on /deals and /gp/goldbox
+  '[data-deal-id]',
+  '.dealTile',
+  '.octopus-dlp-asin-section',
+  '.DealCard-module_card__container',
+  // Lightning deals grid
+  '.a-section.octopus-dlp-asin-section',
+  '.inlineBlock-module_wrapper',
+];
+
+const SEARCH_FEED_SELECTORS = [
+  '[data-component-type="s-search-results"]',
+  '.s-main-slot',
+  '#search',
+];
+
+const PRODUCT_FEED_SELECTORS = [
+  '#similarities_feature_div',
+  '#sp-cc',
+  '#rhf',
+  '#dp-container',
+  '#dp',
+  '#centerCol',
+];
+
+const BESTSELLER_FEED_SELECTORS = ['#zg-ordered-list', '.p13n-desktop-grid', '#zg-right-col'];
+
+const HOMEPAGE_FEED_SELECTORS = [
+  '#desktop-grid-1',
+  '#desktop-grid-2',
+  '#desktop-grid-3',
+  '[data-component-type="s-personalize-widget"]',
+  '#rhf-container',
+  '#shoveler-container',
+  '.feed-carousel',
+  '#main-content',
+];
+
+const DEALS_FEED_SELECTORS = [
+  '#dealsGrid',
+  '#octopus-dlp-content-grid',
+  '.deals-shoveler',
+  '#slot-15',
+  '#main-content',
+];
 
 export class AmazonAdapter extends BaseAdapter {
   constructor() {
+    // Start with all selectors combined — page-type narrowing happens in init override
     super({
       platform: 'amazon',
       cardSelector: [
-        // Search results page
-        '[data-component-type="s-search-result"]',
-        '.s-result-item[data-asin]:not(.AdHolder)',
-        // Best Sellers / zg lists (bestsellers, movers & shakers, new releases)
-        'li.zg-item-immersion',
-        'div.p13n-sc-uncoverable-faceout',
-        '[class*="zg-item"]',
-        // Product page — "Customers also bought" / carousels
-        'li[data-asin]:not([data-asin=""])',
-        '.a-carousel-card[data-asin]',
-        // Homepage recommendation tiles & cards
-        '.a-cardui-content[data-asin]',
-        '.a-cardui[data-asin]',
-        // Homepage category / promo cards (e.g. "Pet wellness", "Savings & Sales")
-        '[data-component-type="s-impression-counter"]',
-        '.feed-carousel-card',
-        // Related products widgets
-        '[data-csa-c-item-id]',
-        '[data-csa-c-type="item"]',
-        // Homepage grid items (deals, browsing history, etc.)
-        '.rhf-card',
-        '.feed-card',
-        '.octopus-pc-category-card-v2',
-      ].join(', '),
+        ...SEARCH_CARD_SELECTORS,
+        ...PRODUCT_PAGE_CARD_SELECTORS,
+        ...BESTSELLER_CARD_SELECTORS,
+        ...HOMEPAGE_CARD_SELECTORS,
+        ...DEALS_CARD_SELECTORS,
+      ]
+        .filter((s, i, arr) => arr.indexOf(s) === i) // dedupe
+        .join(', '),
       feedSelector: [
-        // Search
-        '[data-component-type="s-search-results"]',
-        '.s-main-slot',
-        '#search',
-        // Best Sellers page
-        '#zg-ordered-list',
-        '.p13n-desktop-grid',
-        // Product page widgets
-        '#similarities_feature_div',
-        '#sp-cc',
-        '#rhf',
-        // Homepage — algorithmic recommendation sections
-        '#desktop-grid-1',
-        '#desktop-grid-2',
-        '#desktop-grid-3',
-        '[data-component-type="s-personalize-widget"]',
-        '#rhf-container',
-        '#shoveler-container',
-        '.feed-carousel',
-        // Fallback
-        '#dp',
-        '#centerCol',
-        '#main-content',
-      ].join(', '),
+        ...SEARCH_FEED_SELECTORS,
+        ...PRODUCT_FEED_SELECTORS,
+        ...BESTSELLER_FEED_SELECTORS,
+        ...HOMEPAGE_FEED_SELECTORS,
+        ...DEALS_FEED_SELECTORS,
+      ]
+        .filter((s, i, arr) => arr.indexOf(s) === i)
+        .join(', '),
     });
+  }
+
+  /**
+   * Two-step detection override: narrow selectors to page type before init.
+   * QA fix: prevents wasted selector queries and reduces false positives.
+   */
+  override init(): void {
+    const pageType = this.detectPageType();
+    const { cards, feeds } = this.getPageTypeSelectors(pageType);
+
+    // Narrow the active selectors to this page type (with fallback to all)
+    if (cards.length > 0) {
+      this.narrowSelectors(cards.join(', '), feeds.join(', '));
+    }
+
+    super.init();
   }
 
   protected override get isCommerceAdapter(): boolean {
@@ -79,21 +169,50 @@ export class AmazonAdapter extends BaseAdapter {
     if (path === '/' || path === '/ref=nav_logo' || path.startsWith('/ref=')) return 'home';
     if (path.startsWith('/s') || path.includes('/s?')) return 'search';
     if (path.includes('/dp/') || path.includes('/gp/product/')) return 'product';
+    if (path.includes('/deals') || path.includes('/gp/goldbox') || path.includes('/gp/anytime'))
+      return 'deals';
     if (
       path.includes('/bestsellers') ||
       path.includes('/zgbs') ||
-      path.includes('/gp/new-releases')
+      path.includes('/gp/new-releases') ||
+      path.includes('/gp/movers-and-shakers')
     )
       return 'feed';
     return 'unknown';
   }
 
+  private getPageTypeSelectors(pageType: AmazonPageType): { cards: string[]; feeds: string[] } {
+    switch (pageType) {
+      case 'search':
+        return { cards: SEARCH_CARD_SELECTORS, feeds: SEARCH_FEED_SELECTORS };
+      case 'product':
+        return { cards: PRODUCT_PAGE_CARD_SELECTORS, feeds: PRODUCT_FEED_SELECTORS };
+      case 'feed':
+        return { cards: BESTSELLER_CARD_SELECTORS, feeds: BESTSELLER_FEED_SELECTORS };
+      case 'deals':
+        return { cards: DEALS_CARD_SELECTORS, feeds: DEALS_FEED_SELECTORS };
+      case 'home':
+        return { cards: HOMEPAGE_CARD_SELECTORS, feeds: HOMEPAGE_FEED_SELECTORS };
+      default:
+        // Unknown — use all selectors
+        return { cards: [], feeds: [] };
+    }
+  }
+
+  /** Narrow active selectors to a page-type-specific subset */
+  private narrowSelectors(cardSelector: string, feedSelector: string): void {
+    this.activeCardSelector = cardSelector;
+    this.activeFeedSelector = feedSelector;
+  }
+
   override buildPageContext(): PageContext {
     const pageType = this.detectPageType();
     const params = new URLSearchParams(window.location.search);
+    // Map Amazon-specific page types to the PageContext union
+    const contextPageType = pageType === 'deals' ? 'feed' : pageType;
     return {
       site: 'amazon',
-      pageType,
+      pageType: contextPageType,
       url: window.location.href,
       query: params.get('k') ?? params.get('field-keywords') ?? undefined,
       categoryPath: this.extractCategoryPath(),
@@ -262,6 +381,14 @@ export class AmazonAdapter extends BaseAdapter {
       const match = dpLink?.href.match(/\/dp\/([A-Z0-9]{10})/);
       asin = match?.[1] ?? '';
     }
+
+    // Also try cel_widget_id which contains ASIN in newer layouts
+    if (!asin) {
+      const widgetId = element.getAttribute('cel_widget_id') ?? '';
+      const celMatch = widgetId.match(/([A-Z0-9]{10})/);
+      asin = celMatch?.[1] ?? '';
+    }
+
     return asin;
   }
 
@@ -283,6 +410,9 @@ export class AmazonAdapter extends BaseAdapter {
       element.querySelector('._cDEzb_p13n-sc-css-line-clamp-3_g3dy1') ??
       element.querySelector('.a-size-medium.a-color-base.a-text-normal') ??
       element.querySelector('.a-size-base-plus.a-color-base.a-text-normal') ??
+      // Deal cards and comparison table
+      element.querySelector('.a-size-medium.a-text-normal') ??
+      element.querySelector('[data-deal-id] .a-size-base') ??
       element.querySelector('a[title]');
     return titleEl ? extractTextContent(titleEl) || titleEl.getAttribute('title') || '' : '';
   }
@@ -301,6 +431,7 @@ export class AmazonAdapter extends BaseAdapter {
       element.querySelector('.a-size-base-plus.a-color-secondary')?.textContent?.trim() ??
       element.querySelector('[data-a-color="secondary"] span')?.textContent?.trim() ??
       element.querySelector('.p13n-sc-brand')?.textContent?.trim() ??
+      element.querySelector('.a-row.a-size-small span:nth-child(2)')?.textContent?.trim() ??
       undefined
     );
   }

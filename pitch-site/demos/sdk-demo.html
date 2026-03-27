@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RecoMe SDK Demo — Developer Integration</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d1117;
+      --panel:     #161b22;
+      --panel2:    #1c2128;
+      --border:    #21262d;
+      --border2:   #30363d;
+      --amber:     #d97706;
+      --amber-light: #f59e0b;
+      --amber-dim: rgba(217,119,6,0.15);
+      --amber-glow: rgba(217,119,6,0.3);
+      --text:      #e6edf3;
+      --text-muted:#7d8590;
+      --text-dim:  #484f58;
+      --purple:    #c678dd;
+      --blue:      #61afef;
+      --green:     #98c379;
+      --yellow:    #e5c07b;
+      --red:       #e06c75;
+      --radius:    8px;
+      --radius-lg: 12px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(13,17,23,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1.05rem;
+      letter-spacing: -0.01em;
+      text-decoration: none;
+      color: var(--text);
+    }
+
+    .nav-logo-mark {
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, var(--amber), #92400e);
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.5px;
+      box-shadow: 0 0 12px var(--amber-glow);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      font-weight: 500;
+      padding: 6px 12px;
+      border-radius: var(--radius);
+      transition: color 0.15s, background 0.15s;
+    }
+
+    .nav-links a:hover,
+    .nav-links a.active {
+      color: var(--text);
+      background: var(--border);
+    }
+
+    .nav-badge {
+      background: var(--amber-dim);
+      border: 1px solid var(--amber);
+      color: var(--amber);
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+      letter-spacing: 0.03em;
+    }
+
+    /* ─── HERO ─── */
+    .hero {
+      text-align: center;
+      padding: 5rem 2rem 4rem;
+      background: radial-gradient(ellipse 80% 40% at 50% 0%, rgba(217,119,6,0.08) 0%, transparent 70%);
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--amber-dim);
+      border: 1px solid rgba(217,119,6,0.4);
+      color: var(--amber-light);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-eyebrow::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--amber);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 4vw, 3.25rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 1.25rem;
+    }
+
+    .hero h1 span { color: var(--amber); }
+
+    .hero p {
+      max-width: 600px;
+      margin: 0 auto 2.5rem;
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      line-height: 1.7;
+    }
+
+    .hero-meta {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .hero-stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .hero-stat strong {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--amber);
+    }
+
+    .hero-stat span {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .hero-divider {
+      width: 1px;
+      height: 36px;
+      background: var(--border2);
+    }
+
+    /* ─── MAIN DEMO ─── */
+    #integration {
+      padding: 0 2rem 5rem;
+    }
+
+    .section-label {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .section-label h2 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .section-label p {
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      font-size: 0.95rem;
+    }
+
+    .demo-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      max-width: 1280px;
+      margin: 0 auto;
+      align-items: start;
+    }
+
+    /* ─── EDITOR PANEL ─── */
+    .editor-panel {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 480px;
+    }
+
+    .editor-topbar {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 44px;
+      flex-shrink: 0;
+    }
+
+    .window-dots {
+      display: flex;
+      gap: 7px;
+    }
+
+    .window-dots span {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .dot-red   { background: #ff5f57; }
+    .dot-yellow{ background: #ffbd2e; }
+    .dot-green { background: #28c840; }
+
+    .editor-filename {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .tab-bar {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+      padding: 0 1rem;
+      flex-shrink: 0;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-muted);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 500;
+      padding: 10px 16px;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+      margin-bottom: -1px;
+    }
+
+    .tab-btn:hover { color: var(--text); }
+
+    .tab-btn.active {
+      color: var(--amber);
+      border-bottom-color: var(--amber);
+    }
+
+    .scenario-bar {
+      background: var(--panel2);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .scenario-bar label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .scenario-select {
+      background: var(--bg);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.82rem;
+      padding: 6px 12px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+      flex: 1;
+      max-width: 260px;
+    }
+
+    .scenario-select:focus {
+      outline: none;
+      border-color: var(--amber);
+    }
+
+    .scenario-select option { background: var(--panel); }
+
+    .line-numbers-wrap {
+      display: flex;
+      flex: 1;
+      overflow: auto;
+      min-height: 0;
+    }
+
+    .line-numbers {
+      background: var(--bg);
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.7;
+      padding: 1.25rem 0.75rem 1.25rem 1rem;
+      text-align: right;
+      user-select: none;
+      border-right: 1px solid var(--border);
+      width: 48px;
+      flex-shrink: 0;
+      white-space: pre;
+    }
+
+    .code-area {
+      flex: 1;
+      min-width: 0;
+      padding: 1.25rem 1.5rem;
+      overflow: auto;
+    }
+
+    .code-block {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.7;
+      white-space: pre;
+      display: block;
+      transition: opacity 0.2s;
+    }
+
+    /* Syntax classes */
+    .kw  { color: #c678dd; }
+    .fn  { color: #61afef; }
+    .str { color: #98c379; }
+    .num { color: #d97706; }
+    .cm  { color: #5c6370; font-style: italic; }
+    .cls { color: #e5c07b; }
+    .op  { color: #56b6c2; }
+    .pn  { color: #abb2bf; }
+
+    /* ─── OUTPUT PANEL ─── */
+    .output-panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .output-topbar {
+      background: var(--panel2);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 44px;
+      flex-shrink: 0;
+    }
+
+    .output-title {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px #98c379;
+      animation: pulse 2.5s infinite;
+    }
+
+    .run-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--amber);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      font-size: 0.85rem;
+      border: none;
+      border-radius: var(--radius);
+      padding: 8px 18px;
+      cursor: pointer;
+      margin: 1rem 1.25rem;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .run-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(255,255,255,0.2) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .run-btn:hover { background: var(--amber-light); transform: translateY(-1px); box-shadow: 0 4px 16px var(--amber-glow); }
+    .run-btn:active { transform: translateY(0); }
+
+    .run-btn.running::before { opacity: 1; animation: ripple 0.8s ease-out; }
+
+    @keyframes ripple {
+      0% { transform: scale(0); opacity: 1; }
+      100% { transform: scale(4); opacity: 0; }
+    }
+
+    .run-icon {
+      width: 14px;
+      height: 14px;
+      border-left: 10px solid #fff;
+      border-top: 6px solid transparent;
+      border-bottom: 6px solid transparent;
+      border-right: none;
+      display: inline-block;
+    }
+
+    .output-area {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      line-height: 1.7;
+      padding: 0 1.25rem 1rem;
+      overflow: auto;
+      flex: 1;
+      min-height: 180px;
+    }
+
+    .output-line {
+      display: block;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+
+    .output-line.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .json-key   { color: #61afef; }
+    .json-str   { color: #98c379; }
+    .json-num   { color: #d97706; }
+    .json-bool  { color: #c678dd; }
+    .json-null  { color: #5c6370; }
+    .json-pn    { color: #abb2bf; }
+
+    /* ─── METRIC CARDS ─── */
+    .metrics-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.75rem;
+      padding: 0 1.25rem 1rem;
+      flex-shrink: 0;
+    }
+
+    .metric-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.85rem 1rem;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .metric-card.active-card {
+      border-color: var(--amber);
+      box-shadow: 0 0 12px var(--amber-dim);
+    }
+
+    .metric-card.green-card.active-card  { border-color: #98c379; box-shadow: 0 0 12px rgba(152,195,121,0.15); }
+    .metric-card.blue-card.active-card   { border-color: #61afef; box-shadow: 0 0 12px rgba(97,175,239,0.15); }
+    .metric-card.purple-card.active-card { border-color: #c678dd; box-shadow: 0 0 12px rgba(198,120,221,0.15); }
+
+    .metric-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 4px;
+    }
+
+    .metric-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .metric-value.amber  { color: var(--amber); }
+    .metric-value.green  { color: #98c379; }
+    .metric-value.purple { color: #c678dd; }
+
+    /* ─── SVG GRAPH ─── */
+    .graph-section {
+      padding: 0 1.25rem 1.25rem;
+      flex-shrink: 0;
+    }
+
+    .graph-header {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    .graph-container {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .graph-container svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .node-label {
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      font-weight: 600;
+      fill: var(--text);
+    }
+
+    .node-circle { stroke-width: 2; }
+    .graph-edge  { stroke: var(--border2); stroke-width: 1.5; opacity: 0.6; }
+
+    /* ─── PATTERNS SECTION ─── */
+    #overview {
+      padding: 4rem 2rem;
+      background: var(--panel2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .patterns-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      max-width: 1280px;
+      margin: 2rem auto 0;
+    }
+
+    .pattern-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .pattern-card:hover {
+      border-color: var(--amber);
+      transform: translateY(-2px);
+    }
+
+    .pattern-header {
+      padding: 1.25rem 1.25rem 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .pattern-tag {
+      display: inline-block;
+      background: var(--amber-dim);
+      color: var(--amber);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border-radius: 20px;
+      margin-bottom: 0.6rem;
+      border: 1px solid rgba(217,119,6,0.3);
+    }
+
+    .pattern-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.35rem;
+    }
+
+    .pattern-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .pattern-code {
+      padding: 1rem 1.25rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.73rem;
+      line-height: 1.65;
+      white-space: pre;
+      overflow-x: auto;
+      background: var(--bg);
+    }
+
+    /* ─── LIVE OUTPUT section anchor ─── */
+    #live-output { scroll-margin-top: 70px; }
+
+    /* ─── FOOTER ─── */
+    footer {
+      padding: 2rem;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 0.8rem;
+      border-top: 1px solid var(--border);
+    }
+
+    footer a { color: var(--amber); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* ─── SCROLLBAR ─── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #484f58; }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 900px) {
+      .demo-layout { grid-template-columns: 1fr; }
+      .patterns-grid { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 2rem; }
+      .metrics-row { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 600px) {
+      nav { padding: 0 1rem; }
+      .nav-links { display: none; }
+      #integration, #overview { padding-left: 1rem; padding-right: 1rem; }
+      .hero { padding: 3rem 1rem 2.5rem; }
+      .metrics-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── NAV ─── -->
+<nav id="overview-nav">
+  <a href="#" class="nav-logo">
+    <div class="nav-logo-mark">R</div>
+    RecoMe SDK Demo
+  </a>
+  <ul class="nav-links">
+    <li><a href="#overview" class="active">Overview</a></li>
+    <li><a href="#integration">Integration</a></li>
+    <li><a href="#live-output">Live Output</a></li>
+    <li><span class="nav-badge">v2.1.0</span></li>
+  </ul>
+</nav>
+
+<!-- ─── HERO ─── -->
+<section class="hero">
+  <div class="hero-eyebrow">SDK Documentation</div>
+  <h1>Build with the<br /><span>RecoMe Interest Graph</span></h1>
+  <p>Drop the SDK into your application and start ranking content, surfacing opportunities, and detecting deltas — powered by a live, evolving model of user interest.</p>
+  <div class="hero-meta">
+    <div class="hero-stat"><strong>&lt; 5min</strong><span>Time to first ranking</span></div>
+    <div class="hero-divider"></div>
+    <div class="hero-stat"><strong>TypeScript</strong><span>+ Python + REST</span></div>
+    <div class="hero-divider"></div>
+    <div class="hero-stat"><strong>HIPAA</strong><span>Compliant mode</span></div>
+    <div class="hero-divider"></div>
+    <div class="hero-stat"><strong>SOC 2</strong><span>Type II certified</span></div>
+  </div>
+</section>
+
+<!-- ─── DEMO ─── -->
+<section id="integration">
+  <div class="section-label">
+    <h2>Interactive Integration Demo</h2>
+    <p>Select a scenario and language — see live SDK code and real-time output side by side.</p>
+  </div>
+
+  <div class="demo-layout">
+
+    <!-- LEFT: Editor -->
+    <div class="editor-panel">
+      <div class="editor-topbar">
+        <div class="window-dots">
+          <span class="dot-red"></span>
+          <span class="dot-yellow"></span>
+          <span class="dot-green"></span>
+        </div>
+        <div class="editor-filename" id="editor-filename">integration.ts</div>
+        <div style="width:60px"></div>
+      </div>
+
+      <div class="tab-bar">
+        <button class="tab-btn active" data-lang="ts" onclick="switchLang('ts', this)">TypeScript</button>
+        <button class="tab-btn" data-lang="py" onclick="switchLang('py', this)">Python</button>
+      </div>
+
+      <div class="scenario-bar">
+        <label>Integration Scenario:</label>
+        <select class="scenario-select" id="scenario-select" onchange="switchScenario(this.value)">
+          <option value="healthcare">Healthcare (Pantory)</option>
+          <option value="legal">Legal (LexAI)</option>
+          <option value="ecommerce">E-commerce</option>
+        </select>
+      </div>
+
+      <div class="line-numbers-wrap">
+        <div class="line-numbers" id="line-numbers"></div>
+        <div class="code-area">
+          <code class="code-block" id="code-display"></code>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Output -->
+    <div class="output-panel" id="live-output">
+      <div class="output-topbar">
+        <span class="output-title">Live SDK Output</span>
+        <div class="status-dot"></div>
+      </div>
+
+      <button class="run-btn" id="run-btn" onclick="runSimulation()">
+        <span class="run-icon"></span>
+        Run Simulation
+      </button>
+
+      <div class="output-area" id="output-area">
+        <span style="color:var(--text-dim); font-style:italic; font-size:0.78rem;">// Press "Run Simulation" to execute the SDK call →</span>
+      </div>
+
+      <div class="metrics-row" id="metrics-row">
+        <div class="metric-card green-card" id="metric-1">
+          <div class="metric-label">Interest Match</div>
+          <div class="metric-value green" id="mv-1">—</div>
+        </div>
+        <div class="metric-card blue-card" id="metric-2">
+          <div class="metric-label">Opportunity Score</div>
+          <div class="metric-value amber" id="mv-2">—</div>
+        </div>
+        <div class="metric-card purple-card" id="metric-3">
+          <div class="metric-label">Delta Detected</div>
+          <div class="metric-value purple" id="mv-3">—</div>
+        </div>
+      </div>
+
+      <div class="graph-section" id="graph-section">
+        <div class="graph-header">Interest Graph Nodes</div>
+        <div class="graph-container" id="graph-container">
+          <!-- SVG injected by JS -->
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── PATTERNS ─── -->
+<section id="overview">
+  <div class="section-label">
+    <h2>Three Integration Patterns</h2>
+    <p>From zero to production in minutes. Choose the pattern that fits your architecture.</p>
+  </div>
+
+  <div class="patterns-grid">
+
+    <div class="pattern-card">
+      <div class="pattern-header">
+        <div class="pattern-tag">Drop-in Module</div>
+        <div class="pattern-title">&lt; 5 min Setup</div>
+        <div class="pattern-desc">Install the SDK, provide an API key, and call <code style="color:var(--blue);font-size:0.78rem">rank()</code>. Interest graphs build automatically from usage.</div>
+      </div>
+      <div class="pattern-code"><span class="cm">// 1. Install</span>
+<span class="cm">// npm i @recome/sdk</span>
+
+<span class="kw">import</span> <span class="pn">{</span> <span class="cls">RecoMeSDK</span> <span class="pn">}</span> <span class="kw">from</span> <span class="str">'@recome/sdk'</span><span class="pn">;</span>
+
+<span class="kw">const</span> sdk <span class="op">=</span> <span class="kw">new</span> <span class="cls">RecoMeSDK</span><span class="pn">({</span>
+  apiKey<span class="pn">:</span> <span class="str">'rm_live_sk_...'</span>
+<span class="pn">});</span>
+
+<span class="kw">const</span> results <span class="op">=</span> <span class="kw">await</span> sdk<span class="pn">.</span><span class="fn">rank</span><span class="pn">({</span>
+  userId<span class="pn">:</span> <span class="str">'user_123'</span><span class="pn">,</span>
+  candidates<span class="pn">:</span> contentChunks
+<span class="pn">});</span></div>
+    </div>
+
+    <div class="pattern-card">
+      <div class="pattern-header">
+        <div class="pattern-tag">Full Graph Sync</div>
+        <div class="pattern-title">Real-time Sync</div>
+        <div class="pattern-desc">Stream user events directly into the interest graph. Rankings update live as new signals arrive from any surface.</div>
+      </div>
+      <div class="pattern-code"><span class="cm">// Stream events in real-time</span>
+<span class="kw">const</span> stream <span class="op">=</span> sdk<span class="pn">.</span><span class="fn">stream</span><span class="pn">(</span><span class="str">'user_123'</span><span class="pn">);</span>
+
+stream<span class="pn">.</span><span class="fn">on</span><span class="pn">(</span><span class="str">'event'</span><span class="pn">,</span> <span class="pn">(</span>event<span class="pn">)</span> <span class="op">=&gt;</span> <span class="pn">{</span>
+  <span class="cm">// Graph updates automatically</span>
+  console<span class="pn">.</span><span class="fn">log</span><span class="pn">(</span>event<span class="pn">.</span>graphDelta<span class="pn">);</span>
+<span class="pn">});</span>
+
+<span class="cm">// Emit user signals</span>
+<span class="kw">await</span> stream<span class="pn">.</span><span class="fn">emit</span><span class="pn">({</span>
+  type<span class="pn">:</span> <span class="str">'view'</span><span class="pn">,</span>
+  entity<span class="pn">:</span> <span class="str">'FOLFIRINOX'</span><span class="pn">,</span>
+  duration<span class="pn">:</span> <span class="num">142</span>
+<span class="pn">});</span></div>
+    </div>
+
+    <div class="pattern-card">
+      <div class="pattern-header">
+        <div class="pattern-tag">Batch Processing</div>
+        <div class="pattern-title">Offline Pipeline</div>
+        <div class="pattern-desc">Run bulk ranking jobs overnight. Ideal for digest emails, weekly reports, or large document corpora.</div>
+      </div>
+      <div class="pattern-code"><span class="cm">// Submit a batch job</span>
+<span class="kw">const</span> job <span class="op">=</span> <span class="kw">await</span> sdk<span class="pn">.</span><span class="fn">batch</span><span class="pn">({</span>
+  userIds<span class="pn">:</span> allUsers<span class="pn">,</span>
+  corpus<span class="pn">:</span> weeklyReports<span class="pn">,</span>
+  schedule<span class="pn">:</span> <span class="str">'0 6 * * 1'</span> <span class="cm">// Mon 6am</span>
+<span class="pn">});</span>
+
+<span class="cm">// Poll or webhook on complete</span>
+job<span class="pn">.</span><span class="fn">onComplete</span><span class="pn">((</span>results<span class="pn">)</span> <span class="op">=&gt;</span> <span class="pn">{</span>
+  <span class="cm">// results[userId] = ranked[]</span>
+  <span class="fn">sendDigestEmails</span><span class="pn">(</span>results<span class="pn">);</span>
+<span class="pn">});</span></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ─── FOOTER ─── -->
+<footer>
+  <p>RecoMe SDK &mdash; <a href="#">docs.recome.ai</a> &mdash; Questions? <a href="#">sdk@recome.ai</a></p>
+  <p style="margin-top:0.5rem;color:var(--text-dim)">Built for developers who need signal, not noise.</p>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════
+
+const SCENARIOS = {
+  healthcare: {
+    filename: { ts: 'oncology-integration.ts', py: 'oncology_integration.py' },
+    ts: `<span class="kw">import</span> <span class="pn">{</span> <span class="cls">RecoMeSDK</span> <span class="pn">}</span> <span class="kw">from</span> <span class="str">'@recome/sdk'</span><span class="pn">;</span>
+
+<span class="kw">const</span> sdk <span class="op">=</span> <span class="kw">new</span> <span class="cls">RecoMeSDK</span><span class="pn">({</span> apiKey<span class="pn">:</span> <span class="str">'rm_live_sk_...'</span> <span class="pn">});</span>
+
+<span class="cm">// Initialize user interest graph</span>
+<span class="kw">const</span> graph <span class="op">=</span> <span class="kw">await</span> sdk<span class="pn">.</span>interestGraph<span class="pn">.</span><span class="fn">init</span><span class="pn">({</span>
+  userId<span class="pn">:</span>    <span class="str">'patient_james_047'</span><span class="pn">,</span>
+  specialty<span class="pn">:</span> <span class="str">'oncology'</span>
+<span class="pn">});</span>
+
+<span class="cm">// Add medical context</span>
+<span class="kw">await</span> graph<span class="pn">.</span><span class="fn">addNode</span><span class="pn">({</span>
+  entity<span class="pn">:</span> <span class="str">'PDAC'</span><span class="pn">,</span>
+  type<span class="pn">:</span>   <span class="str">'condition'</span><span class="pn">,</span>
+  weight<span class="pn">:</span> <span class="num">1.0</span>
+<span class="pn">});</span>
+
+<span class="kw">await</span> graph<span class="pn">.</span><span class="fn">addEdge</span><span class="pn">({</span>
+  from<span class="pn">:</span>     <span class="str">'PDAC'</span><span class="pn">,</span>
+  to<span class="pn">:</span>       <span class="str">'FOLFIRINOX'</span><span class="pn">,</span>
+  relation<span class="pn">:</span> <span class="str">'treated_by'</span><span class="pn">,</span>
+  weight<span class="pn">:</span>   <span class="num">0.92</span>
+<span class="pn">});</span>
+
+<span class="kw">await</span> graph<span class="pn">.</span><span class="fn">addEdge</span><span class="pn">({</span>
+  from<span class="pn">:</span>     <span class="str">'PDAC'</span><span class="pn">,</span>
+  to<span class="pn">:</span>       <span class="str">'CA 19-9'</span><span class="pn">,</span>
+  relation<span class="pn">:</span> <span class="str">'monitored_by'</span><span class="pn">,</span>
+  weight<span class="pn">:</span>   <span class="num">0.88</span>
+<span class="pn">});</span>
+
+<span class="cm">// Rank opportunities</span>
+<span class="kw">const</span> ranked <span class="op">=</span> <span class="kw">await</span> sdk<span class="pn">.</span>opportunityRanker<span class="pn">.</span><span class="fn">rank</span><span class="pn">({</span>
+  userId<span class="pn">:</span>     <span class="str">'patient_james_047'</span><span class="pn">,</span>
+  candidates<span class="pn">:</span> medicalReportChunks<span class="pn">,</span>
+  threshold<span class="pn">:</span>  <span class="num">0.65</span>
+<span class="pn">});</span>
+
+console<span class="pn">.</span><span class="fn">log</span><span class="pn">(</span>ranked<span class="pn">[</span><span class="num">0</span><span class="pn">]);</span>
+<span class="cm">// { entity: 'CA 19-9 trending down', score: 0.89, delta: true }</span>`,
+
+    py: `<span class="kw">from</span> recome <span class="kw">import</span> <span class="cls">RecoMeSDK</span>
+
+sdk <span class="op">=</span> <span class="cls">RecoMeSDK</span><span class="pn">(</span>api_key<span class="op">=</span><span class="str">"rm_live_sk_..."</span><span class="pn">)</span>
+
+<span class="cm"># Initialize user interest graph</span>
+graph <span class="op">=</span> <span class="kw">await</span> sdk<span class="pn">.</span>interest_graph<span class="pn">.</span><span class="fn">init</span><span class="pn">(</span>
+    user_id<span class="op">=</span><span class="str">"patient_james_047"</span><span class="pn">,</span>
+    specialty<span class="op">=</span><span class="str">"oncology"</span>
+<span class="pn">)</span>
+
+<span class="cm"># Add medical context</span>
+<span class="kw">await</span> graph<span class="pn">.</span><span class="fn">add_node</span><span class="pn">(</span>
+    entity<span class="op">=</span><span class="str">"PDAC"</span><span class="pn">,</span>
+    type<span class="op">=</span><span class="str">"condition"</span><span class="pn">,</span>
+    weight<span class="op">=</span><span class="num">1.0</span>
+<span class="pn">)</span>
+
+<span class="kw">await</span> graph<span class="pn">.</span><span class="fn">add_edge</span><span class="pn">(</span>
+    from_node<span class="op">=</span><span class="str">"PDAC"</span><span class="pn">,</span>
+    to_node<span class="op">=</span><span class="str">"FOLFIRINOX"</span><span class="pn">,</span>
+    relation<span class="op">=</span><span class="str">"treated_by"</span><span class="pn">,</span>
+    weight<span class="op">=</span><span class="num">0.92</span>
+<span class="pn">)</span>
+
+<span class="kw">await</span> graph<span class="pn">.</span><span class="fn">add_edge</span><span class="pn">(</span>
+    from_node<span class="op">=</span><span class="str">"PDAC"</span><span class="pn">,</span>
+    to_node<span class="op">=</span><span class="str">"CA 19-9"</span><span class="pn">,</span>
+    relation<span class="op">=</span><span class="str">"monitored_by"</span><span class="pn">,</span>
+    weight<span class="op">=</span><span class="num">0.88</span>
+<span class="pn">)</span>
+
+<span class="cm"># Rank opportunities</span>
+ranked <span class="op">=</span> <span class="kw">await</span> sdk<span class="pn">.</span>opportunity_ranker<span class="pn">.</span><span class="fn">rank</span><span class="pn">(</span>
+    user_id<span class="op">=</span><span class="str">"patient_james_047"</span><span class="pn">,</span>
+    candidates<span class="op">=</span>medical_report_chunks<span class="pn">,</span>
+    threshold<span class="op">=</span><span class="num">0.65</span>
+<span class="pn">)</span>
+
+<span class="fn">print</span><span class="pn">(</span>ranked<span class="pn">[</span><span class="num">0</span><span class="pn">])</span>
+<span class="cm"># {'entity': 'CA 19-9 trending down', 'score': 0.89, 'delta': True}</span>`,
+
+    metrics: { m1: '0.94', m2: '0.89', m3: 'Yes' },
+    output: [
+      `<span class="json-pn">{</span>`,
+      `  <span class="json-key">"userId"</span><span class="json-pn">:</span> <span class="json-str">"patient_james_047"</span><span class="json-pn">,</span>`,
+      `  <span class="json-key">"ranked"</span><span class="json-pn">:</span> <span class="json-pn">[</span>`,
+      `    <span class="json-pn">{</span>`,
+      `      <span class="json-key">"chunk"</span><span class="json-pn">:</span> <span class="json-str">"CA 19-9 dropped from 847 to 612"</span><span class="json-pn">,</span>`,
+      `      <span class="json-key">"score"</span><span class="json-pn">:</span> <span class="json-num">0.89</span><span class="json-pn">,</span>`,
+      `      <span class="json-key">"signals"</span><span class="json-pn">:</span> <span class="json-pn">{</span>`,
+      `        <span class="json-key">"interestMatch"</span><span class="json-pn">:</span> <span class="json-num">0.94</span><span class="json-pn">,</span>`,
+      `        <span class="json-key">"benefitClarity"</span><span class="json-pn">:</span> <span class="json-num">0.91</span><span class="json-pn">,</span>`,
+      `        <span class="json-key">"timeliness"</span><span class="json-pn">:</span> <span class="json-num">0.82</span><span class="json-pn">,</span>`,
+      `        <span class="json-key">"novelty"</span><span class="json-pn">:</span> <span class="json-num">0.88</span>`,
+      `      <span class="json-pn">},</span>`,
+      `      <span class="json-key">"delta"</span><span class="json-pn">:</span> <span class="json-bool">true</span><span class="json-pn">,</span>`,
+      `      <span class="json-key">"deltaNote"</span><span class="json-pn">:</span> <span class="json-str">"37% improvement since last scan"</span>`,
+      `    <span class="json-pn">},</span>`,
+      `    <span class="json-pn">{</span>`,
+      `      <span class="json-key">"chunk"</span><span class="json-pn">:</span> <span class="json-str">"Fat stranding around SMA"</span><span class="json-pn">,</span>`,
+      `      <span class="json-key">"score"</span><span class="json-pn">:</span> <span class="json-num">0.18</span><span class="json-pn">,</span>`,
+      `      <span class="json-key">"filtered"</span><span class="json-pn">:</span> <span class="json-bool">true</span><span class="json-pn">,</span>`,
+      `      <span class="json-key">"reason"</span><span class="json-pn">:</span> <span class="json-str">"below threshold 0.65"</span>`,
+      `    <span class="json-pn">}</span>`,
+      `  <span class="json-pn">],</span>`,
+      `  <span class="json-key">"memoryUpdated"</span><span class="json-pn">:</span> <span class="json-bool">true</span><span class="json-pn">,</span>`,
+      `  <span class="json-key">"graphNodesAdded"</span><span class="json-pn">:</span> <span class="json-num">3</span>`,
+      `<span class="json-pn">}</span>`
+    ],
+    graph: {
+      nodes: [
+        { id: 'PDAC',             x: 200, y: 120, r: 22, fill: '#d97706', labelDy: -28 },
+        { id: 'FOLFIRINOX',       x: 80,  y: 55,  r: 14, fill: '#d97706', labelDy: -20 },
+        { id: 'CA 19-9',          x: 330, y: 60,  r: 16, fill: '#d97706', labelDy: -22 },
+        { id: 'Clinical Trials',  x: 60,  y: 190, r: 12, fill: '#484f58', labelDy:  20 },
+        { id: 'Gemcitabine',      x: 330, y: 195, r: 12, fill: '#484f58', labelDy:  20 },
+        { id: 'Nab-paclitaxel',   x: 200, y: 240, r: 10, fill: '#484f58', labelDy:  18 },
+      ],
+      edges: [
+        [0,1],[0,2],[0,3],[0,4],[0,5],[1,3],[2,4]
+      ]
+    }
+  },
+
+  legal: {
+    filename: { ts: 'legal-integration.ts', py: 'legal_integration.py' },
+    ts: `<span class="kw">import</span> <span class="pn">{</span> <span class="cls">RecoMeSDK</span> <span class="pn">}</span> <span class="kw">from</span> <span class="str">'@recome/sdk'</span><span class="pn">;</span>
+
+<span class="kw">const</span> sdk <span class="op">=</span> <span class="kw">new</span> <span class="cls">RecoMeSDK</span><span class="pn">({</span> apiKey<span class="pn">:</span> <span class="str">'rm_live_sk_...'</span> <span class="pn">});</span>
+
+<span class="cm">// Initialize attorney interest profile</span>
+<span class="kw">const</span> graph <span class="op">=</span> <span class="kw">await</span> sdk<span class="pn">.</span>interestGraph<span class="pn">.</span><span class="fn">init</span><span class="pn">({</span>
+  userId<span class="pn">:</span>   <span class="str">'atty_chen_88'</span><span class="pn">,</span>
+  domain<span class="pn">:</span>   <span class="str">'contract_law'</span>
+<span class="pn">});</span>
+
+<span class="cm">// Add legal practice areas</span>
+<span class="kw">await</span> graph<span class="pn">.</span><span class="fn">addNode</span><span class="pn">({</span>
+  entity<span class="pn">:</span> <span class="str">'Indemnification'</span><span class="pn">,</span>
+  type<span class="pn">:</span>   <span class="str">'clause_type'</span><span class="pn">,</span>
+  weight<span class="pn">:</span> <span class="num">1.0</span>
+<span class="pn">});</span>
+
+<span class="kw">await</span> graph<span class="pn">.</span><span class="fn">addNode</span><span class="pn">({</span>
+  entity<span class="pn">:</span> <span class="str">'Limitation of Liability'</span><span class="pn">,</span>
+  type<span class="pn">:</span>   <span class="str">'clause_type'</span><span class="pn">,</span>
+  weight<span class="pn">:</span> <span class="num">0.95</span>
+<span class="pn">});</span>
+
+<span class="kw">await</span> graph<span class="pn">.</span><span class="fn">addEdge</span><span class="pn">({</span>
+  from<span class="pn">:</span>     <span class="str">'Indemnification'</span><span class="pn">,</span>
+  to<span class="pn">:</span>       <span class="str">'Limitation of Liability'</span><span class="pn">,</span>
+  relation<span class="pn">:</span> <span class="str">'often_paired'</span><span class="pn">,</span>
+  weight<span class="pn">:</span>   <span class="num">0.87</span>
+<span class="pn">});</span>
+
+<span class="cm">// Rank contract clauses by risk relevance</span>
+<span class="kw">const</span> clauses <span class="op">=</span> <span class="kw">await</span> sdk<span class="pn">.</span>opportunityRanker<span class="pn">.</span><span class="fn">rank</span><span class="pn">({</span>
+  userId<span class="pn">:</span>     <span class="str">'atty_chen_88'</span><span class="pn">,</span>
+  candidates<span class="pn">:</span> contractClauses<span class="pn">,</span>
+  threshold<span class="pn">:</span>  <span class="num">0.70</span><span class="pn">,</span>
+  mode<span class="pn">:</span>       <span class="str">'risk_surface'</span>
+<span class="pn">});</span>
+
+console<span class="pn">.</span><span class="fn">log</span><span class="pn">(</span>clauses<span class="pn">[</span><span class="num">0</span><span class="pn">]);</span>
+<span class="cm">// { clause: 'Mutual indemnification carve-out', risk: 'HIGH', score: 0.91 }</span>`,
+
+    py: `<span class="kw">from</span> recome <span class="kw">import</span> <span class="cls">RecoMeSDK</span>
+
+sdk <span class="op">=</span> <span class="cls">RecoMeSDK</span><span class="pn">(</span>api_key<span class="op">=</span><span class="str">"rm_live_sk_..."</span><span class="pn">)</span>
+
+<span class="cm"># Initialize attorney interest profile</span>
+graph <span class="op">=</span> <span class="kw">await</span> sdk<span class="pn">.</span>interest_graph<span class="pn">.</span><span class="fn">init</span><span class="pn">(</span>
+    user_id<span class="op">=</span><span class="str">"atty_chen_88"</span><span class="pn">,</span>
+    domain<span class="op">=</span><span class="str">"contract_law"</span>
+<span class="pn">)</span>
+
+<span class="cm"># Add legal clause nodes</span>
+<span class="kw">await</span> graph<span class="pn">.</span><span class="fn">add_node</span><span class="pn">(</span>
+    entity<span class="op">=</span><span class="str">"Indemnification"</span><span class="pn">,</span>
+    type<span class="op">=</span><span class="str">"clause_type"</span><span class="pn">,</span>
+    weight<span class="op">=</span><span class="num">1.0</span>
+<span class="pn">)</span>
+
+<span class="kw">await</span> graph<span class="pn">.</span><span class="fn">add_node</span><span class="pn">(</span>
+    entity<span class="op">=</span><span class="str">"Limitation of Liability"</span><span class="pn">,</span>
+    type<span class="op">=</span><span class="str">"clause_type"</span><span class="pn">,</span>
+    weight<span class="op">=</span><span class="num">0.95</span>
+<span class="pn">)</span>
+
+<span class="cm"># Rank clauses by risk relevance</span>
+clauses <span class="op">=</span> <span class="kw">await</span> sdk<span class="pn">.</span>opportunity_ranker<span class="pn">.</span><span class="fn">rank</span><span class="pn">(</span>
+    user_id<span class="op">=</span><span class="str">"atty_chen_88"</span><span class="pn">,</span>
+    candidates<span class="op">=</span>contract_clauses<span class="pn">,</span>
+    threshold<span class="op">=</span><span class="num">0.70</span><span class="pn">,</span>
+    mode<span class="op">=</span><span class="str">"risk_surface"</span>
+<span class="pn">)</span>
+
+<span class="fn">print</span><span class="pn">(</span>clauses<span class="pn">[</span><span class="num">0</span><span class="pn">])</span>
+<span class="cm"># {'clause': 'Mutual indemnification carve-out', 'risk': 'HIGH', 'score': 0.91}</span>`,
+
+    metrics: { m1: '0.91', m2: '0.76', m3: 'Yes' },
+    output: [
+      `<span class="json-pn">{</span>`,
+      `  <span class="json-key">"userId"</span><span class="json-pn">:</span> <span class="json-str">"atty_chen_88"</span><span class="json-pn">,</span>`,
+      `  <span class="json-key">"ranked"</span><span class="json-pn">:</span> <span class="json-pn">[</span>`,
+      `    <span class="json-pn">{</span>`,
+      `      <span class="json-key">"clause"</span><span class="json-pn">:</span> <span class="json-str">"Mutual indemnification carve-out"</span><span class="json-pn">,</span>`,
+      `      <span class="json-key">"score"</span><span class="json-pn">:</span> <span class="json-num">0.91</span><span class="json-pn">,</span>`,
+      `      <span class="json-key">"risk"</span><span class="json-pn">:</span> <span class="json-str">"HIGH"</span><span class="json-pn">,</span>`,
+      `      <span class="json-key">"signals"</span><span class="json-pn">:</span> <span class="json-pn">{</span>`,
+      `        <span class="json-key">"practiceAreaMatch"</span><span class="json-pn">:</span> <span class="json-num">0.97</span><span class="json-pn">,</span>`,
+      `        <span class="json-key">"riskExposure"</span><span class="json-pn">:</span> <span class="json-num">0.88</span><span class="json-pn">,</span>`,
+      `        <span class="json-key">"precedentMatch"</span><span class="json-pn">:</span> <span class="json-num">0.76</span>`,
+      `      <span class="json-pn">},</span>`,
+      `      <span class="json-key">"delta"</span><span class="json-pn">:</span> <span class="json-bool">true</span><span class="json-pn">,</span>`,
+      `      <span class="json-key">"deltaNote"</span><span class="json-pn">:</span> <span class="json-str">"New carve-out language not seen before"</span>`,
+      `    <span class="json-pn">},</span>`,
+      `    <span class="json-pn">{</span>`,
+      `      <span class="json-key">"clause"</span><span class="json-pn">:</span> <span class="json-str">"Standard force majeure"</span><span class="json-pn">,</span>`,
+      `      <span class="json-key">"score"</span><span class="json-pn">:</span> <span class="json-num">0.31</span><span class="json-pn">,</span>`,
+      `      <span class="json-key">"filtered"</span><span class="json-pn">:</span> <span class="json-bool">true</span><span class="json-pn">,</span>`,
+      `      <span class="json-key">"reason"</span><span class="json-pn">:</span> <span class="json-str">"below threshold 0.70"</span>`,
+      `    <span class="json-pn">}</span>`,
+      `  <span class="json-pn">],</span>`,
+      `  <span class="json-key">"memoryUpdated"</span><span class="json-pn">:</span> <span class="json-bool">true</span><span class="json-pn">,</span>`,
+      `  <span class="json-key">"graphNodesAdded"</span><span class="json-pn">:</span> <span class="json-num">2</span>`,
+      `<span class="json-pn">}</span>`
+    ],
+    graph: {
+      nodes: [
+        { id: 'Indemnification',      x: 200, y: 120, r: 20, fill: '#d97706', labelDy: -26 },
+        { id: 'Limit. Liability',     x: 80,  y: 60,  r: 16, fill: '#d97706', labelDy: -22 },
+        { id: 'IP Ownership',         x: 330, y: 65,  r: 13, fill: '#484f58', labelDy: -19 },
+        { id: 'Governing Law',        x: 55,  y: 190, r: 11, fill: '#484f58', labelDy:  19 },
+        { id: 'Arbitration',          x: 330, y: 195, r: 13, fill: '#484f58', labelDy:  19 },
+        { id: 'Force Majeure',        x: 200, y: 245, r: 10, fill: '#484f58', labelDy:  17 },
+      ],
+      edges: [[0,1],[0,2],[0,3],[0,4],[0,5],[1,3],[2,4]]
+    }
+  },
+
+  ecommerce: {
+    filename: { ts: 'ecommerce-integration.ts', py: 'ecommerce_integration.py' },
+    ts: `<span class="kw">import</span> <span class="pn">{</span> <span class="cls">RecoMeSDK</span> <span class="pn">}</span> <span class="kw">from</span> <span class="str">'@recome/sdk'</span><span class="pn">;</span>
+
+<span class="kw">const</span> sdk <span class="op">=</span> <span class="kw">new</span> <span class="cls">RecoMeSDK</span><span class="pn">({</span> apiKey<span class="pn">:</span> <span class="str">'rm_live_sk_...'</span> <span class="pn">});</span>
+
+<span class="cm">// Build shopper interest graph</span>
+<span class="kw">const</span> graph <span class="op">=</span> <span class="kw">await</span> sdk<span class="pn">.</span>interestGraph<span class="pn">.</span><span class="fn">init</span><span class="pn">({</span>
+  userId<span class="pn">:</span>   <span class="str">'shopper_amara_22'</span><span class="pn">,</span>
+  vertical<span class="pn">:</span> <span class="str">'apparel'</span>
+<span class="pn">});</span>
+
+<span class="cm">// Capture purchase signals</span>
+<span class="kw">await</span> graph<span class="pn">.</span><span class="fn">addNode</span><span class="pn">({</span>
+  entity<span class="pn">:</span> <span class="str">'Minimalist Aesthetic'</span><span class="pn">,</span>
+  type<span class="pn">:</span>   <span class="str">'style_preference'</span><span class="pn">,</span>
+  weight<span class="pn">:</span> <span class="num">0.96</span>
+<span class="pn">});</span>
+
+<span class="kw">await</span> graph<span class="pn">.</span><span class="fn">addNode</span><span class="pn">({</span>
+  entity<span class="pn">:</span> <span class="str">'Sustainable Materials'</span><span class="pn">,</span>
+  type<span class="pn">:</span>   <span class="str">'value_signal'</span><span class="pn">,</span>
+  weight<span class="pn">:</span> <span class="num">0.89</span>
+<span class="pn">});</span>
+
+<span class="kw">await</span> graph<span class="pn">.</span><span class="fn">addEdge</span><span class="pn">({</span>
+  from<span class="pn">:</span>     <span class="str">'Minimalist Aesthetic'</span><span class="pn">,</span>
+  to<span class="pn">:</span>       <span class="str">'Sustainable Materials'</span><span class="pn">,</span>
+  relation<span class="pn">:</span> <span class="str">'co_purchased'</span><span class="pn">,</span>
+  weight<span class="pn">:</span>   <span class="num">0.84</span>
+<span class="pn">});</span>
+
+<span class="cm">// Rank product catalog</span>
+<span class="kw">const</span> recs <span class="op">=</span> <span class="kw">await</span> sdk<span class="pn">.</span>opportunityRanker<span class="pn">.</span><span class="fn">rank</span><span class="pn">({</span>
+  userId<span class="pn">:</span>     <span class="str">'shopper_amara_22'</span><span class="pn">,</span>
+  candidates<span class="pn">:</span> productCatalog<span class="pn">,</span>
+  threshold<span class="pn">:</span>  <span class="num">0.60</span><span class="pn">,</span>
+  boost<span class="pn">:</span>      <span class="pn">[</span><span class="str">'new_arrival'</span><span class="pn">,</span> <span class="str">'on_sale'</span><span class="pn">]</span>
+<span class="pn">});</span>
+
+console<span class="pn">.</span><span class="fn">log</span><span class="pn">(</span>recs<span class="pn">[</span><span class="num">0</span><span class="pn">]);</span>
+<span class="cm">// { product: 'Linen Wide-Leg Pants', score: 0.93, newArrival: true }</span>`,
+
+    py: `<span class="kw">from</span> recome <span class="kw">import</span> <span class="cls">RecoMeSDK</span>
+
+sdk <span class="op">=</span> <span class="cls">RecoMeSDK</span><span class="pn">(</span>api_key<span class="op">=</span><span class="str">"rm_live_sk_..."</span><span class="pn">)</span>
+
+<span class="cm"># Build shopper interest graph</span>
+graph <span class="op">=</span> <span class="kw">await</span> sdk<span class="pn">.</span>interest_graph<span class="pn">.</span><span class="fn">init</span><span class="pn">(</span>
+    user_id<span class="op">=</span><span class="str">"shopper_amara_22"</span><span class="pn">,</span>
+    vertical<span class="op">=</span><span class="str">"apparel"</span>
+<span class="pn">)</span>
+
+<span class="cm"># Capture purchase signals</span>
+<span class="kw">await</span> graph<span class="pn">.</span><span class="fn">add_node</span><span class="pn">(</span>
+    entity<span class="op">=</span><span class="str">"Minimalist Aesthetic"</span><span class="pn">,</span>
+    type<span class="op">=</span><span class="str">"style_preference"</span><span class="pn">,</span>
+    weight<span class="op">=</span><span class="num">0.96</span>
+<span class="pn">)</span>
+
+<span class="kw">await</span> graph<span class="pn">.</span><span class="fn">add_node</span><span class="pn">(</span>
+    entity<span class="op">=</span><span class="str">"Sustainable Materials"</span><span class="pn">,</span>
+    type<span class="op">=</span><span class="str">"value_signal"</span><span class="pn">,</span>
+    weight<span class="op">=</span><span class="num">0.89</span>
+<span class="pn">)</span>
+
+<span class="cm"># Rank product catalog</span>
+recs <span class="op">=</span> <span class="kw">await</span> sdk<span class="pn">.</span>opportunity_ranker<span class="pn">.</span><span class="fn">rank</span><span class="pn">(</span>
+    user_id<span class="op">=</span><span class="str">"shopper_amara_22"</span><span class="pn">,</span>
+    candidates<span class="op">=</span>product_catalog<span class="pn">,</span>
+    threshold<span class="op">=</span><span class="num">0.60</span><span class="pn">,</span>
+    boost<span class="op">=</span><span class="pn">[</span><span class="str">"new_arrival"</span><span class="pn">,</span> <span class="str">"on_sale"</span><span class="pn">]</span>
+<span class="pn">)</span>
+
+<span class="fn">print</span><span class="pn">(</span>recs<span class="pn">[</span><span class="num">0</span><span class="pn">])</span>
+<span class="cm"># {'product': 'Linen Wide-Leg Pants', 'score': 0.93, 'new_arrival': True}</span>`,
+
+    metrics: { m1: '0.93', m2: '0.81', m3: 'No' },
+    output: [
+      `<span class="json-pn">{</span>`,
+      `  <span class="json-key">"userId"</span><span class="json-pn">:</span> <span class="json-str">"shopper_amara_22"</span><span class="json-pn">,</span>`,
+      `  <span class="json-key">"ranked"</span><span class="json-pn">:</span> <span class="json-pn">[</span>`,
+      `    <span class="json-pn">{</span>`,
+      `      <span class="json-key">"product"</span><span class="json-pn">:</span> <span class="json-str">"Linen Wide-Leg Pants"</span><span class="json-pn">,</span>`,
+      `      <span class="json-key">"score"</span><span class="json-pn">:</span> <span class="json-num">0.93</span><span class="json-pn">,</span>`,
+      `      <span class="json-key">"signals"</span><span class="json-pn">:</span> <span class="json-pn">{</span>`,
+      `        <span class="json-key">"styleMatch"</span><span class="json-pn">:</span> <span class="json-num">0.97</span><span class="json-pn">,</span>`,
+      `        <span class="json-key">"materialMatch"</span><span class="json-pn">:</span> <span class="json-num">0.91</span><span class="json-pn">,</span>`,
+      `        <span class="json-key">"priceAffinity"</span><span class="json-pn">:</span> <span class="json-num">0.85</span><span class="json-pn">,</span>`,
+      `        <span class="json-key">"novelty"</span><span class="json-pn">:</span> <span class="json-num">0.79</span>`,
+      `      <span class="json-pn">},</span>`,
+      `      <span class="json-key">"newArrival"</span><span class="json-pn">:</span> <span class="json-bool">true</span><span class="json-pn">,</span>`,
+      `      <span class="json-key">"delta"</span><span class="json-pn">:</span> <span class="json-bool">false</span>`,
+      `    <span class="json-pn">},</span>`,
+      `    <span class="json-pn">{</span>`,
+      `      <span class="json-key">"product"</span><span class="json-pn">:</span> <span class="json-str">"Graphic Logo Hoodie"</span><span class="json-pn">,</span>`,
+      `      <span class="json-key">"score"</span><span class="json-pn">:</span> <span class="json-num">0.22</span><span class="json-pn">,</span>`,
+      `      <span class="json-key">"filtered"</span><span class="json-pn">:</span> <span class="json-bool">true</span><span class="json-pn">,</span>`,
+      `      <span class="json-key">"reason"</span><span class="json-pn">:</span> <span class="json-str">"below threshold 0.60"</span>`,
+      `    <span class="json-pn">}</span>`,
+      `  <span class="json-pn">],</span>`,
+      `  <span class="json-key">"memoryUpdated"</span><span class="json-pn">:</span> <span class="json-bool">true</span><span class="json-pn">,</span>`,
+      `  <span class="json-key">"graphNodesAdded"</span><span class="json-pn">:</span> <span class="json-num">4</span>`,
+      `<span class="json-pn">}</span>`
+    ],
+    graph: {
+      nodes: [
+        { id: 'Minimalist',          x: 200, y: 120, r: 20, fill: '#d97706', labelDy: -26 },
+        { id: 'Sustainable',         x: 80,  y: 60,  r: 16, fill: '#d97706', labelDy: -22 },
+        { id: 'Linen / Natural',     x: 325, y: 65,  r: 13, fill: '#d97706', labelDy: -19 },
+        { id: 'On Sale',             x: 55,  y: 190, r: 11, fill: '#484f58', labelDy:  19 },
+        { id: 'New Arrivals',        x: 330, y: 195, r: 14, fill: '#484f58', labelDy:  19 },
+        { id: 'Neutral Palette',     x: 200, y: 245, r: 10, fill: '#484f58', labelDy:  17 },
+      ],
+      edges: [[0,1],[0,2],[0,3],[0,4],[0,5],[1,2],[1,3],[2,4]]
+    }
+  }
+};
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let currentScenario = 'healthcare';
+let currentLang = 'ts';
+
+// ═══════════════════════════════════════════
+// RENDER HELPERS
+// ═══════════════════════════════════════════
+
+function renderCode() {
+  const data = SCENARIOS[currentScenario];
+  const html = data[currentLang];
+  const display = document.getElementById('code-display');
+  display.style.opacity = '0';
+  setTimeout(() => {
+    display.innerHTML = html;
+    // Count lines
+    const lines = html.split('\n').length;
+    const ln = document.getElementById('line-numbers');
+    ln.innerHTML = Array.from({length: lines}, (_, i) => i + 1).join('\n');
+    display.style.opacity = '1';
+  }, 120);
+  document.getElementById('editor-filename').textContent =
+    data.filename[currentLang];
+}
+
+function renderGraph(scenario) {
+  const g = SCENARIOS[scenario].graph;
+  const W = 400, H = 280;
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+  // Background
+  const bg = document.createElementNS(svgNS, 'rect');
+  bg.setAttribute('width', W); bg.setAttribute('height', H);
+  bg.setAttribute('fill', '#0d1117');
+  svg.appendChild(bg);
+
+  // Edges
+  g.edges.forEach(([a, b]) => {
+    const na = g.nodes[a], nb = g.nodes[b];
+    const line = document.createElementNS(svgNS, 'line');
+    line.setAttribute('x1', na.x); line.setAttribute('y1', na.y);
+    line.setAttribute('x2', nb.x); line.setAttribute('y2', nb.y);
+    line.setAttribute('class', 'graph-edge');
+    svg.appendChild(line);
+  });
+
+  // Nodes
+  g.nodes.forEach(node => {
+    const g_el = document.createElementNS(svgNS, 'g');
+
+    const circle = document.createElementNS(svgNS, 'circle');
+    circle.setAttribute('cx', node.x); circle.setAttribute('cy', node.y);
+    circle.setAttribute('r', node.r);
+    circle.setAttribute('fill', node.fill + '33');
+    circle.setAttribute('stroke', node.fill);
+    circle.setAttribute('stroke-width', node.fill === '#d97706' ? '2.5' : '1.5');
+    circle.setAttribute('class', 'node-circle');
+    g_el.appendChild(circle);
+
+    if (node.fill === '#d97706') {
+      // Glow ring
+      const glow = document.createElementNS(svgNS, 'circle');
+      glow.setAttribute('cx', node.x); glow.setAttribute('cy', node.y);
+      glow.setAttribute('r', node.r + 5);
+      glow.setAttribute('fill', 'none');
+      glow.setAttribute('stroke', '#d97706');
+      glow.setAttribute('stroke-width', '1');
+      glow.setAttribute('opacity', '0.25');
+      g_el.appendChild(glow);
+    }
+
+    const text = document.createElementNS(svgNS, 'text');
+    text.setAttribute('x', node.x);
+    text.setAttribute('y', node.y + node.labelDy);
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('class', 'node-label');
+    text.setAttribute('font-size', node.r > 16 ? '10' : '9');
+    text.textContent = node.id;
+    g_el.appendChild(text);
+
+    svg.appendChild(g_el);
+  });
+
+  const container = document.getElementById('graph-container');
+  container.innerHTML = '';
+  container.appendChild(svg);
+}
+
+// ═══════════════════════════════════════════
+// SCENARIO / LANG SWITCHES
+// ═══════════════════════════════════════════
+
+function switchScenario(value) {
+  currentScenario = value;
+  renderCode();
+  renderGraph(value);
+  resetOutput();
+}
+
+function switchLang(lang, btn) {
+  currentLang = lang;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCode();
+}
+
+function resetOutput() {
+  document.getElementById('output-area').innerHTML =
+    '<span style="color:var(--text-dim);font-style:italic;font-size:0.78rem;">// Press "Run Simulation" to execute →</span>';
+  ['mv-1','mv-2','mv-3'].forEach(id => {
+    document.getElementById(id).textContent = '—';
+  });
+  ['metric-1','metric-2','metric-3'].forEach(id => {
+    document.getElementById(id).classList.remove('active-card');
+  });
+}
+
+// ═══════════════════════════════════════════
+// RUN SIMULATION
+// ═══════════════════════════════════════════
+
+let simRunning = false;
+
+async function runSimulation() {
+  if (simRunning) return;
+  simRunning = true;
+
+  const btn = document.getElementById('run-btn');
+  btn.textContent = '';
+  btn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:6px;vertical-align:middle"></span>Running…';
+  btn.style.opacity = '0.7';
+  btn.style.pointerEvents = 'none';
+
+  // Add spin keyframe if not present
+  if (!document.getElementById('spin-style')) {
+    const style = document.createElement('style');
+    style.id = 'spin-style';
+    style.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
+    document.head.appendChild(style);
+  }
+
+  const area = document.getElementById('output-area');
+  area.innerHTML = '';
+
+  const lines = SCENARIOS[currentScenario].output;
+  const delay = 800 / lines.length;
+
+  for (let i = 0; i < lines.length; i++) {
+    await new Promise(r => setTimeout(r, delay));
+    const span = document.createElement('span');
+    span.className = 'output-line';
+    span.innerHTML = lines[i] + '\n';
+    area.appendChild(span);
+    // Trigger transition
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => { span.classList.add('visible'); });
+    });
+  }
+
+  // Metrics
+  await new Promise(r => setTimeout(r, 200));
+  const m = SCENARIOS[currentScenario].metrics;
+  const mv1 = document.getElementById('mv-1');
+  const mv2 = document.getElementById('mv-2');
+  const mv3 = document.getElementById('mv-3');
+  mv1.textContent = m.m1;
+  mv2.textContent = m.m2;
+  mv3.textContent = m.m3;
+
+  ['metric-1','metric-2','metric-3'].forEach(id => {
+    document.getElementById(id).classList.add('active-card');
+  });
+
+  // Restore button
+  btn.innerHTML = '<span class="run-icon"></span> Run Again';
+  btn.style.opacity = '1';
+  btn.style.pointerEvents = 'auto';
+
+  // Scroll to graph
+  document.getElementById('graph-section').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  simRunning = false;
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderCode();
+  renderGraph('healthcare');
+
+  // Nav active state on scroll
+  const sections = ['overview', 'integration', 'live-output'];
+  const navLinks = document.querySelectorAll('.nav-links a');
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(id => {
+      const el = document.getElementById(id === 'overview' ? 'overview' : id);
+      if (el && window.scrollY >= el.offsetTop - 80) current = id;
+    });
+    navLinks.forEach(link => {
+      const href = link.getAttribute('href').replace('#', '');
+      link.classList.toggle('active', href === current || (current === '' && href === 'overview'));
+    });
+  }, { passive: true });
+});
+</script>
+</body>
+</html>

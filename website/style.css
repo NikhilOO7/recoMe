@@ -1603,6 +1603,276 @@ input:focus-visible,
   color: #8080a0;
 }
 
+/* ── Floating Overlay Mock ───────────────────────────────────────────────────── */
+.mini-overlay {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+}
+
+.overlay-pill-mock {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #818cf8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+}
+
+.overlay-panel-mock {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.overlay-header-mock {
+  font-size: 13px;
+  color: #e0e0ff;
+}
+
+.overlay-header-mock small {
+  color: #8080a0;
+  margin-left: 6px;
+}
+
+.overlay-quick-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.overlay-action {
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: #2a2a4a;
+  border: 1px solid #3a3a5a;
+  color: #c0c0e0;
+}
+
+.overlay-chat-preview {
+  font-size: 11px;
+  color: #6060a0;
+  padding: 8px 10px;
+  background: #1a1a3a;
+  border-radius: 8px;
+  border: 1px solid #2a2a4a;
+}
+
+/* ── Smart Prompts Mock ──────────────────────────────────────────────────────── */
+.mini-prompts {
+  padding: 12px;
+}
+
+.prompt-card-mock {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(129, 140, 248, 0.05));
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.prompt-icon-mock {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.prompt-text-mock strong {
+  display: block;
+  font-size: 12px;
+  color: #e0e0ff;
+  margin-bottom: 4px;
+}
+
+.prompt-text-mock small {
+  font-size: 11px;
+  color: #8080a0;
+}
+
+.prompt-actions-mock {
+  display: flex;
+  gap: 8px;
+}
+
+.prompt-yes {
+  font-size: 11px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+}
+
+.prompt-no {
+  font-size: 11px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: #2a2a4a;
+  color: #8080a0;
+}
+
+/* ── Price Tracking Mock ─────────────────────────────────────────────────────── */
+.mini-prices {
+  padding: 12px;
+}
+
+.price-header-mock {
+  font-size: 12px;
+  font-weight: 700;
+  color: #8080a0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.price-item-mock {
+  padding: 10px;
+  background: #1a1a3a;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.price-item-mock strong {
+  display: block;
+  font-size: 13px;
+  color: #e0e0ff;
+  margin-bottom: 6px;
+}
+
+.price-row-mock {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.price-current {
+  font-size: 16px;
+  font-weight: 800;
+  color: #4ade80;
+}
+
+.price-was {
+  font-size: 11px;
+  color: #6060a0;
+  text-decoration: line-through;
+}
+
+.price-drop {
+  font-size: 11px;
+  color: #4ade80;
+  font-weight: 600;
+}
+
+.price-spark-mock {
+  font-size: 14px;
+  color: #818cf8;
+  letter-spacing: 2px;
+}
+
+.price-alert-mock {
+  font-size: 11px;
+  padding: 8px 10px;
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  border-radius: 8px;
+  color: #4ade80;
+}
+
+/* ── Import Mock ─────────────────────────────────────────────────────────────── */
+.mini-imports {
+  padding: 12px;
+}
+
+.import-header-mock {
+  font-size: 12px;
+  font-weight: 700;
+  color: #8080a0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.import-item-mock {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #c0c0e0;
+  margin-bottom: 4px;
+}
+
+.import-item-mock.done {
+  color: #4ade80;
+}
+
+.import-item-mock.active {
+  background: rgba(99, 102, 241, 0.1);
+  color: #818cf8;
+}
+
+.import-item-mock.pending {
+  color: #6060a0;
+}
+
+/* ── Preference Packs Mock ───────────────────────────────────────────────────── */
+.mini-packs {
+  padding: 12px;
+}
+
+.pack-header-mock {
+  font-size: 12px;
+  font-weight: 700;
+  color: #8080a0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.pack-item-mock {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  background: #1a1a3a;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.pack-item-mock strong {
+  font-size: 13px;
+  color: #e0e0ff;
+  flex: 1;
+}
+
+.pack-item-mock small {
+  font-size: 10px;
+  color: #6060a0;
+  width: 100%;
+  margin-top: -4px;
+}
+
+.pack-btn-mock {
+  font-size: 10px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+}
+
 /* ── Platforms ─────────────────────────────────────────────────────────────────── */
 .platforms-section {
   padding: 100px 0;
@@ -1610,7 +1880,7 @@ input:focus-visible,
 
 .platforms-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
 }
 
