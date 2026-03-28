@@ -77,8 +77,12 @@ const youtubeStrategy: DismissStrategy = {
   },
 
   findDismissOption(): HTMLElement | null {
-    // The menu renders as a popup outside the card
-    const menuItems = document.querySelectorAll<HTMLElement>(
+    // The menu renders as a popup outside the card — scope to last opened popup
+    const popups = document.querySelectorAll<HTMLElement>(
+      'ytd-popup-container, tp-yt-iron-dropdown, [class*="popup"]',
+    );
+    const scope = popups.length > 0 ? popups[popups.length - 1]! : document;
+    const menuItems = scope.querySelectorAll<HTMLElement>(
       'ytd-menu-service-item-renderer, tp-yt-paper-item',
     );
     for (const item of menuItems) {
@@ -112,10 +116,10 @@ const instagramStrategy: DismissStrategy = {
   },
 
   findDismissOption(): HTMLElement | null {
-    // Instagram menu renders as a dialog/modal
-    const buttons = document.querySelectorAll<HTMLElement>(
-      'div[role="dialog"] button, div[role="menu"] button, div[role="menuitem"]',
-    );
+    // Instagram menu renders as a dialog/modal — scope to last opened dialog
+    const dialogs = document.querySelectorAll<HTMLElement>('div[role="dialog"]');
+    const scope = dialogs.length > 0 ? dialogs[dialogs.length - 1]! : document;
+    const buttons = scope.querySelectorAll<HTMLElement>('button, div[role="menuitem"]');
     for (const btn of buttons) {
       const text = btn.textContent?.trim().toLowerCase() ?? '';
       if (text.includes('not interested') || text.includes('hide')) {
@@ -138,10 +142,12 @@ const twitterStrategy: DismissStrategy = {
   },
 
   findDismissOption(): HTMLElement | null {
-    // Twitter menu renders as a dropdown
-    const items = document.querySelectorAll<HTMLElement>(
-      '[data-testid="Dropdown"] [role="menuitem"], ' + 'div[role="menu"] div[role="menuitem"]',
+    // Twitter menu renders as a dropdown — scope to last opened dropdown
+    const dropdowns = document.querySelectorAll<HTMLElement>(
+      '[data-testid="Dropdown"], div[role="menu"]',
     );
+    const scope = dropdowns.length > 0 ? dropdowns[dropdowns.length - 1]! : document;
+    const items = scope.querySelectorAll<HTMLElement>('[role="menuitem"]');
     for (const item of items) {
       const text = item.textContent?.trim().toLowerCase() ?? '';
       if (text.includes('not interested') || text.includes('this post isn')) {
@@ -166,9 +172,10 @@ const facebookStrategy: DismissStrategy = {
   },
 
   findDismissOption(): HTMLElement | null {
-    const items = document.querySelectorAll<HTMLElement>(
-      'div[role="menu"] div[role="menuitem"], ' + 'div[role="dialog"] div[role="menuitem"]',
-    );
+    // Facebook — scope to last opened menu/dialog
+    const menus = document.querySelectorAll<HTMLElement>('div[role="menu"], div[role="dialog"]');
+    const scope = menus.length > 0 ? menus[menus.length - 1]! : document;
+    const items = scope.querySelectorAll<HTMLElement>('div[role="menuitem"]');
     for (const item of items) {
       const text = item.textContent?.trim().toLowerCase() ?? '';
       if (
@@ -196,9 +203,12 @@ const linkedinStrategy: DismissStrategy = {
   },
 
   findDismissOption(): HTMLElement | null {
-    const items = document.querySelectorAll<HTMLElement>(
-      '.feed-shared-control-menu__content li, ' + 'div[role="menu"] li',
+    // LinkedIn — scope to last opened control menu
+    const menus = document.querySelectorAll<HTMLElement>(
+      '.feed-shared-control-menu__content, div[role="menu"]',
     );
+    const scope = menus.length > 0 ? menus[menus.length - 1]! : document;
+    const items = scope.querySelectorAll<HTMLElement>('li');
     for (const item of items) {
       const text = item.textContent?.trim().toLowerCase() ?? '';
       if (

@@ -17,6 +17,10 @@ createRoot(container).render(
   </StrictMode>,
 );
 
-requestIdleCallback(() => {
+const idleCallback =
+  typeof requestIdleCallback === 'function'
+    ? requestIdleCallback
+    : (cb: () => void) => setTimeout(cb, 1);
+idleCallback(() => {
   PerfMonitor.getInstance().record('popup_load_ms', performance.now() - popupStart);
 });

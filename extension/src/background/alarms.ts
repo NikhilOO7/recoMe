@@ -13,43 +13,53 @@ import { getMonitoringCollector } from './monitoring/MonitoringCollector';
 
 const log = createLogger('Alarms');
 
-export function registerAlarms(): void {
-  chrome.alarms.create(ALARM_NAMES.decay, {
-    periodInMinutes: ALARM_INTERVALS.decay_minutes,
-    delayInMinutes: 1,
-  });
+export async function registerAlarms(): Promise<void> {
+  // Idempotent: only create alarms that don't already exist
+  const existing = await chrome.alarms.getAll();
+  const existingNames = new Set(existing.map((a) => a.name));
 
-  chrome.alarms.create(ALARM_NAMES.stats, {
-    periodInMinutes: ALARM_INTERVALS.stats_minutes,
-    delayInMinutes: 5,
-  });
+  const alarmDefs: Array<{ name: string; periodInMinutes: number; delayInMinutes: number }> = [
+    { name: ALARM_NAMES.decay, periodInMinutes: ALARM_INTERVALS.decay_minutes, delayInMinutes: 1 },
+    { name: ALARM_NAMES.stats, periodInMinutes: ALARM_INTERVALS.stats_minutes, delayInMinutes: 5 },
+    {
+      name: ALARM_NAMES.preference_synthesis,
+      periodInMinutes: ALARM_INTERVALS.preference_synthesis_minutes,
+      delayInMinutes: 10,
+    },
+    {
+      name: ALARM_NAMES.insight_check,
+      periodInMinutes: ALARM_INTERVALS.insight_check_minutes,
+      delayInMinutes: 5,
+    },
+    {
+      name: ALARM_NAMES.selector_health,
+      periodInMinutes: ALARM_INTERVALS.selector_health_minutes,
+      delayInMinutes: 15,
+    },
+    {
+      name: ALARM_NAMES.price_check,
+      periodInMinutes: ALARM_INTERVALS.price_check_minutes,
+      delayInMinutes: 30,
+    },
+    {
+      name: ALARM_NAMES.import_check,
+      periodInMinutes: ALARM_INTERVALS.import_check_minutes,
+      delayInMinutes: 10,
+    },
+  ];
 
-  chrome.alarms.create(ALARM_NAMES.preference_synthesis, {
-    periodInMinutes: ALARM_INTERVALS.preference_synthesis_minutes,
-    delayInMinutes: 10, // first run 10 min after install/startup
-  });
+  let created = 0;
+  for (const def of alarmDefs) {
+    if (!existingNames.has(def.name)) {
+      chrome.alarms.create(def.name, {
+        periodInMinutes: def.periodInMinutes,
+        delayInMinutes: def.delayInMinutes,
+      });
+      created++;
+    }
+  }
 
-  chrome.alarms.create(ALARM_NAMES.insight_check, {
-    periodInMinutes: ALARM_INTERVALS.insight_check_minutes,
-    delayInMinutes: 5, // first run 5 min after startup
-  });
-
-  chrome.alarms.create(ALARM_NAMES.selector_health, {
-    periodInMinutes: ALARM_INTERVALS.selector_health_minutes,
-    delayInMinutes: 15, // first run 15 min after startup
-  });
-
-  chrome.alarms.create(ALARM_NAMES.price_check, {
-    periodInMinutes: ALARM_INTERVALS.price_check_minutes,
-    delayInMinutes: 30, // first run 30 min after startup
-  });
-
-  chrome.alarms.create(ALARM_NAMES.import_check, {
-    periodInMinutes: ALARM_INTERVALS.import_check_minutes,
-    delayInMinutes: 10, // first run 10 min after startup
-  });
-
-  log.info('Alarms registered');
+  log.info(`Alarms registered (${created} new, ${existingNames.size} existing)`);
 }
 
 export function handleAlarm(alarm: chrome.alarms.Alarm): void {

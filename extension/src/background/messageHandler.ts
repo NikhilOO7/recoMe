@@ -120,8 +120,17 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
     }
 
     case 'GET_SETTINGS': {
-      const settings = await chrome.storage.sync.get('recome_settings');
-      return ok(settings['recome_settings'] ?? defaultSettings());
+      const [syncResult, localResult] = await Promise.all([
+        chrome.storage.sync.get('recome_settings'),
+        chrome.storage.local.get('recome_api_keys'),
+      ]);
+      const base = syncResult['recome_settings'] ?? defaultSettings();
+      const keys = localResult['recome_api_keys'] as Record<string, string> | undefined;
+      // Merge API keys from local storage into settings response
+      if (keys) {
+        Object.assign(base, keys);
+      }
+      return ok(base);
     }
 
     case 'GET_STATS': {
@@ -197,19 +206,50 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
 
     case 'CLEAR_ALL_DATA': {
       await svc.getMemoryService().clearAll();
-      await chrome.storage.local.remove('recome_stats');
+      // Clear all IDB stores (commerce, graph, etc.)
+      try {
+        const db = await getDB();
+        const storeNames = Array.from(db.objectStoreNames);
+        for (const storeName of storeNames) {
+          const tx = db.transaction(storeName, 'readwrite');
+          await tx.store.clear();
+          await tx.done;
+        }
+      } catch (e) {
+        log.warn('Failed to clear some IDB stores', e);
+      }
+      await chrome.storage.local.remove(['recome_stats', 'recome_api_keys', 'recome_focus']);
       return ok(undefined);
     }
 
     case 'EXPORT_DATA': {
       const memory = svc.getMemoryService();
       const graph = svc.getGraph();
-      const [pack, entities, stats] = await Promise.all([
-        memory.retrieve('general'),
+      const contexts = [
+        'general',
+        'work',
+        'shopping',
+        'entertainment',
+        'learning',
+        'social',
+      ] as const;
+      const packPromises = contexts.map((ctx) =>
+        memory.retrieve(ctx).then((p) => [ctx, p] as const),
+      );
+      const [packs, entities, relations, stats] = await Promise.all([
+        Promise.all(packPromises),
         graph.getAllEntities(),
+        graph.getAllRelations(),
         readStats(),
       ]);
-      return ok({ memory: pack, graph: { entities }, stats, exported_at: Date.now() });
+      const memoryByContext: Record<string, unknown> = {};
+      for (const [ctx, pack] of packs) memoryByContext[ctx] = pack;
+      return ok({
+        memory: memoryByContext,
+        graph: { entities, relations },
+        stats,
+        exported_at: Date.now(),
+      });
     }
 
     case 'GET_DECISION_LOG': {
@@ -226,13 +266,44 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
         chrome.storage.local.get(null),
         chrome.storage.sync.get(null),
       ]);
-      return ok({ local, sync });
+      // Redact API keys from the response to prevent leaking secrets
+      const redactedLocal = { ...local };
+      delete redactedLocal['recome_api_keys'];
+      const redactedSync = { ...sync };
+      if (redactedSync['recome_settings']) {
+        const s = { ...(redactedSync['recome_settings'] as Record<string, unknown>) };
+        for (const k of Object.keys(s)) {
+          if (k.endsWith('_api_key')) s[k] = '***REDACTED***';
+        }
+        redactedSync['recome_settings'] = s;
+      }
+      return ok({ local: redactedLocal, sync: redactedSync });
     }
 
     case 'SAVE_SETTINGS': {
       const current = await chrome.storage.sync.get('recome_settings');
       const existing = current['recome_settings'] ?? defaultSettings();
-      const merged = { ...existing, ...message.payload };
+      const patch = { ...message.payload } as Record<string, unknown>;
+
+      // Extract API keys — store them in local storage only (never sync)
+      const apiKeys: Record<string, string> = {};
+      let hasKeys = false;
+      for (const k of Object.keys(patch)) {
+        if (k.endsWith('_api_key')) {
+          if (typeof patch[k] === 'string') {
+            apiKeys[k] = patch[k] as string;
+            hasKeys = true;
+          }
+          delete patch[k];
+        }
+      }
+      if (hasKeys) {
+        const existingKeys =
+          (await chrome.storage.local.get('recome_api_keys'))['recome_api_keys'] ?? {};
+        await chrome.storage.local.set({ recome_api_keys: { ...existingKeys, ...apiKeys } });
+      }
+
+      const merged = { ...existing, ...patch };
       await chrome.storage.sync.set({ recome_settings: merged });
       svc.invalidateSettingsCache();
       return ok(merged);
@@ -267,6 +338,20 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
       const db = await getDB();
       const importData = message.payload;
 
+      // Schema validation — reject malformed imports
+      if (typeof importData !== 'object' || importData === null) {
+        return err('Invalid import: expected an object');
+      }
+      if (!importData.memory && !importData.graph && !importData.stats) {
+        return err('Invalid import: must contain at least one of memory, graph, or stats');
+      }
+      if (
+        (importData as Record<string, unknown>).exported_at !== undefined &&
+        typeof (importData as Record<string, unknown>).exported_at !== 'number'
+      ) {
+        return err('Invalid import: exported_at must be a number');
+      }
+
       // Import memory entries
       if (
         importData.memory &&
@@ -275,7 +360,8 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
         const entries = (importData.memory as { entries: Array<Record<string, unknown>> }).entries;
         const tx = db.transaction('memory_entries', 'readwrite');
         for (const entry of entries) {
-          if (entry.entry_id) await tx.store.put(entry as never);
+          if (entry.entry_id && typeof entry.entry_id === 'string')
+            await tx.store.put(entry as never);
         }
         await tx.done;
       }
@@ -289,7 +375,7 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
           .entities;
         const tx = db.transaction('entities', 'readwrite');
         for (const entity of entities) {
-          if (entity.id) await tx.store.put(entity as never);
+          if (entity.id && typeof entity.id === 'string') await tx.store.put(entity as never);
         }
         await tx.done;
       }

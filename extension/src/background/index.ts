@@ -22,7 +22,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   }
 
   // Register periodic alarms
-  registerAlarms();
+  await registerAlarms();
 
   // Set default settings on fresh install
   if (details.reason === 'install') {
@@ -53,7 +53,7 @@ chrome.runtime.onStartup.addListener(async () => {
     getIntelligenceService().resetInitState();
     await getIntelligenceService().initialize();
     // Re-register alarms (they may have been cleared)
-    registerAlarms();
+    await registerAlarms();
   } catch (err) {
     log.error('Startup init failed', err);
   }

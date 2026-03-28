@@ -3,12 +3,32 @@
   "name": "RecoMe",
   "version": "1.2.0",
   "description": "Intelligent recommendation feed control. Your feed, your rules.",
-  "permissions": ["storage", "alarms", "tabs", "activeTab", "notifications"],
+  "permissions": ["storage", "alarms", "tabs"],
   "host_permissions": [
     "https://api.anthropic.com/*",
     "https://api.openai.com/*",
     "https://generativelanguage.googleapis.com/*",
-    "https://*/*"
+    "https://*.youtube.com/*",
+    "https://*.amazon.com/*",
+    "https://*.amazon.co.*/*",
+    "https://*.amazon.ca/*",
+    "https://*.amazon.de/*",
+    "https://*.amazon.fr/*",
+    "https://*.amazon.it/*",
+    "https://*.amazon.es/*",
+    "https://*.amazon.in/*",
+    "https://*.amazon.com.br/*",
+    "https://*.amazon.com.au/*",
+    "https://*.twitter.com/*",
+    "https://*.x.com/*",
+    "https://*.facebook.com/*",
+    "https://*.instagram.com/*",
+    "https://*.ebay.com/*",
+    "https://*.ebay.co.*/*",
+    "https://*.ebay.de/*",
+    "https://*.ebay.fr/*",
+    "https://*.walmart.com/*",
+    "https://*.linkedin.com/*"
   ],
   "background": {
     "service_worker": "background.js",
@@ -16,7 +36,29 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://*/*"],
+      "matches": [
+        "https://*.youtube.com/*",
+        "https://*.amazon.com/*",
+        "https://*.amazon.co.*/*",
+        "https://*.amazon.ca/*",
+        "https://*.amazon.de/*",
+        "https://*.amazon.fr/*",
+        "https://*.amazon.it/*",
+        "https://*.amazon.es/*",
+        "https://*.amazon.in/*",
+        "https://*.amazon.com.br/*",
+        "https://*.amazon.com.au/*",
+        "https://*.twitter.com/*",
+        "https://*.x.com/*",
+        "https://*.facebook.com/*",
+        "https://*.instagram.com/*",
+        "https://*.ebay.com/*",
+        "https://*.ebay.co.*/*",
+        "https://*.ebay.de/*",
+        "https://*.ebay.fr/*",
+        "https://*.walmart.com/*",
+        "https://*.linkedin.com/*"
+      ],
       "js": ["content.js"],
       "css": ["content.css"],
       "run_at": "document_idle"
@@ -39,7 +81,17 @@
   "web_accessible_resources": [
     {
       "resources": ["icons/*"],
-      "matches": ["https://*/*"]
+      "matches": [
+        "https://*.youtube.com/*",
+        "https://*.amazon.com/*",
+        "https://*.twitter.com/*",
+        "https://*.x.com/*",
+        "https://*.facebook.com/*",
+        "https://*.instagram.com/*",
+        "https://*.ebay.com/*",
+        "https://*.walmart.com/*",
+        "https://*.linkedin.com/*"
+      ]
     }
   ],
   "content_security_policy": {

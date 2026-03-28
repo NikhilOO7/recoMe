@@ -45,10 +45,10 @@ export function renderPrompt(
   container.setAttribute('data-prompt-id', data.id);
   container.setAttribute('role', 'alert');
 
-  // Build content
+  // Build content (sanitize to prevent XSS — only allow <strong> tags)
   const messageEl = document.createElement('span');
   messageEl.className = 'recome-prompt-message';
-  messageEl.innerHTML = data.message;
+  messageEl.innerHTML = sanitizePromptHtml(data.message);
   container.appendChild(messageEl);
 
   // Action buttons
@@ -148,6 +148,16 @@ function dismiss(el: HTMLElement): void {
   el.addEventListener('transitionend', () => el.remove(), { once: true });
   // Fallback removal
   setTimeout(() => el.remove(), 500);
+}
+
+/** Strip all HTML except <strong> tags to prevent XSS from user-controlled strings */
+function sanitizePromptHtml(raw: string): string {
+  const div = document.createElement('div');
+  div.textContent = raw;
+  // After escaping, restore only <strong>...</strong>
+  return div.innerHTML
+    .replace(/&lt;strong&gt;/gi, '<strong>')
+    .replace(/&lt;\/strong&gt;/gi, '</strong>');
 }
 
 function ensureStyles(): void {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import type { Platform } from '@shared/types';
 
 type LLMProvider = 'anthropic' | 'openai' | 'gemini';
@@ -123,15 +123,24 @@ export function SettingsPanel() {
       .catch(() => undefined);
   }
 
-  function saveSettings(patch: Partial<Settings>) {
-    if (!settings) return;
-    const updated = { ...settings, ...patch };
-    setSettings(updated);
-    setSaving(true);
-    send('SAVE_SETTINGS', patch)
-      .then(() => setSaving(false))
-      .catch(() => setSaving(false));
-  }
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const saveSettings = useCallback(
+    (patch: Partial<Settings>) => {
+      if (!settings) return;
+      const updated = { ...settings, ...patch };
+      setSettings(updated);
+      setSaving(true);
+      // Debounce saves — wait 400ms before sending to background
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(() => {
+        send('SAVE_SETTINGS', patch)
+          .then(() => setSaving(false))
+          .catch(() => setSaving(false));
+      }, 400);
+    },
+    [settings],
+  );
 
   function togglePlatform(p: Platform) {
     if (!settings) return;
@@ -191,11 +200,19 @@ export function SettingsPanel() {
     setTimeout(() => setKeySaved(false), 2000);
   }
 
+  const [confirmAction, setConfirmAction] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
   function handleClearData() {
-    if (!confirm('Clear all RecoMe memory and preferences?')) return;
+    if (confirmAction !== 'clear') {
+      setConfirmAction('clear');
+      return;
+    }
+    setConfirmAction(null);
     send('CLEAR_ALL_DATA')
       .then(() => {
-        alert('Data cleared.');
+        setStatusMessage('Data cleared.');
+        setTimeout(() => setStatusMessage(null), 2500);
         loadTopics();
       })
       .catch(console.error);
@@ -217,6 +234,10 @@ export function SettingsPanel() {
   }
 
   function handleImport() {
+    if (confirmAction === 'import-confirm') {
+      // Already confirmed — skip (handled by file picker callback)
+      return;
+    }
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
@@ -227,15 +248,17 @@ export function SettingsPanel() {
         const text = await file.text();
         const data = JSON.parse(text) as { memory?: unknown; graph?: unknown; stats?: unknown };
         if (!data.memory && !data.graph) {
-          alert('Invalid RecoMe export file.');
+          setStatusMessage('Invalid RecoMe export file.');
+          setTimeout(() => setStatusMessage(null), 3000);
           return;
         }
-        if (!confirm('Import will merge with your existing data. Continue?')) return;
         await send('IMPORT_DATA', data);
-        alert('Import complete!');
+        setStatusMessage('Import complete!');
+        setTimeout(() => setStatusMessage(null), 2500);
         loadTopics();
       } catch {
-        alert('Failed to import: invalid JSON file.');
+        setStatusMessage('Failed to import: invalid JSON file.');
+        setTimeout(() => setStatusMessage(null), 3000);
       }
     };
     input.click();
@@ -438,14 +461,25 @@ export function SettingsPanel() {
             Import data
           </button>
           <button className="setting-btn setting-btn-danger" onClick={handleClearData}>
-            Clear all data
+            {confirmAction === 'clear' ? 'Confirm clear?' : 'Clear all data'}
           </button>
+          {confirmAction === 'clear' && (
+            <button className="setting-btn" onClick={() => setConfirmAction(null)}>
+              Cancel
+            </button>
+          )}
+          {statusMessage && (
+            <p className="setting-text" style={{ marginTop: 6 }}>
+              {statusMessage}
+            </p>
+          )}
         </div>
       </div>
 
       <div className="setting-group">
         <p className="setting-text" style={{ fontSize: 10, textAlign: 'center', opacity: 0.5 }}>
           All data is stored locally on your device. Nothing is sent to any server.
+          <br />v{chrome.runtime.getManifest().version}
         </p>
       </div>
     </div>

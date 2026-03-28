@@ -280,18 +280,27 @@ export abstract class BaseAdapter {
     popover.className = 'recome-explanation-popover';
     popover.setAttribute('role', 'tooltip');
 
-    const factorsHtml =
-      decision.factors.length > 0
-        ? `<ul class="recome-explanation-factors">${decision.factors.map((f) => `<li>${f}</li>`).join('')}</ul>`
-        : '';
+    // Build popover content safely (no innerHTML with user data)
+    const textDiv = document.createElement('div');
+    textDiv.className = 'recome-explanation-text';
+    textDiv.textContent = decision.explanation;
+    popover.appendChild(textDiv);
 
-    popover.innerHTML = `
-      <div class="recome-explanation-text">${decision.explanation}</div>
-      ${factorsHtml}
-      <div class="recome-explanation-meta">
-        Score: ${decision.score.toFixed(2)} · Confidence: ${(decision.confidence * 100).toFixed(0)}%
-      </div>
-    `;
+    if (decision.factors.length > 0) {
+      const ul = document.createElement('ul');
+      ul.className = 'recome-explanation-factors';
+      for (const f of decision.factors) {
+        const li = document.createElement('li');
+        li.textContent = f;
+        ul.appendChild(li);
+      }
+      popover.appendChild(ul);
+    }
+
+    const metaDiv = document.createElement('div');
+    metaDiv.className = 'recome-explanation-meta';
+    metaDiv.textContent = `Score: ${decision.score.toFixed(2)} · Confidence: ${(decision.confidence * 100).toFixed(0)}%`;
+    popover.appendChild(metaDiv);
 
     const portal = getMenuPortal();
     portal.appendChild(popover);
@@ -332,15 +341,27 @@ export abstract class BaseAdapter {
 
       const badge = document.createElement('div');
       badge.className = 'recome-hidden-badge';
-      badge.innerHTML = `
-        <span class="recome-icon">&#128065;&#65039;&#8205;&#128488;&#65039;</span>
-        <span class="recome-hidden-text">Hidden${reason ? ` · ${reason}` : ''}</span>
-        <button class="recome-reveal-btn" type="button" aria-label="Show hidden content">Show anyway</button>
-      `;
+
+      const iconSpan = document.createElement('span');
+      iconSpan.className = 'recome-icon';
+      iconSpan.textContent = '\u{1F441}\uFE0F\u200D\u{1F5E8}\uFE0F';
+      badge.appendChild(iconSpan);
+
+      const textSpan = document.createElement('span');
+      textSpan.className = 'recome-hidden-text';
+      textSpan.textContent = reason ? `Hidden \u00B7 ${reason}` : 'Hidden';
+      badge.appendChild(textSpan);
+
+      const revealBtn = document.createElement('button');
+      revealBtn.className = 'recome-reveal-btn';
+      revealBtn.type = 'button';
+      revealBtn.setAttribute('aria-label', 'Show hidden content');
+      revealBtn.textContent = 'Show anyway';
+      badge.appendChild(revealBtn);
       badge.style.cssText =
         'position:relative;display:flex;align-items:center;z-index:9999;pointer-events:auto;padding:8px;';
       element.appendChild(badge);
-      badge.querySelector('.recome-reveal-btn')?.addEventListener('click', (e) => {
+      revealBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         this.reveal(element, badge);
       });

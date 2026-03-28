@@ -58,9 +58,11 @@ interface Settings {
 async function getSettings(): Promise<Settings> {
   try {
     const response = await chrome.runtime.sendMessage({ type: 'GET_SETTINGS', payload: null });
-    return (response?.data as Settings) ?? { enabled: true, platforms: {} };
+    if (!response?.success) return { enabled: false, platforms: {} }; // fail closed
+    return (response.data as Settings) ?? { enabled: false, platforms: {} };
   } catch {
-    return { enabled: true, platforms: {} };
+    // If we can't reach the background script, fail closed — don't run
+    return { enabled: false, platforms: {} };
   }
 }
 
@@ -163,9 +165,14 @@ async function bootstrap(): Promise<void> {
 
   // Run a GenericAdapter as a supplement on known platforms to catch widgets,
   // carousels, video overlays, and other elements the specific adapter misses.
-  // We share the same platform label so blocks/likes still apply.
+  // Lifecycle is coupled to the primary adapter — destroyed when it is.
   if (platform !== 'unknown') {
     const supplement = new GenericAdapter(genericPlatform);
+    const origDestroy = adapter.destroy.bind(adapter);
+    adapter.destroy = () => {
+      supplement.destroy();
+      origDestroy();
+    };
     // Give the main adapter 2 seconds head-start before the generic one kicks in
     setTimeout(() => {
       supplement.init();

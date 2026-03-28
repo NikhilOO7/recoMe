@@ -369,36 +369,59 @@ export function createSmartPromptTrackers(
 }
 
 function showProactiveNudge(topic: string, meta: ContentMetadata): void {
-  // Build a small inline toast with Yes/No actions
+  // Build a small inline toast with Yes/No actions — use DOM creation to prevent XSS
   const container = document.createElement('div');
   container.className = 'recome-nudge';
-  container.innerHTML = `
-    <span class="recome-nudge-text">Enjoying <strong>${topic}</strong> content?</span>
-    <div class="recome-nudge-actions">
-      <button class="recome-nudge-btn yes" type="button">\uD83D\uDC4D Yes, more!</button>
-      <button class="recome-nudge-btn no"  type="button">\uD83D\uDC4E Less of this</button>
-      <button class="recome-nudge-close"   type="button">\u2715</button>
-    </div>
-  `;
 
+  const textSpan = document.createElement('span');
+  textSpan.className = 'recome-nudge-text';
+  textSpan.appendChild(document.createTextNode('Enjoying '));
+  const strong = document.createElement('strong');
+  strong.textContent = topic;
+  textSpan.appendChild(strong);
+  textSpan.appendChild(document.createTextNode(' content?'));
+  container.appendChild(textSpan);
+
+  const actionsDiv = document.createElement('div');
+  actionsDiv.className = 'recome-nudge-actions';
+
+  const yesBtn = document.createElement('button');
+  yesBtn.className = 'recome-nudge-btn yes';
+  yesBtn.type = 'button';
+  yesBtn.textContent = '\uD83D\uDC4D Yes, more!';
+  actionsDiv.appendChild(yesBtn);
+
+  const noBtn = document.createElement('button');
+  noBtn.className = 'recome-nudge-btn no';
+  noBtn.type = 'button';
+  noBtn.textContent = '\uD83D\uDC4E Less of this';
+  actionsDiv.appendChild(noBtn);
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'recome-nudge-close';
+  closeBtn.type = 'button';
+  closeBtn.textContent = '\u2715';
+  actionsDiv.appendChild(closeBtn);
+
+  container.appendChild(actionsDiv);
   document.body.appendChild(container);
 
   // Auto-dismiss after 8 seconds if no interaction
   const autoDismiss = setTimeout(() => container.remove(), 8000);
 
-  container.querySelector('.recome-nudge-close')?.addEventListener('click', () => {
+  closeBtn.addEventListener('click', () => {
     clearTimeout(autoDismiss);
     container.remove();
   });
 
-  container.querySelector('.recome-nudge-btn.yes')?.addEventListener('click', () => {
+  yesBtn.addEventListener('click', () => {
     clearTimeout(autoDismiss);
     container.remove();
     chrome.runtime.sendMessage({ type: 'LIKE_TOPIC', payload: { topic } }).catch(() => undefined);
     showToast(`Got it — boosting ${topic} content!`, 'success');
   });
 
-  container.querySelector('.recome-nudge-btn.no')?.addEventListener('click', () => {
+  noBtn.addEventListener('click', () => {
     clearTimeout(autoDismiss);
     container.remove();
     chrome.runtime

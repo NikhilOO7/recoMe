@@ -116,7 +116,7 @@ const EXCLUDED_ANCESTOR_SELECTORS = [
  */
 export class GenericAdapter extends BaseAdapter {
   private readonly platformOverride: Platform;
-  private discoveryTimer: ReturnType<typeof setInterval> | null = null;
+  private discoveryTimers: Array<ReturnType<typeof setTimeout>> = [];
   private readonly discoveredContainers = new WeakSet<Element>();
 
   constructor(platform: Platform = 'unknown') {
@@ -165,17 +165,16 @@ export class GenericAdapter extends BaseAdapter {
 
   override init(): void {
     super.init();
-    // Run repeated-sibling discovery every 4 seconds to catch lazy-loaded content
-    this.discoveryTimer = setInterval(() => this.discoverRepeatedSiblings(), 4000);
-    // First run after a short delay
-    setTimeout(() => this.discoverRepeatedSiblings(), 2000);
+    // Scheduled discovery: 2s, 6s, 12s, 20s, 30s — then stop (no infinite polling)
+    const delays = [2000, 6000, 12000, 20000, 30000];
+    for (const delay of delays) {
+      this.discoveryTimers.push(setTimeout(() => this.discoverRepeatedSiblings(), delay));
+    }
   }
 
   override destroy(): void {
-    if (this.discoveryTimer) {
-      clearInterval(this.discoveryTimer);
-      this.discoveryTimer = null;
-    }
+    for (const t of this.discoveryTimers) clearTimeout(t);
+    this.discoveryTimers = [];
     super.destroy();
   }
 
