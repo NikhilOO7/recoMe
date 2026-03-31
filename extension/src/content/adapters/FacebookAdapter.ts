@@ -2,24 +2,53 @@ import { BaseAdapter } from './BaseAdapter';
 import { extractTextContent } from '@shared/utils';
 import { heuristicTitle, heuristicCreator } from './MetadataHeuristics';
 import type { ContentMetadata } from '@shared/types';
+import { createLogger } from '@shared/Logger';
+
+const log = createLogger('FacebookAdapter');
 
 export class FacebookAdapter extends BaseAdapter {
   constructor() {
     super({
       platform: 'facebook',
       cardSelector: [
-        // Pagelet-based feed units
+        // Pagelet-based feed units (stable data attributes)
         'div[data-pagelet^="FeedUnit"]',
         // Reel containers
         'div[data-pagelet^="Reels"]',
         // Video tab
         'div[data-video-id]',
-        // Modern feed articles (News Feed + Groups)
+        // Modern feed articles (News Feed + Groups) — ARIA role is resilient to obfuscation
         'div[role="article"][aria-label]',
+        'div[role="article"]',
         // Marketplace listings
         'div[aria-label][data-virtualized]',
         // Watch feed
         'div[data-nt="NT:TV_EB"]',
+        // Fallback: deeply-nested post wrappers
+        'div[data-pagelet] div[role="article"]',
+
+        // ── Marketplace page cards ────────────────────────────────────
+        'div[data-pagelet="MarketplaceFeed"] a[href*="/marketplace/item/"]',
+        'a[href*="/marketplace/item/"]',
+        '[data-testid="marketplace_feed_item"]',
+        'div[data-pagelet="BrowseFeed"] div[role="listitem"]',
+
+        // ── Groups feed ───────────────────────────────────────────────
+        'div[data-pagelet="GroupFeed"] div[role="article"]',
+        'div[data-pagelet^="GroupsFeed"] div[role="article"]',
+
+        // ── Watch / Video tab ─────────────────────────────────────────
+        'div[data-pagelet="WatchFeed"] div[role="article"]',
+        'div[data-pagelet="VideoHome"] div[role="article"]',
+        'div[data-pagelet^="Video"] div[role="article"]',
+
+        // ── Reels tab ─────────────────────────────────────────────────
+        'div[data-pagelet="ReelsFeed"] div[role="article"]',
+        'div[aria-label="Reels"] div[role="article"]',
+
+        // ── Stories tray ──────────────────────────────────────────────
+        'div[data-pagelet="Stories"] div[role="button"]',
+        'div[aria-label="Stories"] div[role="listitem"]',
       ].join(', '),
       feedSelector: [
         '[role="feed"]',
@@ -28,8 +57,68 @@ export class FacebookAdapter extends BaseAdapter {
         '[aria-label="Reels"]',
         'div[data-pagelet="Home"]',
         'div[data-pagelet="Feed"]',
+        // Marketplace
+        'div[data-pagelet="MarketplaceFeed"]',
+        'div[data-pagelet="BrowseFeed"]',
+        // Groups
+        'div[data-pagelet="GroupFeed"]',
+        'div[data-pagelet^="GroupsFeed"]',
+        // Watch / Video
+        'div[data-pagelet="WatchFeed"]',
+        'div[data-pagelet="VideoHome"]',
+        // Reels
+        'div[data-pagelet="ReelsFeed"]',
+        '[aria-label="Reels"]',
+        // Stories
+        'div[data-pagelet="Stories"]',
+        '[aria-label="Stories"]',
+        // Fallback — Facebook may restructure containers but main is stable
+        'main',
       ].join(', '),
     });
+  }
+
+  /** Detect the current Facebook page mode for page-specific behavior */
+  private detectPageMode():
+    | 'feed'
+    | 'marketplace'
+    | 'groups'
+    | 'watch'
+    | 'reels'
+    | 'stories'
+    | 'profile'
+    | 'unknown' {
+    const path = location.pathname;
+    if (path.startsWith('/marketplace')) return 'marketplace';
+    if (path.startsWith('/groups')) return 'groups';
+    if (path.startsWith('/watch') || path.startsWith('/video')) return 'watch';
+    if (path.startsWith('/reel')) return 'reels';
+    if (path.startsWith('/stories')) return 'stories';
+    if (path === '/' || path === '/home') return 'feed';
+    // Check if it's a profile page (single-segment path that isn't a known route)
+    if (/^\/[^/]+\/?$/.test(path) && !path.startsWith('/settings')) return 'profile';
+    return 'unknown';
+  }
+
+  /**
+   * Validate Facebook cards before processing.
+   * Facebook aggressively obfuscates class names; cards that match by selector
+   * may be empty shells. Verify they contain actual content.
+   */
+  protected override onCardFound(element: Element): void {
+    const text = (element.textContent ?? '').trim();
+    if (text.length < 20) return;
+
+    const hasLink = Array.from(element.querySelectorAll('a[href]')).some(
+      (a) => (a.textContent ?? '').trim().length > 5,
+    );
+    const hasMedia = !!element.querySelector('img[src], video, [data-video-id]');
+    if (!hasLink && !hasMedia) {
+      log.debug('Card rejected — no links or media (possible obfuscated shell)');
+      return;
+    }
+
+    super.onCardFound(element);
   }
 
   extractMetadata(element: Element): ContentMetadata | null {
@@ -86,15 +175,31 @@ export class FacebookAdapter extends BaseAdapter {
       // Extract hashtags from text
       const hashtags = [...text.matchAll(/#(\w+)/g)].map((m) => m[1]!.toLowerCase());
 
+      // Page-mode-aware type detection
+      const pageMode = this.detectPageMode();
+      type ContentType = 'ad' | 'post' | 'product' | 'video';
+      let contentType: ContentType = isAd ? 'ad' : 'post';
+      if (pageMode === 'marketplace') contentType = isAd ? 'ad' : 'product';
+      else if (pageMode === 'reels' || pageMode === 'stories') contentType = 'video';
+      else if (pageMode === 'watch') contentType = 'video';
+
+      // Marketplace-specific: extract price and item URL
+      const marketplaceLink = element.querySelector(
+        'a[href*="/marketplace/item/"]',
+      ) as HTMLAnchorElement | null;
+      const itemUrl = marketplaceLink?.href ?? location.href;
+      const marketplaceId = itemUrl.match(/\/marketplace\/item\/(\d+)/)?.[1];
+
       return {
-        id: this.computeContentHash(element),
+        id: marketplaceId ?? this.computeContentHash(element),
         platform: 'facebook',
-        type: isAd ? 'ad' : 'post',
+        type: contentType,
         title,
         creator,
         topics: hashtags,
         entities: creator ? [creator] : [],
-        url: location.href,
+        url: itemUrl,
+        raw_metadata: pageMode !== 'feed' ? { pageMode } : undefined,
       };
     } catch {
       return null;

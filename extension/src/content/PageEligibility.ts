@@ -123,28 +123,69 @@ const AUTH_FORM_SELECTORS = [
   'input[type="password"]',
 ];
 
+/**
+ * Weighted classifier for auth page detection.
+ * Uses a scoring system to distinguish between login pages and pages
+ * that merely have a sidebar login widget (e.g., eBay, news sites).
+ *
+ * Signals and weights:
+ *  - URL pattern match:     +5 (strong signal)
+ *  - Password field exists: +2
+ *  - Auth form selector:    +2
+ *  - Minimal visible inputs (<=5): +3 (few inputs = likely just a login form)
+ *  - Page has feed/article content: -4 (real content = sidebar widget, not auth page)
+ *  - Page title contains auth keywords: +2
+ *  - Sidebar/aside contains the password field: -3 (widget, not main auth)
+ *
+ * Threshold: >= 6 = auth page
+ */
 function isAuthPage(): boolean {
   const path = location.pathname;
+  let score = 0;
 
-  // URL pattern match
-  if (AUTH_URL_PATTERNS.some((p) => p.test(path))) return true;
+  // URL pattern match — strong signal
+  if (AUTH_URL_PATTERNS.some((p) => p.test(path))) score += 5;
 
-  // Check if page is dominated by auth forms (login page with password field
-  // but NOT a page that just has a login widget in the corner)
   const passwordFields = document.querySelectorAll('input[type="password"]');
-  if (passwordFields.length > 0) {
-    // Count total visible form inputs — if there are very few, this is likely a login page
-    const allInputs = document.querySelectorAll(
-      'input:not([type="hidden"]):not([type="submit"]):not([type="button"])',
-    );
-    const hasMinimalContent = allInputs.length <= 5;
-    const hasAuthForm = AUTH_FORM_SELECTORS.some((sel) => document.querySelector(sel));
+  if (passwordFields.length > 0) score += 2;
 
-    // It's a login page if it's just a form with a password field and minimal other content
-    if (hasMinimalContent && hasAuthForm) return true;
+  const hasAuthForm = AUTH_FORM_SELECTORS.some((sel) => document.querySelector(sel));
+  if (hasAuthForm) score += 2;
+
+  // Count visible form inputs
+  const allInputs = document.querySelectorAll(
+    'input:not([type="hidden"]):not([type="submit"]):not([type="button"])',
+  );
+  if (allInputs.length <= 5) score += 3;
+
+  // Title contains auth keywords
+  const title = document.title.toLowerCase();
+  if (/log\s?in|sign\s?in|sign\s?up|register|create\s+account/i.test(title)) score += 2;
+
+  // Negative signals: page has real content (feed, articles, products)
+  const hasRealContent = !!(
+    document.querySelector('[role="feed"]') ||
+    document.querySelector('article') ||
+    document.querySelector('[role="main"] [data-item-id]') ||
+    document.querySelector('.search-result-gridview-item') ||
+    document.querySelectorAll('a[href*="/itm/"], a[href*="/ip/"]').length > 3
+  );
+  if (hasRealContent) score -= 4;
+
+  // If the password field is inside a sidebar/aside/nav, it's a widget, not the page
+  if (passwordFields.length > 0) {
+    const inSidebar = Array.from(passwordFields).every(
+      (el) =>
+        el.closest('aside') ||
+        el.closest('nav') ||
+        el.closest('[role="complementary"]') ||
+        el.closest('[class*="sidebar"]') ||
+        el.closest('[class*="widget"]'),
+    );
+    if (inSidebar) score -= 3;
   }
 
-  return false;
+  return score >= 6;
 }
 
 // ── Interstitial / Redirect / Error detection ────────────────────────────────

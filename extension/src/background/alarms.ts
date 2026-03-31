@@ -63,33 +63,45 @@ export async function registerAlarms(): Promise<void> {
 }
 
 export function handleAlarm(alarm: chrome.alarms.Alarm): void {
-  getMonitoringCollector().recordAlarmFired(alarm.name);
+  const monitoring = getMonitoringCollector();
+  monitoring.recordAlarmFired(alarm.name);
 
-  switch (alarm.name) {
-    case ALARM_NAMES.decay:
-      runDecay();
-      break;
-    case ALARM_NAMES.stats:
-      aggregateStats();
-      break;
-    case ALARM_NAMES.preference_synthesis:
-      runPreferenceSynthesis();
-      break;
-    case ALARM_NAMES.insight_check:
-      runInsightCheck();
-      break;
-    case ALARM_NAMES.selector_health:
-      broadcastSelectorHealthCheck();
-      break;
-    case ALARM_NAMES.price_check:
-      runPriceCheck();
-      break;
-    case ALARM_NAMES.import_check:
-      runImportCheck();
-      break;
-    default:
-      log.warn(`Unknown alarm: ${alarm.name}`);
-  }
+  // Wrap async alarm handlers so failures are logged and monitored
+  const run = async (): Promise<void> => {
+    switch (alarm.name) {
+      case ALARM_NAMES.decay:
+        await runDecay();
+        break;
+      case ALARM_NAMES.stats:
+        await aggregateStats();
+        break;
+      case ALARM_NAMES.preference_synthesis:
+        await runPreferenceSynthesis();
+        break;
+      case ALARM_NAMES.insight_check:
+        await runInsightCheck();
+        break;
+      case ALARM_NAMES.selector_health:
+        await broadcastSelectorHealthCheck();
+        break;
+      case ALARM_NAMES.price_check:
+        await runPriceCheck();
+        break;
+      case ALARM_NAMES.import_check:
+        await runImportCheck();
+        break;
+      default:
+        log.warn(`Unknown alarm: ${alarm.name}`);
+    }
+  };
+
+  run().catch((err) => {
+    log.error(`Alarm handler "${alarm.name}" threw uncaught error`, err);
+    monitoring.recordError(
+      'alarm',
+      `${alarm.name}: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  });
 }
 
 async function runDecay(): Promise<void> {

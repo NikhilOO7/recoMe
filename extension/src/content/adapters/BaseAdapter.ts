@@ -132,6 +132,7 @@ export abstract class BaseAdapter {
     this.observer = null;
     this.bodyObserver?.disconnect();
     this.bodyObserver = null;
+    this.observedFeedEl = null;
     this.processedIds.clear();
     this.cardRetryAttempts.clear();
     for (const t of this.retryTimers) clearTimeout(t);
@@ -151,6 +152,12 @@ export abstract class BaseAdapter {
     this.scoreBatch = [];
     this.commerceBatch = [];
     this.commerceDecisions.clear();
+    // Cancel pending mutation batch
+    if (this.mutationRafId !== null) {
+      cancelAnimationFrame(this.mutationRafId);
+      this.mutationRafId = null;
+    }
+    this.pendingMutationNodes = [];
   }
 
   // ── Abstract ───────────────────────────────────────────────────────────────
@@ -1326,24 +1333,92 @@ export abstract class BaseAdapter {
   private observeExistingCards(): number {
     const cards = document.querySelectorAll(this.activeCardSelector);
     cards.forEach((card) => this.onCardFound(card));
-    return cards.length;
+
+    // Shadow DOM traversal — scan open shadow roots for cards
+    const shadowCards = this.queryShadowRoots(document.body, this.activeCardSelector);
+    shadowCards.forEach((card) => this.onCardFound(card));
+
+    return cards.length + shadowCards.length;
   }
 
-  /** Build a MutationObserver callback that calls onCardFound for matching nodes */
+  /**
+   * Recursively traverse open shadow roots to find elements matching a selector.
+   * Handles custom elements used by platforms (e.g., YouTube's polymer components,
+   * ad-blockers injecting shadow-rooted containers, dark-mode extensions).
+   */
+  private queryShadowRoots(root: Element | Document, selector: string, depth = 0): Element[] {
+    if (depth > 5) return []; // Limit depth to prevent runaway recursion
+    const results: Element[] = [];
+    const hosts = root.querySelectorAll('*');
+    for (const host of hosts) {
+      const shadow = host.shadowRoot;
+      if (!shadow) continue; // Only open shadow roots are accessible
+      const found = shadow.querySelectorAll(selector);
+      for (const el of found) results.push(el);
+      // Recurse into nested shadow roots
+      results.push(...this.queryShadowRoots(shadow as unknown as Document, selector, depth + 1));
+    }
+    return results;
+  }
+
+  /** Pending elements from batched mutation observations */
+  private pendingMutationNodes: Element[] = [];
+  private mutationRafId: number | null = null;
+
+  /** Build a MutationObserver callback that batches mutations via rAF */
   private makeMutationCallback(): MutationCallback {
     return (mutations) => {
       for (const mutation of mutations) {
         for (const node of mutation.addedNodes) {
           if (!(node instanceof Element)) continue;
-          if (node.matches(this.activeCardSelector)) this.onCardFound(node);
-          node.querySelectorAll(this.activeCardSelector).forEach((card) => this.onCardFound(card));
+          this.pendingMutationNodes.push(node);
         }
+      }
+      // Batch processing — coalesce rapid DOM mutations into a single rAF pass
+      if (this.mutationRafId === null) {
+        this.mutationRafId = requestAnimationFrame(() => {
+          this.mutationRafId = null;
+          this.processPendingMutations();
+        });
       }
     };
   }
 
+  /** Process batched mutation nodes, capped to avoid long-running frames */
+  private processPendingMutations(): void {
+    const nodes = this.pendingMutationNodes;
+    this.pendingMutationNodes = [];
+
+    // Cap per-frame work to prevent jank (process remaining in next frame)
+    const MAX_PER_FRAME = 50;
+    const batch = nodes.length > MAX_PER_FRAME ? nodes.splice(0, MAX_PER_FRAME) : nodes;
+
+    for (const node of batch) {
+      if (node.matches(this.activeCardSelector)) this.onCardFound(node);
+      node.querySelectorAll(this.activeCardSelector).forEach((card) => this.onCardFound(card));
+      // Also check inside open shadow roots of newly added elements
+      if (node.shadowRoot) {
+        node.shadowRoot
+          .querySelectorAll(this.activeCardSelector)
+          .forEach((card) => this.onCardFound(card));
+      }
+      const shadowCards = this.queryShadowRoots(node, this.activeCardSelector);
+      shadowCards.forEach((card) => this.onCardFound(card));
+    }
+
+    // If there are remaining nodes, schedule another frame
+    if (nodes.length > 0) {
+      this.pendingMutationNodes = nodes.concat(this.pendingMutationNodes);
+      this.mutationRafId = requestAnimationFrame(() => {
+        this.mutationRafId = null;
+        this.processPendingMutations();
+      });
+    }
+  }
+
   private attachObserver(element: Element): void {
     this.observer?.disconnect();
+    this.observedFeedEl = element;
     this.observer = new MutationObserver(this.makeMutationCallback());
     this.observer.observe(
       element,
@@ -1351,11 +1426,21 @@ export abstract class BaseAdapter {
     );
   }
 
+  /** The feed element being observed (used to dedup body observer events) */
+  private observedFeedEl: Element | null = null;
+
   private startObserver(): void {
     // Permanent body-level observer — catches modals, overlays, lazy-injected sections
     // (e.g. Instagram post modal opens as a child of <body>, not inside main).
-    // This observer is NEVER replaced — it runs for the entire lifetime of the adapter.
-    this.bodyObserver = new MutationObserver(this.makeMutationCallback());
+    // Filters out mutations already covered by the narrower feed observer to avoid
+    // double-processing the same subtree.
+    this.bodyObserver = new MutationObserver((mutations) => {
+      const feedEl = this.observedFeedEl;
+      const filtered = feedEl ? mutations.filter((m) => !feedEl.contains(m.target)) : mutations;
+      if (filtered.length > 0) {
+        this.makeMutationCallback()(filtered, this.bodyObserver!);
+      }
+    });
     this.bodyObserver.observe(document.body, { childList: true, subtree: true });
 
     // Narrow observer on the feed container once available (more efficient for

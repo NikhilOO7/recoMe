@@ -21,6 +21,26 @@ export class InstagramAdapter extends BaseAdapter {
         'div[role="button"][tabindex="0"] video',
         // Story tray highlights on profile
         'div[role="menuitem"] canvas',
+
+        // ── Explore page grid ─────────────────────────────────────────
+        'main a[href*="/p/"]',
+        'main a[href*="/reel/"]',
+        // Explore tiles (3-col grid with mixed media)
+        'div[style*="grid"] a[href*="/p/"]',
+        'div[style*="grid"] a[href*="/reel/"]',
+
+        // ── Reels tab (dedicated /reels/ page) ───────────────────────
+        'div[role="presentation"] video',
+        'section video[src]',
+
+        // ── Stories tray on home page ─────────────────────────────────
+        'div[role="listbox"] button[aria-label]',
+        'div[role="list"] div[role="listitem"]',
+
+        // ── Shop tab ──────────────────────────────────────────────────
+        'a[href*="/shop/"] div[role="button"]',
+        'main a[href*="/shop/product/"]',
+        '[data-testid="shop-product-card"]',
       ].join(', '),
       feedSelector: [
         'main[role="main"]',
@@ -29,9 +49,36 @@ export class InstagramAdapter extends BaseAdapter {
         'div[role="main"]',
         // Modal / overlay dialogs (for post modals)
         'div[role="dialog"]',
+        // Explore grid container
+        'section main',
+        // Stories tray
+        'div[role="listbox"]',
+        'div[role="list"]',
+        // Shop section
+        'div[data-testid="shop-container"]',
         '#react-root',
       ].join(', '),
     });
+  }
+
+  /** Detect the current Instagram page mode */
+  private detectPageMode():
+    | 'feed'
+    | 'explore'
+    | 'reels'
+    | 'stories'
+    | 'shop'
+    | 'profile'
+    | 'unknown' {
+    const path = location.pathname;
+    if (path === '/' || path === '/home') return 'feed';
+    if (path.startsWith('/explore')) return 'explore';
+    if (path.startsWith('/reels') || path.startsWith('/reel/')) return 'reels';
+    if (path.startsWith('/stories')) return 'stories';
+    if (path.startsWith('/shop')) return 'shop';
+    // Profile pages: single-segment like /@username or /username
+    if (/^\/[^/]+\/?$/.test(path) && !path.startsWith('/direct')) return 'profile';
+    return 'unknown';
   }
 
   extractMetadata(element: Element): ContentMetadata | null {
@@ -113,15 +160,23 @@ export class InstagramAdapter extends BaseAdapter {
       // Extract hashtags as topics
       const hashtags = [...captionText.matchAll(/#(\w+)/g)].map((m) => m[1]!.toLowerCase());
 
+      // Page-mode-aware type detection
+      const pageMode = this.detectPageMode();
+      type ContentType = 'ad' | 'post' | 'video' | 'product';
+      let contentType: ContentType = isAd ? 'ad' : href.includes('/reel/') ? 'video' : 'post';
+      if (pageMode === 'reels' || pageMode === 'stories') contentType = isAd ? 'ad' : 'video';
+      else if (pageMode === 'shop') contentType = isAd ? 'ad' : 'product';
+
       return {
         id,
         platform: 'instagram',
-        type: isAd ? 'ad' : href.includes('/reel/') ? 'video' : 'post',
+        type: contentType,
         title,
         creator,
         topics: hashtags,
         entities: creator ? [creator] : [],
         url: href || location.href,
+        raw_metadata: pageMode !== 'feed' ? { pageMode } : undefined,
       };
     } catch {
       return null;

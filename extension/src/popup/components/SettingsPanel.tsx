@@ -78,7 +78,11 @@ function send(
 
 const MASKED = '••••••••••••••••';
 
-export function SettingsPanel() {
+interface SettingsPanelProps {
+  onReplayOnboarding?: () => void;
+}
+
+export function SettingsPanel({ onReplayOnboarding }: SettingsPanelProps = {}) {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [blockedTopics, setBlockedTopics] = useState<string[]>([]);
   const [likedTopics, setLikedTopics] = useState<string[]>([]);
@@ -475,6 +479,17 @@ export function SettingsPanel() {
           )}
         </div>
       </div>
+
+      {/* Replay Onboarding */}
+      {onReplayOnboarding && (
+        <div className="setting-group">
+          <h3 className="setting-title">Setup Wizard</h3>
+          <p className="setting-text">Re-run the onboarding flow to update your preferences.</p>
+          <button className="setting-btn" onClick={onReplayOnboarding}>
+            Replay onboarding
+          </button>
+        </div>
+      )}
 
       <div className="setting-group">
         <p className="setting-text" style={{ fontSize: 10, textAlign: 'center', opacity: 0.5 }}>

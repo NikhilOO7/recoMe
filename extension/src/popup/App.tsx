@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { SettingsPanel } from './components/SettingsPanel';
 import { AgentChat } from './components/AgentChat';
-import { Onboarding } from './components/Onboarding';
+import { Onboarding, type SeedPreferences } from './components/Onboarding';
 import { useConnectionStatus, type ConnectionStatus } from './hooks/useConnectionStatus';
 import '../styles/popup.css';
 
@@ -16,6 +16,7 @@ function applyTheme(theme: Theme) {
 export function App() {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null);
+  const [replayOnboarding, setReplayOnboarding] = useState(false);
   const [theme, setTheme] = useState<Theme>('light');
   const connectionStatus = useConnectionStatus();
 
@@ -46,7 +47,11 @@ export function App() {
     chrome.storage.local.set({ recome_theme: next }).catch(() => undefined);
   }
 
-  async function handleOnboardingComplete(quickBlocks: string[], quickLikes: string[]) {
+  async function handleOnboardingComplete(
+    quickBlocks: string[],
+    quickLikes: string[],
+    seedPrefs?: SeedPreferences,
+  ) {
     for (const topic of quickBlocks) {
       await chrome.runtime
         .sendMessage({ type: 'BLOCK_TOPIC', payload: { topic } })
@@ -57,17 +62,35 @@ export function App() {
         .sendMessage({ type: 'LIKE_TOPIC', payload: { topic } })
         .catch(() => undefined);
     }
+    // Save seed preferences for cold-start scoring
+    if (seedPrefs) {
+      await chrome.storage.local
+        .set({
+          recome_seed_prefs: seedPrefs,
+          recome_seed_prefs_at: new Date().toISOString(),
+        })
+        .catch(() => undefined);
+      // Map intensity to aggressiveness setting
+      const aggressivenessMap = { casual: 0.3, moderate: 0.5, power: 0.8 };
+      await chrome.runtime
+        .sendMessage({
+          type: 'SAVE_SETTINGS',
+          payload: { aggressiveness: aggressivenessMap[seedPrefs.intensity] },
+        })
+        .catch(() => undefined);
+    }
     await chrome.storage.sync.set({ recome_onboarding_done: true });
     setOnboardingDone(true);
+    setReplayOnboarding(false);
   }
 
   // Still loading — show nothing to avoid flash
   if (onboardingDone === null) return null;
 
-  if (!onboardingDone) {
+  if (!onboardingDone || replayOnboarding) {
     return (
       <div className="app">
-        <Onboarding onComplete={handleOnboardingComplete} />
+        <Onboarding onComplete={handleOnboardingComplete} isReplay={replayOnboarding} />
       </div>
     );
   }
@@ -139,7 +162,9 @@ export function App() {
         {activeTab === 'agent' && (
           <AgentChat onNavigateToSettings={() => setActiveTab('settings')} />
         )}
-        {activeTab === 'settings' && <SettingsPanel />}
+        {activeTab === 'settings' && (
+          <SettingsPanel onReplayOnboarding={() => setReplayOnboarding(true)} />
+        )}
       </main>
 
       <footer className="app-footer">

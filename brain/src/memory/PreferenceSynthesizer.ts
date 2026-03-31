@@ -72,15 +72,13 @@ Rules:
     try {
       const response = await llm.call(prompt, { maxTokens: 300 });
       if (!response) {
-        log.warn('LLM returned null during synthesis');
-        await this.markRan();
+        log.warn('LLM returned null during synthesis — will retry next alarm');
         return false;
       }
 
       const parsed = this.parseResponse(response);
       if (!parsed) {
-        log.warn('Failed to parse synthesis response');
-        await this.markRan();
+        log.warn('Failed to parse synthesis response — will retry next alarm');
         return false;
       }
 
@@ -111,8 +109,7 @@ Rules:
       await this.markRan();
       return true;
     } catch (err) {
-      log.error('Preference synthesis failed', err);
-      await this.markRan();
+      log.error('Preference synthesis failed — will retry next alarm', err);
       return false;
     }
   }

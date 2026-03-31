@@ -166,9 +166,12 @@ export class GenericAdapter extends BaseAdapter {
   override init(): void {
     super.init();
     // Scheduled discovery: 2s, 6s, 12s, 20s, 30s — then stop (no infinite polling)
+    // Wrapped in rAF to batch layout reads with the browser's paint cycle
     const delays = [2000, 6000, 12000, 20000, 30000];
     for (const delay of delays) {
-      this.discoveryTimers.push(setTimeout(() => this.discoverRepeatedSiblings(), delay));
+      this.discoveryTimers.push(
+        setTimeout(() => requestAnimationFrame(() => this.discoverRepeatedSiblings()), delay),
+      );
     }
   }
 
@@ -274,7 +277,9 @@ export class GenericAdapter extends BaseAdapter {
       if (bestGroup.length < 4) continue;
 
       // Validate: each sibling should have substantive content
-      const validCount = bestGroup.filter((el) => {
+      // Batch layout reads first to avoid interleaved read/write thrashing
+      const rects = bestGroup.map((el) => el.getBoundingClientRect());
+      const validCount = bestGroup.filter((el, i) => {
         const hasMedia = !!el.querySelector('img[src], video, picture');
         const hasHeadingOrSubstantialLink =
           !!el.querySelector('h1, h2, h3, h4, h5, h6') ||
@@ -282,7 +287,7 @@ export class GenericAdapter extends BaseAdapter {
             (l) => (l.textContent ?? '').trim().length > 15,
           );
         const textLen = (el.textContent ?? '').trim().length;
-        const r = el.getBoundingClientRect();
+        const r = rects[i]!;
         return (
           (hasMedia || hasHeadingOrSubstantialLink) &&
           textLen >= 30 &&

@@ -2,6 +2,38 @@
    All classes are scoped under .recome-* to avoid conflicts with host pages.
    ─────────────────────────────────────────────────────────────────────────── */
 
+/* ── Extension Compatibility Guards ──────────────────────────────────────────
+   Prevent visual conflicts with ad blockers (uBlock, AdBlock), dark-mode
+   extensions (Dark Reader, Night Eye), and other common browser extensions.
+   Uses !important sparingly and only on properties that extensions commonly
+   override (colors, visibility, display, opacity).
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* Prevent ad blockers from hiding RecoMe UI (they target generic selectors) */
+[class^='recome-'],
+[class*=' recome-'] {
+  visibility: visible !important;
+  display: revert !important;
+}
+
+/* Prevent Dark Reader / Night Eye from inverting RecoMe overlay colors */
+.recome-intent,
+.recome-trigger,
+.recome-menu,
+.recome-decision-badge,
+.recome-explanation-popover,
+#recome-overlay-host {
+  color-scheme: light dark;
+}
+
+/* Ensure our z-index wins over extension-injected layers */
+#recome-overlay-host {
+  z-index: 2147483646 !important;
+}
+#recome-menu-portal {
+  z-index: 2147483640 !important;
+}
+
 /* ── Intent Trigger (always-visible pill) ────────────────────────────────── */
 .recome-intent {
   position: absolute;

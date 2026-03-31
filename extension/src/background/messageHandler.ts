@@ -25,9 +25,16 @@ const log = createLogger('MessageHandler');
 
 export function handleMessage(
   message: RecoMeMessage,
-  _sender: chrome.runtime.MessageSender,
+  sender: chrome.runtime.MessageSender,
   sendResponse: (response: MessageResponse) => void,
 ): true {
+  // Capability-scope: only accept messages from this extension's own contexts
+  if (sender.id !== chrome.runtime.id) {
+    log.warn(`Rejected message from unknown sender: ${sender.id}`);
+    sendResponse(err('Unauthorized sender'));
+    return true;
+  }
+
   dispatch(message)
     .then(sendResponse)
     .catch((e: unknown) => {

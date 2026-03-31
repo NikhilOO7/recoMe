@@ -28,15 +28,15 @@ export interface LLMMessage {
 // ── Provider model configuration ─────────────────────────────────────────────
 
 const PROVIDER_MODELS: Record<LLMProvider, string> = {
-  anthropic: 'claude-sonnet-4-6',
-  openai: 'gpt-4o-mini',
-  gemini: 'gemini-2.0-flash',
+  anthropic: 'claude-haiku-4-5-20251001',
+  openai: 'gpt-5',
+  gemini: 'gemini-2.5-flash',
 };
 
 export const PROVIDER_DISPLAY_NAMES: Record<LLMProvider, string> = {
-  anthropic: 'Claude Sonnet 4.6',
-  openai: 'GPT-4o mini',
-  gemini: 'Gemini 2.0 Flash',
+  anthropic: 'Haiku 4.5',
+  openai: 'GPT-5',
+  gemini: 'Gemini 2.5 Flash',
 };
 
 // ── LLM Client ───────────────────────────────────────────────────────────────
@@ -56,6 +56,11 @@ export class LLMClient {
   private cache = new Map<string, { response: string; timestamp: number }>();
   private static readonly CACHE_MAX = 50;
   private static readonly CACHE_TTL = 5 * 60 * 1000; // 5 min
+
+  // Data minimization limits — cap content sent to external AI providers
+  private static readonly MAX_PROMPT_CHARS = 4000;
+  private static readonly MAX_MESSAGE_CHARS = 2000;
+  private static readonly MAX_SYSTEM_CHARS = 1500;
 
   /** Check if an LLM provider is configured and available. */
   async isConfigured(): Promise<boolean> {
@@ -81,10 +86,31 @@ export class LLMClient {
   /**
    * Call the configured LLM provider with a prompt.
    * Returns the text response, or null if no provider is configured or circuit is open.
+   *
+   * Data minimization: prompts and messages are truncated to limit data sent
+   * to external AI providers.
    */
   async call(prompt: string, options: LLMCallOptions = {}): Promise<string | null> {
     const config = await this.getConfig();
     if (!config) return null;
+
+    // Data minimization — truncate content before sending to external providers
+    prompt = LLMClient.truncateText(prompt, LLMClient.MAX_PROMPT_CHARS);
+    if (options.messages) {
+      options = {
+        ...options,
+        messages: options.messages.map((m) => ({
+          ...m,
+          content: LLMClient.truncateText(m.content, LLMClient.MAX_MESSAGE_CHARS),
+        })),
+      };
+    }
+    if (options.system) {
+      options = {
+        ...options,
+        system: LLMClient.truncateText(options.system, LLMClient.MAX_SYSTEM_CHARS),
+      };
+    }
 
     // Circuit breaker check
     if (Date.now() < this.circuitOpenUntil) {
@@ -105,8 +131,12 @@ export class LLMClient {
         const response = await this.callProvider(config, prompt, options);
         this.consecutiveFailures = 0;
 
-        // Cache the response
-        this.cacheResponse(cacheKey, response);
+        // Only cache non-empty responses — treat empty/whitespace as errors
+        if (response && response.trim().length > 0) {
+          this.cacheResponse(cacheKey, response);
+        } else {
+          log.debug('LLM returned empty response — not caching');
+        }
 
         return response;
       } catch (err) {
@@ -299,7 +329,8 @@ export class LLMClient {
       } else {
         this.config = null;
       }
-    } catch {
+    } catch (e) {
+      log.debug('Failed to load LLM config from storage', e);
       this.config = null;
     }
 
@@ -308,6 +339,12 @@ export class LLMClient {
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
+
+  /** Truncate text to a max character count, appending ellipsis if trimmed */
+  private static truncateText(text: string, maxChars: number): string {
+    if (text.length <= maxChars) return text;
+    return text.slice(0, maxChars) + '\n…[truncated for data minimization]';
+  }
 
   private sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));

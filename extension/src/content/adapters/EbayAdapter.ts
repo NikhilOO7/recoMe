@@ -88,6 +88,21 @@ export class EbayAdapter extends BaseAdapter {
     return window.location.pathname.startsWith('/sch/');
   }
 
+  /**
+   * Build a collision-resistant hash for eBay items without an /itm/ ID.
+   * Includes title, href, and price to distinguish similar listings.
+   */
+  private computeEbayHash(title: string, href: string, element: Element): string {
+    const priceText =
+      element.querySelector('.s-item__price, [class*="item__price"]')?.textContent?.trim() ?? '';
+    const combined = `ebay:${title}|${href}|${priceText}`;
+    let hash = 5381;
+    for (let i = 0; i < combined.length; i++) {
+      hash = ((hash << 5) + hash + combined.charCodeAt(i)) | 0;
+    }
+    return `ebay-${(hash >>> 0).toString(36)}`;
+  }
+
   extractMetadata(element: Element): ContentMetadata | null {
     try {
       const titleEl =
@@ -109,7 +124,9 @@ export class EbayAdapter extends BaseAdapter {
       let href = linkEl?.href ?? '';
       if (!href) href = heuristicUrl(element) ?? '';
       const itemMatch = href.match(/\/itm\/(\d+)/);
-      const id = itemMatch?.[1] ?? this.computeContentHash(element);
+      // Use eBay item number when available; otherwise build a collision-resistant
+      // hash from title + href + price to avoid false dedup across similar listings
+      const id = itemMatch?.[1] ?? this.computeEbayHash(title, href, element);
 
       let seller =
         element.querySelector('.s-item__seller-info-text')?.textContent?.trim() ??

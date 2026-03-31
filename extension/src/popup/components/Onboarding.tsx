@@ -1,7 +1,20 @@
 import { useState } from 'react';
 
 interface OnboardingProps {
-  onComplete: (quickBlocks: string[], quickLikes: string[]) => void;
+  onComplete: (
+    quickBlocks: string[],
+    quickLikes: string[],
+    seedPreferences?: SeedPreferences,
+  ) => void;
+  /** When true, shows a condensed replay (skip welcome/agent steps) */
+  isReplay?: boolean;
+}
+
+export interface SeedPreferences {
+  /** Preferred content types (video, article, product, etc.) */
+  contentTypes: string[];
+  /** Browsing intensity: casual, moderate, power */
+  intensity: 'casual' | 'moderate' | 'power';
 }
 
 const QUICK_BLOCK_OPTIONS = [
@@ -22,14 +35,37 @@ const QUICK_LIKE_OPTIONS = [
   { id: 'finance', emoji: '📈', label: 'Personal Finance' },
 ];
 
-export function Onboarding({ onComplete }: OnboardingProps) {
-  const [step, setStep] = useState(0);
+const CONTENT_TYPE_OPTIONS = [
+  { id: 'videos', emoji: '🎬', label: 'Videos & Reels' },
+  { id: 'articles', emoji: '📰', label: 'Articles & Posts' },
+  { id: 'products', emoji: '🛒', label: 'Products & Deals' },
+  { id: 'images', emoji: '🖼️', label: 'Photos & Images' },
+  { id: 'news', emoji: '📡', label: 'News & Updates' },
+  { id: 'tutorials', emoji: '📚', label: 'Tutorials & How-tos' },
+];
+
+const INTENSITY_OPTIONS: Array<{
+  id: SeedPreferences['intensity'];
+  emoji: string;
+  label: string;
+  desc: string;
+}> = [
+  { id: 'casual', emoji: '🌿', label: 'Casual', desc: 'Light filtering, mostly suggestions' },
+  { id: 'moderate', emoji: '⚡', label: 'Moderate', desc: 'Balanced filtering and boosting' },
+  { id: 'power', emoji: '🔥', label: 'Power', desc: 'Aggressive filtering, strong curation' },
+];
+
+export function Onboarding({ onComplete, isReplay }: OnboardingProps) {
+  const [step, setStep] = useState(isReplay ? 1 : 0);
   const [selectedBlocks, setSelectedBlocks] = useState<Set<string>>(new Set());
   const [selectedLikes, setSelectedLikes] = useState<Set<string>>(new Set());
   const [customBlock, setCustomBlock] = useState('');
   const [customLike, setCustomLike] = useState('');
+  const [selectedContentTypes, setSelectedContentTypes] = useState<Set<string>>(new Set());
+  const [intensity, setIntensity] = useState<SeedPreferences['intensity']>('moderate');
 
-  const totalSteps = 6;
+  // Replay mode uses fewer steps (skip welcome, agent explainer, shopping explainer)
+  const totalSteps = isReplay ? 5 : 8;
 
   function toggleBlock(id: string) {
     setSelectedBlocks((prev) => {
@@ -63,8 +99,21 @@ export function Onboarding({ onComplete }: OnboardingProps) {
     setCustomLike('');
   }
 
+  function toggleContentType(id: string) {
+    setSelectedContentTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
   function finish() {
-    onComplete([...selectedBlocks], [...selectedLikes]);
+    const seedPrefs: SeedPreferences = {
+      contentTypes: [...selectedContentTypes],
+      intensity,
+    };
+    onComplete([...selectedBlocks], [...selectedLikes], seedPrefs);
   }
 
   return (
@@ -296,8 +345,76 @@ export function Onboarding({ onComplete }: OnboardingProps) {
         </div>
       )}
 
-      {/* Step 5: Agent */}
+      {/* Step 5: Cold-start — Content type preferences */}
       {step === 5 && (
+        <div className="onboarding-step">
+          <h2 className="onboarding-title">What kind of content?</h2>
+          <p className="onboarding-body">
+            Tell RecoMe what types of content you browse most. This helps us prioritize from day
+            one.
+          </p>
+          <div className="onboarding-options">
+            {CONTENT_TYPE_OPTIONS.map((opt) => (
+              <button
+                key={opt.id}
+                className={`onboarding-option like-option ${selectedContentTypes.has(opt.id) ? 'selected' : ''}`}
+                onClick={() => toggleContentType(opt.id)}
+              >
+                <span className="onboarding-option-emoji">{opt.emoji}</span>
+                <span className="onboarding-option-label">{opt.label}</span>
+                {selectedContentTypes.has(opt.id) && (
+                  <span className="onboarding-option-check">✓</span>
+                )}
+              </button>
+            ))}
+          </div>
+          <div className="onboarding-nav">
+            <button className="onboarding-btn ghost" onClick={() => setStep(4)}>
+              ← Back
+            </button>
+            <button className="onboarding-btn primary" onClick={() => setStep(6)}>
+              Next →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 6: Cold-start — Browsing intensity */}
+      {step === 6 && (
+        <div className="onboarding-step">
+          <h2 className="onboarding-title">How should RecoMe filter?</h2>
+          <p className="onboarding-body">
+            Choose how aggressively RecoMe should curate your feeds.
+          </p>
+          <div className="onboarding-options">
+            {INTENSITY_OPTIONS.map((opt) => (
+              <button
+                key={opt.id}
+                className={`onboarding-option ${intensity === opt.id ? 'selected' : ''}`}
+                onClick={() => setIntensity(opt.id)}
+              >
+                <span className="onboarding-option-emoji">{opt.emoji}</span>
+                <div style={{ textAlign: 'left' }}>
+                  <span className="onboarding-option-label">{opt.label}</span>
+                  <div style={{ fontSize: '11px', opacity: 0.7, marginTop: 2 }}>{opt.desc}</div>
+                </div>
+                {intensity === opt.id && <span className="onboarding-option-check">✓</span>}
+              </button>
+            ))}
+          </div>
+          <div className="onboarding-nav">
+            <button className="onboarding-btn ghost" onClick={() => setStep(5)}>
+              ← Back
+            </button>
+            <button className="onboarding-btn primary" onClick={() => setStep(7)}>
+              Next →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 7: Agent (skipped in replay) */}
+      {step === 7 && !isReplay && (
         <div className="onboarding-step">
           <h2 className="onboarding-title">Your shopping companion</h2>
           <p className="onboarding-body">
@@ -330,21 +447,23 @@ export function Onboarding({ onComplete }: OnboardingProps) {
             </div>
           </div>
           <div className="onboarding-nav">
-            <button className="onboarding-btn ghost" onClick={() => setStep(4)}>
+            <button className="onboarding-btn ghost" onClick={() => setStep(6)}>
               ← Back
             </button>
-            <button className="onboarding-btn primary" onClick={() => setStep(6)}>
+            <button className="onboarding-btn primary" onClick={() => setStep(8)}>
               Next →
             </button>
           </div>
         </div>
       )}
 
-      {/* Step 6: All Set */}
-      {step === 6 && (
+      {/* Final Step: All Set (step 8 in full flow, step 7 in replay when agent step is skipped) */}
+      {(step === 8 || (isReplay && step === 7)) && (
         <div className="onboarding-step">
           <div className="onboarding-hero">🎉</div>
-          <h2 className="onboarding-title">You're all set!</h2>
+          <h2 className="onboarding-title">
+            {isReplay ? 'Preferences updated!' : "You're all set!"}
+          </h2>
           <p className="onboarding-body">
             {selectedBlocks.size > 0 || selectedLikes.size > 0
               ? [
@@ -362,7 +481,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
             settings.
           </p>
           <button className="onboarding-btn primary" onClick={finish}>
-            Start browsing 🚀
+            {isReplay ? 'Done' : 'Start browsing 🚀'}
           </button>
         </div>
       )}

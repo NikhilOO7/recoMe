@@ -9,11 +9,14 @@ export function detectPlatform(): Platform {
   const host = location.hostname.replace(/^www\./, '');
 
   if (host.includes('youtube.com')) return 'youtube';
-  // Amazon international domains: amazon.co.uk, amazon.de, amazon.co.jp, amazon.in, etc.
+  // Amazon international domains + Fresh, Pantry, Prime Now subdomains
   if (
     /amazon\.(com|co\.\w+|ca|de|fr|it|es|in|com\.br|com\.mx|com\.au|nl|pl|se|sg|sa|ae|eg|com\.tr|co\.za)/.test(
       host,
-    )
+    ) ||
+    host.includes('fresh.amazon') ||
+    host.includes('pantry.amazon') ||
+    host.includes('primenow.amazon')
   )
     return 'amazon';
   if (host.includes('twitter.com') || host.includes('x.com')) return 'twitter';
@@ -48,7 +51,7 @@ function getRouteSignature(): string {
   return `${location.pathname}${location.hash}`;
 }
 
-export async function initAdapter(adapter: BaseAdapter): Promise<void> {
+export async function initAdapter(adapter: BaseAdapter, onRouteChange?: () => void): Promise<void> {
   if (document.readyState === 'loading') {
     await new Promise<void>((resolve) =>
       document.addEventListener('DOMContentLoaded', () => resolve(), { once: true }),
@@ -94,6 +97,7 @@ export async function initAdapter(adapter: BaseAdapter): Promise<void> {
 
       adapter.init();
       log.info(`Adapter re-init after navigation to ${newRoute}`);
+      onRouteChange?.();
     }, 800);
   };
 

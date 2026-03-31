@@ -7,13 +7,14 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
+  confirmWipe: boolean;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
-  override state: State = { hasError: false, error: null };
+  override state: State = { hasError: false, error: null, confirmWipe: false };
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+    return { hasError: true, error, confirmWipe: false };
   }
 
   override componentDidCatch(error: Error, info: ErrorInfo) {
@@ -25,15 +26,32 @@ export class ErrorBoundary extends Component<Props, State> {
     this.setState({ hasError: false, error: null });
   };
 
+  /** Soft reset — clears only UI/cache state, preserves user data (blocks, likes, memory) */
+  handleSoftReset = () => {
+    const UI_KEYS = [
+      'recome_theme',
+      'recome_first_action_done',
+      'recome_last_synthesis',
+      'recome_achievements',
+    ];
+    chrome.storage.local
+      .remove(UI_KEYS)
+      .then(() => window.location.reload())
+      .catch(() => window.location.reload());
+  };
+
+  /** Nuclear option — clears ALL data. Requires confirmation. */
   handleClearAndRestart = () => {
+    if (!this.state.confirmWipe) {
+      this.setState({ confirmWipe: true });
+      return;
+    }
     chrome.storage.local
       .clear()
       .then(() => {
         chrome.storage.sync
           .clear()
-          .then(() => {
-            window.location.reload();
-          })
+          .then(() => window.location.reload())
           .catch(() => window.location.reload());
       })
       .catch(() => window.location.reload());
@@ -62,8 +80,19 @@ export class ErrorBoundary extends Component<Props, State> {
         <button style={styles.primaryBtn} onClick={this.handleRetry}>
           Try Again
         </button>
-        <button style={styles.secondaryBtn} onClick={this.handleClearAndRestart}>
-          Clear Data &amp; Restart
+        <button style={styles.secondaryBtn} onClick={this.handleSoftReset}>
+          Soft Reset (keep data)
+        </button>
+        <button
+          style={{
+            ...styles.secondaryBtn,
+            marginTop: '6px',
+            color: '#ef4444',
+            borderColor: '#ef4444',
+          }}
+          onClick={this.handleClearAndRestart}
+        >
+          {this.state.confirmWipe ? 'Confirm — erase everything' : 'Clear All Data'}
         </button>
       </div>
     );

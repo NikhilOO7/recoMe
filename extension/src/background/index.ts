@@ -8,6 +8,50 @@ import type { RecoMeMessage } from '@shared/messages';
 
 const log = createLogger('Background');
 
+// ── Storage Schema Versioning ────────────────────────────────────────────────
+// Tracks the version of chrome.storage.local / chrome.storage.sync flags.
+// IDB versioning is handled separately via DB_VERSION in constants.ts.
+const STORAGE_SCHEMA_VERSION = 2;
+
+/**
+ * Run storage migrations when the extension updates and the schema version
+ * has changed. Each migration is idempotent and runs exactly once.
+ */
+async function migrateStorageSchema(): Promise<void> {
+  try {
+    const result = await chrome.storage.local.get('recome_storage_version');
+    const currentVersion = (result.recome_storage_version as number) ?? 0;
+
+    if (currentVersion >= STORAGE_SCHEMA_VERSION) return;
+
+    log.info(`Storage migration: v${currentVersion} → v${STORAGE_SCHEMA_VERSION}`);
+
+    // Migration v0/v1 → v2: Ensure instagram is in platform settings
+    if (currentVersion < 2) {
+      const syncData = await chrome.storage.sync.get('recome_settings');
+      const settings = syncData.recome_settings as Record<string, unknown> | undefined;
+      if (settings?.platforms) {
+        const platforms = settings.platforms as Record<string, boolean>;
+        if (platforms.instagram === undefined) {
+          platforms.instagram = true;
+          await chrome.storage.sync.set({ recome_settings: settings });
+          log.info('Migration v2: added instagram to platform settings');
+        }
+      }
+    }
+
+    // Stamp the new version
+    await chrome.storage.local.set({
+      recome_storage_version: STORAGE_SCHEMA_VERSION,
+      recome_last_migration: new Date().toISOString(),
+    });
+
+    log.info('Storage migration complete');
+  } catch (err) {
+    log.error('Storage migration failed', err);
+  }
+}
+
 // ── Service Worker Lifecycle ──────────────────────────────────────────────────
 
 chrome.runtime.onInstalled.addListener(async (details) => {
@@ -36,13 +80,24 @@ chrome.runtime.onInstalled.addListener(async (details) => {
           amazon: true,
           twitter: true,
           facebook: true,
+          instagram: true,
           ebay: true,
           walmart: true,
           linkedin: true,
         },
       },
     });
+    // Version stamp for storage migration support
+    await chrome.storage.local.set({
+      recome_storage_version: STORAGE_SCHEMA_VERSION,
+      recome_installed_at: new Date().toISOString(),
+    });
     log.info('Default settings written');
+  }
+
+  // Storage migration on update
+  if (details.reason === 'update') {
+    await migrateStorageSchema();
   }
 });
 

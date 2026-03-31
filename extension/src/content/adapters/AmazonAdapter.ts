@@ -12,31 +12,33 @@ export type AmazonPageType = 'search' | 'product' | 'feed' | 'home' | 'deals' | 
 // selectors. Reduces false positives and improves hit rate on each surface.
 
 const SEARCH_CARD_SELECTORS = [
+  // Data-attribute selectors (most resilient to DOM class-name churn)
   '[data-component-type="s-search-result"]',
-  '.s-result-item[data-asin]:not(.AdHolder)',
   '[data-component-type="s-impression-counter"]',
-  // Newer React-based search results
   '[data-cel-widget^="search_result_"]',
   '[cel_widget_id^="MAIN-SEARCH_RESULTS-"]',
+  // ASIN-based fallback — Amazon's ASIN data attribute is extremely stable
+  'div[data-asin]:not([data-asin=""]):not(.AdHolder)',
+  '.s-result-item[data-asin]:not(.AdHolder)',
 ];
 
 const PRODUCT_PAGE_CARD_SELECTORS = [
-  // "Customers also bought" / "Frequently bought together"
+  // ASIN-based selectors (most resilient — Amazon's ASIN system is permanent)
   'li[data-asin]:not([data-asin=""])',
   '.a-carousel-card[data-asin]',
-  '#anonCarousel1 .a-carousel-card',
-  '#anonCarousel2 .a-carousel-card',
-  // "Compare with similar items" table rows
-  '[data-comparison-table-row]',
-  'div.comparison_table_image_row div.a-section',
-  // Related products widgets
+  // Data-attribute selectors (stable across redesigns)
   '[data-csa-c-item-id]',
   '[data-csa-c-type="item"]',
-  // "Customers who viewed this also viewed"
+  '[data-comparison-table-row]',
+  // ID-based selectors (Amazon keeps widget IDs stable for analytics)
+  '#anonCarousel1 .a-carousel-card',
+  '#anonCarousel2 .a-carousel-card',
   '#sp-cc .a-carousel-card',
   '#rhf .a-carousel-card',
   '#similarities_feature_div .a-carousel-card',
   '#day0-btf-recommendations .a-carousel-card',
+  // Class-based (least resilient — keep as last resort)
+  'div.comparison_table_image_row div.a-section',
 ];
 
 const BESTSELLER_CARD_SELECTORS = [

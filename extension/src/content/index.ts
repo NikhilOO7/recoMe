@@ -9,6 +9,7 @@ import { InstagramAdapter } from './adapters/InstagramAdapter';
 import { EbayAdapter } from './adapters/EbayAdapter';
 import { WalmartAdapter } from './adapters/WalmartAdapter';
 import { GenericAdapter } from './adapters/GenericAdapter';
+import { LinkedInAdapter } from './adapters/LinkedInAdapter';
 import { createProactiveDwellTracker, createSmartPromptTrackers } from './DwellTracker';
 import { PlatformIntelligenceEngine } from './intelligence/PlatformIntelligenceEngine';
 import { migrateLegacyCache } from './adapters/SelectorDiscovery';
@@ -23,6 +24,31 @@ import type { BaseAdapter } from './adapters/BaseAdapter';
 import type { Platform, ContentMetadata } from '@shared/types';
 
 const log = createLogger('Content');
+
+// ── Incognito detection ─────────────────────────────────────────────────────
+function isIncognito(): boolean {
+  try {
+    return chrome.extension?.inIncognitoContext === true;
+  } catch {
+    return false;
+  }
+}
+
+// ── Offline / degraded mode detection ───────────────────────────────────────
+let contentOfflineMode = !navigator.onLine;
+window.addEventListener('online', () => {
+  contentOfflineMode = false;
+  log.info('Back online — AI features available');
+});
+window.addEventListener('offline', () => {
+  contentOfflineMode = true;
+  log.info('Offline — running in degraded mode (local scoring only)');
+});
+
+/** Check if AI features should be gated (incognito or offline) */
+function isAIGated(): boolean {
+  return isIncognito() || contentOfflineMode;
+}
 
 // ── Chat / messaging domains where RecoMe should never run ──────────────────
 const CHAT_ONLY_DOMAINS = [
@@ -76,6 +102,17 @@ async function bootstrap(): Promise<void> {
     return;
   }
 
+  // ── Incognito gating ────────────────────────────────────────────────────────
+  // In incognito: skip storage writes, disable AI features, run in read-only mode
+  if (isIncognito()) {
+    log.info('Incognito mode — running in privacy-safe mode (no storage writes, no AI)');
+  }
+
+  // ── Offline awareness ───────────────────────────────────────────────────────
+  if (contentOfflineMode) {
+    log.info('Offline — AI scoring disabled, local-only mode');
+  }
+
   // ── P0 Fix: Page eligibility gate ─────────────────────────────────────────
   // Run strict checks BEFORE creating any adapter, overlay, or UI.
   // Blocks: CAPTCHA, anti-bot, login/signup, logged-out social, error pages.
@@ -120,7 +157,7 @@ async function bootstrap(): Promise<void> {
       adapter = new WalmartAdapter();
       break;
     case 'linkedin':
-      adapter = new GenericAdapter('linkedin');
+      adapter = new LinkedInAdapter();
       break;
     default: {
       // Unknown platform — use generic adapter so RecoMe works everywhere
@@ -143,7 +180,28 @@ async function bootstrap(): Promise<void> {
   if (!cached) cached = await migrateLegacyCache(domain);
   if (cached) adapter.applyCachedSelectors(cached);
 
-  await initAdapter(adapter);
+  await initAdapter(adapter, () => {
+    // SPA navigation: rebind overlay with fresh page context and adapter closures
+    if (overlayInstance) {
+      overlayInstance.onNavigate(() => {
+        const candidates: unknown[] = [];
+        const pdpMethod = (adapter as unknown as Record<string, unknown>)['extractPdpCandidate'];
+        if (typeof pdpMethod === 'function') {
+          const pdp = pdpMethod.call(adapter) as unknown;
+          if (pdp) candidates.push(pdp);
+        }
+        if (candidates.length === 0) {
+          const sel = adapter.getCardSelector();
+          const cards = document.querySelectorAll(sel);
+          for (const card of Array.from(cards).slice(0, 5)) {
+            const candidate = adapter.extractCandidate(card);
+            if (candidate) candidates.push(candidate);
+          }
+        }
+        return candidates;
+      });
+    }
+  });
 
   // ── P1 Fix: Per-platform health threshold ─────────────────────────────────
   // After adapter init, check if enough cards were found. If not, wait a bit
@@ -186,14 +244,19 @@ async function bootstrap(): Promise<void> {
       adapter as unknown as { extractMetadata: (e: Element) => ContentMetadata | null }
     ).extractMetadata(el);
 
-  // Proactive dwell tracking — observe cards the user lingers on
-  setupDwellTracking(adapter, resolvedPlatform);
+  // In incognito mode, skip tracking and storage writes
+  if (!isIncognito()) {
+    // Proactive dwell tracking — observe cards the user lingers on
+    setupDwellTracking(adapter, resolvedPlatform);
 
-  // Smart prompt tracking — scroll-back, comparison, cart hover detection
-  setupSmartPromptTracking(adapter, resolvedPlatform, extractMeta);
+    // Smart prompt tracking — scroll-back, comparison, cart hover detection
+    setupSmartPromptTracking(adapter, resolvedPlatform, extractMeta);
 
-  // Search query monitoring — learn from what the user searches for
-  setupSearchTracking(resolvedPlatform);
+    // Search query monitoring — learn from what the user searches for
+    setupSearchTracking(resolvedPlatform);
+  } else {
+    log.info('Incognito: skipping dwell/search/smart-prompt tracking');
+  }
 
   // ── Overlay injection with health gating ──────────────────────────────────
   // If cards were found immediately, inject overlay right away.
@@ -352,6 +415,14 @@ function setupSmartPromptTracking(
 
 async function injectOverlay(platform: Platform, adapter: BaseAdapter): Promise<void> {
   try {
+    // Prevent duplicate overlays — destroy existing instance before creating a new one
+    if (overlayInstance) {
+      overlayInstance.destroy();
+      overlayInstance = null;
+    }
+    // Also remove any stale host element left behind (defensive)
+    document.getElementById('recome-overlay-host')?.remove();
+
     const overlay = new FloatingOverlay(platform);
     overlayInstance = overlay;
 
@@ -389,6 +460,12 @@ async function injectOverlay(platform: Platform, adapter: BaseAdapter): Promise<
 // ── Platform Intelligence ───────────────────────────────────────────────────
 
 function setupPlatformIntelligence(platform: Platform): void {
+  // Gate AI features in incognito or offline mode
+  if (isAIGated()) {
+    log.info('AI gated (incognito or offline) — skipping platform intelligence');
+    return;
+  }
+
   // Delay to let the page finish loading and the adapter settle
   setTimeout(async () => {
     try {

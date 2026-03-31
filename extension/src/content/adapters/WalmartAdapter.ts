@@ -57,6 +57,23 @@ export class WalmartAdapter extends BaseAdapter {
         // ── Weekly ad / savings section ─────────────────────────────────
         '[data-testid="savings-item"]',
         '.savings-card',
+
+        // ── Walmart+ exclusive deals ──────────────────────────────────
+        '[data-testid="wplus-deal-card"]',
+        '[data-automation-id="wplus-item"]',
+        '.w-plus-deal-tile',
+        '[aria-label*="Walmart+"] [data-item-id]',
+
+        // ── Weekly ad flyer items ─────────────────────────────────────
+        '[data-testid="weekly-ad-item"]',
+        '.weekly-ad-card',
+        '[data-automation-id="flyer-item"]',
+
+        // ── "Also considered" / "Compare with similar" ────────────────
+        '[data-testid="comparison-card"]',
+        '.comparison-item-card',
+        '[data-testid="btf-item"]',
+        '.product-comparison-tile',
       ].join(', '),
       feedSelector: [
         // Search results
@@ -74,6 +91,15 @@ export class WalmartAdapter extends BaseAdapter {
         // Product page recommendations
         '[data-testid="recommendations"]',
         '[data-testid="also-considered"]',
+        // Walmart+ section
+        '[data-testid="wplus-deals"]',
+        '[aria-label*="Walmart+"]',
+        // Weekly ad / flyer
+        '[data-testid="weekly-ad-grid"]',
+        '.weekly-ad-container',
+        // Comparison section
+        '[data-testid="comparison-grid"]',
+        '.product-comparison-section',
         // Generic fallbacks
         '#maincontent',
         'main[role="main"]',

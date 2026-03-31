@@ -79,6 +79,13 @@ export function Dashboard() {
 
   useEffect(() => {
     load();
+
+    // Refresh data when popup regains visibility (e.g. user switches tabs and comes back)
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') load();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
   }, [load]);
 
   if (loading)
@@ -102,8 +109,33 @@ export function Dashboard() {
   const isColdStart =
     hiddenToday === 0 && totalHidden === 0 && memoryCount === 0 && patternCount === 0;
 
+  // Graceful degradation: if extension has no data at all (no blocks, likes, memory, patterns)
+  // show an "unavailable" hint rather than an empty dashboard that looks active
+  const isUnavailable =
+    !isColdStart &&
+    hiddenToday === 0 &&
+    totalHidden === 0 &&
+    memoryCount === 0 &&
+    patternCount === 0 &&
+    blockedCount === 0 &&
+    likedCount === 0;
+
   return (
     <div className="dashboard">
+      {/* Graceful degradation banner when no activity detected */}
+      {isUnavailable && (
+        <div
+          className="getting-started-card"
+          style={{ borderLeft: '3px solid var(--accent6, #f59e0b)' }}
+        >
+          <h3 className="getting-started-title">No activity detected</h3>
+          <p className="getting-started-hint">
+            RecoMe is installed but hasn&apos;t found any content to process yet. Visit a supported
+            site (Amazon, YouTube, etc.) to get started.
+          </p>
+        </div>
+      )}
+
       {/* Cold-start Getting Started card */}
       {isColdStart && (
         <div className="getting-started-card">
@@ -133,7 +165,9 @@ export function Dashboard() {
               <span className="step-icon">2</span>
               <span className="step-label">Set preferences</span>
             </div>
-            <div className="getting-started-step current">
+            <div
+              className={`getting-started-step ${totalHidden > 0 || memoryCount > 0 ? 'done' : 'current'}`}
+            >
               <span className="step-icon">3</span>
               <span className="step-label">Browse a site</span>
             </div>

@@ -46,8 +46,8 @@ export class FloatingOverlay {
       const r = await chrome.storage.local.get('recome_theme');
       const saved = r['recome_theme'] as string | undefined;
       if (saved === 'light' || saved === 'dark') this.theme = saved;
-    } catch {
-      // Use default
+    } catch (e) {
+      log.debug('Could not load theme preference', e);
     }
 
     // Check if overlay is enabled in settings
@@ -58,8 +58,8 @@ export class FloatingOverlay {
         log.info('Overlay disabled in settings');
         return;
       }
-    } catch {
-      // Default: show overlay
+    } catch (e) {
+      log.debug('Could not read overlay settings — defaulting to enabled', e);
     }
 
     // Create host element
@@ -140,6 +140,16 @@ export class FloatingOverlay {
   /** Programmatically toggle (for keyboard shortcut from content script) */
   toggle(): void {
     this.manager.toggle();
+  }
+
+  /**
+   * Called on SPA navigation — re-renders with fresh page context (URL, title)
+   * and optionally rebinds the adapter's candidate extractor.
+   */
+  onNavigate(getCandidates?: () => unknown[]): void {
+    if (this.destroyed) return;
+    if (getCandidates) this.getCandidates = getCandidates;
+    this.renderChat();
   }
 
   /** Update the insight badge count */
@@ -224,8 +234,8 @@ export class FloatingOverlay {
           }
         }
       });
-    } catch {
-      // Content script may not have access in all contexts
+    } catch (e) {
+      log.debug('Could not set up theme change listener', e);
     }
   }
 }
