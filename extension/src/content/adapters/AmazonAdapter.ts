@@ -1,6 +1,11 @@
 import { BaseAdapter } from './BaseAdapter';
 import { extractTextContent } from '@shared/utils';
-import { heuristicTitle, heuristicCreator, heuristicUrl } from './MetadataHeuristics';
+import {
+  heuristicTitle,
+  heuristicCreator,
+  heuristicUrl,
+  looksLikePrice,
+} from './MetadataHeuristics';
 import type { ContentMetadata } from '@shared/types';
 import type { CandidateEntity } from '@schema/entities';
 import type { PageContext } from '@schema/decisions';
@@ -429,13 +434,20 @@ export class AmazonAdapter extends BaseAdapter {
   }
 
   private extractBrand(element: Element): string | undefined {
-    return (
-      element.querySelector('.a-size-base-plus.a-color-secondary')?.textContent?.trim() ??
-      element.querySelector('[data-a-color="secondary"] span')?.textContent?.trim() ??
-      element.querySelector('.p13n-sc-brand')?.textContent?.trim() ??
-      element.querySelector('.a-row.a-size-small span:nth-child(2)')?.textContent?.trim() ??
-      undefined
-    );
+    const candidates = [
+      element.querySelector('.a-size-base-plus.a-color-secondary'),
+      element.querySelector('[data-a-color="secondary"] span'),
+      element.querySelector('.p13n-sc-brand'),
+      element.querySelector('.a-row.a-size-small span:nth-child(2)'),
+    ];
+
+    for (const el of candidates) {
+      const text = el?.textContent?.trim();
+      if (text && text.length > 1 && text.length < 80 && !looksLikePrice(text)) {
+        return text;
+      }
+    }
+    return undefined;
   }
 
   private extractPrice(element: Element): number | undefined {

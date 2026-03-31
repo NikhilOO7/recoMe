@@ -1,6 +1,11 @@
 import { BaseAdapter } from './BaseAdapter';
 import { extractTextContent } from '@shared/utils';
-import { heuristicTitle, heuristicCreator, heuristicUrl } from './MetadataHeuristics';
+import {
+  heuristicTitle,
+  heuristicCreator,
+  heuristicUrl,
+  looksLikePrice,
+} from './MetadataHeuristics';
 import type { ContentMetadata } from '@shared/types';
 
 /**
@@ -136,9 +141,18 @@ export class WalmartAdapter extends BaseAdapter {
         href.match(/\/ip\/[^/]+\/(\d+)/)?.[1] ??
         this.computeContentHash(element);
 
-      let brand =
-        element.querySelector('[data-automation-id="brand-name"]')?.textContent?.trim() ??
-        element.querySelector('[data-testid="brand-name"]')?.textContent?.trim();
+      const brandCandidates = [
+        element.querySelector('[data-automation-id="brand-name"]'),
+        element.querySelector('[data-testid="brand-name"]'),
+      ];
+      let brand: string | undefined;
+      for (const el of brandCandidates) {
+        const text = el?.textContent?.trim();
+        if (text && text.length > 1 && text.length < 80 && !looksLikePrice(text)) {
+          brand = text;
+          break;
+        }
+      }
       if (!brand) brand = heuristicCreator(element) ?? undefined;
 
       // Price extraction

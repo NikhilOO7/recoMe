@@ -1,6 +1,11 @@
 import { BaseAdapter } from './BaseAdapter';
 import { extractTextContent } from '@shared/utils';
-import { heuristicTitle, heuristicCreator, heuristicUrl } from './MetadataHeuristics';
+import {
+  heuristicTitle,
+  heuristicCreator,
+  heuristicUrl,
+  looksLikePrice,
+} from './MetadataHeuristics';
 import type { ContentMetadata } from '@shared/types';
 
 /**
@@ -128,9 +133,18 @@ export class EbayAdapter extends BaseAdapter {
       // hash from title + href + price to avoid false dedup across similar listings
       const id = itemMatch?.[1] ?? this.computeEbayHash(title, href, element);
 
-      let seller =
-        element.querySelector('.s-item__seller-info-text')?.textContent?.trim() ??
-        element.querySelector('[class*="seller"]')?.textContent?.trim();
+      const sellerCandidates = [
+        element.querySelector('.s-item__seller-info-text'),
+        element.querySelector('[class*="seller"]'),
+      ];
+      let seller: string | undefined;
+      for (const el of sellerCandidates) {
+        const text = el?.textContent?.trim();
+        if (text && text.length > 1 && text.length < 80 && !looksLikePrice(text)) {
+          seller = text;
+          break;
+        }
+      }
       if (!seller) seller = heuristicCreator(element) ?? undefined;
 
       // Price extraction for better metadata

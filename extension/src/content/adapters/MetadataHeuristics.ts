@@ -7,6 +7,15 @@
 
 const PRICE_REGEX = /[$\u20AC\u00A3\u00A5]\s?\d[\d,]*\.?\d*|\d[\d.,]+\s?(?:USD|EUR|GBP)/;
 
+/**
+ * Returns true if the text looks like a price or price label rather than a
+ * creator/brand name. Exported so platform adapters can guard their own
+ * brand/seller extraction the same way MetadataHeuristics does internally.
+ */
+export function looksLikePrice(text: string): boolean {
+  return PRICE_REGEX.test(text) || /list\s*price|sale\s*price|was\s*\$|retail\s*price/i.test(text);
+}
+
 const CREATOR_CLASS_PATTERNS =
   /author|creator|channel|byline|user-?name|publisher|seller|brand|vendor/i;
 
@@ -58,11 +67,33 @@ export function heuristicTitle(card: Element): string {
  */
 export function heuristicCreator(card: Element): string | undefined {
   // 1. Elements with author/creator/channel class names
+  //    Walk deepest-first so we prefer the most specific (leaf) element,
+  //    avoiding containers that also wrap prices or other unrelated text.
   const allElements = Array.from(card.querySelectorAll('*'));
   for (const el of allElements) {
     if (CREATOR_CLASS_PATTERNS.test(el.className)) {
-      const text = (el.textContent ?? '').trim();
-      if (text.length > 1 && text.length < 80) return text;
+      // Prefer the element's own direct text (not children's text) if short enough
+      let text = '';
+      // If the element has few children, use its textContent directly
+      if (el.children.length === 0) {
+        text = (el.textContent ?? '').trim();
+      } else {
+        // For container elements, only take the first line / first child's text
+        // to avoid pulling in price text from sibling children
+        const firstText = el.querySelector('span, a, strong, b, em');
+        text = firstText
+          ? (firstText.textContent ?? '').trim()
+          : ((el.textContent ?? '').trim().split('\n')[0]?.trim() ?? '');
+      }
+      // Reject if it looks like a price, is too long, or contains price keywords
+      if (
+        text.length > 1 &&
+        text.length < 80 &&
+        !PRICE_REGEX.test(text) &&
+        !/list\s*price|sale\s*price|was\s*\$/i.test(text)
+      ) {
+        return text;
+      }
     }
   }
 

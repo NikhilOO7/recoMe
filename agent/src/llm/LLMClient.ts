@@ -28,13 +28,13 @@ export interface LLMMessage {
 // ── Provider model configuration ─────────────────────────────────────────────
 
 const PROVIDER_MODELS: Record<LLMProvider, string> = {
-  anthropic: 'claude-haiku-4-5-20251001',
+  anthropic: 'claude-sonnet-4-6',
   openai: 'gpt-5',
   gemini: 'gemini-2.5-flash',
 };
 
 export const PROVIDER_DISPLAY_NAMES: Record<LLMProvider, string> = {
-  anthropic: 'Haiku 4.5',
+  anthropic: 'Claude Sonnet 4.6',
   openai: 'GPT-5',
   gemini: 'Gemini 2.5 Flash',
 };

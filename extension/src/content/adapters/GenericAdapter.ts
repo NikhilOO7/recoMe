@@ -1,5 +1,6 @@
 import { BaseAdapter } from './BaseAdapter';
 import { extractTextContent } from '@shared/utils';
+import { looksLikePrice } from './MetadataHeuristics';
 import { findRepeatedSiblings } from './SelectorDiscovery';
 import type { ContentMetadata, Platform } from '@shared/types';
 
@@ -357,9 +358,11 @@ export class GenericAdapter extends BaseAdapter {
       const creatorEl = element.querySelector(
         '[class*="author"], [class*="creator"], [class*="channel"], [class*="byline"], [class*="publisher"], [class*="source"], [rel="author"], cite',
       );
-      const creator = creatorEl
-        ? extractTextContent(creatorEl).trim().slice(0, 80) || undefined
-        : undefined;
+      let creator: string | undefined;
+      if (creatorEl) {
+        const text = extractTextContent(creatorEl).trim().slice(0, 80);
+        creator = text && !looksLikePrice(text) ? text : undefined;
+      }
 
       const priceEl = element.querySelector(
         '[class*="price"], [data-price], [class*="cost"], .a-price',
