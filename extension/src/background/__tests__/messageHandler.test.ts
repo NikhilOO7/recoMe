@@ -400,7 +400,11 @@ describe('messageHandler', () => {
 
       expect(res.success).toBe(true);
       expect(mockClearAll).toHaveBeenCalled();
-      expect(chrome.storage.local.remove).toHaveBeenCalledWith('recome_stats');
+      expect(chrome.storage.local.remove).toHaveBeenCalledWith([
+        'recome_stats',
+        'recome_api_keys',
+        'recome_focus',
+      ]);
     });
   });
 
