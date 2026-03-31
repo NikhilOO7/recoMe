@@ -17,6 +17,12 @@ export type Platform =
   | 'ebay'
   | 'walmart'
   | 'linkedin'
+  | 'tiktok'
+  | 'indeed'
+  | 'glassdoor'
+  | 'udemy'
+  | 'coursera'
+  | 'edx'
   | 'unknown';
 
 /** Browsing context state (auto-detected or manual override). */

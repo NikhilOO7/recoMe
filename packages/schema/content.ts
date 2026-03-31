@@ -7,7 +7,7 @@ export type ContentAction = 'hide' | 'suppress' | 'show' | 'boost' | 'prompt';
 export interface ContentMetadata {
   id: string;
   platform: Platform;
-  type: 'video' | 'product' | 'post' | 'ad' | 'article' | 'unknown';
+  type: 'video' | 'product' | 'post' | 'ad' | 'article' | 'course' | 'job' | 'unknown';
   title: string;
   creator?: string;
   topics: string[];

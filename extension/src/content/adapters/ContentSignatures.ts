@@ -246,6 +246,12 @@ const SIGNATURES: Record<Platform, ContentSignature> = {
   ebay: ebaySignature,
   walmart: walmartSignature,
   linkedin: genericSignature,
+  tiktok: genericSignature,
+  indeed: genericSignature,
+  glassdoor: genericSignature,
+  udemy: genericSignature,
+  coursera: genericSignature,
+  edx: genericSignature,
   unknown: genericSignature,
 };
 

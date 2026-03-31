@@ -10,6 +10,12 @@ import { EbayAdapter } from './adapters/EbayAdapter';
 import { WalmartAdapter } from './adapters/WalmartAdapter';
 import { GenericAdapter } from './adapters/GenericAdapter';
 import { LinkedInAdapter } from './adapters/LinkedInAdapter';
+import { TikTokAdapter } from './adapters/TikTokAdapter';
+import { IndeedAdapter } from './adapters/IndeedAdapter';
+import { GlassdoorAdapter } from './adapters/GlassdoorAdapter';
+import { UdemyAdapter } from './adapters/UdemyAdapter';
+import { CourseraAdapter } from './adapters/CourseraAdapter';
+import { EdxAdapter } from './adapters/EdxAdapter';
 import { createProactiveDwellTracker, createSmartPromptTrackers } from './DwellTracker';
 import { PlatformIntelligenceEngine } from './intelligence/PlatformIntelligenceEngine';
 import { migrateLegacyCache } from './adapters/SelectorDiscovery';
@@ -158,6 +164,24 @@ async function bootstrap(): Promise<void> {
       break;
     case 'linkedin':
       adapter = new LinkedInAdapter();
+      break;
+    case 'tiktok':
+      adapter = new TikTokAdapter();
+      break;
+    case 'indeed':
+      adapter = new IndeedAdapter();
+      break;
+    case 'glassdoor':
+      adapter = new GlassdoorAdapter();
+      break;
+    case 'udemy':
+      adapter = new UdemyAdapter();
+      break;
+    case 'coursera':
+      adapter = new CourseraAdapter();
+      break;
+    case 'edx':
+      adapter = new EdxAdapter();
       break;
     default: {
       // Unknown platform — use generic adapter so RecoMe works everywhere

@@ -27,6 +27,12 @@ export function detectPlatform(): Platform {
     return 'ebay';
   if (host.includes('walmart.com')) return 'walmart';
   if (host.includes('linkedin.com')) return 'linkedin';
+  if (host.includes('tiktok.com')) return 'tiktok';
+  if (host.includes('indeed.com')) return 'indeed';
+  if (host.includes('glassdoor.com')) return 'glassdoor';
+  if (host.includes('udemy.com')) return 'udemy';
+  if (host.includes('coursera.org')) return 'coursera';
+  if (host.includes('edx.org')) return 'edx';
   return 'unknown';
 }
 

@@ -24,6 +24,12 @@ const ALL_PLATFORMS: Platform[] = [
   'ebay',
   'walmart',
   'linkedin',
+  'tiktok',
+  'indeed',
+  'glassdoor',
+  'udemy',
+  'coursera',
+  'edx',
 ];
 const PLATFORM_ICONS: Record<Platform, string> = {
   youtube: '▶',
@@ -34,6 +40,12 @@ const PLATFORM_ICONS: Record<Platform, string> = {
   ebay: '🛍',
   walmart: 'W',
   linkedin: 'in',
+  tiktok: '♪',
+  indeed: '■',
+  glassdoor: '◆',
+  udemy: 'U',
+  coursera: 'C',
+  edx: 'X',
   unknown: '?',
 };
 

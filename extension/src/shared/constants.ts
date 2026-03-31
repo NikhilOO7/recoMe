@@ -101,6 +101,12 @@ export const PLATFORM_CONTEXT_MAP: Record<Platform, ContextBucket> = {
   ebay: 'shopping',
   walmart: 'shopping',
   linkedin: 'work',
+  tiktok: 'entertainment',
+  indeed: 'work',
+  glassdoor: 'work',
+  udemy: 'learning',
+  coursera: 'learning',
+  edx: 'learning',
   unknown: 'general',
 };
 

@@ -55,7 +55,14 @@
     "https://*.ebay.pl/*",
     "https://*.ebay.ph/*",
     "https://*.walmart.com/*",
-    "https://*.linkedin.com/*"
+    "https://*.linkedin.com/*",
+    "https://*.tiktok.com/*",
+    "https://*.indeed.com/*",
+    "https://*.glassdoor.com/*",
+    "https://*.glassdoor.co.uk/*",
+    "https://*.udemy.com/*",
+    "https://*.coursera.org/*",
+    "https://*.edx.org/*"
   ],
   "background": {
     "service_worker": "background.js",
@@ -111,7 +118,14 @@
         "https://*.ebay.pl/*",
         "https://*.ebay.ph/*",
         "https://*.walmart.com/*",
-        "https://*.linkedin.com/*"
+        "https://*.linkedin.com/*",
+        "https://*.tiktok.com/*",
+        "https://*.indeed.com/*",
+        "https://*.glassdoor.com/*",
+        "https://*.glassdoor.co.uk/*",
+        "https://*.udemy.com/*",
+        "https://*.coursera.org/*",
+        "https://*.edx.org/*"
       ],
       "js": ["content.js"],
       "css": ["content.css"],
@@ -144,7 +158,13 @@
         "https://*.instagram.com/*",
         "https://*.ebay.com/*",
         "https://*.walmart.com/*",
-        "https://*.linkedin.com/*"
+        "https://*.linkedin.com/*",
+        "https://*.tiktok.com/*",
+        "https://*.indeed.com/*",
+        "https://*.glassdoor.com/*",
+        "https://*.udemy.com/*",
+        "https://*.coursera.org/*",
+        "https://*.edx.org/*"
       ]
     }
   ],

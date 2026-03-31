@@ -356,6 +356,12 @@ const PLATFORM_MIN_CARDS: Record<string, number> = {
   facebook: 1,
   instagram: 1,
   linkedin: 1,
+  tiktok: 1,
+  indeed: 2,
+  glassdoor: 2,
+  udemy: 2,
+  coursera: 2,
+  edx: 2,
   unknown: 1,
 };
 

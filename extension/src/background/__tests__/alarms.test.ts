@@ -6,6 +6,7 @@ import { ALARM_NAMES, ALARM_INTERVALS } from '@shared/constants';
 globalThis.chrome = {
   alarms: {
     create: jest.fn(),
+    getAll: jest.fn().mockResolvedValue([]),
     onAlarm: { addListener: jest.fn() },
   },
   tabs: {
@@ -95,8 +96,8 @@ describe('alarms', () => {
   });
 
   describe('registerAlarms', () => {
-    it('creates all expected alarms', () => {
-      registerAlarms();
+    it('creates all expected alarms', async () => {
+      await registerAlarms();
 
       expect(chrome.alarms.create).toHaveBeenCalledTimes(7);
       expect(chrome.alarms.create).toHaveBeenCalledWith(ALARM_NAMES.decay, {
