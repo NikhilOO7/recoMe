@@ -76,7 +76,12 @@ export class InsightRenderer {
   }
 
   private showInsightToast(insight: ProactiveInsight): void {
-    const message = `${insight.title} — ${insight.benefit}`;
+    // Build message with top factor explanation for transparency
+    const topFactor = insight.factors
+      ?.filter((f) => f.weightedScore > 0)
+      .sort((a, b) => b.weightedScore - a.weightedScore)[0];
+    const why = topFactor ? ` (${topFactor.explanation.toLowerCase()})` : '';
+    const message = `${insight.title} — ${insight.benefit}${why}`;
 
     showToast(message, 'info', {
       onUndo: () => this.dismiss(insight.id),

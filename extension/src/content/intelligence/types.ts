@@ -11,6 +11,15 @@ export type InsightCategory =
   | 'trend'
   | 'alert';
 
+/** Factor contribution for explainable scoring */
+export interface InsightFactor {
+  name: string;
+  rawScore: number;
+  weight: number;
+  weightedScore: number;
+  explanation: string;
+}
+
 export interface ProactiveInsight {
   id: string;
   platform: Platform;
@@ -25,6 +34,8 @@ export interface ProactiveInsight {
   expiresAt?: number;
   platformContext: Record<string, unknown>;
   createdAt: number;
+  /** Factor breakdown explaining why this insight was surfaced */
+  factors?: InsightFactor[];
 }
 
 // ── Platform Profile ────────────────────────────────────────────────────────

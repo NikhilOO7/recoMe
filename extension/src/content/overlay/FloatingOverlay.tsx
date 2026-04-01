@@ -4,6 +4,7 @@ import { OverlayChat } from './OverlayChat';
 import { OverlayManager } from './OverlayManager';
 import { getOverlayStyles } from './OverlayStyles';
 import { createLogger } from '@shared/Logger';
+import { safeStorageSyncGet } from '@shared/storageSync';
 
 const log = createLogger('FloatingOverlay');
 
@@ -52,7 +53,7 @@ export class FloatingOverlay {
 
     // Check if overlay is enabled in settings
     try {
-      const r = await chrome.storage.sync.get('recome_settings');
+      const r = await safeStorageSyncGet('recome_settings');
       const settings = r['recome_settings'] as { overlay_enabled?: boolean } | undefined;
       if (settings?.overlay_enabled === false) {
         log.info('Overlay disabled in settings');

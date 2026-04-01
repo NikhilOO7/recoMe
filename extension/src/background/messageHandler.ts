@@ -20,6 +20,7 @@ import { getMonitoringCollector } from './monitoring/MonitoringCollector';
 import { handleMonitoringMessage } from './monitoring/monitoringHandlers';
 import type { Platform } from '@schema/context';
 import type { RecoMeMessage, MessageResponse } from '@shared/messages';
+import { safeStorageSyncGet, safeStorageSyncSet } from '@shared/storageSync';
 
 const log = createLogger('MessageHandler');
 
@@ -128,14 +129,20 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
 
     case 'GET_SETTINGS': {
       const [syncResult, localResult] = await Promise.all([
-        chrome.storage.sync.get('recome_settings'),
+        safeStorageSyncGet('recome_settings'),
         chrome.storage.local.get('recome_api_keys'),
       ]);
-      const base = syncResult['recome_settings'] ?? defaultSettings();
+      const base = (syncResult['recome_settings'] ?? defaultSettings()) as Record<string, unknown>;
       const keys = localResult['recome_api_keys'] as Record<string, string> | undefined;
-      // Merge API keys from local storage into settings response
+      // Merge masked API key indicators — the popup only needs to know
+      // whether a key is configured and show a preview, not the full secret.
+      // LLMClient reads keys directly from local storage.
       if (keys) {
-        Object.assign(base, keys);
+        for (const [k, v] of Object.entries(keys)) {
+          if (k.endsWith('_api_key') && typeof v === 'string' && v.trim()) {
+            base[k] = v.slice(0, 8) + '...';
+          }
+        }
       }
       return ok(base);
     }
@@ -271,7 +278,7 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
     case 'GET_RAW_STORAGE': {
       const [local, sync] = await Promise.all([
         chrome.storage.local.get(null),
-        chrome.storage.sync.get(null),
+        safeStorageSyncGet(null),
       ]);
       // Redact API keys from the response to prevent leaking secrets
       const redactedLocal = { ...local };
@@ -288,7 +295,7 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
     }
 
     case 'SAVE_SETTINGS': {
-      const current = await chrome.storage.sync.get('recome_settings');
+      const current = await safeStorageSyncGet('recome_settings');
       const existing = current['recome_settings'] ?? defaultSettings();
       const patch = { ...message.payload } as Record<string, unknown>;
 
@@ -311,7 +318,7 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
       }
 
       const merged = { ...existing, ...patch };
-      await chrome.storage.sync.set({ recome_settings: merged });
+      await safeStorageSyncSet({ recome_settings: merged });
       svc.invalidateSettingsCache();
       return ok(merged);
     }
@@ -719,6 +726,153 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
       const engine = new PriceAlertEngine();
       await engine.dismissAlert(message.payload.alertId);
       return ok(undefined);
+    }
+
+    // ── Sprint 2: Dashboard experience ──────────────────────────────────────
+
+    case 'GET_GRAPH_SUMMARY': {
+      const graph = svc.getGraph();
+      const memory = svc.getMemoryService();
+      const [entities, relations, memCount] = await Promise.all([
+        graph.getAllEntities(),
+        graph.getAllRelations(),
+        memory.getMemoryCount(),
+      ]);
+
+      // Group entities by type
+      const byType: Record<string, number> = {};
+      for (const e of entities) {
+        byType[e.type] = (byType[e.type] ?? 0) + 1;
+      }
+
+      // Top interests (positive relations sorted by weight)
+      const positiveRels = relations
+        .filter((r) => r.type === 'interested_in' || r.type === 'follows')
+        .sort((a, b) => b.weight - a.weight);
+      const topInterests = positiveRels.slice(0, 10).map((r) => {
+        const entity = entities.find((e) => e.id === r.target_id);
+        return {
+          id: r.target_id,
+          name: entity?.name ?? r.target_id,
+          type: entity?.type ?? 'unknown',
+          weight: r.weight,
+          relation: r.type,
+        };
+      });
+
+      // Top blocks (negative relations)
+      const negativeRels = relations
+        .filter((r) => r.type === 'not_interested_in' || r.type === 'blocked')
+        .sort((a, b) => b.weight - a.weight);
+      const topBlocks = negativeRels.slice(0, 10).map((r) => {
+        const entity = entities.find((e) => e.id === r.target_id);
+        return {
+          id: r.target_id,
+          name: entity?.name ?? r.target_id,
+          type: entity?.type ?? 'unknown',
+          weight: r.weight,
+          relation: r.type,
+        };
+      });
+
+      // Relation type counts
+      const relationCounts: Record<string, number> = {};
+      for (const r of relations) {
+        relationCounts[r.type] = (relationCounts[r.type] ?? 0) + 1;
+      }
+
+      return ok({
+        entityCount: entities.length,
+        relationCount: relations.length,
+        memoryCount: memCount,
+        entitiesByType: byType,
+        relationsByType: relationCounts,
+        topInterests,
+        topBlocks,
+        recentEntities: entities
+          .sort((a, b) => b.updated_at - a.updated_at)
+          .slice(0, 5)
+          .map((e) => ({ id: e.id, name: e.name, type: e.type, updated_at: e.updated_at })),
+      });
+    }
+
+    case 'GET_ACTION_HISTORY': {
+      const limit = message.payload?.limit ?? 50;
+      const decisions = getDecisionLog().slice(0, limit);
+      return ok(
+        decisions.map((d) => ({
+          id: d.id,
+          timestamp: d.timestamp,
+          action: d.result.action,
+          score: d.result.score,
+          title: d.content.title,
+          platform: d.content.platform,
+          type: d.content.type,
+          creator: d.content.creator,
+          reasons: d.result.factors?.map((f) => f.explanation) ?? [],
+          factors: d.result.factors ?? [],
+        })),
+      );
+    }
+
+    // ── Sprint 4: Agent productization ─────────────────────────────────────
+
+    case 'GET_AGENT_ACTIVITY': {
+      const brain = bootBrain();
+      const agents = brain.registry.getAll();
+      const stats = brain.getAgentStats();
+
+      const AGENT_META: Record<string, { label: string; description: string }> = {
+        filter: {
+          label: 'FilterAgent',
+          description:
+            'Controls feed quality by scoring and filtering content based on your preferences.',
+        },
+        scout: {
+          label: 'ScoutAgent',
+          description:
+            'Discovers opportunities like events, courses, deals, and articles relevant to your interests.',
+        },
+        shopper: {
+          label: 'ShopperAgent',
+          description:
+            'Provides shopping intelligence including price analysis, deal assessment, and product alternatives.',
+        },
+        advisor: {
+          label: 'AdvisorAgent',
+          description:
+            'Your personal assistant for answering questions and providing tailored recommendations.',
+        },
+        social: {
+          label: 'SocialAgent',
+          description:
+            'Tracks community trends, viral content, and social signals across platforms.',
+        },
+        guardian: {
+          label: 'GuardianAgent',
+          description:
+            'Audits privacy and safety, checking data access patterns and consent requirements.',
+        },
+      };
+
+      const activity = agents.map((agent) => {
+        const agentStats = stats[agent.name];
+        const meta = AGENT_META[agent.name] ?? {
+          label: agent.name,
+          description: agent.description,
+        };
+        return {
+          agent: agent.name,
+          label: meta.label,
+          description: meta.description,
+          lastRun: null as number | null,
+          tasksHandled: agentStats?.insightsSurfaced ?? 0,
+          avgConfidence: agentStats ? agentStats.effectivenessRate : 0.5,
+          recentInsights: [],
+        };
+      });
+
+      return ok(activity);
     }
 
     // Monitoring messages are handled before the switch via handleMonitoringMessage()

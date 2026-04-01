@@ -1,4 +1,5 @@
 import { TOAST_DURATION_MS } from '@shared/constants';
+import { escapeHtml } from '@shared/utils';
 
 type ToastType = 'success' | 'info' | 'warning' | 'error';
 
@@ -56,14 +57,6 @@ export function showToast(message: string, type: ToastType = 'info', options?: T
   }
 
   setTimeout(dismiss, options?.onUndo ? TOAST_DURATION_MS + 2000 : TOAST_DURATION_MS);
-}
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }
 
 let stylesInjected = false;

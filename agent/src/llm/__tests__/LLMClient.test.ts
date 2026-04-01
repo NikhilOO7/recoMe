@@ -20,6 +20,8 @@ beforeEach(() => {
   mockFetch = jest.fn();
   globalThis.fetch = mockFetch;
   jest.clearAllMocks();
+  // Default: no API keys in local storage (tests that need keys use configureProvider)
+  (chrome.storage.local.get as jest.Mock).mockResolvedValue({});
 });
 
 afterAll(() => {
@@ -30,9 +32,15 @@ afterAll(() => {
 
 function configureProvider(provider: string, key: string) {
   const keyField = `${provider}_api_key`;
+  // Settings (provider selection) in sync storage
   (chrome.storage.sync.get as jest.Mock).mockResolvedValue({
     recome_settings: {
       llm_provider: provider,
+    },
+  });
+  // API keys in local storage (security: never synced)
+  (chrome.storage.local.get as jest.Mock).mockResolvedValue({
+    recome_api_keys: {
       [keyField]: key,
     },
   });
@@ -65,7 +73,10 @@ describe('LLMClient', () => {
 
     it('returns false when provider is set but key is empty', async () => {
       (chrome.storage.sync.get as jest.Mock).mockResolvedValue({
-        recome_settings: { llm_provider: 'anthropic', anthropic_api_key: '' },
+        recome_settings: { llm_provider: 'anthropic' },
+      });
+      (chrome.storage.local.get as jest.Mock).mockResolvedValue({
+        recome_api_keys: { anthropic_api_key: '' },
       });
       const client = new LLMClient();
       expect(await client.isConfigured()).toBe(false);
@@ -297,6 +308,7 @@ describe('LLMClient', () => {
       // Invalidate and change config to empty
       client.invalidateConfig();
       (chrome.storage.sync.get as jest.Mock).mockResolvedValue({});
+      (chrome.storage.local.get as jest.Mock).mockResolvedValue({});
 
       expect(await client.isConfigured()).toBe(false);
     });

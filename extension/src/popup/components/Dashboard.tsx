@@ -1,5 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { StatsCard } from './StatsCard';
+import { GraphSummary } from './GraphSummary';
+import { ActionHistory } from './ActionHistory';
+import { LearningProgress } from './LearningProgress';
+import { AgentInsights } from './AgentInsights';
 import type { RecoMeStats, ContextBucket } from '@shared/types';
 
 const ALL_ACHIEVEMENTS = [
@@ -191,6 +195,18 @@ export function Dashboard() {
         <StatsCard label="Active blocks" value={blockedCount} icon="🚫" color="#f59e0b" />
         <StatsCard label="Memory entries" value={memoryCount} icon="🧠" color="#06b6d4" />
       </div>
+
+      {/* Learning progress — visible during early usage, hides when graph is mature */}
+      <LearningProgress />
+
+      {/* Preference graph summary — collapsible */}
+      <GraphSummary />
+
+      {/* AI Agent modules — shows which agents are active and their activity */}
+      <AgentInsights />
+
+      {/* Recent action history — decision timeline with explanations */}
+      <ActionHistory />
 
       {/* Achievements */}
       <div className="achievements">

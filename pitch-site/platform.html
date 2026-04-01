@@ -212,7 +212,7 @@
       <!-- Stats -->
       <div class="stat-row">
         <div class="stat-box">
-          <div class="sn" style="color:var(--infra)">7</div>
+          <div class="sn" style="color:var(--infra)">8</div>
           <div class="sl">API Endpoints</div>
         </div>
         <div class="stat-box">
@@ -309,10 +309,10 @@
         <div class="layer-body">
           <div class="layer-label">Layer 1</div>
           <h3>Platform API</h3>
-          <p>The foundation. OAuth 2.0 scoped access gives third-party developers controlled, consent-gated reads and writes to user preference graphs. Seven agent-powered endpoints handle every interaction — from reading taste preferences to submitting behavioral signals. Metered pricing means developers pay only for what they use, scaling from indie side projects to enterprise products.</p>
+          <p>The foundation. OAuth 2.0 scoped access gives third-party developers controlled, consent-gated reads and writes to user preference graphs. Eight agent-powered endpoints handle every interaction — from reading taste preferences to submitting behavioral signals. Metered pricing means developers pay only for what they use, scaling from indie side projects to enterprise products.</p>
           <div class="layer-tags">
             <span class="tag infra">OAuth 2.0</span>
-            <span class="tag infra">7 Endpoints</span>
+            <span class="tag infra">8 Endpoints</span>
             <span class="tag infra">Agent-Powered</span>
             <span class="tag gray">Metered Pricing</span>
             <span class="tag gray">$0.001/call</span>
@@ -399,7 +399,7 @@
   <div class="wrap" id="api-endpoints">
     <section>
       <div class="eyebrow infra">API Reference</div>
-      <h2 class="h2" style="margin-bottom:10px">7 Agent-Powered Endpoints</h2>
+      <h2 class="h2" style="margin-bottom:10px">8 Agent-Powered Endpoints</h2>
       <p class="sub" style="margin-bottom:36px">Every endpoint is backed by a dedicated AI agent. The API is stateless from the developer's perspective; the intelligence lives inside the agent layer.</p>
 
       <div style="overflow-x:auto">
@@ -447,7 +447,13 @@
               <td><span class="method get">GET</span></td>
               <td><span class="ep-path">/api/v2/social/similar-users</span></td>
               <td><span class="ep-agent">CommunityAgent</span></td>
-              <td class="ep-desc">Find anonymized users with statistically similar preference graphs for social discovery or collaborative filtering.</td>
+              <td class="ep-desc">Find anonymized users with 60%+ taste overlap (Taste Twins) for collaborative filtering. Returns similarity scores, overlap categories, and twin count — never PII.</td>
+            </tr>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td><span class="ep-path">/api/v2/social/twin-recommendations</span></td>
+              <td><span class="ep-agent">CommunityAgent</span></td>
+              <td class="ep-desc">Get cross-platform recommendations sourced from Taste Twins — products, courses, posts, and videos that matched users discovered and engaged with highly.</td>
             </tr>
             <tr>
               <td><span class="method get">GET</span></td>
@@ -484,6 +490,10 @@
           <div class="scope-item">
             <span class="scope-name">recome:recommendations:read</span>
             <span class="scope-desc">Retrieve personalized content and product recommendations powered by the user's graph.</span>
+          </div>
+          <div class="scope-item">
+            <span class="scope-name">recome:social:twins</span>
+            <span class="scope-desc">Access Taste Twin matching and cross-user recommendations. Returns anonymized similarity data and twin-sourced recommendations — never user identities.</span>
           </div>
           <div class="scope-item">
             <span class="scope-name">recome:analytics:read</span>
@@ -712,6 +722,185 @@
 </div>
 
 <!-- ════════════════════════════════════════════════════════════════════ -->
+<!-- 7B. TASTE TWIN NETWORK — COLLABORATIVE FILTERING                     -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<div class="wrap" id="taste-twins">
+  <section>
+    <div class="eyebrow infra">The Moat Within the Moat</div>
+    <h2 class="h2" style="margin-bottom:10px">Taste Twin Network</h2>
+    <p class="sub" style="margin-bottom:36px">When two users share 60%+ taste overlap across their preference graphs, they become <strong style="color:var(--infra)">Taste Twins</strong>. What one discovers, the other sees — across every platform, every product category, every app in the ecosystem. This is collaborative filtering rebuilt on top of a universal preference graph.</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start;margin-bottom:48px">
+      <div>
+        <h3 class="h3" style="margin-bottom:14px">How It Works</h3>
+
+        <div class="wf">
+          <div class="wf-step">
+            <div class="wf-n" style="background:var(--infra)">1</div>
+            <div class="wf-txt">
+              <h5>Graph Similarity Detection</h5>
+              <p>CommunityAgent continuously computes taste-overlap scores between anonymized preference graphs. When two users cross the <strong style="color:var(--infra)">60% similarity threshold</strong>, they form a Taste Twin pair. Matching is weighted — deep preferences (high-confidence, long-held) count more than casual signals.</p>
+            </div>
+          </div>
+          <div class="wf-arrow">&#x2193;</div>
+          <div class="wf-step">
+            <div class="wf-n" style="background:var(--infra)">2</div>
+            <div class="wf-txt">
+              <h5>Cross-Pollination Engine</h5>
+              <p>When User A discovers a product, course, post, or video that scores highly against their graph, CommunityAgent checks: does this content also match User B's graph? If both the <em>content-to-graph</em> score and the <em>twin-similarity</em> score exceed thresholds, the recommendation propagates.</p>
+            </div>
+          </div>
+          <div class="wf-arrow">&#x2193;</div>
+          <div class="wf-step">
+            <div class="wf-n" style="background:var(--infra)">3</div>
+            <div class="wf-txt">
+              <h5>Privacy-First Delivery</h5>
+              <p>User B sees: <em>"People with similar taste discovered this."</em> They never see User A's identity, browsing history, or graph details. The recommendation travels through the graph layer — anonymized, aggregated, and consent-gated at every step.</p>
+            </div>
+          </div>
+          <div class="wf-arrow">&#x2193;</div>
+          <div class="wf-step">
+            <div class="wf-n" style="background:var(--infra)">4</div>
+            <div class="wf-txt">
+              <h5>Feedback Loop Strengthens the Match</h5>
+              <p>When User B engages with the recommendation, the twin-similarity score updates. Accurate matches strengthen the pair. Poor matches decay it. The network self-corrects over time.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Diagram: Taste Twin Network -->
+      <div>
+        <div class="diagram-wrap" style="padding:24px">
+          <p style="font-size:12px;color:rgba(255,255,255,0.3);margin-bottom:16px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;">Taste Twin Network — Cross-Platform Flow</p>
+          <svg viewBox="0 0 380 480" width="100%" style="display:block;">
+            <defs>
+              <marker id="arr-tw" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                <path d="M0,1 L7,4 L0,7 L2,4 Z" fill="rgba(16,185,129,0.6)"/>
+              </marker>
+            </defs>
+
+            <!-- User A -->
+            <circle cx="100" cy="60" r="36" fill="rgba(35,86,232,0.12)" stroke="#2356e8" stroke-width="1.5"/>
+            <text x="100" y="56" text-anchor="middle" font-size="11" font-weight="700" fill="#93b4fd" font-family="system-ui">User A</text>
+            <text x="100" y="70" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.3)" font-family="system-ui">browses Udemy</text>
+
+            <!-- User B -->
+            <circle cx="280" cy="60" r="36" fill="rgba(124,58,237,0.12)" stroke="#7c3aed" stroke-width="1.5"/>
+            <text x="280" y="56" text-anchor="middle" font-size="11" font-weight="700" fill="#c4b5fd" font-family="system-ui">User B</text>
+            <text x="280" y="70" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.3)" font-family="system-ui">browses YouTube</text>
+
+            <!-- Similarity bar -->
+            <rect x="130" y="48" width="56" height="24" rx="6" fill="rgba(16,185,129,0.15)" stroke="rgba(16,185,129,0.4)" stroke-width="1"/>
+            <text x="158" y="64" text-anchor="middle" font-size="10" font-weight="700" fill="#6ee7b7" font-family="system-ui">73%</text>
+
+            <!-- Arrows to graphs -->
+            <line x1="100" y1="96" x2="100" y2="140" stroke="rgba(35,86,232,0.4)" stroke-width="1.5" marker-end="url(#arr-tw)"/>
+            <line x1="280" y1="96" x2="280" y2="140" stroke="rgba(124,58,237,0.4)" stroke-width="1.5" marker-end="url(#arr-tw)"/>
+
+            <!-- Graph A -->
+            <rect x="30" y="144" width="140" height="80" rx="10" fill="rgba(35,86,232,0.06)" stroke="rgba(35,86,232,0.2)" stroke-width="1"/>
+            <text x="100" y="166" text-anchor="middle" font-size="10" font-weight="700" fill="#93b4fd" font-family="system-ui">Graph A</text>
+            <text x="100" y="182" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.3)" font-family="system-ui">ML(0.92) Design(0.85)</text>
+            <text x="100" y="196" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.3)" font-family="system-ui">Python(0.88) UX(0.78)</text>
+            <text x="100" y="210" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.25)" font-family="system-ui">Finds: "ML Ops" course</text>
+
+            <!-- Graph B -->
+            <rect x="210" y="144" width="140" height="80" rx="10" fill="rgba(124,58,237,0.06)" stroke="rgba(124,58,237,0.2)" stroke-width="1"/>
+            <text x="280" y="166" text-anchor="middle" font-size="10" font-weight="700" fill="#c4b5fd" font-family="system-ui">Graph B</text>
+            <text x="280" y="182" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.3)" font-family="system-ui">ML(0.89) Stats(0.82)</text>
+            <text x="280" y="196" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.3)" font-family="system-ui">Python(0.91) Data(0.84)</text>
+            <text x="280" y="210" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.25)" font-family="system-ui">Hasn't seen "ML Ops"</text>
+
+            <!-- CommunityAgent -->
+            <line x1="100" y1="224" x2="100" y2="270" stroke="rgba(16,185,129,0.4)" stroke-width="1.5"/>
+            <line x1="280" y1="224" x2="280" y2="270" stroke="rgba(16,185,129,0.4)" stroke-width="1.5"/>
+            <rect x="60" y="274" width="260" height="44" rx="10" fill="rgba(16,185,129,0.08)" stroke="rgba(16,185,129,0.3)" stroke-width="1.5"/>
+            <text x="190" y="294" text-anchor="middle" font-size="11" font-weight="700" fill="#6ee7b7" font-family="system-ui">CommunityAgent</text>
+            <text x="190" y="308" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.3)" font-family="system-ui">73% overlap + content scores &gt; threshold</text>
+
+            <!-- Arrow to recommendation -->
+            <line x1="190" y1="318" x2="190" y2="356" stroke="rgba(16,185,129,0.5)" stroke-width="1.5" marker-end="url(#arr-tw)"/>
+
+            <!-- Recommendation propagates -->
+            <rect x="70" y="360" width="240" height="50" rx="10" fill="rgba(16,185,129,0.12)" stroke="rgba(16,185,129,0.35)" stroke-width="1.5"/>
+            <text x="190" y="382" text-anchor="middle" font-size="11" font-weight="700" fill="#6ee7b7" font-family="system-ui">Recommendation Propagates</text>
+            <text x="190" y="398" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.35)" font-family="system-ui">User B sees: "People with similar taste found this"</text>
+
+            <!-- Cross-platform labels -->
+            <line x1="190" y1="410" x2="100" y2="448" stroke="rgba(35,86,232,0.3)" stroke-width="1"/>
+            <line x1="190" y1="410" x2="190" y2="448" stroke="rgba(217,119,6,0.3)" stroke-width="1"/>
+            <line x1="190" y1="410" x2="280" y2="448" stroke="rgba(124,58,237,0.3)" stroke-width="1"/>
+
+            <text x="100" y="466" text-anchor="middle" font-size="10" fill="#93b4fd" font-family="system-ui">Extension</text>
+            <text x="190" y="466" text-anchor="middle" font-size="10" fill="#fcd34d" font-family="system-ui">SDK Apps</text>
+            <text x="280" y="466" text-anchor="middle" font-size="10" fill="#c4b5fd" font-family="system-ui">Mobile App</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cross-Platform Examples -->
+    <h3 class="h3" style="margin-bottom:18px">Everywhere. Not Just One App.</h3>
+    <p style="font-size:14px;color:rgba(255,255,255,0.45);margin-bottom:28px;max-width:700px;line-height:1.7">Taste Twins don't stop at the extension. The same matching engine powers recommendations across <em>every product in the ecosystem</em> — and any third-party app integrated via the SDK or Platform API.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:36px">
+
+      <div class="card" style="border-color:rgba(35,86,232,0.2)">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#93b4fd;margin-bottom:10px">Browser Extension</div>
+        <p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.65">
+          User A finds an underrated Udemy course on ML Ops. User B — browsing YouTube for ML tutorials — sees an inline insight: <em>"Taste-matched users rated this course highly."</em> Cross-platform, cross-content-type recommendation.
+        </p>
+      </div>
+
+      <div class="card" style="border-color:rgba(13,148,136,0.2)">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#5eead4;margin-bottom:10px">Mobile App</div>
+        <p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.65">
+          AdvisorAgent surfaces a weekly "Taste Twin Picks" feed — products, videos, courses, and articles your taste twins discovered this week. A curated newsletter powered by real preference graphs, not algorithmic engagement bait.
+        </p>
+      </div>
+
+      <div class="card" style="border-color:rgba(217,119,6,0.2)">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#fcd34d;margin-bottom:10px">SDK / Third-Party Apps</div>
+        <p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.65">
+          A podcast app using the RecoMe SDK calls <code style="font-family:var(--mono);font-size:11px;color:var(--infra)">/api/v2/social/similar-users</code> and shows: <em>"Listeners like you also follow these shows."</em> Collaborative filtering without building a rec engine.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Thresholds -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:36px">
+      <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:12px;padding:20px;text-align:center">
+        <div style="font-size:28px;font-weight:900;color:#6ee7b7;line-height:1">60%</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px">Min overlap for Taste Twin pairing</div>
+      </div>
+      <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:12px;padding:20px;text-align:center">
+        <div style="font-size:28px;font-weight:900;color:#6ee7b7;line-height:1">70%+</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px">High-confidence twin (priority propagation)</div>
+      </div>
+      <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:12px;padding:20px;text-align:center">
+        <div style="font-size:28px;font-weight:900;color:#6ee7b7;line-height:1">0</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px">PII exchanged between twins</div>
+      </div>
+      <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:12px;padding:20px;text-align:center">
+        <div style="font-size:28px;font-weight:900;color:#6ee7b7;line-height:1">&#x221E;</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px">Platforms the recs can cross</div>
+      </div>
+    </div>
+
+    <!-- Why this is a moat -->
+    <div class="callout infra">
+      <div class="callout-ico">&#x1F3AF;</div>
+      <div>
+        <h4>Why Taste Twins are a compounding moat</h4>
+        <p>Every new user in the network makes every existing user's recommendations better. Every new platform integrated via the SDK expands the content surface area that twins can cross-pollinate from. Netflix can't recommend you a Udemy course. Spotify can't tell you about a trending LinkedIn post. But a Taste Twin who shares 73% of your preference graph and browses all three platforms? That's a recommendation engine no single platform can build alone. <strong style="color:var(--infra)">The more users, the more platforms, the more products — the better every recommendation gets.</strong> This is the network effect that makes the preference graph defensible.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
 <!-- 8. MONETIZATION                                                      -->
 <!-- ════════════════════════════════════════════════════════════════════ -->
 <div class="wrap">
@@ -726,7 +915,7 @@
         <div class="mc-num">Stream 1</div>
         <h3>API Metered Access</h3>
         <div class="mc-price">$0.001/call</div>
-        <p>Pay-as-you-go for API calls across all 7 endpoints. Developer plan at $29/mo for up to 30,000 calls. Growth plan at $299/mo for up to 500,000 calls. Enterprise: custom volume pricing. Scales naturally with product adoption.</p>
+        <p>Pay-as-you-go for API calls across all 8 endpoints. Developer plan at $29/mo for up to 30,000 calls. Growth plan at $299/mo for up to 500,000 calls. Enterprise: custom volume pricing. Scales naturally with product adoption.</p>
       </div>
 
       <div class="mono-card">

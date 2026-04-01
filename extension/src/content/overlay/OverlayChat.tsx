@@ -1,12 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Dashboard } from '../../popup/components/Dashboard';
 import { SettingsPanel } from '../../popup/components/SettingsPanel';
 import { AgentChat } from '../../popup/components/AgentChat';
-import { Onboarding } from '../../popup/components/Onboarding';
+import { Onboarding, type SeedPreferences } from '../../popup/components/Onboarding';
+import {
+  loadPanelState,
+  completeOnboarding,
+  persistActiveTab,
+  type PanelTab,
+  type PanelMode,
+} from '../../shared/PanelState';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-type OverlayTab = 'dashboard' | 'agent' | 'settings';
 type Theme = 'light' | 'dark';
 
 export interface OverlayChatProps {
@@ -59,19 +65,26 @@ function OverlayHeader({
 // ── Main Component ──────────────────────────────────────────────────────────
 
 export function OverlayChat({ onClose, theme, onToggleTheme }: OverlayChatProps) {
-  const [activeTab, setActiveTab] = useState<OverlayTab>('dashboard');
-  const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null);
+  const [activeTab, setActiveTab] = useState<PanelTab>('dashboard');
+  const [panelMode, setPanelMode] = useState<PanelMode>('loading');
 
   useEffect(() => {
-    chrome.storage.sync
-      .get('recome_onboarding_done')
-      .then((r) => {
-        setOnboardingDone(!!r['recome_onboarding_done']);
-      })
-      .catch(() => setOnboardingDone(true));
+    loadPanelState().then((snapshot) => {
+      setPanelMode(snapshot.mode);
+      setActiveTab(snapshot.activeTab);
+    });
   }, []);
 
-  async function handleOnboardingComplete(quickBlocks: string[], quickLikes: string[]) {
+  const handleTabChange = useCallback((tab: PanelTab) => {
+    setActiveTab(tab);
+    persistActiveTab(tab);
+  }, []);
+
+  async function handleOnboardingComplete(
+    quickBlocks: string[],
+    quickLikes: string[],
+    seedPrefs?: SeedPreferences,
+  ) {
     for (const topic of quickBlocks) {
       await chrome.runtime
         .sendMessage({ type: 'BLOCK_TOPIC', payload: { topic } })
@@ -82,20 +95,39 @@ export function OverlayChat({ onClose, theme, onToggleTheme }: OverlayChatProps)
         .sendMessage({ type: 'LIKE_TOPIC', payload: { topic } })
         .catch(() => undefined);
     }
-    await chrome.storage.sync.set({ recome_onboarding_done: true });
-    setOnboardingDone(true);
+    // Save seed preferences for cold-start scoring (now also saved from overlay)
+    if (seedPrefs) {
+      await chrome.storage.local
+        .set({
+          recome_seed_prefs: seedPrefs,
+          recome_seed_prefs_at: new Date().toISOString(),
+        })
+        .catch(() => undefined);
+      const aggressivenessMap = { casual: 0.3, moderate: 0.5, power: 0.8 };
+      await chrome.runtime
+        .sendMessage({
+          type: 'SAVE_SETTINGS',
+          payload: { aggressiveness: aggressivenessMap[seedPrefs.intensity] },
+        })
+        .catch(() => undefined);
+    }
+    await completeOnboarding();
+    setPanelMode('dashboard_default');
   }
 
   // Still loading onboarding state
-  if (onboardingDone === null) return null;
+  if (panelMode === 'loading') return null;
 
   // Show onboarding if not complete
-  if (!onboardingDone) {
+  if (panelMode === 'onboarding_required' || panelMode === 'onboarding_replay') {
     return (
       <>
         <OverlayHeader theme={theme} onToggleTheme={onToggleTheme} onClose={onClose} />
         <div className="recome-overlay-popup-content">
-          <Onboarding onComplete={handleOnboardingComplete} />
+          <Onboarding
+            onComplete={handleOnboardingComplete}
+            isReplay={panelMode === 'onboarding_replay'}
+          />
         </div>
       </>
     );
@@ -109,19 +141,19 @@ export function OverlayChat({ onClose, theme, onToggleTheme }: OverlayChatProps)
       <div className="recome-tab-nav">
         <button
           className={`recome-tab-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
-          onClick={() => setActiveTab('dashboard')}
+          onClick={() => handleTabChange('dashboard')}
         >
           Dashboard
         </button>
         <button
           className={`recome-tab-btn ${activeTab === 'agent' ? 'active' : ''}`}
-          onClick={() => setActiveTab('agent')}
+          onClick={() => handleTabChange('agent')}
         >
           Agent
         </button>
         <button
           className={`recome-tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
-          onClick={() => setActiveTab('settings')}
+          onClick={() => handleTabChange('settings')}
         >
           Settings
         </button>
@@ -136,7 +168,7 @@ export function OverlayChat({ onClose, theme, onToggleTheme }: OverlayChatProps)
 
       {activeTab === 'agent' && (
         <div className="recome-overlay-popup-agent">
-          <AgentChat onNavigateToSettings={() => setActiveTab('settings')} />
+          <AgentChat onNavigateToSettings={() => handleTabChange('settings')} />
         </div>
       )}
 

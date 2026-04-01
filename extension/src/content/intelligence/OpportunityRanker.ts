@@ -3,6 +3,7 @@ import type {
   RawOpportunity,
   RankingWeights,
   InsightFrequencyConfig,
+  InsightFactor,
 } from './types';
 import { DEFAULT_RANKING_WEIGHTS, DEFAULT_FREQUENCY_CONFIG } from './types';
 import type { Platform } from '@schema/context';
@@ -50,15 +51,15 @@ export class OpportunityRanker {
     if (limit <= 0) return [];
 
     const scored = opportunities
-      .map((opp) => ({
-        opp,
-        score: this.scoreOpportunity(opp, userInterests),
-      }))
+      .map((opp) => {
+        const breakdown = this.scoreWithFactors(opp, userInterests);
+        return { opp, score: breakdown.total, factors: breakdown.factors };
+      })
       .filter((s) => s.score >= this.config.minRelevanceScore)
       .sort((a, b) => b.score - a.score);
 
     const results: ProactiveInsight[] = [];
-    for (const { opp, score } of scored) {
+    for (const { opp, score, factors } of scored) {
       if (results.length >= limit) break;
 
       const id = `insight_${++this.idCounter}_${Date.now()}`;
@@ -78,6 +79,7 @@ export class OpportunityRanker {
         expiresAt: opp.expiresAt,
         platformContext: opp.platformContext,
         createdAt: Date.now(),
+        factors,
       });
 
       this.shownInsights.add(opp.title);
@@ -90,18 +92,64 @@ export class OpportunityRanker {
     return results;
   }
 
-  private scoreOpportunity(opp: RawOpportunity, userInterests: string[]): number {
+  private scoreWithFactors(
+    opp: RawOpportunity,
+    userInterests: string[],
+  ): { total: number; factors: InsightFactor[] } {
     const interestMatch = this.computeInterestMatch(opp, userInterests);
     const benefitClarity = opp.benefit.length > 10 ? 0.8 : 0.3;
     const timeliness = opp.timeliness;
     const novelty = this.shownInsights.has(opp.title) ? 0 : 0.8;
 
-    return (
-      this.weights.interestMatch * interestMatch +
-      this.weights.benefitClarity * benefitClarity +
-      this.weights.timeliness * timeliness +
-      this.weights.novelty * novelty
-    );
+    const factors: InsightFactor[] = [
+      {
+        name: 'Relevance',
+        rawScore: interestMatch,
+        weight: this.weights.interestMatch,
+        weightedScore: this.weights.interestMatch * interestMatch,
+        explanation:
+          interestMatch >= 0.6
+            ? 'Closely matches your known interests'
+            : interestMatch >= 0.3
+              ? 'Partially related to your interests'
+              : 'Not strongly connected to your interests',
+      },
+      {
+        name: 'Evidence quality',
+        rawScore: benefitClarity,
+        weight: this.weights.benefitClarity,
+        weightedScore: this.weights.benefitClarity * benefitClarity,
+        explanation:
+          benefitClarity >= 0.6
+            ? 'Clear benefit explained'
+            : 'Limited benefit information available',
+      },
+      {
+        name: 'Urgency',
+        rawScore: timeliness,
+        weight: this.weights.timeliness,
+        weightedScore: this.weights.timeliness * timeliness,
+        explanation:
+          timeliness >= 0.7
+            ? 'Time-sensitive opportunity'
+            : timeliness >= 0.4
+              ? 'Moderately time-relevant'
+              : 'No urgency detected',
+      },
+      {
+        name: 'Novelty',
+        rawScore: novelty,
+        weight: this.weights.novelty,
+        weightedScore: this.weights.novelty * novelty,
+        explanation:
+          novelty > 0
+            ? 'New to you — not previously shown'
+            : 'You have seen similar content before',
+      },
+    ];
+
+    const total = factors.reduce((sum, f) => sum + f.weightedScore, 0);
+    return { total, factors };
   }
 
   private computeInterestMatch(opp: RawOpportunity, userInterests: string[]): number {

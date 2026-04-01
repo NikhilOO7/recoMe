@@ -12,6 +12,7 @@ import { buildPathPattern, loadPathAwareCache, savePathAwareCache } from './Path
 import { SELECTOR_HEALTH_CHECK_INTERVAL_MS } from '@shared/constants';
 import { triggerPlatformDismiss } from './PlatformFeedback';
 import { createLogger } from '@shared/Logger';
+import { escapeHtml } from '@shared/utils';
 
 export interface AdapterConfig {
   platform: Platform;
@@ -84,6 +85,9 @@ export abstract class BaseAdapter {
   private observer: MutationObserver | null = null;
   /** Permanent body-level observer — always running; catches modals, overlays, lazy sections */
   private bodyObserver: MutationObserver | null = null;
+  // P3.2: Capped collections to prevent unbounded memory growth on long sessions
+  private static readonly MAX_PROCESSED_IDS = 2000;
+  private static readonly MAX_COMMERCE_DECISIONS = 500;
   private readonly processedIds = new Set<string>();
   private retryTimers: ReturnType<typeof setTimeout>[] = [];
   // Tracks how many retry attempts we've made per card id (key = id)
@@ -221,7 +225,11 @@ export abstract class BaseAdapter {
     const el = element as HTMLElement;
     const isSearch = this.isUserInitiatedSearch();
 
-    // Store decision for explanation popovers
+    // Store decision for explanation popovers (P3.2: cap to prevent unbounded growth)
+    if (this.commerceDecisions.size >= BaseAdapter.MAX_COMMERCE_DECISIONS) {
+      const first = this.commerceDecisions.keys().next().value;
+      if (first !== undefined) this.commerceDecisions.delete(first);
+    }
     this.commerceDecisions.set(decision.candidateId, decision);
 
     // Apply visual treatment based on decision type
@@ -552,8 +560,8 @@ export abstract class BaseAdapter {
       btn.dataset.intentType = mode.intentType;
       btn.dataset.variant = 'dim';
       btn.innerHTML = `
-        <span class="recome-menu-icon recome-icon-text">${mode.icon}</span>
-        <span class="recome-menu-label">${mode.label}</span>
+        <span class="recome-menu-icon recome-icon-text">${escapeHtml(mode.icon)}</span>
+        <span class="recome-menu-label">${escapeHtml(mode.label)}</span>
       `;
       menu.appendChild(btn);
     }
@@ -649,8 +657,8 @@ export abstract class BaseAdapter {
     if (def.value) btn.dataset.value = def.value;
     btn.dataset.action = def.action;
     btn.innerHTML = `
-      <span class="recome-menu-icon recome-icon-text">${def.icon}</span>
-      <span class="recome-menu-label">${def.label}</span>
+      <span class="recome-menu-icon recome-icon-text">${escapeHtml(def.icon)}</span>
+      <span class="recome-menu-label">${escapeHtml(def.label)}</span>
     `;
     return btn;
   }
@@ -672,8 +680,8 @@ export abstract class BaseAdapter {
     btn.dataset.entityId = def.entityId;
     if (def.variant) btn.dataset.variant = def.variant;
     btn.innerHTML = `
-      <span class="recome-menu-icon recome-icon-text">${def.icon}</span>
-      <span class="recome-menu-label">${def.label}</span>
+      <span class="recome-menu-icon recome-icon-text">${escapeHtml(def.icon)}</span>
+      <span class="recome-menu-label">${escapeHtml(def.label)}</span>
     `;
     return btn;
   }
@@ -1141,6 +1149,15 @@ export abstract class BaseAdapter {
   }
 
   protected markProcessed(id: string): void {
+    // P3.2: Evict oldest half when cap is reached to bound memory
+    if (this.processedIds.size >= BaseAdapter.MAX_PROCESSED_IDS) {
+      const half = Math.floor(BaseAdapter.MAX_PROCESSED_IDS / 2);
+      let count = 0;
+      for (const old of this.processedIds) {
+        if (count++ >= half) break;
+        this.processedIds.delete(old);
+      }
+    }
     this.processedIds.add(id);
   }
 
@@ -1347,10 +1364,13 @@ export abstract class BaseAdapter {
    * ad-blockers injecting shadow-rooted containers, dark-mode extensions).
    */
   private queryShadowRoots(root: Element | Document, selector: string, depth = 0): Element[] {
-    if (depth > 5) return []; // Limit depth to prevent runaway recursion
+    if (depth > 3) return []; // Limit depth to prevent runaway recursion
     const results: Element[] = [];
-    const hosts = root.querySelectorAll('*');
-    for (const host of hosts) {
+    // P3.2: Only scan custom elements (tag names with hyphens) — standard elements
+    // never have shadow roots. This avoids scanning every element in the document.
+    const customElements = root.querySelectorAll('*');
+    for (const host of customElements) {
+      if (!host.tagName.includes('-')) continue; // Skip non-custom elements
       const shadow = host.shadowRoot;
       if (!shadow) continue; // Only open shadow roots are accessible
       const found = shadow.querySelectorAll(selector);
@@ -1498,7 +1518,12 @@ export abstract class BaseAdapter {
     if (this.healthCheckInterval) return;
 
     this.healthCheckInterval = setInterval(() => {
-      const count = document.querySelectorAll(this.activeCardSelector).length;
+      // P3.2: Scope query to feed container when available to avoid full-document scan
+      const scope =
+        this.observedFeedEl && document.contains(this.observedFeedEl)
+          ? this.observedFeedEl
+          : document;
+      const count = scope.querySelectorAll(this.activeCardSelector).length;
       const record = this.healthMonitor.recordCheck(
         this.pathPattern,
         this.activeCardSelector,

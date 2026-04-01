@@ -256,7 +256,7 @@ export function HealthTab() {
         </Section>
 
         {/* Memory & Learning */}
-        <Section title="Memory &amp; Learning">
+        <Section title="Memory & Learning">
           <Stat label="Memory Entries" value={health.memoryEntryCount} />
           <Stat label="Graph Entities" value={health.graphEntityCount} />
           <Stat label="Graph Relations" value={health.graphRelationCount} />
@@ -265,7 +265,7 @@ export function HealthTab() {
         </Section>
 
         {/* Agents & Intelligence */}
-        <Section title="Agents &amp; Intelligence">
+        <Section title="Agents & Intelligence">
           <Stat label="Brain Tasks Processed" value={health.brainTasksProcessed} />
           <Stat label="Insights Generated" value={health.insightsGenerated} />
           <Stat label="Insight Act Rate" value={pct(health.insightActRate)} />
@@ -523,8 +523,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
           borderBottom: '1px solid var(--border)',
           paddingBottom: 4,
         }}
-        dangerouslySetInnerHTML={{ __html: title }}
-      />
+      >
+        {title}
+      </div>
       {children}
     </div>
   );

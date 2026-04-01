@@ -36,24 +36,42 @@ export class WalmartAdapter extends BaseAdapter {
         '[data-type="itemStack"]',
         '[data-testid="item-tile"]',
         '.product-tile',
+        // Tempo product tile inside grids and carousels
+        '[data-testid="product-tile"]',
 
         // ── Browse / Category pages ─────────────────────────────────────
         '[data-testid="browse-item"]',
         '.browse-grid-item',
         '[data-testid="category-item"]',
 
+        // ── Homepage hero / featured product tiles ──────────────────────
+        '[data-testid="hero-item"]',
+        '[data-testid="featured-item"]',
+        '[data-automation-id="hero-product"]',
+        // Homepage category shelf items (common on walmart.com landing)
+        'section[data-testid] [data-item-id]',
+
         // ── Deals / Rollback / Flash deals ──────────────────────────────
         '[data-testid="deal-card"]',
         '.rollback-item',
         '[data-automation-id="deal-container"]',
         '.flash-deal-card',
+        // Rollback / clearance grid items
+        '[data-testid="rollback-item"]',
+        '[data-testid="clearance-item"]',
 
         // ── Product page — "Customers also considered" / recommendations
         '[data-testid="recommendation-card"]',
         '[data-testid="also-considered-card"]',
         '.product-recommendation-card',
-        // Carousel items on product pages
+        // Carousel items — multiple carousel framework patterns
         '.carousel-cell[data-item-id]',
+        // Walmart's own carousel (not Slick/Flickity)
+        '[data-testid="carousel-item"]',
+        '.carousel-product-card',
+        // Generic: any product tile inside a carousel container
+        '[role="group"] [data-item-id]',
+        '[data-testid="product-carousel"] [data-item-id]',
 
         // ── Sponsored items (still need to detect, even if suppressed) ──
         '[data-automation-id="product-container"][data-sponsored="true"]',
@@ -90,9 +108,14 @@ export class WalmartAdapter extends BaseAdapter {
         // Browse / category
         '[data-testid="browse-grid"]',
         '[data-testid="category-grid"]',
+        // Homepage shelves and carousels
+        '[data-testid="product-carousel"]',
+        '[data-testid="tempo-module"]',
+        '[data-testid="homepage-content"]',
         // Deals
         '[data-testid="deal-grid"]',
         '.flash-deals-container',
+        '[data-testid="rollback-grid"]',
         // Product page recommendations
         '[data-testid="recommendations"]',
         '[data-testid="also-considered"]',
@@ -126,10 +149,16 @@ export class WalmartAdapter extends BaseAdapter {
         // Newer Tempo-based cards
         element.querySelector('[data-testid="product-title"]') ??
         element.querySelector('[data-testid="item-title"]') ??
+        // Carousel product cards (link text often serves as title)
+        element.querySelector('[data-testid="product-tile"] a[aria-label]') ??
         // Deal cards
         element.querySelector('[data-testid="deal-title"]') ??
-        element.querySelector('.deal-card-title');
+        element.querySelector('.deal-card-title') ??
+        // Fallback: first link with a product-like href
+        element.querySelector('a[href*="/ip/"]');
       let title = titleEl ? extractTextContent(titleEl) : '';
+      // Carousel cards sometimes have title only in aria-label
+      if (!title && titleEl) title = titleEl.getAttribute('aria-label') ?? '';
       if (!title) title = heuristicTitle(element) ?? '';
       if (!title) return null;
 

@@ -159,6 +159,27 @@ export class EbayAdapter extends BaseAdapter {
         !!element.querySelector('[aria-label*="Sponsored"]') ||
         !!element.querySelector('.s-item__sep-sponsored');
 
+      // Auction vs. Buy It Now detection
+      const biddingEl = element.querySelector('.s-item__bids, .s-item__bidCount, [class*="bid"]');
+      const isAuction = !!biddingEl;
+      const bidText = biddingEl?.textContent?.trim() ?? '';
+
+      // Item condition (New, Used, Refurbished, etc.)
+      const conditionEl = element.querySelector(
+        '.s-item__subtitle .SECONDARY_INFO, .s-item__condition, [class*="condition"]',
+      );
+      const condition = conditionEl?.textContent?.trim() ?? '';
+
+      // Shipping info
+      const shippingEl = element.querySelector(
+        '.s-item__shipping, .s-item__freeXDays, [class*="shipping"]',
+      );
+      const shipping = shippingEl?.textContent?.trim() ?? '';
+
+      // Time left for auctions
+      const timeLeftEl = element.querySelector('.s-item__time-left, .s-item__time-end');
+      const timeLeft = timeLeftEl?.textContent?.trim() ?? '';
+
       return {
         id,
         platform: 'ebay',
@@ -168,7 +189,14 @@ export class EbayAdapter extends BaseAdapter {
         topics: [],
         entities: [],
         url: href,
-        raw_metadata: priceText ? { price: priceText } : undefined,
+        raw_metadata: {
+          ...(priceText ? { price: priceText } : {}),
+          ...(isAuction ? { is_auction: true } : {}),
+          ...(bidText ? { bids: bidText } : {}),
+          ...(condition ? { condition } : {}),
+          ...(shipping ? { shipping } : {}),
+          ...(timeLeft ? { time_left: timeLeft } : {}),
+        },
       };
     } catch {
       return null;

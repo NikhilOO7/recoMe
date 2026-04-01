@@ -3,26 +3,65 @@ import { extractTextContent } from '@shared/utils';
 import { heuristicTitle, heuristicCreator, heuristicUrl } from './MetadataHeuristics';
 import type { ContentMetadata } from '@shared/types';
 
+/**
+ * YouTubeAdapter — covers home feed, subscriptions, search results,
+ * watch page sidebar, Shorts, channel pages, playlists, and trending.
+ *
+ * Sprint 1 (P1.2): Added page-type detection, Shorts-specific extraction,
+ * channel page cards, subscription feed, duration/view count metadata,
+ * and better ad detection for in-feed promoted content.
+ */
+
+type YTPageType =
+  | 'home'
+  | 'search'
+  | 'watch'
+  | 'shorts'
+  | 'channel'
+  | 'playlist'
+  | 'subscriptions'
+  | 'trending'
+  | 'unknown';
+
 export class YouTubeAdapter extends BaseAdapter {
   constructor() {
     super({
       platform: 'youtube',
       cardSelector: [
-        // Home feed, subscriptions, search
+        // ── Home feed, subscriptions, search ────────────────────────────
         'ytd-rich-item-renderer',
         'ytd-video-renderer',
         'ytd-compact-video-renderer',
-        // Grid views (channels, playlists)
+
+        // ── Grid views (channels, playlists, trending) ──────────────────
         'ytd-grid-video-renderer',
-        // Shorts shelf items
+
+        // ── Shorts shelf items ──────────────────────────────────────────
         'ytd-reel-item-renderer',
         'ytd-shorts-lockup-view-model',
-        // Watch page sidebar
+        // Shorts in full-screen vertical scroll
+        'ytd-reel-video-renderer',
+
+        // ── Watch page sidebar / up next ────────────────────────────────
         'ytd-compact-radio-renderer',
-        // Playlist panels
+        // Related video in sidebar
+        'ytd-compact-link-renderer',
+
+        // ── Playlist panels ─────────────────────────────────────────────
         'ytd-playlist-panel-video-renderer',
-        // Search mix results
+        'ytd-playlist-video-renderer',
+
+        // ── Search mix / radio results ──────────────────────────────────
         'ytd-radio-renderer',
+
+        // ── Channel page sections ───────────────────────────────────────
+        'ytd-channel-video-player-renderer',
+        'ytd-channel-featured-content-renderer',
+        // Channel about / featured channels
+        'ytd-mini-channel-renderer',
+
+        // ── Live streams ────────────────────────────────────────────────
+        'ytd-rich-item-renderer:has([aria-label*="LIVE"])',
       ].join(', '),
       feedSelector: [
         'ytd-browse',
@@ -30,8 +69,28 @@ export class YouTubeAdapter extends BaseAdapter {
         '#primary',
         'ytd-two-column-browse-results-renderer',
         'ytd-page-manager',
+        // Watch page secondary column (sidebar)
+        '#secondary',
+        'ytd-watch-next-secondary-results-renderer',
+        // Shorts container
+        'ytd-shorts',
+        '#shorts-container',
       ].join(', '),
     });
+  }
+
+  detectPageType(): YTPageType {
+    const path = location.pathname;
+    if (path === '/' || path === '/feed') return 'home';
+    if (path === '/results') return 'search';
+    if (path === '/watch') return 'watch';
+    if (path.startsWith('/shorts')) return 'shorts';
+    if (path.startsWith('/@') || path.startsWith('/channel/') || path.startsWith('/c/'))
+      return 'channel';
+    if (path.startsWith('/playlist')) return 'playlist';
+    if (path === '/feed/subscriptions') return 'subscriptions';
+    if (path === '/feed/trending') return 'trending';
+    return 'unknown';
   }
 
   protected override isUserInitiatedSearch(): boolean {
@@ -40,6 +99,15 @@ export class YouTubeAdapter extends BaseAdapter {
 
   extractMetadata(element: Element): ContentMetadata | null {
     try {
+      const pageType = this.detectPageType();
+
+      // Shorts have a different extraction path
+      const isShorts =
+        pageType === 'shorts' ||
+        element.matches(
+          'ytd-reel-item-renderer, ytd-shorts-lockup-view-model, ytd-reel-video-renderer',
+        );
+
       // Title — try multiple selectors in priority order
       const titleEl =
         element.querySelector('#video-title') ??
@@ -47,6 +115,8 @@ export class YouTubeAdapter extends BaseAdapter {
         element.querySelector('a#video-title') ??
         element.querySelector('h3 a') ??
         element.querySelector('h3 span') ??
+        // Shorts overlays
+        element.querySelector('.reel-item-metadata h3') ??
         element.querySelector('[title]:not([title=""])');
 
       let title = titleEl ? titleEl.getAttribute('title') || extractTextContent(titleEl) : '';
@@ -61,16 +131,30 @@ export class YouTubeAdapter extends BaseAdapter {
         element.querySelector('#channel-name') ??
         element.querySelector('.ytd-channel-name') ??
         element.querySelector('a.yt-simple-endpoint[href^="/@"]') ??
-        element.querySelector('a.yt-simple-endpoint[href^="/channel/"]');
+        element.querySelector('a.yt-simple-endpoint[href^="/channel/"]') ??
+        // Shorts overlay author
+        element.querySelector('.reel-item-metadata a[href^="/@"]');
       let creator = channelEl ? extractTextContent(channelEl).trim() || undefined : undefined;
       if (!creator) creator = heuristicCreator(element) ?? undefined;
 
-      // Video ID from watch link
-      const linkEl = element.querySelector('a[href*="/watch"]') as HTMLAnchorElement | null;
-      let href = linkEl?.href ?? '';
-      if (!href) href = heuristicUrl(element) ?? '';
-      const videoIdMatch = href.match(/[?&]v=([^&]+)/);
-      const videoId = videoIdMatch?.[1] ?? this.computeContentHash(element);
+      // Video ID from watch link or shorts link
+      let href = '';
+      let videoId = '';
+
+      if (isShorts) {
+        const shortsLink = element.querySelector('a[href*="/shorts/"]') as HTMLAnchorElement | null;
+        href = shortsLink?.href ?? '';
+        const shortsIdMatch = href.match(/\/shorts\/([A-Za-z0-9_-]+)/);
+        videoId = shortsIdMatch?.[1] ?? '';
+      }
+
+      if (!videoId) {
+        const linkEl = element.querySelector('a[href*="/watch"]') as HTMLAnchorElement | null;
+        href = linkEl?.href ?? href;
+        if (!href) href = heuristicUrl(element) ?? '';
+        const videoIdMatch = href.match(/[?&]v=([^&]+)/);
+        videoId = videoIdMatch?.[1] ?? this.computeContentHash(element);
+      }
 
       // Detect ads — covers promoted videos, overlay ads, and sponsored shelves
       const isAd =
@@ -81,23 +165,39 @@ export class YouTubeAdapter extends BaseAdapter {
         !!element.querySelector('[id^="ad-slot"]') ||
         !!element.querySelector('.badge-style-type-ad') ||
         !!element.closest('ytd-ad-slot-renderer') ||
+        !!element.querySelector('[overlay-style="SHORTS_AD"]') ||
         element.textContent?.includes('Sponsored') === true ||
         element.textContent?.includes('Contains paid promotion') === true;
 
       // Extract topics from title keywords
       const topics = extractKeywordsFromText(title);
 
+      // Duration and view count for ranking context
+      const metaLine = element.querySelector('#metadata-line')?.textContent?.trim() ?? '';
+      const durationEl = element.querySelector(
+        'ytd-thumbnail-overlay-time-status-renderer span, .badge-shape-wiz__text',
+      );
+      const duration = durationEl?.textContent?.trim() ?? '';
+
+      // Live badge
+      const isLive =
+        !!element.querySelector('[aria-label*="LIVE"]') ||
+        !!element.querySelector('.badge-style-type-live-now');
+
       return {
         id: videoId,
         platform: 'youtube',
-        type: isAd ? 'ad' : 'video',
+        type: isAd ? 'ad' : isShorts ? 'video' : 'video',
         title,
         creator,
         topics,
         entities: creator ? [creator] : [],
         url: href || location.href,
         raw_metadata: {
-          meta_text: element.querySelector('#metadata-line')?.textContent?.trim() ?? '',
+          meta_text: metaLine,
+          ...(duration ? { duration } : {}),
+          ...(isShorts ? { is_short: true } : {}),
+          ...(isLive ? { is_live: true } : {}),
         },
       };
     } catch {

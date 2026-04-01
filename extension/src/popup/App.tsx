@@ -1,12 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { SettingsPanel } from './components/SettingsPanel';
 import { AgentChat } from './components/AgentChat';
 import { Onboarding, type SeedPreferences } from './components/Onboarding';
 import { useConnectionStatus, type ConnectionStatus } from './hooks/useConnectionStatus';
+import {
+  loadPanelState,
+  completeOnboarding,
+  persistActiveTab,
+  type PanelTab,
+  type PanelMode,
+} from '../shared/PanelState';
 import '../styles/popup.css';
 
-type Tab = 'dashboard' | 'agent' | 'settings';
 type Theme = 'light' | 'dark';
 
 function applyTheme(theme: Theme) {
@@ -14,9 +20,8 @@ function applyTheme(theme: Theme) {
 }
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<Tab>('dashboard');
-  const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null);
-  const [replayOnboarding, setReplayOnboarding] = useState(false);
+  const [activeTab, setActiveTab] = useState<PanelTab>('dashboard');
+  const [panelMode, setPanelMode] = useState<PanelMode>('loading');
   const [theme, setTheme] = useState<Theme>('light');
   const connectionStatus = useConnectionStatus();
 
@@ -32,12 +37,15 @@ export function App() {
       })
       .catch(() => undefined);
 
-    chrome.storage.sync
-      .get('recome_onboarding_done')
-      .then((r) => {
-        setOnboardingDone(!!r['recome_onboarding_done']);
-      })
-      .catch(() => setOnboardingDone(true));
+    loadPanelState().then((snapshot) => {
+      setPanelMode(snapshot.mode);
+      setActiveTab(snapshot.activeTab);
+    });
+  }, []);
+
+  const handleTabChange = useCallback((tab: PanelTab) => {
+    setActiveTab(tab);
+    persistActiveTab(tab);
   }, []);
 
   function toggleTheme() {
@@ -79,18 +87,20 @@ export function App() {
         })
         .catch(() => undefined);
     }
-    await chrome.storage.sync.set({ recome_onboarding_done: true });
-    setOnboardingDone(true);
-    setReplayOnboarding(false);
+    await completeOnboarding();
+    setPanelMode('dashboard_default');
   }
 
   // Still loading — show nothing to avoid flash
-  if (onboardingDone === null) return null;
+  if (panelMode === 'loading') return null;
 
-  if (!onboardingDone || replayOnboarding) {
+  if (panelMode === 'onboarding_required' || panelMode === 'onboarding_replay') {
     return (
       <div className="app">
-        <Onboarding onComplete={handleOnboardingComplete} isReplay={replayOnboarding} />
+        <Onboarding
+          onComplete={handleOnboardingComplete}
+          isReplay={panelMode === 'onboarding_replay'}
+        />
       </div>
     );
   }
@@ -126,7 +136,7 @@ export function App() {
           aria-selected={activeTab === 'dashboard'}
           aria-controls="tabpanel-dashboard"
           className={`nav-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
-          onClick={() => setActiveTab('dashboard')}
+          onClick={() => handleTabChange('dashboard')}
         >
           Dashboard
         </button>
@@ -135,7 +145,7 @@ export function App() {
           aria-selected={activeTab === 'agent'}
           aria-controls="tabpanel-agent"
           className={`nav-btn ${activeTab === 'agent' ? 'active' : ''}`}
-          onClick={() => setActiveTab('agent')}
+          onClick={() => handleTabChange('agent')}
         >
           Agent
         </button>
@@ -144,7 +154,7 @@ export function App() {
           aria-selected={activeTab === 'settings'}
           aria-controls="tabpanel-settings"
           className={`nav-btn ${activeTab === 'settings' ? 'active' : ''}`}
-          onClick={() => setActiveTab('settings')}
+          onClick={() => handleTabChange('settings')}
         >
           Settings
         </button>
@@ -160,10 +170,10 @@ export function App() {
       >
         {activeTab === 'dashboard' && <Dashboard />}
         {activeTab === 'agent' && (
-          <AgentChat onNavigateToSettings={() => setActiveTab('settings')} />
+          <AgentChat onNavigateToSettings={() => handleTabChange('settings')} />
         )}
         {activeTab === 'settings' && (
-          <SettingsPanel onReplayOnboarding={() => setReplayOnboarding(true)} />
+          <SettingsPanel onReplayOnboarding={() => setPanelMode('onboarding_replay')} />
         )}
       </main>
 

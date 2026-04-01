@@ -101,6 +101,24 @@ async function getSettings(): Promise<Settings> {
 // ── Overlay reference (for toggle command) ──────────────────────────────────
 let overlayInstance: import('./overlay/FloatingOverlay').FloatingOverlay | null = null;
 
+// ── P3.1: Lifecycle manager — tracks pending timeouts for clean teardown ────
+/** Active adapter reference — used by overlay callbacks to avoid stale closures */
+let activeAdapter: BaseAdapter | null = null;
+/** Handles for recheck timeouts so they can be cleared on SPA navigation */
+const pendingTimers: ReturnType<typeof setTimeout>[] = [];
+
+function trackTimeout(fn: () => void, delay: number): ReturnType<typeof setTimeout> {
+  const handle = setTimeout(fn, delay);
+  pendingTimers.push(handle);
+  return handle;
+}
+
+/** Clear all tracked timeouts (called on SPA nav before re-bootstrap) */
+function clearPendingTimers(): void {
+  for (const h of pendingTimers) clearTimeout(h);
+  pendingTimers.length = 0;
+}
+
 async function bootstrap(): Promise<void> {
   // Never run on pure chat/messaging sites
   if (isChatOnlySite()) {
@@ -136,6 +154,9 @@ async function bootstrap(): Promise<void> {
     log.info('RecoMe disabled');
     return;
   }
+
+  // P3.1: Clear stale timers from previous SPA navigation
+  clearPendingTimers();
 
   let adapter: BaseAdapter;
   let genericPlatform: Platform = platform === 'unknown' ? 'unknown' : platform;
@@ -191,6 +212,9 @@ async function bootstrap(): Promise<void> {
     }
   }
 
+  // P3.1: Store active adapter so overlay callbacks always use the current one
+  activeAdapter = adapter;
+
   if (platform !== 'unknown' && settings.platforms[platform] === false) {
     log.info(`Platform ${platform} disabled in settings`);
     return;
@@ -205,20 +229,24 @@ async function bootstrap(): Promise<void> {
   if (cached) adapter.applyCachedSelectors(cached);
 
   await initAdapter(adapter, () => {
-    // SPA navigation: rebind overlay with fresh page context and adapter closures
+    // SPA navigation: clear stale timers and rebind overlay with fresh adapter ref
+    clearPendingTimers();
     if (overlayInstance) {
       overlayInstance.onNavigate(() => {
+        // P3.1: Use activeAdapter (module-level) to avoid stale closure
+        const current = activeAdapter;
+        if (!current) return [];
         const candidates: unknown[] = [];
-        const pdpMethod = (adapter as unknown as Record<string, unknown>)['extractPdpCandidate'];
+        const pdpMethod = (current as unknown as Record<string, unknown>)['extractPdpCandidate'];
         if (typeof pdpMethod === 'function') {
-          const pdp = pdpMethod.call(adapter) as unknown;
+          const pdp = pdpMethod.call(current) as unknown;
           if (pdp) candidates.push(pdp);
         }
         if (candidates.length === 0) {
-          const sel = adapter.getCardSelector();
+          const sel = current.getCardSelector();
           const cards = document.querySelectorAll(sel);
           for (const card of Array.from(cards).slice(0, 5)) {
-            const candidate = adapter.extractCandidate(card);
+            const candidate = current.extractCandidate(card);
             if (candidate) candidates.push(candidate);
           }
         }
@@ -288,7 +316,7 @@ async function bootstrap(): Promise<void> {
   // detect them async). If still nothing, stay hidden — the extension is active
   // but there's nothing useful to show on this page.
   if (!overlayDeferred) {
-    injectOverlay(resolvedPlatform, adapter);
+    injectOverlay(resolvedPlatform);
     setupPlatformIntelligence(resolvedPlatform);
   } else {
     // Recheck at 2s, 5s, and 8s intervals — cards may load asynchronously
@@ -296,7 +324,7 @@ async function bootstrap(): Promise<void> {
     let injected = false;
 
     for (const delay of recheckIntervals) {
-      setTimeout(() => {
+      trackTimeout(() => {
         if (injected) return;
         const currentCount = countDetectedCards(adapter);
 
@@ -310,7 +338,7 @@ async function bootstrap(): Promise<void> {
         if (currentCount >= minCards) {
           log.info(`Recheck: ${currentCount} cards found (need ${minCards}) — activating overlay`);
           injected = true;
-          injectOverlay(resolvedPlatform, adapter);
+          injectOverlay(resolvedPlatform);
           setupPlatformIntelligence(resolvedPlatform);
           showFirstActionNudge();
         } else if (delay === recheckIntervals[recheckIntervals.length - 1]) {
@@ -320,7 +348,7 @@ async function bootstrap(): Promise<void> {
           );
           // Still inject the overlay so the user can access the dashboard/agent,
           // but DON'T show the first-action nudge (nothing actionable on the page).
-          injectOverlay(resolvedPlatform, adapter);
+          injectOverlay(resolvedPlatform);
           setupPlatformIntelligence(resolvedPlatform);
         }
       }, delay);
@@ -437,7 +465,7 @@ function setupSmartPromptTracking(
   });
 }
 
-async function injectOverlay(platform: Platform, adapter: BaseAdapter): Promise<void> {
+async function injectOverlay(platform: Platform): Promise<void> {
   try {
     // Prevent duplicate overlays — destroy existing instance before creating a new one
     if (overlayInstance) {
@@ -451,22 +479,25 @@ async function injectOverlay(platform: Platform, adapter: BaseAdapter): Promise<
     overlayInstance = overlay;
 
     // Give the overlay access to extract product candidates from the page
+    // P3.1: Use activeAdapter to avoid stale closure after SPA navigation
     overlay.setGetCandidates(() => {
+      const current = activeAdapter;
+      if (!current) return [];
       const candidates: unknown[] = [];
 
       // Try PDP extraction first (e.g., Amazon product page)
-      const pdpMethod = (adapter as unknown as Record<string, unknown>)['extractPdpCandidate'];
+      const pdpMethod = (current as unknown as Record<string, unknown>)['extractPdpCandidate'];
       if (typeof pdpMethod === 'function') {
-        const pdp = pdpMethod.call(adapter) as unknown;
+        const pdp = pdpMethod.call(current) as unknown;
         if (pdp) candidates.push(pdp);
       }
 
       // If no PDP candidate, try extracting from visible cards on the page
       if (candidates.length === 0) {
-        const sel = adapter.getCardSelector();
+        const sel = current.getCardSelector();
         const cards = document.querySelectorAll(sel);
         for (const card of Array.from(cards).slice(0, 5)) {
-          const candidate = adapter.extractCandidate(card);
+          const candidate = current.extractCandidate(card);
           if (candidate) candidates.push(candidate);
         }
       }

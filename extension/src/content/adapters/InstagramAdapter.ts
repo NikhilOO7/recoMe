@@ -167,6 +167,17 @@ export class InstagramAdapter extends BaseAdapter {
       if (pageMode === 'reels' || pageMode === 'stories') contentType = isAd ? 'ad' : 'video';
       else if (pageMode === 'shop') contentType = isAd ? 'ad' : 'product';
 
+      // Media type detection for richer metadata
+      const hasVideo =
+        !!card.querySelector('video') ||
+        !!card.querySelector('[aria-label*="Video"]') ||
+        !!card.querySelector('[aria-label*="Reel"]');
+      const hasMultipleImages = (card.querySelectorAll('li[style*="translateX"]') ?? []).length > 1;
+
+      // Like count if visible (for engagement context)
+      const likeEl = card.querySelector('section span, button[type="button"] span');
+      const likeText = likeEl?.textContent?.match(/^[\d,.]+ likes?$/i)?.[0] ?? '';
+
       return {
         id,
         platform: 'instagram',
@@ -176,7 +187,12 @@ export class InstagramAdapter extends BaseAdapter {
         topics: hashtags,
         entities: creator ? [creator] : [],
         url: href || location.href,
-        raw_metadata: pageMode !== 'feed' ? { pageMode } : undefined,
+        raw_metadata: {
+          ...(pageMode !== 'feed' ? { pageMode } : {}),
+          ...(hasVideo ? { has_video: true } : {}),
+          ...(hasMultipleImages ? { is_carousel: true } : {}),
+          ...(likeText ? { likes: likeText } : {}),
+        },
       };
     } catch {
       return null;

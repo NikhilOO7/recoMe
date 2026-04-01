@@ -1141,7 +1141,7 @@
       <div class="stat-label">security</div>
     </div>
     <div class="stat-box">
-      <div class="stat-value">7</div>
+      <div class="stat-value">8</div>
       <div class="stat-label">endpoints</div>
     </div>
     <div class="stat-box">
@@ -1363,6 +1363,14 @@
           <div class="endpoint-desc">Send signal to update graph</div>
         </div>
       </div>
+
+      <div class="endpoint-item" data-ep="7" onclick="selectEndpoint(7)">
+        <span class="method-badge method-get">GET</span>
+        <div>
+          <div class="endpoint-path">/v4/social/twin-recommendations</div>
+          <div class="endpoint-desc">Taste Twin cross-platform recs</div>
+        </div>
+      </div>
     </div>
 
     <!-- Request / Response -->
@@ -1399,6 +1407,72 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ─── SECTION 2B: TASTE TWIN NETWORK ─── -->
+<section id="taste-twins" style="max-width:900px; margin:0 auto;">
+  <div class="section-label">
+    <span class="pill">Section 02B</span>
+  </div>
+  <h2>Taste Twin Network</h2>
+  <p>Users with 60%+ preference graph overlap become anonymous "Taste Twins." CommunityAgent surfaces cross-platform recommendations from what twins engage with — courses, products, articles, jobs — without ever revealing identities.</p>
+
+  <!-- How it works: 4-step flow -->
+  <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin:32px 0 40px;">
+    <div style="background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px 16px; text-align:center;">
+      <div style="font-size:28px; margin-bottom:8px;">1</div>
+      <div style="font-size:13px; font-weight:700; margin-bottom:4px; color:var(--infra-light);">Graph Overlap</div>
+      <div style="font-size:12px; color:var(--text-muted); line-height:1.5;">User A and User B share 60%+ interest-graph nodes and edge weights</div>
+    </div>
+    <div style="background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px 16px; text-align:center;">
+      <div style="font-size:28px; margin-bottom:8px;">2</div>
+      <div style="font-size:13px; font-weight:700; margin-bottom:4px; color:var(--infra-light);">CommunityAgent</div>
+      <div style="font-size:12px; color:var(--text-muted); line-height:1.5;">Detects overlap anonymously — no PII exchanged, only hashed graph fingerprints</div>
+    </div>
+    <div style="background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px 16px; text-align:center;">
+      <div style="font-size:28px; margin-bottom:8px;">3</div>
+      <div style="font-size:13px; font-weight:700; margin-bottom:4px; color:var(--infra-light);">Cross-Platform</div>
+      <div style="font-size:12px; color:var(--text-muted); line-height:1.5;">Twin's Coursera course becomes your recommendation on Amazon or Indeed</div>
+    </div>
+    <div style="background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px 16px; text-align:center;">
+      <div style="font-size:28px; margin-bottom:8px;">4</div>
+      <div style="font-size:13px; font-weight:700; margin-bottom:4px; color:var(--infra-light);">Delivered</div>
+      <div style="font-size:12px; color:var(--text-muted); line-height:1.5;">Recommendations appear in extension overlay, app feed, and via API endpoint</div>
+    </div>
+  </div>
+
+  <!-- Example twin recommendations -->
+  <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:32px;">
+    <div style="background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.2); border-radius:var(--radius-lg); padding:20px;">
+      <div style="font-size:10px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--infra); margin-bottom:8px;">Course</div>
+      <div style="font-size:15px; font-weight:700; margin-bottom:6px;">Advanced Distributed Systems</div>
+      <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Coursera &middot; 93% match</div>
+      <div style="font-size:11px; color:var(--infra-light); font-style:italic;">2 taste twins completed this</div>
+    </div>
+    <div style="background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.2); border-radius:var(--radius-lg); padding:20px;">
+      <div style="font-size:10px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--infra); margin-bottom:8px;">Product</div>
+      <div style="font-size:15px; font-weight:700; margin-bottom:6px;">Designing Data-Intensive Apps</div>
+      <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Amazon &middot; 88% match</div>
+      <div style="font-size:11px; color:var(--infra-light); font-style:italic;">3 taste twins purchased this</div>
+    </div>
+    <div style="background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.2); border-radius:var(--radius-lg); padding:20px;">
+      <div style="font-size:10px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--infra); margin-bottom:8px;">Job</div>
+      <div style="font-size:15px; font-weight:700; margin-bottom:6px;">Sr. Distributed Systems Eng.</div>
+      <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Indeed &middot; 71% match</div>
+      <div style="font-size:11px; color:var(--infra-light); font-style:italic;">1 taste twin applied to this</div>
+    </div>
+  </div>
+
+  <!-- Privacy callout -->
+  <div style="background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px 24px; display:flex; align-items:center; gap:16px;">
+    <div style="font-size:24px; flex-shrink:0;">🔒</div>
+    <div>
+      <div style="font-size:14px; font-weight:700; margin-bottom:4px;">Zero-knowledge matching</div>
+      <div style="font-size:13px; color:var(--text-muted); line-height:1.6;">Twin identities are never revealed. CommunityAgent compares hashed graph fingerprints server-side. Users see "2 taste twins completed this" — never who. Requires OAuth scope <code style="font-size:12px; background:rgba(16,185,129,0.12); padding:2px 6px; border-radius:4px; color:var(--infra-light);">recome:social:twins</code>.</div>
     </div>
   </div>
 </section>
@@ -1676,6 +1750,63 @@
   "delta":         0.07,
   "graph_updated": true,
   "processed_at":  "2026-03-15T14:30:01Z"
+}`
+    },
+    {
+      method: 'GET',
+      path: '/v4/social/twin-recommendations',
+      params: '?limit=5&min_overlap=0.6',
+      body: null,
+      response: `{
+  "twin_count":        3,
+  "min_overlap_used":  0.60,
+  "recommendations": [
+    {
+      "type":        "course",
+      "title":       "Advanced Distributed Systems",
+      "platform":    "coursera",
+      "match_score": 0.93,
+      "twin_signal": "2 taste twins completed this",
+      "reason":      "strong overlap in distributed-systems + rust-programming"
+    },
+    {
+      "type":        "product",
+      "title":       "Designing Data-Intensive Applications",
+      "platform":    "amazon",
+      "match_score": 0.88,
+      "twin_signal": "3 taste twins purchased this",
+      "reason":      "co-interest in system-design + databases"
+    },
+    {
+      "type":        "article",
+      "title":       "Raft Consensus: A Deep Dive",
+      "platform":    "twitter",
+      "match_score": 0.82,
+      "twin_signal": "2 taste twins bookmarked this",
+      "reason":      "overlap in consensus-algorithms + distributed-systems"
+    },
+    {
+      "type":        "video",
+      "title":       "Building a Compiler in Rust",
+      "platform":    "youtube",
+      "match_score": 0.77,
+      "twin_signal": "1 taste twin watched this 3x",
+      "reason":      "shared rust-programming + wasm interest"
+    },
+    {
+      "type":        "job",
+      "title":       "Senior Distributed Systems Engineer",
+      "platform":    "indeed",
+      "match_score": 0.71,
+      "twin_signal": "1 taste twin applied to this",
+      "reason":      "overlap in distributed-systems + cloud-infra"
+    }
+  ],
+  "privacy": {
+    "pii_shared":         false,
+    "twin_ids_revealed":  false,
+    "scope_required":     "recome:social:twins"
+  }
 }`
     }
   ];

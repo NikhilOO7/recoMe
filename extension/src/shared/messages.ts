@@ -94,7 +94,12 @@ export type MessageType =
   | 'RUN_VALIDATORS'
   | 'SIMULATE_CONTENT'
   | 'SIMULATE_FLOW'
-  | 'MONITOR_CLEAR';
+  | 'MONITOR_CLEAR'
+  // Sprint 2: Dashboard experience
+  | 'GET_GRAPH_SUMMARY'
+  | 'GET_ACTION_HISTORY'
+  // Sprint 4: Agent productization
+  | 'GET_AGENT_ACTIVITY';
 
 // ── Individual message shapes ─────────────────────────────────────────────────
 
@@ -550,6 +555,41 @@ export interface MonitorClearMessage {
   payload: null;
 }
 
+// ── Sprint 2: Dashboard experience messages ──────────────────────────────────
+
+export interface GetGraphSummaryMessage {
+  type: 'GET_GRAPH_SUMMARY';
+  payload: null;
+}
+
+export interface GetActionHistoryMessage {
+  type: 'GET_ACTION_HISTORY';
+  payload: { limit?: number } | null;
+}
+
+// ── Sprint 4: Agent productization messages ──────────────────────────────────
+
+export interface GetAgentActivityMessage {
+  type: 'GET_AGENT_ACTIVITY';
+  payload: null;
+}
+
+/** Agent activity entry returned by GET_AGENT_ACTIVITY */
+export interface AgentActivityEntry {
+  agent: string;
+  label: string;
+  description: string;
+  lastRun: number | null;
+  tasksHandled: number;
+  avgConfidence: number;
+  recentInsights: Array<{
+    title: string;
+    explanation: string;
+    confidence: number;
+    timestamp: number;
+  }>;
+}
+
 // ── Union type for all messages ───────────────────────────────────────────────
 
 export type RecoMeMessage =
@@ -621,7 +661,10 @@ export type RecoMeMessage =
   | RunValidatorsMessage
   | SimulateContentMessage
   | SimulateFlowMessage
-  | MonitorClearMessage;
+  | MonitorClearMessage
+  | GetGraphSummaryMessage
+  | GetActionHistoryMessage
+  | GetAgentActivityMessage;
 
 // ── Response wrapper ──────────────────────────────────────────────────────────
 

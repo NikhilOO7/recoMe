@@ -45,14 +45,41 @@ export function detectPlatform(): Platform {
  * if the user navigates to a login, CAPTCHA, or other ineligible page within
  * the same SPA session.
  */
-/** Build a route signature that captures meaningful URL changes per platform */
+/**
+ * Build a route signature that captures meaningful URL changes per platform.
+ * Commerce sites include search terms (changing search = new page).
+ * Video sites include video ID. Most sites use pathname + hash.
+ */
 function getRouteSignature(): string {
   const platform = detectPlatform();
+  const params = new URLSearchParams(location.search);
+
   // YouTube: video ID is in ?v= param, not pathname
   if (platform === 'youtube') {
-    const v = new URLSearchParams(location.search).get('v') ?? '';
-    return `${location.pathname}?v=${v}${location.hash}`;
+    const v = params.get('v') ?? '';
+    const list = params.get('list') ?? '';
+    return `${location.pathname}?v=${v}&list=${list}${location.hash}`;
   }
+
+  // Amazon: search keyword `k=` and category `i=` define the results page
+  if (platform === 'amazon') {
+    const k = params.get('k') ?? '';
+    const i = params.get('i') ?? '';
+    return `${location.pathname}?k=${k}&i=${i}${location.hash}`;
+  }
+
+  // eBay: search keyword `_nkw=` defines results
+  if (platform === 'ebay') {
+    const nkw = params.get('_nkw') ?? '';
+    return `${location.pathname}?_nkw=${nkw}${location.hash}`;
+  }
+
+  // Walmart: search `q=` param
+  if (platform === 'walmart') {
+    const q = params.get('q') ?? '';
+    return `${location.pathname}?q=${q}${location.hash}`;
+  }
+
   // For most sites, pathname + hash is sufficient (ignore query-only filter changes)
   return `${location.pathname}${location.hash}`;
 }

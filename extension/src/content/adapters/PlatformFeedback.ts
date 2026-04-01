@@ -13,6 +13,7 @@
 
 import type { Platform } from '@shared/types';
 import { createLogger } from '@shared/Logger';
+import { safeStorageSyncGet } from '@shared/storageSync';
 
 const log = createLogger('PlatformFeedback');
 
@@ -23,7 +24,7 @@ let enabled = false;
 async function isEnabled(): Promise<boolean> {
   if (settingLoaded) return enabled;
   try {
-    const r = await chrome.storage.sync.get('recome_settings');
+    const r = await safeStorageSyncGet('recome_settings');
     const settings = r['recome_settings'] as { train_platform_algo?: boolean } | undefined;
     enabled = settings?.train_platform_algo === true;
   } catch {
@@ -53,12 +54,54 @@ try {
 interface DismissStrategy {
   /** Find the menu trigger button inside/near the card */
   findMenuTrigger(card: HTMLElement): HTMLElement | null;
-  /** Find the "Not interested" option inside the opened menu */
-  findDismissOption(): HTMLElement | null;
+  /**
+   * Find the "Not interested" option inside the opened menu.
+   * The `menuTrigger` param is the element that was clicked to open the menu,
+   * allowing strategies to scope their search to the menu owned by that trigger.
+   */
+  findDismissOption(menuTrigger: HTMLElement): HTMLElement | null;
   /** Delay before looking for the dismiss option (menu animation) */
   menuOpenDelay: number;
   /** Delay before closing any lingering undo toasts/dialogs */
   postClickDelay: number;
+}
+
+/**
+ * Finds the most recently opened menu/popup/dropdown that appeared after
+ * clicking a trigger. Scopes the search by checking which popup appeared
+ * closest (temporally) to the trigger click, verified by DOM proximity
+ * when possible.
+ */
+function findScopedMenu(
+  menuTrigger: HTMLElement,
+  containerSelectors: string,
+  itemSelectors: string,
+): { scope: ParentNode; items: NodeListOf<HTMLElement> } | null {
+  // Strategy: find all matching containers, prefer the one that is a sibling
+  // or descendant of the trigger's card, fall back to the last opened one.
+  const containers = document.querySelectorAll<HTMLElement>(containerSelectors);
+  if (containers.length === 0) return null;
+
+  // Try to find a container that is controlled by / adjacent to the trigger
+  const triggerCard = menuTrigger.closest('[data-recome-id]') ?? menuTrigger.parentElement;
+  for (let i = containers.length - 1; i >= 0; i--) {
+    const container = containers[i]!;
+    // Check if this menu is inside the same card, or is the aria-controlled target
+    const ariaControls = menuTrigger.getAttribute('aria-controls');
+    if (ariaControls && container.id === ariaControls) {
+      return { scope: container, items: container.querySelectorAll<HTMLElement>(itemSelectors) };
+    }
+    if (triggerCard?.contains(container)) {
+      return { scope: container, items: container.querySelectorAll<HTMLElement>(itemSelectors) };
+    }
+  }
+
+  // Fall back to the most recently added container (last in DOM order)
+  const lastContainer = containers[containers.length - 1]!;
+  return {
+    scope: lastContainer,
+    items: lastContainer.querySelectorAll<HTMLElement>(itemSelectors),
+  };
 }
 
 const youtubeStrategy: DismissStrategy = {
@@ -66,7 +109,6 @@ const youtubeStrategy: DismissStrategy = {
   postClickDelay: 100,
 
   findMenuTrigger(card: HTMLElement): HTMLElement | null {
-    // YouTube uses a three-dot menu button inside the card
     return card.querySelector<HTMLElement>(
       'button.yt-icon-button#button[aria-label="Action menu"], ' +
         'yt-icon-button#button, ' +
@@ -76,16 +118,14 @@ const youtubeStrategy: DismissStrategy = {
     );
   },
 
-  findDismissOption(): HTMLElement | null {
-    // The menu renders as a popup outside the card — scope to last opened popup
-    const popups = document.querySelectorAll<HTMLElement>(
-      'ytd-popup-container, tp-yt-iron-dropdown, [class*="popup"]',
-    );
-    const scope = popups.length > 0 ? popups[popups.length - 1]! : document;
-    const menuItems = scope.querySelectorAll<HTMLElement>(
+  findDismissOption(menuTrigger: HTMLElement): HTMLElement | null {
+    const result = findScopedMenu(
+      menuTrigger,
+      'ytd-popup-container tp-yt-iron-dropdown, tp-yt-iron-dropdown, ytd-menu-popup-renderer',
       'ytd-menu-service-item-renderer, tp-yt-paper-item',
     );
-    for (const item of menuItems) {
+    if (!result) return null;
+    for (const item of result.items) {
       const text = item.textContent?.trim().toLowerCase() ?? '';
       if (text.includes('not interested') || text.includes("don't recommend")) {
         return item;
@@ -100,7 +140,6 @@ const instagramStrategy: DismissStrategy = {
   postClickDelay: 200,
 
   findMenuTrigger(card: HTMLElement): HTMLElement | null {
-    // Instagram's three-dot menu on posts
     return (
       (card
         .querySelector<HTMLElement>(
@@ -115,15 +154,17 @@ const instagramStrategy: DismissStrategy = {
     );
   },
 
-  findDismissOption(): HTMLElement | null {
-    // Instagram menu renders as a dialog/modal — scope to last opened dialog
-    const dialogs = document.querySelectorAll<HTMLElement>('div[role="dialog"]');
-    const scope = dialogs.length > 0 ? dialogs[dialogs.length - 1]! : document;
-    const buttons = scope.querySelectorAll<HTMLElement>('button, div[role="menuitem"]');
-    for (const btn of buttons) {
-      const text = btn.textContent?.trim().toLowerCase() ?? '';
+  findDismissOption(menuTrigger: HTMLElement): HTMLElement | null {
+    const result = findScopedMenu(
+      menuTrigger,
+      'div[role="dialog"]',
+      'button, div[role="menuitem"]',
+    );
+    if (!result) return null;
+    for (const item of result.items) {
+      const text = item.textContent?.trim().toLowerCase() ?? '';
       if (text.includes('not interested') || text.includes('hide')) {
-        return btn;
+        return item;
       }
     }
     return null;
@@ -135,20 +176,19 @@ const twitterStrategy: DismissStrategy = {
   postClickDelay: 100,
 
   findMenuTrigger(card: HTMLElement): HTMLElement | null {
-    // Twitter's caret/more menu on tweets
     return card.querySelector<HTMLElement>(
       '[data-testid="caret"], ' + 'button[aria-label="More"], ' + 'div[aria-label="More"]',
     );
   },
 
-  findDismissOption(): HTMLElement | null {
-    // Twitter menu renders as a dropdown — scope to last opened dropdown
-    const dropdowns = document.querySelectorAll<HTMLElement>(
+  findDismissOption(menuTrigger: HTMLElement): HTMLElement | null {
+    const result = findScopedMenu(
+      menuTrigger,
       '[data-testid="Dropdown"], div[role="menu"]',
+      '[role="menuitem"]',
     );
-    const scope = dropdowns.length > 0 ? dropdowns[dropdowns.length - 1]! : document;
-    const items = scope.querySelectorAll<HTMLElement>('[role="menuitem"]');
-    for (const item of items) {
+    if (!result) return null;
+    for (const item of result.items) {
       const text = item.textContent?.trim().toLowerCase() ?? '';
       if (text.includes('not interested') || text.includes('this post isn')) {
         return item;
@@ -163,7 +203,6 @@ const facebookStrategy: DismissStrategy = {
   postClickDelay: 200,
 
   findMenuTrigger(card: HTMLElement): HTMLElement | null {
-    // Facebook's three-dot menu
     return card.querySelector<HTMLElement>(
       '[aria-label="Actions for this post"], ' +
         '[aria-label="More"], ' +
@@ -171,12 +210,14 @@ const facebookStrategy: DismissStrategy = {
     );
   },
 
-  findDismissOption(): HTMLElement | null {
-    // Facebook — scope to last opened menu/dialog
-    const menus = document.querySelectorAll<HTMLElement>('div[role="menu"], div[role="dialog"]');
-    const scope = menus.length > 0 ? menus[menus.length - 1]! : document;
-    const items = scope.querySelectorAll<HTMLElement>('div[role="menuitem"]');
-    for (const item of items) {
+  findDismissOption(menuTrigger: HTMLElement): HTMLElement | null {
+    const result = findScopedMenu(
+      menuTrigger,
+      'div[role="menu"], div[role="dialog"]',
+      'div[role="menuitem"]',
+    );
+    if (!result) return null;
+    for (const item of result.items) {
       const text = item.textContent?.trim().toLowerCase() ?? '';
       if (
         text.includes('hide post') ||
@@ -202,14 +243,14 @@ const linkedinStrategy: DismissStrategy = {
     );
   },
 
-  findDismissOption(): HTMLElement | null {
-    // LinkedIn — scope to last opened control menu
-    const menus = document.querySelectorAll<HTMLElement>(
+  findDismissOption(menuTrigger: HTMLElement): HTMLElement | null {
+    const result = findScopedMenu(
+      menuTrigger,
       '.feed-shared-control-menu__content, div[role="menu"]',
+      'li',
     );
-    const scope = menus.length > 0 ? menus[menus.length - 1]! : document;
-    const items = scope.querySelectorAll<HTMLElement>('li');
-    for (const item of items) {
+    if (!result) return null;
+    for (const item of result.items) {
       const text = item.textContent?.trim().toLowerCase() ?? '';
       if (
         text.includes("i don't want to see this") ||
@@ -295,8 +336,8 @@ async function executeDismiss(
   // Step 3: Wait for menu to open
   await sleep(strategy.menuOpenDelay);
 
-  // Step 4: Find the dismiss option
-  const dismissBtn = strategy.findDismissOption();
+  // Step 4: Find the dismiss option — scoped to the menu opened from this trigger
+  const dismissBtn = strategy.findDismissOption(trigger);
   if (!dismissBtn) {
     log.debug(`No dismiss option found for ${platform} — closing menu`);
     // Close the menu by pressing Escape or clicking elsewhere

@@ -232,8 +232,6 @@ const SOCIAL_GATE_CHECKS: PlatformGateCheck[] = [
     // Twitter / X — logged-out landing page
     hostPatterns: ['twitter.com', 'x.com'],
     isLoggedOut: () => {
-      // The logged-out page has prominent "Sign in" / "Create account" CTAs
-      // and no feed content. Check for the sign-in dialog or landing hero.
       const hasLoginCtas =
         !!document.querySelector('[data-testid="loginButton"]') ||
         !!document.querySelector('[data-testid="signupButton"]') ||
@@ -247,7 +245,6 @@ const SOCIAL_GATE_CHECKS: PlatformGateCheck[] = [
     // Instagram — logged-out
     hostPatterns: ['instagram.com'],
     isLoggedOut: () => {
-      // Instagram shows a full-screen login modal when logged out
       const hasLoginForm =
         !!document.querySelector('input[name="username"]') &&
         !!document.querySelector('input[name="password"]');
@@ -256,12 +253,21 @@ const SOCIAL_GATE_CHECKS: PlatformGateCheck[] = [
     },
   },
   {
-    // Facebook — logged-out
+    // Facebook — logged-out / chooser / account picker
     hostPatterns: ['facebook.com'],
     isLoggedOut: () => {
       const hasLoginForm = !!document.querySelector('#login_form, form[action*="login"]');
       const hasFeed = !!document.querySelector('[role="feed"]');
-      return hasLoginForm && !hasFeed;
+      if (hasLoginForm && !hasFeed) return true;
+      // Facebook account chooser / profile picker page
+      const isChooser =
+        /\/profiles|\/switch|\/select/i.test(location.pathname) ||
+        !!document.querySelector('[data-testid="profile_chooser"]') ||
+        !!document.querySelector('[aria-label*="Choose"]') ||
+        !!document.querySelector('[aria-label*="Switch"]') ||
+        !!document.querySelector('[data-testid="account-switcher"]');
+      if (isChooser && !hasFeed) return true;
+      return false;
     },
   },
   {
@@ -274,6 +280,25 @@ const SOCIAL_GATE_CHECKS: PlatformGateCheck[] = [
         !!document.querySelector('[data-id="sign-in-form"]');
       const hasFeed = !!document.querySelector('.feed-shared-update-v2');
       return hasLoginForm && !hasFeed;
+    },
+  },
+  {
+    // eBay — signed-out homepage (no personalized content)
+    hostPatterns: ['ebay.com', 'ebay.co.uk', 'ebay.de', 'ebay.fr', 'ebay.ca', 'ebay.com.au'],
+    isLoggedOut: () => {
+      // Signed-out eBay homepage has a sign-in CTA and no real product feed
+      const isHomepage = location.pathname === '/' || location.pathname === '/index.html';
+      if (!isHomepage) return false;
+      const hasSignInPrompt =
+        !!document.querySelector('#gh-ug a[href*="signin"]') ||
+        !!document.querySelector('a[href*="signin"][class*="gh-"]') ||
+        !!document.querySelector('[data-testid="signin-link"]');
+      // Check there's no meaningful product listing (search/category pages have items)
+      const hasProductFeed =
+        document.querySelectorAll('a[href*="/itm/"]').length > 3 ||
+        !!document.querySelector('.srp-results') ||
+        !!document.querySelector('[data-view="SEARCH"]');
+      return hasSignInPrompt && !hasProductFeed;
     },
   },
 ];
@@ -292,10 +317,10 @@ function isLoggedOutSocialPage(): boolean {
 
 function isDefensivePage(): boolean {
   const host = location.hostname.replace(/^www\./, '');
+  const title = document.title.toLowerCase();
 
-  // Walmart robot/verification pages
+  // Walmart robot/verification pages (PerimeterX)
   if (host.includes('walmart.com')) {
-    const title = document.title.toLowerCase();
     if (
       title.includes('robot') ||
       title.includes('verify') ||
@@ -304,8 +329,34 @@ function isDefensivePage(): boolean {
     ) {
       return true;
     }
-    // Check for the robot challenge page
     if (document.querySelector('#px-captcha, .px-captcha, [data-px]')) return true;
+  }
+
+  // Amazon anti-bot / CAPTCHA pages
+  if (host.includes('amazon.')) {
+    if (
+      title.includes('robot') ||
+      title.includes('captcha') ||
+      title.includes('automated access') ||
+      title.includes('something went wrong')
+    ) {
+      return true;
+    }
+    // Amazon shows a CAPTCHA image and form
+    if (
+      document.querySelector('form[action*="validateCaptcha"]') ||
+      document.querySelector('img[src*="captcha"]') ||
+      document.querySelector('#captchacharacters')
+    ) {
+      return true;
+    }
+  }
+
+  // Indeed / Glassdoor anti-bot
+  if (host.includes('indeed.com') || host.includes('glassdoor.com')) {
+    if (title.includes('verify') || title.includes('security') || title.includes('blocked')) {
+      return true;
+    }
   }
 
   return false;

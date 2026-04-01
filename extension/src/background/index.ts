@@ -5,6 +5,7 @@ import { registerEventListeners } from './eventListeners';
 import { getIntelligenceService } from '@intelligence/index';
 import { createLogger } from '@shared/Logger';
 import type { RecoMeMessage } from '@shared/messages';
+import { safeStorageSyncGet, safeStorageSyncSet } from '@shared/storageSync';
 
 const log = createLogger('Background');
 
@@ -28,13 +29,13 @@ async function migrateStorageSchema(): Promise<void> {
 
     // Migration v0/v1 → v2: Ensure instagram is in platform settings
     if (currentVersion < 2) {
-      const syncData = await chrome.storage.sync.get('recome_settings');
+      const syncData = await safeStorageSyncGet('recome_settings');
       const settings = syncData.recome_settings as Record<string, unknown> | undefined;
       if (settings?.platforms) {
         const platforms = settings.platforms as Record<string, boolean>;
         if (platforms.instagram === undefined) {
           platforms.instagram = true;
-          await chrome.storage.sync.set({ recome_settings: settings });
+          await safeStorageSyncSet({ recome_settings: settings });
           log.info('Migration v2: added instagram to platform settings');
         }
       }
@@ -70,7 +71,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 
   // Set default settings on fresh install
   if (details.reason === 'install') {
-    await chrome.storage.sync.set({
+    await safeStorageSyncSet({
       recome_settings: {
         enabled: true,
         aggressiveness: 0.5,

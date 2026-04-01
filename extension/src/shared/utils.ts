@@ -20,4 +20,5 @@ export {
   extractDomain,
   isHttpUrl,
   omit,
+  escapeHtml,
 } from '@utils/index';

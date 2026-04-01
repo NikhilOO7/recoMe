@@ -133,3 +133,12 @@ export function omit<T extends object, K extends keyof T>(obj: T, ...keys: K[]):
   for (const key of keys) delete result[key];
   return result as Omit<T, K>;
 }
+
+/** Escape HTML entities to prevent XSS when inserting text into innerHTML. */
+export function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}

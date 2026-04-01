@@ -307,22 +307,21 @@ export class LLMClient {
     if (this.configLoaded) return this.config;
 
     try {
-      const result = await chrome.storage.sync.get('recome_settings');
-      const s = result['recome_settings'] as
-        | {
-            llm_provider?: string;
-            anthropic_api_key?: string;
-            openai_api_key?: string;
-            gemini_api_key?: string;
-          }
-        | undefined;
+      // Settings (provider selection) live in sync storage;
+      // API keys live in local storage only (never synced for security).
+      const [syncResult, localResult] = await Promise.all([
+        chrome.storage.sync.get('recome_settings'),
+        chrome.storage.local.get('recome_api_keys'),
+      ]);
+      const s = syncResult['recome_settings'] as { llm_provider?: string } | undefined;
+      const keys = (localResult['recome_api_keys'] ?? {}) as Record<string, string>;
 
       const provider = s?.llm_provider as LLMProvider | undefined;
       if (provider) {
         const keyMap: Record<LLMProvider, string | undefined> = {
-          anthropic: s?.anthropic_api_key,
-          openai: s?.openai_api_key,
-          gemini: s?.gemini_api_key,
+          anthropic: keys['anthropic_api_key'],
+          openai: keys['openai_api_key'],
+          gemini: keys['gemini_api_key'],
         };
         const key = keyMap[provider]?.trim();
         this.config = key ? { provider, key } : null;

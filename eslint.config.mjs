@@ -21,6 +21,12 @@ export default [
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports', disallowTypeAnnotations: false }],
       'no-console': ['warn', { allow: ['warn', 'error'] }],
+      // P0.3: Flag innerHTML/outerHTML assignments to prevent XSS regressions.
+      // Approved usage must go through escapeHtml() or sanitizePromptHtml() helpers.
+      'no-restricted-properties': ['error',
+        { object: 'element', property: 'innerHTML', message: 'Use escapeHtml() or sanitizePromptHtml() helper instead of raw innerHTML. See P0.3.' },
+        { object: 'el', property: 'innerHTML', message: 'Use escapeHtml() or sanitizePromptHtml() helper instead of raw innerHTML. See P0.3.' },
+      ],
     },
   },
   {

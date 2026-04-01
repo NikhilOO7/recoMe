@@ -15,6 +15,10 @@ interface ChatMessage {
   actions?: AgentAction[];
   suggestedFollowups?: string[];
   aiPowered?: boolean;
+  /** Which agent handled this response (e.g. 'advisor', 'shopper') */
+  agentName?: string;
+  /** Scoring factors that contributed to this response */
+  factors?: Array<{ name: string; score: number; weight: number; explanation: string }>;
 }
 
 interface AgentChatProps {
@@ -125,9 +129,16 @@ export function AgentChat({ onNavigateToSettings }: AgentChatProps) {
   }
 
   function renderMessageContent(content: string) {
-    // Simple markdown rendering: **bold**, *italic*, and line breaks
+    // Simple markdown rendering: **bold**, *italic*, and line breaks.
+    // SECURITY: Escape HTML entities FIRST to prevent XSS from AI-generated
+    // or page-derived content, then apply safe markdown transformations.
     return content.split('\n').map((line, i) => {
-      const formatted = line
+      const escaped = line
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+      const formatted = escaped
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.+?)\*/g, '<em>$1</em>')
         .replace(/`(.+?)`/g, '<code>$1</code>');
@@ -221,9 +232,27 @@ export function AgentChat({ onNavigateToSettings }: AgentChatProps) {
 
         {messages.map((msg, i) => (
           <div key={i} className={`agent-msg agent-msg-${msg.role}`}>
+            {msg.role === 'agent' && msg.agentName && (
+              <div className="agent-attribution">
+                <span className="agent-attribution-badge">{msg.agentName}</span>
+              </div>
+            )}
             <div className="agent-msg-content">
               {msg.role === 'agent' ? renderMessageContent(msg.content) : <p>{msg.content}</p>}
             </div>
+            {msg.factors && msg.factors.length > 0 && (
+              <details className="agent-factors-detail">
+                <summary className="agent-factors-summary">Why this answer</summary>
+                <ul className="agent-factors-list">
+                  {msg.factors.map((f, fi) => (
+                    <li key={fi} className="agent-factor-item">
+                      <span className="agent-factor-name">{f.name}</span>
+                      <span className="agent-factor-explanation">{f.explanation}</span>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
             {msg.actions && msg.actions.length > 0 && (
               <div className="agent-msg-actions">
                 {msg.actions.map((action, k) => (
