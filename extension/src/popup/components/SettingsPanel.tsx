@@ -1,5 +1,11 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import type { Platform } from '@shared/types';
+import type {
+  CloudAccountStatus,
+  TwinStatus,
+  TwinMatchInfo,
+  TwinRecommendationInfo,
+} from '@shared/messages';
 
 type LLMProvider = 'anthropic' | 'openai' | 'gemini';
 
@@ -218,6 +224,156 @@ export function SettingsPanel({ onReplayOnboarding }: SettingsPanelProps = {}) {
 
   const [confirmAction, setConfirmAction] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  // Cloud account state
+  const [cloudStatus, setCloudStatus] = useState<CloudAccountStatus | null>(null);
+  const [cloudTab, setCloudTab] = useState<'login' | 'register'>('login');
+  const [cloudEmail, setCloudEmail] = useState('');
+  const [cloudPassword, setCloudPassword] = useState('');
+  const [cloudName, setCloudName] = useState('');
+  const [cloudLoading, setCloudLoading] = useState(false);
+  const [cloudError, setCloudError] = useState<string | null>(null);
+
+  useEffect(() => {
+    send('CLOUD_GET_STATUS')
+      .then((r) => {
+        if (r.success && r.data) setCloudStatus(r.data as CloudAccountStatus);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  function handleCloudAuth() {
+    if (!cloudEmail || !cloudPassword) return;
+    setCloudLoading(true);
+    setCloudError(null);
+    const type = cloudTab === 'register' ? 'CLOUD_REGISTER' : 'CLOUD_LOGIN';
+    const payload =
+      cloudTab === 'register'
+        ? { email: cloudEmail, password: cloudPassword, displayName: cloudName || undefined }
+        : { email: cloudEmail, password: cloudPassword };
+    send(type, payload)
+      .then((r) => {
+        if (r.success) {
+          setCloudStatus({
+            authenticated: true,
+            email: cloudEmail,
+            tier: 'FREE',
+            syncAvailable: true,
+            lastSync: null,
+          });
+          setCloudEmail('');
+          setCloudPassword('');
+          setCloudName('');
+        } else {
+          setCloudError((r as { error?: string }).error ?? 'Authentication failed');
+        }
+      })
+      .catch(() => setCloudError('Connection failed'))
+      .finally(() => setCloudLoading(false));
+  }
+
+  function handleCloudLogout() {
+    send('CLOUD_LOGOUT')
+      .then(() => {
+        setCloudStatus({
+          authenticated: false,
+          email: null,
+          tier: 'FREE',
+          syncAvailable: false,
+          lastSync: null,
+        });
+      })
+      .catch(() => undefined);
+  }
+
+  function handleCloudSync() {
+    setCloudLoading(true);
+    send('CLOUD_SYNC_NOW')
+      .then(() => setStatusMessage('Sync complete!'))
+      .catch(() => setStatusMessage('Sync failed'))
+      .finally(() => {
+        setCloudLoading(false);
+        setTimeout(() => setStatusMessage(null), 2500);
+      });
+  }
+
+  // Taste Twin state
+  const [twinStatus, setTwinStatus] = useState<TwinStatus | null>(null);
+  const [twins, setTwins] = useState<TwinMatchInfo[]>([]);
+  const [twinRecs, setTwinRecs] = useState<TwinRecommendationInfo[]>([]);
+  const [twinLoading, setTwinLoading] = useState(false);
+
+  useEffect(() => {
+    if (cloudStatus?.authenticated) {
+      send('TWIN_GET_STATUS')
+        .then((r) => {
+          if (r.success && r.data) setTwinStatus(r.data as TwinStatus);
+        })
+        .catch(() => undefined);
+    }
+  }, [cloudStatus?.authenticated]);
+
+  function loadTwinData() {
+    send('TWIN_GET_TWINS')
+      .then((r) => {
+        if (r.success && Array.isArray(r.data)) setTwins(r.data as TwinMatchInfo[]);
+      })
+      .catch(() => undefined);
+    send('TWIN_GET_RECOMMENDATIONS')
+      .then((r) => {
+        if (r.success && Array.isArray(r.data)) setTwinRecs(r.data as TwinRecommendationInfo[]);
+      })
+      .catch(() => undefined);
+  }
+
+  function handleTwinOptIn() {
+    setTwinLoading(true);
+    send('TWIN_OPT_IN')
+      .then((r) => {
+        if (r.success) {
+          setTwinStatus({
+            optedIn: true,
+            twinCount: 0,
+            recommendationCount: 0,
+            isDiscoverable: true,
+          });
+        }
+      })
+      .catch(() => undefined)
+      .finally(() => setTwinLoading(false));
+  }
+
+  function handleTwinOptOut() {
+    if (confirmAction !== 'twin-opt-out') {
+      setConfirmAction('twin-opt-out');
+      return;
+    }
+    setConfirmAction(null);
+    setTwinLoading(true);
+    send('TWIN_OPT_OUT')
+      .then(() => {
+        setTwinStatus({ optedIn: false, twinCount: 0, recommendationCount: 0 });
+        setTwins([]);
+        setTwinRecs([]);
+      })
+      .catch(() => undefined)
+      .finally(() => setTwinLoading(false));
+  }
+
+  function handleFindTwins() {
+    setTwinLoading(true);
+    send('TWIN_COMPUTE_MATCHES')
+      .then(() => {
+        loadTwinData();
+        send('TWIN_GET_STATUS')
+          .then((r) => {
+            if (r.success && r.data) setTwinStatus(r.data as TwinStatus);
+          })
+          .catch(() => undefined);
+      })
+      .catch(() => undefined)
+      .finally(() => setTwinLoading(false));
+  }
 
   function handleClearData() {
     if (confirmAction !== 'clear') {
@@ -466,6 +622,196 @@ export function SettingsPanel({ onReplayOnboarding }: SettingsPanelProps = {}) {
         )}
       </div>
 
+      {/* Cloud Account */}
+      <div className="setting-group">
+        <h3 className="setting-title">
+          Cloud Sync
+          <span className="setting-badge" style={{ marginLeft: 8 }}>
+            {cloudStatus?.authenticated ? 'connected' : 'offline'}
+          </span>
+        </h3>
+        {cloudStatus?.authenticated ? (
+          <div className="cloud-account-connected">
+            <p className="setting-text">
+              Signed in as <strong>{cloudStatus.email}</strong>
+              <br />
+              Tier: {cloudStatus.tier}
+            </p>
+            <div className="setting-actions">
+              <button className="setting-btn" onClick={handleCloudSync} disabled={cloudLoading}>
+                {cloudLoading ? 'Syncing…' : 'Sync now'}
+              </button>
+              <button className="setting-btn setting-btn-danger" onClick={handleCloudLogout}>
+                Sign out
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="cloud-auth-form">
+            <div className="cloud-tabs">
+              <button
+                className={`cloud-tab ${cloudTab === 'login' ? 'active' : ''}`}
+                onClick={() => setCloudTab('login')}
+              >
+                Sign in
+              </button>
+              <button
+                className={`cloud-tab ${cloudTab === 'register' ? 'active' : ''}`}
+                onClick={() => setCloudTab('register')}
+              >
+                Register
+              </button>
+            </div>
+            {cloudTab === 'register' && (
+              <input
+                type="text"
+                className="cloud-input"
+                placeholder="Display name"
+                value={cloudName}
+                onChange={(e) => setCloudName(e.target.value)}
+              />
+            )}
+            <input
+              type="email"
+              className="cloud-input"
+              placeholder="Email"
+              value={cloudEmail}
+              onChange={(e) => setCloudEmail(e.target.value)}
+            />
+            <input
+              type="password"
+              className="cloud-input"
+              placeholder="Password"
+              value={cloudPassword}
+              onChange={(e) => setCloudPassword(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleCloudAuth()}
+            />
+            {cloudError && <p className="cloud-error">{cloudError}</p>}
+            <button className="setting-btn" onClick={handleCloudAuth} disabled={cloudLoading}>
+              {cloudLoading
+                ? 'Please wait…'
+                : cloudTab === 'register'
+                  ? 'Create account'
+                  : 'Sign in'}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Taste Twin Network */}
+      {cloudStatus?.authenticated && (
+        <div className="setting-group">
+          <h3 className="setting-title">
+            Taste Twins
+            <span className="setting-badge" style={{ marginLeft: 8 }}>
+              {twinStatus?.optedIn
+                ? `${twinStatus.twinCount} twin${twinStatus.twinCount !== 1 ? 's' : ''}`
+                : 'off'}
+            </span>
+          </h3>
+          {!twinStatus?.optedIn ? (
+            <div>
+              <p className="setting-text">
+                Find users with similar tastes. Your interests are anonymized — only bucketed
+                signals are shared, never raw data. Twin identities are never revealed.
+              </p>
+              <button className="setting-btn" onClick={handleTwinOptIn} disabled={twinLoading}>
+                {twinLoading ? 'Please wait…' : 'Join Taste Twin Network'}
+              </button>
+            </div>
+          ) : (
+            <div>
+              <p className="setting-text">
+                You have {twinStatus.twinCount} taste twin{twinStatus.twinCount !== 1 ? 's' : ''}{' '}
+                and {twinStatus.recommendationCount} pending recommendation
+                {twinStatus.recommendationCount !== 1 ? 's' : ''}.
+              </p>
+              <div className="setting-actions">
+                <button className="setting-btn" onClick={handleFindTwins} disabled={twinLoading}>
+                  {twinLoading ? 'Searching…' : 'Find twins'}
+                </button>
+                <button className="setting-btn setting-btn-danger" onClick={handleTwinOptOut}>
+                  {confirmAction === 'twin-opt-out' ? 'Confirm leave?' : 'Leave network'}
+                </button>
+                {confirmAction === 'twin-opt-out' && (
+                  <button className="setting-btn" onClick={() => setConfirmAction(null)}>
+                    Cancel
+                  </button>
+                )}
+              </div>
+
+              {twins.length > 0 && (
+                <div className="twin-list">
+                  <span className="twin-list-heading">Your Twins</span>
+                  {twins.map((t) => (
+                    <div key={t.matchId} className="twin-card">
+                      <div className="twin-card-info">
+                        <span className="twin-card-score">
+                          {Math.round(t.similarityScore * 100)}% match
+                        </span>
+                        <span className="twin-card-buckets">
+                          {t.sharedBuckets} shared interest{t.sharedBuckets !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                      <div className="twin-card-actions">
+                        {!t.accepted && (
+                          <button
+                            className="setting-btn"
+                            onClick={() =>
+                              send('TWIN_ACCEPT_MATCH', { matchId: t.matchId }).then(() =>
+                                loadTwinData(),
+                              )
+                            }
+                          >
+                            Accept
+                          </button>
+                        )}
+                        <button
+                          className="setting-btn setting-btn-danger"
+                          onClick={() =>
+                            send('TWIN_BLOCK_MATCH', { matchId: t.matchId }).then(() =>
+                              loadTwinData(),
+                            )
+                          }
+                        >
+                          Block
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {twinRecs.length > 0 && (
+                <div className="twin-recs">
+                  <span className="twin-list-heading">Twin Recommendations</span>
+                  {twinRecs.map((r) => (
+                    <div key={r.id} className="twin-rec-card">
+                      <div className="twin-rec-content">
+                        <span className="twin-rec-title">{r.title}</span>
+                        <span className="twin-rec-body">{r.body}</span>
+                        {r.platform && <span className="twin-rec-platform">{r.platform}</span>}
+                      </div>
+                      <button
+                        className="twin-rec-dismiss"
+                        onClick={() =>
+                          send('TWIN_DISMISS_RECOMMENDATION', { recommendationId: r.id }).then(() =>
+                            loadTwinData(),
+                          )
+                        }
+                        title="Dismiss"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Data */}
       <div className="setting-group">
         <h3 className="setting-title">Data</h3>
@@ -505,7 +851,7 @@ export function SettingsPanel({ onReplayOnboarding }: SettingsPanelProps = {}) {
 
       <div className="setting-group">
         <p className="setting-text" style={{ fontSize: 10, textAlign: 'center', opacity: 0.5 }}>
-          All data is stored locally on your device. Nothing is sent to any server.
+          Data is stored locally. Cloud sync is optional and end-to-end encrypted.
           <br />v{chrome.runtime.getManifest().version}
         </p>
       </div>

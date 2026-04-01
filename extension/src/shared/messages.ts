@@ -99,7 +99,25 @@ export type MessageType =
   | 'GET_GRAPH_SUMMARY'
   | 'GET_ACTION_HISTORY'
   // Sprint 4: Agent productization
-  | 'GET_AGENT_ACTIVITY';
+  | 'GET_AGENT_ACTIVITY'
+  // Sprint 5: Cloud sync & auth
+  | 'CLOUD_REGISTER'
+  | 'CLOUD_LOGIN'
+  | 'CLOUD_LOGOUT'
+  | 'CLOUD_GET_STATUS'
+  | 'CLOUD_SYNC_NOW'
+  | 'CLOUD_SET_PASSPHRASE'
+  // Sprint 5: Taste Twin Network
+  | 'TWIN_GET_STATUS'
+  | 'TWIN_OPT_IN'
+  | 'TWIN_OPT_OUT'
+  | 'TWIN_UPLOAD_VECTOR'
+  | 'TWIN_COMPUTE_MATCHES'
+  | 'TWIN_GET_TWINS'
+  | 'TWIN_GET_RECOMMENDATIONS'
+  | 'TWIN_ACCEPT_MATCH'
+  | 'TWIN_BLOCK_MATCH'
+  | 'TWIN_DISMISS_RECOMMENDATION';
 
 // ── Individual message shapes ─────────────────────────────────────────────────
 
@@ -590,6 +608,127 @@ export interface AgentActivityEntry {
   }>;
 }
 
+// ── Sprint 5: Cloud sync & auth messages ────────────────────────────────────
+
+export interface CloudRegisterMessage {
+  type: 'CLOUD_REGISTER';
+  payload: { email: string; password: string; displayName?: string };
+}
+
+export interface CloudLoginMessage {
+  type: 'CLOUD_LOGIN';
+  payload: { email: string; password: string };
+}
+
+export interface CloudLogoutMessage {
+  type: 'CLOUD_LOGOUT';
+  payload: null;
+}
+
+export interface CloudGetStatusMessage {
+  type: 'CLOUD_GET_STATUS';
+  payload: null;
+}
+
+export interface CloudSyncNowMessage {
+  type: 'CLOUD_SYNC_NOW';
+  payload: null;
+}
+
+export interface CloudSetPassphraseMessage {
+  type: 'CLOUD_SET_PASSPHRASE';
+  payload: { passphrase: string };
+}
+
+/** Cloud account status returned by CLOUD_GET_STATUS */
+export interface CloudAccountStatus {
+  authenticated: boolean;
+  email: string | null;
+  tier: string;
+  syncAvailable: boolean;
+  lastSync: number | null;
+}
+
+// ── Sprint 5: Taste Twin Network messages ───────────────────────────────────
+
+export interface TwinGetStatusMessage {
+  type: 'TWIN_GET_STATUS';
+  payload: null;
+}
+
+export interface TwinOptInMessage {
+  type: 'TWIN_OPT_IN';
+  payload: null;
+}
+
+export interface TwinOptOutMessage {
+  type: 'TWIN_OPT_OUT';
+  payload: null;
+}
+
+export interface TwinUploadVectorMessage {
+  type: 'TWIN_UPLOAD_VECTOR';
+  payload: { vector: string[] };
+}
+
+export interface TwinComputeMatchesMessage {
+  type: 'TWIN_COMPUTE_MATCHES';
+  payload: null;
+}
+
+export interface TwinGetTwinsMessage {
+  type: 'TWIN_GET_TWINS';
+  payload: null;
+}
+
+export interface TwinGetRecommendationsMessage {
+  type: 'TWIN_GET_RECOMMENDATIONS';
+  payload: null;
+}
+
+export interface TwinAcceptMatchMessage {
+  type: 'TWIN_ACCEPT_MATCH';
+  payload: { matchId: string };
+}
+
+export interface TwinBlockMatchMessage {
+  type: 'TWIN_BLOCK_MATCH';
+  payload: { matchId: string };
+}
+
+export interface TwinDismissRecommendationMessage {
+  type: 'TWIN_DISMISS_RECOMMENDATION';
+  payload: { recommendationId: string };
+}
+
+/** Taste Twin status returned by TWIN_GET_STATUS */
+export interface TwinStatus {
+  optedIn: boolean;
+  isDiscoverable?: boolean;
+  twinCount: number;
+  recommendationCount: number;
+  lastUpdated?: string;
+}
+
+/** A twin match (anonymized — no identity) */
+export interface TwinMatchInfo {
+  matchId: string;
+  similarityScore: number;
+  sharedBuckets: number;
+  accepted: boolean;
+  computedAt: string;
+}
+
+/** A twin recommendation */
+export interface TwinRecommendationInfo {
+  id: string;
+  title: string;
+  body: string;
+  platform: string | null;
+  relevanceScore: number;
+  createdAt: string;
+}
+
 // ── Union type for all messages ───────────────────────────────────────────────
 
 export type RecoMeMessage =
@@ -664,7 +803,23 @@ export type RecoMeMessage =
   | MonitorClearMessage
   | GetGraphSummaryMessage
   | GetActionHistoryMessage
-  | GetAgentActivityMessage;
+  | GetAgentActivityMessage
+  | CloudRegisterMessage
+  | CloudLoginMessage
+  | CloudLogoutMessage
+  | CloudGetStatusMessage
+  | CloudSyncNowMessage
+  | CloudSetPassphraseMessage
+  | TwinGetStatusMessage
+  | TwinOptInMessage
+  | TwinOptOutMessage
+  | TwinUploadVectorMessage
+  | TwinComputeMatchesMessage
+  | TwinGetTwinsMessage
+  | TwinGetRecommendationsMessage
+  | TwinAcceptMatchMessage
+  | TwinBlockMatchMessage
+  | TwinDismissRecommendationMessage;
 
 // ── Response wrapper ──────────────────────────────────────────────────────────
 

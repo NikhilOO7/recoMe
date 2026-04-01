@@ -19,8 +19,21 @@ import { PriceAlertEngine } from '@brain/commerce/tracking/PriceAlertEngine';
 import { getMonitoringCollector } from './monitoring/MonitoringCollector';
 import { handleMonitoringMessage } from './monitoring/monitoringHandlers';
 import type { Platform } from '@schema/context';
-import type { RecoMeMessage, MessageResponse } from '@shared/messages';
+import type { RecoMeMessage, MessageResponse, CloudAccountStatus } from '@shared/messages';
 import { safeStorageSyncGet, safeStorageSyncSet } from '@shared/storageSync';
+import { getSyncManager, getLicenseManager } from './cloudServices';
+import {
+  handleTwinGetStatus,
+  handleTwinOptIn,
+  handleTwinOptOut,
+  handleTwinUploadVector,
+  handleTwinComputeMatches,
+  handleTwinGetTwins,
+  handleTwinGetRecommendations,
+  handleTwinAcceptMatch,
+  handleTwinBlockMatch,
+  handleTwinDismissRecommendation,
+} from './twinHandlers';
 
 const log = createLogger('MessageHandler');
 
@@ -874,6 +887,105 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
 
       return ok(activity);
     }
+
+    // ── Sprint 5: Cloud sync & auth ──────────────────────────────────────────
+
+    case 'CLOUD_REGISTER': {
+      const sm = getSyncManager();
+      const client = sm.getClient();
+      const { email, password, displayName } = message.payload;
+      const success = await client.register(email, password, displayName);
+      if (!success) return err('Registration failed');
+      const lm = getLicenseManager();
+      await lm.setTier('FREE', email);
+      sm.startAutoSync();
+      lm.startValidation('http://localhost:3001');
+      return ok({ email, tier: 'FREE' });
+    }
+
+    case 'CLOUD_LOGIN': {
+      const sm = getSyncManager();
+      const client = sm.getClient();
+      const { email, password } = message.payload;
+      const success = await client.login(email, password);
+      if (!success) return err('Invalid email or password');
+      const lm = getLicenseManager();
+      await lm.setTier('FREE', email);
+      sm.startAutoSync();
+      lm.startValidation('http://localhost:3001');
+      return ok({ email, tier: 'FREE' });
+    }
+
+    case 'CLOUD_LOGOUT': {
+      const sm = getSyncManager();
+      const client = sm.getClient();
+      sm.stopAutoSync();
+      await client.logout();
+      const lm = getLicenseManager();
+      lm.stopValidation();
+      await lm.clear();
+      return ok(undefined);
+    }
+
+    case 'CLOUD_GET_STATUS': {
+      const sm = getSyncManager();
+      const lm = getLicenseManager();
+      const state = lm.getState();
+      const status: CloudAccountStatus = {
+        authenticated: sm.isAvailable(),
+        email: state.email,
+        tier: state.tier,
+        syncAvailable: sm.isAvailable(),
+        lastSync: state.lastChecked || null,
+      };
+      return ok(status);
+    }
+
+    case 'CLOUD_SYNC_NOW': {
+      const sm = getSyncManager();
+      if (!sm.isAvailable()) return err('Not authenticated');
+      await sm.syncAll();
+      return ok(undefined);
+    }
+
+    case 'CLOUD_SET_PASSPHRASE': {
+      const sm = getSyncManager();
+      const client = sm.getClient();
+      await client.setPassphrase(message.payload.passphrase);
+      return ok(undefined);
+    }
+
+    // ── Sprint 5: Taste Twin Network ────────────────────────────────────────
+
+    case 'TWIN_GET_STATUS':
+      return handleTwinGetStatus();
+
+    case 'TWIN_OPT_IN':
+      return handleTwinOptIn();
+
+    case 'TWIN_OPT_OUT':
+      return handleTwinOptOut();
+
+    case 'TWIN_UPLOAD_VECTOR':
+      return handleTwinUploadVector(message.payload.vector);
+
+    case 'TWIN_COMPUTE_MATCHES':
+      return handleTwinComputeMatches();
+
+    case 'TWIN_GET_TWINS':
+      return handleTwinGetTwins();
+
+    case 'TWIN_GET_RECOMMENDATIONS':
+      return handleTwinGetRecommendations();
+
+    case 'TWIN_ACCEPT_MATCH':
+      return handleTwinAcceptMatch(message.payload.matchId);
+
+    case 'TWIN_BLOCK_MATCH':
+      return handleTwinBlockMatch(message.payload.matchId);
+
+    case 'TWIN_DISMISS_RECOMMENDATION':
+      return handleTwinDismissRecommendation(message.payload.recommendationId);
 
     // Monitoring messages are handled before the switch via handleMonitoringMessage()
     case 'GET_MONITOR_TIMELINE':

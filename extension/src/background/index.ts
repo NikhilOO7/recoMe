@@ -6,6 +6,7 @@ import { getIntelligenceService } from '@intelligence/index';
 import { createLogger } from '@shared/Logger';
 import type { RecoMeMessage } from '@shared/messages';
 import { safeStorageSyncGet, safeStorageSyncSet } from '@shared/storageSync';
+import { initCloudServices } from './cloudServices';
 
 const log = createLogger('Background');
 
@@ -100,6 +101,9 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason === 'update') {
     await migrateStorageSchema();
   }
+
+  // Initialize cloud sync services
+  await initCloudServices();
 });
 
 chrome.runtime.onStartup.addListener(async () => {
@@ -110,6 +114,8 @@ chrome.runtime.onStartup.addListener(async () => {
     await getIntelligenceService().initialize();
     // Re-register alarms (they may have been cleared)
     await registerAlarms();
+    // Initialize cloud sync services
+    await initCloudServices();
   } catch (err) {
     log.error('Startup init failed', err);
   }

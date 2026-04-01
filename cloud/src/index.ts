@@ -9,6 +9,7 @@ import { createBillingRoutes } from './billing/BillingController.js';
 import { createUserRoutes } from './storage/UserController.js';
 import { createPackRoutes } from './social/PackController.js';
 import { createAgentRoutes } from './agent/AgentController.js';
+import { createTasteTwinRoutes } from './tastetwin/TasteTwinController.js';
 import { rateLimiter } from './middleware/rateLimiter.js';
 
 const app = new Hono();
@@ -55,6 +56,7 @@ app.route('/billing', createBillingRoutes());
 app.route('/user', createUserRoutes());
 app.route('/packs', createPackRoutes());
 app.route('/agent', createAgentRoutes());
+app.route('/twins', createTasteTwinRoutes());
 
 // ── 404 ──────────────────────────────────────────────────────────────────────
 
