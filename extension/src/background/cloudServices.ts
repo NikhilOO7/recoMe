@@ -2,6 +2,7 @@ import { SyncManager } from '@shared/sync/SyncManager';
 import { LicenseManager } from '@shared/sync/LicenseManager';
 import { FeatureGate } from '@shared/sync/FeatureGate';
 import { createLogger } from '@shared/Logger';
+import { CLOUD_URL } from '@shared/constants';
 
 const log = createLogger('CloudServices');
 
@@ -25,7 +26,7 @@ export async function initCloudServices(): Promise<void> {
     // If user was previously authenticated, start auto-sync and license validation
     if (syncManager.isAvailable()) {
       syncManager.startAutoSync();
-      licenseManager.startValidation('http://localhost:3001');
+      licenseManager.startValidation(CLOUD_URL);
       log.info('Cloud services resumed — user is authenticated');
     } else {
       log.info('Cloud services initialized — user not authenticated');

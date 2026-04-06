@@ -6,6 +6,7 @@ import { AmazonAdapter } from './adapters/AmazonAdapter';
 import { TwitterAdapter } from './adapters/TwitterAdapter';
 import { FacebookAdapter } from './adapters/FacebookAdapter';
 import { InstagramAdapter } from './adapters/InstagramAdapter';
+import { RedditAdapter } from './adapters/RedditAdapter';
 import { EbayAdapter } from './adapters/EbayAdapter';
 import { WalmartAdapter } from './adapters/WalmartAdapter';
 import { GenericAdapter } from './adapters/GenericAdapter';
@@ -103,6 +104,8 @@ let overlayInstance: import('./overlay/FloatingOverlay').FloatingOverlay | null 
 
 // ── P3.1: Lifecycle manager — centralized cleanup for SPA navigation ────────
 import { getLifecycle, resetLifecycle } from './LifecycleManager';
+import { cleanupAllPrompts } from './prompts/PromptRenderer';
+import { injectResearchCard, removeResearchCard, type ResearchCardData } from './ui/ResearchCard';
 
 /** Active adapter reference — used by overlay callbacks to avoid stale closures */
 let activeAdapter: BaseAdapter | null = null;
@@ -113,6 +116,8 @@ function trackTimeout(fn: () => void, delay: number): ReturnType<typeof setTimeo
 }
 
 function clearPendingTimers(): void {
+  cleanupAllPrompts();
+  removeResearchCard();
   resetLifecycle();
 }
 
@@ -202,6 +207,9 @@ async function bootstrap(): Promise<void> {
     case 'instagram':
       adapter = new InstagramAdapter();
       break;
+    case 'reddit':
+      adapter = new RedditAdapter();
+      break;
     case 'ebay':
       adapter = new EbayAdapter();
       break;
@@ -288,6 +296,7 @@ async function bootstrap(): Promise<void> {
   // usable controls" — the core P0 issue from the QA report.
   const minCards = getMinCardThreshold(platform);
   const cardCount = countDetectedCards(adapter);
+  updateContentState({ cardsDetected: cardCount });
   let overlayDeferred = false;
 
   if (cardCount < minCards) {
@@ -298,6 +307,14 @@ async function bootstrap(): Promise<void> {
   // Show first-action nudge only when we have cards to act on
   if (!overlayDeferred) {
     showFirstActionNudge();
+  }
+
+  // P0.2: Inject "Research Detected" card on Amazon product detail pages
+  if (
+    platform === 'amazon' &&
+    (location.pathname.includes('/dp/') || location.pathname.includes('/gp/product/'))
+  ) {
+    trackTimeout(() => injectResearchCardOnPDP(), 1500);
   }
 
   // Run a GenericAdapter as a supplement on known platforms to catch widgets,
@@ -354,6 +371,7 @@ async function bootstrap(): Promise<void> {
       trackTimeout(() => {
         if (injected) return;
         const currentCount = countDetectedCards(adapter);
+        updateContentState({ cardsDetected: currentCount });
 
         // Also re-run eligibility check (page may have changed via SPA)
         const recheck = checkPageEligibility();
@@ -409,6 +427,113 @@ async function bootstrap(): Promise<void> {
  * Count how many cards the adapter has detected on the current page.
  * Uses the adapter's active card selector to query the DOM.
  */
+/**
+ * P0.2: Inject "Research Detected" card on Amazon product detail pages.
+ * Queries the interest graph for topics matching the current product,
+ * then shows a cross-platform research summary card near the product title.
+ */
+async function injectResearchCardOnPDP(): Promise<void> {
+  try {
+    // Get product title from the page
+    const titleEl = document.querySelector('#productTitle') ?? document.querySelector('h1#title');
+    const productTitle = titleEl?.textContent?.trim() ?? '';
+    if (!productTitle) return;
+
+    // Query interest graph for research signals
+    const graphRes = await chrome.runtime.sendMessage({ type: 'GET_GRAPH_SUMMARY', payload: null });
+    const graph = graphRes?.data as
+      | {
+          topInterests?: Array<{ name: string; type: string; weight: number }>;
+          recentEntities?: Array<{ name: string; type: string; updated_at: number }>;
+        }
+      | undefined;
+    if (!graph) return;
+
+    // Query DB stats for platform-specific signals
+    const dbRes = await chrome.runtime.sendMessage({ type: 'GET_DB_STATS', payload: null });
+    const dbStats = dbRes?.data as
+      | {
+          active_entries?: Array<{
+            topic_key: string;
+            context_bucket: string;
+            value: { strength?: number };
+          }>;
+        }
+      | undefined;
+
+    // Extract product keywords from title
+    const titleWords = productTitle
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length > 3);
+
+    // Find matching research signals across platforms
+    const signals: ResearchCardData['signals'] = [];
+    const seenTopics = new Set<string>();
+
+    for (const interest of graph.topInterests ?? []) {
+      const name = interest.name.toLowerCase();
+      const matches = titleWords.some((w) => name.includes(w) || w.includes(name));
+      if (!matches) continue;
+      if (seenTopics.has(name)) continue;
+      seenTopics.add(name);
+
+      // Find which platforms this topic appeared on
+      const platforms = new Set<string>();
+      for (const entry of dbStats?.active_entries ?? []) {
+        const entryTopic = entry.topic_key
+          .replace(/^(blocked|interested|entity):/, '')
+          .toLowerCase();
+        if (entryTopic.includes(name) || name.includes(entryTopic)) {
+          const plat = entry.context_bucket?.split(':')[0];
+          if (plat) platforms.add(plat);
+        }
+      }
+
+      // Find most recent activity
+      const recentMatch = (graph.recentEntities ?? []).find((e) => e.name.toLowerCase() === name);
+
+      if (platforms.size > 0 || recentMatch) {
+        signals.push({
+          platform: [...platforms][0] ?? 'amazon',
+          topic: interest.name,
+          signalCount: platforms.size + (recentMatch ? 1 : 0),
+          lastSeen: recentMatch?.updated_at ?? Date.now(),
+        });
+      }
+    }
+
+    if (signals.length === 0) return;
+
+    // Build match reason
+    const platformNames = [...new Set(signals.map((s) => s.platform))];
+    const topTopics = signals.slice(0, 3).map((s) => s.topic);
+    const matchReason =
+      platformNames.length > 1
+        ? `You've been researching ${topTopics.join(', ')} across ${platformNames.length} platforms. This product aligns with your research.`
+        : `Based on your interest in ${topTopics.join(', ')}, this product matches your research.`;
+
+    // Calculate match score
+    const avgWeight =
+      signals.reduce((sum, s) => {
+        const interest = (graph.topInterests ?? []).find(
+          (i) => i.name.toLowerCase() === s.topic.toLowerCase(),
+        );
+        return sum + (interest?.weight ?? 0.3);
+      }, 0) / signals.length;
+
+    injectResearchCard({
+      productTitle,
+      matchScore: Math.min(avgWeight * 1.5, 1),
+      signals: signals.slice(0, 4),
+      matchReason,
+    });
+  } catch (err) {
+    // Silently fail — research card is non-critical
+    void err;
+  }
+}
+
 function countDetectedCards(adapter: BaseAdapter): number {
   const selector = adapter.getCardSelector();
   if (!selector) return 0;

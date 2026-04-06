@@ -1,5 +1,13 @@
 import type { ContextBucket, Platform } from './types';
 
+// ── Cloud API ────────────────────────────────────────────────────────────────
+
+/**
+ * Cloud backend URL. For local development, override via chrome.storage.local:
+ *   chrome.storage.local.set({ recome_cloud_url: 'http://localhost:3001' })
+ */
+export const CLOUD_URL = 'https://recome-api.fly.dev';
+
 // ── Database ──────────────────────────────────────────────────────────────────
 
 export const DB_NAME = 'recome_db';
@@ -98,6 +106,7 @@ export const PLATFORM_CONTEXT_MAP: Record<Platform, ContextBucket> = {
   twitter: 'social',
   facebook: 'social',
   instagram: 'social',
+  reddit: 'general',
   ebay: 'shopping',
   walmart: 'shopping',
   linkedin: 'work',
@@ -134,6 +143,7 @@ export const ALARM_NAMES = {
   selector_health: 'recome_selector_health',
   price_check: 'recome_price_check',
   import_check: 'recome_import_check',
+  weekly_digest: 'recome_weekly_digest',
 } as const;
 
 export const ALARM_INTERVALS = {
@@ -144,6 +154,7 @@ export const ALARM_INTERVALS = {
   selector_health_minutes: 60,
   price_check_minutes: 6 * 60, // every 6 hours
   import_check_minutes: 60, // check import schedules hourly
+  weekly_digest_minutes: 7 * 24 * 60, // once per week
 } as const;
 
 // ── UI ────────────────────────────────────────────────────────────────────────

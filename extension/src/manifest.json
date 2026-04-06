@@ -3,12 +3,12 @@
   "name": "RecoMe",
   "version": "1.2.0",
   "description": "Intelligent recommendation feed control. Your feed, your rules.",
-  "permissions": ["storage", "alarms", "tabs"],
+  "permissions": ["storage", "alarms", "tabs", "notifications"],
   "host_permissions": [
     "https://api.anthropic.com/*",
     "https://api.openai.com/*",
     "https://generativelanguage.googleapis.com/*",
-    "http://localhost:3001/*",
+    "https://recome-api.fly.dev/*",
     "https://*.youtube.com/*",
     "https://*.amazon.com/*",
     "https://*.amazon.co.uk/*",
@@ -38,6 +38,7 @@
     "https://*.x.com/*",
     "https://*.facebook.com/*",
     "https://*.instagram.com/*",
+    "https://*.reddit.com/*",
     "https://*.ebay.com/*",
     "https://*.ebay.co.uk/*",
     "https://*.ebay.com.au/*",
@@ -101,6 +102,7 @@
         "https://*.x.com/*",
         "https://*.facebook.com/*",
         "https://*.instagram.com/*",
+        "https://*.reddit.com/*",
         "https://*.ebay.com/*",
         "https://*.ebay.co.uk/*",
         "https://*.ebay.com.au/*",
@@ -157,6 +159,7 @@
         "https://*.x.com/*",
         "https://*.facebook.com/*",
         "https://*.instagram.com/*",
+        "https://*.reddit.com/*",
         "https://*.ebay.com/*",
         "https://*.walmart.com/*",
         "https://*.linkedin.com/*",
@@ -170,7 +173,7 @@
     }
   ],
   "content_security_policy": {
-    "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self' https://api.anthropic.com https://api.openai.com https://generativelanguage.googleapis.com http://localhost:3001; object-src 'none'"
+    "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self' https://api.anthropic.com https://api.openai.com https://generativelanguage.googleapis.com https://recome-api.fly.dev; object-src 'none'"
   },
   "commands": {
     "_execute_action": {

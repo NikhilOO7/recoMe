@@ -243,6 +243,7 @@ const SIGNATURES: Record<Platform, ContentSignature> = {
   twitter: twitterSignature,
   facebook: facebookSignature,
   instagram: instagramSignature,
+  reddit: genericSignature,
   ebay: ebaySignature,
   walmart: walmartSignature,
   linkedin: genericSignature,

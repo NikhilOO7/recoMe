@@ -9,6 +9,42 @@ import { safeStorageSyncGet } from '@shared/storageSync';
 const log = createLogger('FloatingOverlay');
 
 /**
+ * Platform-aware pill positioning to avoid native floating UI.
+ * Each platform has different bottom-right widgets (chat, mini-player, DM button)
+ * that collide with the default position.
+ */
+function getPlatformPillPosition(platform: string): { right: number; bottom: number } {
+  switch (platform) {
+    case 'amazon':
+      // Amazon has a chat widget at bottom-right
+      return { right: 24, bottom: 100 };
+    case 'youtube':
+      // YouTube mini-player sits bottom-right
+      return { right: 24, bottom: 100 };
+    case 'facebook':
+      // Facebook Messenger icon at bottom-right
+      return { right: 80, bottom: 24 };
+    case 'instagram':
+      // Instagram DM button area at bottom-right on mobile-style layouts
+      return { right: 24, bottom: 100 };
+    case 'twitter':
+      // X compose button and bottom nav
+      return { right: 80, bottom: 24 };
+    case 'walmart':
+      // Walmart help chat widget bottom-right
+      return { right: 24, bottom: 100 };
+    case 'linkedin':
+      // LinkedIn messaging widget bottom-right
+      return { right: 80, bottom: 24 };
+    case 'reddit':
+      // Reddit has minimal bottom-right UI
+      return { right: 24, bottom: 80 };
+    default:
+      return { right: 24, bottom: 80 };
+  }
+}
+
+/**
  * FloatingOverlay — injects a Shadow DOM–isolated overlay into the page.
  *
  * Contains:
@@ -85,6 +121,12 @@ export class FloatingOverlay {
     this.pillEl.setAttribute('aria-label', 'Open RecoMe overlay');
     this.pillEl.setAttribute('tabindex', '0');
     this.pillEl.style.pointerEvents = 'auto';
+
+    // Platform-aware positioning to avoid native floating UI (chat widgets, mini-players, etc.)
+    const pillPos = getPlatformPillPosition(this.platform);
+    this.pillEl.style.right = `${pillPos.right}px`;
+    this.pillEl.style.bottom = `${pillPos.bottom}px`;
+
     this.pillEl.innerHTML = `
       <img class="recome-pill-icon" src="${chrome.runtime.getURL('icons/recome_logo_48.png')}" alt="RecoMe" />
     `;

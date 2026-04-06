@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import type { Platform } from '@shared/types';
+import { PrivacyReport } from './PrivacyReport';
 import type {
   CloudAccountStatus,
   TwinStatus,
@@ -27,6 +28,7 @@ const ALL_PLATFORMS: Platform[] = [
   'twitter',
   'facebook',
   'instagram',
+  'reddit',
   'ebay',
   'walmart',
   'linkedin',
@@ -43,6 +45,7 @@ const PLATFORM_ICONS: Record<Platform, string> = {
   twitter: '𝕏',
   facebook: '𝔽',
   instagram: '📸',
+  reddit: 'R',
   ebay: '🛍',
   walmart: 'W',
   linkedin: 'in',
@@ -811,6 +814,11 @@ export function SettingsPanel({ onReplayOnboarding }: SettingsPanelProps = {}) {
           )}
         </div>
       )}
+
+      {/* Privacy Report */}
+      <div className="setting-group">
+        <PrivacyReport />
+      </div>
 
       {/* Data */}
       <div className="setting-group">

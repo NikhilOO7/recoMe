@@ -23,6 +23,7 @@ import type { RecoMeMessage, MessageResponse, CloudAccountStatus } from '@shared
 import { safeStorageSyncGet, safeStorageSyncSet } from '@shared/storageSync';
 import { getSyncManager, getLicenseManager } from './cloudServices';
 import { saveApiKeys, loadApiKeys } from '@shared/KeyVault';
+import { CLOUD_URL } from '@shared/constants';
 import {
   handleTwinGetStatus,
   handleTwinOptIn,
@@ -901,7 +902,7 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
       const lm = await getLicenseManager();
       await lm.setTier('FREE', email);
       sm.startAutoSync();
-      lm.startValidation('http://localhost:3001');
+      lm.startValidation(CLOUD_URL);
       return ok({ email, tier: 'FREE' });
     }
 
@@ -914,7 +915,7 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
       const lm = await getLicenseManager();
       await lm.setTier('FREE', email);
       sm.startAutoSync();
-      lm.startValidation('http://localhost:3001');
+      lm.startValidation(CLOUD_URL);
       return ok({ email, tier: 'FREE' });
     }
 

@@ -105,13 +105,18 @@ export class FacebookAdapter extends BaseAdapter {
    * may be empty shells. Verify they contain actual content.
    */
   protected override onCardFound(element: Element): void {
+    // Reject empty obfuscated shells but accept image/video posts with short captions
+    const hasMedia = !!element.querySelector(
+      'img[src], video, [data-video-id], [aria-label*="video"], [aria-label*="photo"]',
+    );
     const text = (element.textContent ?? '').trim();
-    if (text.length < 20) return;
+
+    // Accept if: has media (even with short text), or text is substantial
+    if (!hasMedia && text.length < 20) return;
 
     const hasLink = Array.from(element.querySelectorAll('a[href]')).some(
-      (a) => (a.textContent ?? '').trim().length > 5,
+      (a) => (a.textContent ?? '').trim().length > 3,
     );
-    const hasMedia = !!element.querySelector('img[src], video, [data-video-id]');
     if (!hasLink && !hasMedia) {
       log.debug('Card rejected — no links or media (possible obfuscated shell)');
       return;

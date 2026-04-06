@@ -22,6 +22,7 @@ export function detectPlatform(): Platform {
   if (host.includes('twitter.com') || host.includes('x.com')) return 'twitter';
   if (host.includes('facebook.com')) return 'facebook';
   if (host.includes('instagram.com')) return 'instagram';
+  if (host.includes('reddit.com')) return 'reddit';
   // eBay international domains
   if (/ebay\.(com|co\.\w+|de|fr|it|es|ca|com\.au|at|ch|ie|com\.sg|com\.my|ph|pl|nl|be)/.test(host))
     return 'ebay';

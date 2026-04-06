@@ -111,6 +111,15 @@ export function renderPrompt(
 
   // Position based on style
   if (data.style === 'toast') {
+    // Suppress toast prompts when the overlay panel is open to avoid collision
+    const overlayPanel = document
+      .querySelector('#recome-overlay-host')
+      ?.shadowRoot?.querySelector('.recome-panel');
+    if (overlayPanel && (overlayPanel as HTMLElement).style.display !== 'none') {
+      log.debug('Suppressing toast prompt — overlay panel is open');
+      return container; // Return without appending
+    }
+
     document.body.appendChild(container);
     requestAnimationFrame(() => container.classList.add('recome-prompt-visible'));
 
@@ -148,6 +157,12 @@ function dismiss(el: HTMLElement): void {
   el.addEventListener('transitionend', () => el.remove(), { once: true });
   // Fallback removal
   setTimeout(() => el.remove(), 500);
+}
+
+/** Remove all active smart prompts from the DOM (called on SPA navigation) */
+export function cleanupAllPrompts(): void {
+  const prompts = document.querySelectorAll('.recome-smart-prompt');
+  prompts.forEach((el) => el.remove());
 }
 
 /** Strip all HTML except <strong> tags to prevent XSS from user-controlled strings */
@@ -194,7 +209,7 @@ function ensureStyles(): void {
 
     .recome-prompt-toast {
       position: fixed;
-      bottom: 80px;
+      bottom: 140px;
       right: 24px;
       max-width: 420px;
     }

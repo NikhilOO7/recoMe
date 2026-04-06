@@ -54,7 +54,8 @@ const STORAGE_KEYS = {
   cloudUrl: 'recome_cloud_url',
 } as const;
 
-const DEFAULT_CLOUD_URL = 'http://localhost:3001';
+// Import from constants — override via chrome.storage.local for local dev
+import { CLOUD_URL as DEFAULT_CLOUD_URL } from '../constants';
 
 export class SyncClient {
   private encryption = new EncryptionClient();

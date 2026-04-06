@@ -1,0 +1,33 @@
+# Fly.io deployment config for RecoMe Cloud API
+# Docs: https://fly.io/docs/reference/configuration/
+
+app = "recome-api"
+primary_region = "sjc"  # San Jose — close to West Coast users
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "3001"
+  NODE_ENV = "production"
+  CORS_ORIGINS = "chrome-extension://*"
+
+[http_service]
+  internal_port = 3001
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0      # Scale to zero when idle (free tier friendly)
+  processes = ["app"]
+
+[[http_service.checks]]
+  grace_period = "10s"
+  interval = "30s"
+  method = "GET"
+  path = "/health"
+  timeout = "5s"
+
+# Scale config — start small, scale as needed
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

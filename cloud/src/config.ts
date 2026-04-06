@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
+  DIRECT_URL: z.string().optional(), // Supabase direct connection (for Prisma migrations)
 
   JWT_SECRET: z.string().min(32),
   JWT_ACCESS_TTL: z.string().default('15m'),

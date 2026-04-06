@@ -4,6 +4,7 @@ import { GraphSummary } from './GraphSummary';
 import { ActionHistory } from './ActionHistory';
 import { LearningProgress } from './LearningProgress';
 import { AgentInsights } from './AgentInsights';
+import { ResearchTopics } from './ResearchTopics';
 import type { RecoMeStats, ContextBucket } from '@shared/types';
 import type { TabContext } from '@shared/messages';
 
@@ -122,9 +123,12 @@ export function Dashboard() {
   const isColdStart =
     hiddenToday === 0 && totalHidden === 0 && memoryCount === 0 && patternCount === 0;
 
-  // Graceful degradation: if extension has no data at all (no blocks, likes, memory, patterns)
-  // show an "unavailable" hint rather than an empty dashboard that looks active
+  // Graceful degradation: if extension has no data at all AND the adapter isn't active,
+  // show an "unavailable" hint. But never show it if the adapter IS active on the page —
+  // that creates a trust-breaking "Unsupported" message when controls are visibly injected.
+  const adapterIsActive = tabCtx?.adapterActive === true;
   const isUnavailable =
+    !adapterIsActive &&
     !isColdStart &&
     hiddenToday === 0 &&
     totalHidden === 0 &&
@@ -150,6 +154,9 @@ export function Dashboard() {
           )}
         </div>
       )}
+
+      {/* Research Topics — thesis-first: show what the user is actively researching */}
+      <ResearchTopics />
 
       {/* Graceful degradation banner when no activity detected */}
       {isUnavailable && (

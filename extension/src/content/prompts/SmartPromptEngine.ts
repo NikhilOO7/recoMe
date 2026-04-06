@@ -364,11 +364,34 @@ export class SmartPromptEngine {
     const meta = trigger.metadata;
     if (!meta) return null;
 
-    const topic = meta.topics[0] ?? meta.creator ?? meta.title;
+    // Prefer extracted topics, then category context, then a cleaned title excerpt.
+    // Skip raw creator names (e.g. "@elonmusk") — they produce confusing prompts
+    // like "Really into @elonmusk?" instead of topic-based questions.
+    const topic =
+      trigger.context?.categoryName ?? meta.topics[0] ?? this.extractTitleKeyword(meta.title);
     if (!topic) return null;
 
     // Sanitize for HTML display
     return topic.replace(/</g, '&lt;').replace(/>/g, '&gt;').substring(0, 60);
+  }
+
+  /** Extract a short keyword phrase from a title for prompt display */
+  private extractTitleKeyword(title: string | undefined): string | null {
+    if (!title) return null;
+    // Remove common noise: "on YouTube", timestamps, URLs, handles
+    const cleaned = title
+      .replace(/@[\w]+/g, '') // Remove @handles
+      .replace(/https?:\/\/\S+/g, '') // Remove URLs
+      .replace(/\d{1,2}:\d{2}/g, '') // Remove timestamps
+      .replace(/[·|—–-]\s*$/g, '') // Remove trailing separators
+      .trim();
+    if (cleaned.length < 3) return null;
+    // Take first ~40 chars at a word boundary
+    const short = cleaned
+      .substring(0, 40)
+      .replace(/\s+\S*$/, '')
+      .trim();
+    return short.length >= 3 ? short : null;
   }
 
   private getContentKey(trigger: PromptTrigger): string | null {

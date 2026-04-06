@@ -1,0 +1,26 @@
+name: Deploy Cloud API
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'cloud/**'
+      - '.github/workflows/deploy-cloud.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cloud
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Fly.io CLI
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy to Fly.io
+        run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

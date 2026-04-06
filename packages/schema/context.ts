@@ -14,6 +14,7 @@ export type Platform =
   | 'twitter'
   | 'facebook'
   | 'instagram'
+  | 'reddit'
   | 'ebay'
   | 'walmart'
   | 'linkedin'

@@ -46,6 +46,11 @@ export async function registerAlarms(): Promise<void> {
       periodInMinutes: ALARM_INTERVALS.import_check_minutes,
       delayInMinutes: 10,
     },
+    {
+      name: ALARM_NAMES.weekly_digest,
+      periodInMinutes: ALARM_INTERVALS.weekly_digest_minutes,
+      delayInMinutes: 60, // First digest 1h after install
+    },
   ];
 
   let created = 0;
@@ -89,6 +94,9 @@ export function handleAlarm(alarm: chrome.alarms.Alarm): void {
         break;
       case ALARM_NAMES.import_check:
         await runImportCheck();
+        break;
+      case ALARM_NAMES.weekly_digest:
+        await runWeeklyDigest();
         break;
       default:
         log.warn(`Unknown alarm: ${alarm.name}`);
@@ -217,6 +225,74 @@ async function runPriceCheck(): Promise<void> {
     }
   } catch (err) {
     log.error('Price check failed', err);
+  }
+}
+
+async function runWeeklyDigest(): Promise<void> {
+  try {
+    const svc = getIntelligenceService();
+    await svc.initialize();
+    const graph = svc.getGraph();
+
+    // Gather weekly research summary
+    const entityCount = await graph.getEntityCount();
+    const allEntities = await graph.getAllEntities();
+
+    // Count signals from the past 7 days
+    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const recentEntities = allEntities.filter((e) => (e.updated_at ?? 0) > oneWeekAgo);
+    const recentCount = recentEntities.length;
+
+    // Get top interests by weight
+    const relations = await graph.getAllRelations();
+    const interestRelations = relations
+      .filter((r) => r.type === 'interested_in')
+      .sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0))
+      .slice(0, 5);
+
+    const topTopicNames: string[] = [];
+    for (const rel of interestRelations) {
+      const entity = await graph.getEntity(rel.target_id);
+      if (entity) topTopicNames.push(entity.name);
+    }
+
+    if (recentCount === 0 && entityCount === 0) {
+      log.info('Weekly digest: no activity to report');
+      return;
+    }
+
+    // Build digest message
+    const digestTitle = 'Your weekly research digest';
+    const digestBody =
+      recentCount > 0
+        ? `${recentCount} new research signal${recentCount !== 1 ? 's' : ''} this week. ` +
+          (topTopicNames.length > 0
+            ? `Top interests: ${topTopicNames.join(', ')}.`
+            : `${entityCount} topics tracked across your platforms.`)
+        : `${entityCount} research topics tracked. Browse Amazon, YouTube, or Reddit to build your research trail.`;
+
+    // Show browser notification
+    await chrome.notifications.create('recome_weekly_digest', {
+      type: 'basic',
+      iconUrl: chrome.runtime.getURL('icons/recome_logo_128.png'),
+      title: digestTitle,
+      message: digestBody,
+      priority: 1,
+    });
+
+    // Store digest timestamp
+    await chrome.storage.local.set({
+      recome_last_digest: new Date().toISOString(),
+      recome_last_digest_data: {
+        recentCount,
+        entityCount,
+        topTopics: topTopicNames,
+      },
+    });
+
+    log.info(`Weekly digest sent: ${recentCount} signals, ${entityCount} topics`);
+  } catch (err) {
+    log.error('Weekly digest generation failed', err);
   }
 }
 

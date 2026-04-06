@@ -1,4 +1,5 @@
 import { prisma } from '../db.js';
+import { Prisma } from '@prisma/client';
 
 /**
  * TasteTwinService — Privacy-first taste similarity matching.
@@ -99,7 +100,7 @@ export class TasteTwinService {
         userId: { not: userId },
         consentGiven: true,
         isDiscoverable: true,
-        tasteVector: { not: null },
+        tasteVector: { not: Prisma.JsonNull },
       },
       select: { userId: true, tasteVector: true },
     });

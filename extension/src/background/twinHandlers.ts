@@ -1,8 +1,7 @@
 import { ok, err } from '@shared/messages';
 import type { MessageResponse } from '@shared/messages';
 import { getSyncManager } from './cloudServices';
-
-const CLOUD_URL = 'http://localhost:3001';
+import { CLOUD_URL } from '@shared/constants';
 
 /**
  * Proxy a request to the cloud Taste Twin API.

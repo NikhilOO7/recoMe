@@ -406,6 +406,7 @@ const PLATFORM_MIN_CARDS: Record<string, number> = {
   twitter: 1,
   facebook: 1,
   instagram: 1,
+  reddit: 1,
   linkedin: 1,
   tiktok: 1,
   indeed: 2,
