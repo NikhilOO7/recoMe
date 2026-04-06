@@ -37,8 +37,10 @@ export class YouTubeAdapter extends BaseAdapter {
         'ytd-grid-video-renderer',
 
         // ── Shorts shelf items ──────────────────────────────────────────
-        'ytd-reel-item-renderer',
         'ytd-shorts-lockup-view-model',
+        'ytd-reel-item-renderer',
+        // Shorts shelf container (renders individual short items)
+        'ytd-reel-shelf-renderer ytd-shorts-lockup-view-model',
         // Shorts in full-screen vertical scroll
         'ytd-reel-video-renderer',
 

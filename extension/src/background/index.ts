@@ -7,6 +7,7 @@ import { createLogger } from '@shared/Logger';
 import type { RecoMeMessage } from '@shared/messages';
 import { safeStorageSyncGet, safeStorageSyncSet } from '@shared/storageSync';
 import { initCloudServices } from './cloudServices';
+import { migrateKeysIfNeeded } from '@shared/KeyVault';
 
 const log = createLogger('Background');
 
@@ -101,6 +102,9 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason === 'update') {
     await migrateStorageSchema();
   }
+
+  // Migrate plaintext API keys to encrypted storage
+  await migrateKeysIfNeeded();
 
   // Initialize cloud sync services
   await initCloudServices();

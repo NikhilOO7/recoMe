@@ -15,8 +15,11 @@ export class InstagramAdapter extends BaseAdapter {
         'a[href*="/reel/"]:has(img)',
         'a[href*="/reel/"]:has(video)',
         // Profile grid photos (3-column grid on profile page)
-        'div._aagw a[href*="/p/"]',
+        // Note: avoid obfuscated class names like _aagw — they rotate every deploy.
+        // Use stable structural selectors instead.
+        'main article a[href*="/p/"]',
         'div[style*="flex"] a[href*="/p/"]',
+        'section > main a[href*="/p/"]:has(img)',
         // Reels page items
         'div[role="button"][tabindex="0"] video',
         // Story tray highlights on profile

@@ -12,10 +12,45 @@ const TOAST_ICONS: Record<ToastType, string> = {
 
 export interface ToastOptions {
   onUndo?: () => void;
+  /** Dedupe key — if a toast with this key is already visible, skip */
+  dedupeKey?: string;
+}
+
+// ── Toast Queue ────────────────────────────────────────────────────────────
+
+const MAX_VISIBLE_TOASTS = 3;
+const TOAST_GAP = 8;
+const TOAST_BASE_BOTTOM = 24;
+
+interface ActiveToast {
+  element: HTMLDivElement;
+  dedupeKey?: string;
+  dismiss: () => void;
+}
+
+const activeToasts: ActiveToast[] = [];
+
+/** Reposition all active toasts so they stack upward without overlap */
+function repositionToasts(): void {
+  let bottom = TOAST_BASE_BOTTOM;
+  for (const t of activeToasts) {
+    t.element.style.bottom = `${bottom}px`;
+    bottom += t.element.offsetHeight + TOAST_GAP;
+  }
 }
 
 export function showToast(message: string, type: ToastType = 'info', options?: ToastOptions): void {
   ensureStyles();
+
+  // Deduplicate: skip if a toast with the same key is already showing
+  if (options?.dedupeKey && activeToasts.some((t) => t.dedupeKey === options.dedupeKey)) {
+    return;
+  }
+
+  // Evict oldest toast if at capacity
+  if (activeToasts.length >= MAX_VISIBLE_TOASTS) {
+    activeToasts[0]?.dismiss();
+  }
 
   const toast = document.createElement('div');
   toast.className = `recome-toast recome-toast-${type}`;
@@ -33,20 +68,29 @@ export function showToast(message: string, type: ToastType = 'info', options?: T
   toast.innerHTML = html;
   document.body.appendChild(toast);
 
-  // Trigger enter animation
-  requestAnimationFrame(() => {
-    toast.classList.add('recome-toast-visible');
-  });
-
   let dismissed = false;
   const dismiss = () => {
     if (dismissed) return;
     dismissed = true;
     toast.classList.remove('recome-toast-visible');
+
+    // Remove from active list and reposition remaining
+    const idx = activeToasts.findIndex((t) => t.element === toast);
+    if (idx !== -1) activeToasts.splice(idx, 1);
+    repositionToasts();
+
     toast.addEventListener('transitionend', () => toast.remove(), { once: true });
-    // Fallback removal if transitionend doesn't fire
     setTimeout(() => toast.remove(), 500);
   };
+
+  const entry: ActiveToast = { element: toast, dedupeKey: options?.dedupeKey, dismiss };
+  activeToasts.push(entry);
+
+  // Trigger enter animation + position
+  requestAnimationFrame(() => {
+    repositionToasts();
+    toast.classList.add('recome-toast-visible');
+  });
 
   if (options?.onUndo) {
     toast.querySelector('.recome-toast-undo')?.addEventListener('click', (e) => {
@@ -86,7 +130,7 @@ function ensureStyles(): void {
       box-shadow: 0 8px 32px rgba(0,0,0,0.4);
       opacity: 0;
       transform: translateY(12px);
-      transition: opacity 300ms ease, transform 300ms ease;
+      transition: opacity 300ms ease, transform 300ms ease, bottom 300ms ease;
       pointer-events: none;
       max-width: 380px;
     }

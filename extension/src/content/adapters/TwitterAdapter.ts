@@ -76,6 +76,15 @@ export class TwitterAdapter extends BaseAdapter {
     return 'unknown';
   }
 
+  /**
+   * Filter out right-rail modules (Who to follow, Trending sidebar, etc.)
+   * to prevent false-positive controls on non-primary content.
+   */
+  protected override onCardFound(element: Element): void {
+    if (element.closest('[data-testid="sidebarColumn"]')) return;
+    super.onCardFound(element);
+  }
+
   protected override isUserInitiatedSearch(): boolean {
     return location.pathname.startsWith('/search');
   }

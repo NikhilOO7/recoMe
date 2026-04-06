@@ -8,9 +8,11 @@ const log = createLogger('CloudServices');
 let syncManager: SyncManager | null = null;
 let licenseManager: LicenseManager | null = null;
 let featureGate: FeatureGate | null = null;
+let initPromise: Promise<void> | null = null;
 
 /** Initialize cloud services (call once during extension startup) */
 export async function initCloudServices(): Promise<void> {
+  if (syncManager && licenseManager && featureGate) return;
   try {
     licenseManager = new LicenseManager();
     await licenseManager.init();
@@ -33,17 +35,27 @@ export async function initCloudServices(): Promise<void> {
   }
 }
 
-export function getSyncManager(): SyncManager {
-  if (!syncManager) throw new Error('Cloud services not initialized');
+/** Ensure cloud services are initialized (lazy init for service worker wake) */
+async function ensureInit(): Promise<void> {
+  if (syncManager && licenseManager && featureGate) return;
+  if (!initPromise) initPromise = initCloudServices();
+  await initPromise;
+}
+
+export async function getSyncManager(): Promise<SyncManager> {
+  await ensureInit();
+  if (!syncManager) throw new Error('Cloud services failed to initialize');
   return syncManager;
 }
 
-export function getLicenseManager(): LicenseManager {
-  if (!licenseManager) throw new Error('Cloud services not initialized');
+export async function getLicenseManager(): Promise<LicenseManager> {
+  await ensureInit();
+  if (!licenseManager) throw new Error('Cloud services failed to initialize');
   return licenseManager;
 }
 
-export function getFeatureGate(): FeatureGate {
-  if (!featureGate) throw new Error('Cloud services not initialized');
+export async function getFeatureGate(): Promise<FeatureGate> {
+  await ensureInit();
+  if (!featureGate) throw new Error('Cloud services failed to initialize');
   return featureGate;
 }

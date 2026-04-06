@@ -101,23 +101,46 @@ async function getSettings(): Promise<Settings> {
 // ── Overlay reference (for toggle command) ──────────────────────────────────
 let overlayInstance: import('./overlay/FloatingOverlay').FloatingOverlay | null = null;
 
-// ── P3.1: Lifecycle manager — tracks pending timeouts for clean teardown ────
+// ── P3.1: Lifecycle manager — centralized cleanup for SPA navigation ────────
+import { getLifecycle, resetLifecycle } from './LifecycleManager';
+
 /** Active adapter reference — used by overlay callbacks to avoid stale closures */
 let activeAdapter: BaseAdapter | null = null;
-/** Handles for recheck timeouts so they can be cleared on SPA navigation */
-const pendingTimers: ReturnType<typeof setTimeout>[] = [];
 
+/** Legacy compat wrappers — delegate to LifecycleManager */
 function trackTimeout(fn: () => void, delay: number): ReturnType<typeof setTimeout> {
-  const handle = setTimeout(fn, delay);
-  pendingTimers.push(handle);
-  return handle;
+  return getLifecycle().trackTimeout(fn, delay);
 }
 
-/** Clear all tracked timeouts (called on SPA nav before re-bootstrap) */
 function clearPendingTimers(): void {
-  for (const h of pendingTimers) clearTimeout(h);
-  pendingTimers.length = 0;
+  resetLifecycle();
 }
+
+// ── Tab context state (for popup synchronization) ─────────────────────────
+let contentState = {
+  platform: 'unknown',
+  adapterActive: false,
+  cardsDetected: 0,
+  controlsInjected: 0,
+  pageEligible: false,
+  eligibilityReason: undefined as string | undefined,
+};
+
+/** Update content state — called from bootstrap and adapter callbacks */
+function updateContentState(patch: Partial<typeof contentState>): void {
+  Object.assign(contentState, patch);
+}
+
+// Listen for tab context queries from the background script
+chrome.runtime.onMessage.addListener(
+  (message: { type: string }, _sender, sendResponse: (response: unknown) => void) => {
+    if (message.type === 'RECOME_GET_CONTENT_STATE') {
+      sendResponse(contentState);
+      return true;
+    }
+    return false;
+  },
+);
 
 async function bootstrap(): Promise<void> {
   // Never run on pure chat/messaging sites
@@ -143,11 +166,13 @@ async function bootstrap(): Promise<void> {
   const eligibility = checkPageEligibility();
   if (!eligibility.eligible) {
     log.info(`Page ineligible: ${eligibility.reason} — suppressing all RecoMe UI`);
+    updateContentState({ pageEligible: false, eligibilityReason: eligibility.reason });
     return;
   }
 
   const platform = detectPlatform();
   log.info(`Platform detected: ${platform}`);
+  updateContentState({ platform, pageEligible: true, eligibilityReason: undefined });
 
   const settings = await getSettings();
   if (!settings.enabled) {
@@ -212,8 +237,10 @@ async function bootstrap(): Promise<void> {
     }
   }
 
-  // P3.1: Store active adapter so overlay callbacks always use the current one
+  // P3.1: Store active adapter and register with lifecycle for SPA cleanup
   activeAdapter = adapter;
+  getLifecycle().register(adapter);
+  updateContentState({ adapterActive: true });
 
   if (platform !== 'unknown' && settings.platforms[platform] === false) {
     log.info(`Platform ${platform} disabled in settings`);

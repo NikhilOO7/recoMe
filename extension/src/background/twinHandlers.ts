@@ -13,7 +13,7 @@ async function twinFetch(
   method: 'GET' | 'POST' | 'PATCH' = 'GET',
   body?: unknown,
 ): Promise<{ ok: boolean; status: number; data: unknown }> {
-  const sm = getSyncManager();
+  const sm = await getSyncManager();
   if (!sm.isAvailable()) {
     return { ok: false, status: 401, data: { error: 'Not authenticated' } };
   }

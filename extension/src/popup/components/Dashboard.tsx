@@ -5,6 +5,7 @@ import { ActionHistory } from './ActionHistory';
 import { LearningProgress } from './LearningProgress';
 import { AgentInsights } from './AgentInsights';
 import type { RecoMeStats, ContextBucket } from '@shared/types';
+import type { TabContext } from '@shared/messages';
 
 const ALL_ACHIEVEMENTS = [
   // First Steps
@@ -53,6 +54,7 @@ export function Dashboard() {
   const [context, setContext] = useState<ContextBucket>('general');
   const [loading, setLoading] = useState(true);
   const [unlockedIds, setUnlockedIds] = useState<string[]>([]);
+  const [tabCtx, setTabCtx] = useState<TabContext | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -77,6 +79,13 @@ export function Dashboard() {
       .then((r: { success: boolean; data?: unknown }) => {
         const s = r.data as { context_override?: ContextBucket | null } | undefined;
         if (s?.context_override) setContext(s.context_override);
+      })
+      .catch(() => undefined);
+
+    // Get current tab context for status bar
+    send('GET_TAB_CONTEXT')
+      .then((r) => {
+        if (r.success && r.data) setTabCtx(r.data as TabContext);
       })
       .catch(() => undefined);
   }, []);
@@ -126,6 +135,22 @@ export function Dashboard() {
 
   return (
     <div className="dashboard">
+      {/* Tab context status bar */}
+      {tabCtx && (
+        <div className="tab-status-bar">
+          <span className={`tab-status-dot ${tabCtx.adapterActive ? 'active' : 'inactive'}`} />
+          <span className="tab-status-platform">
+            {tabCtx.platform === 'unknown' ? 'Unsupported page' : tabCtx.platform}
+          </span>
+          {tabCtx.adapterActive && tabCtx.cardsDetected > 0 && (
+            <span className="tab-status-cards">{tabCtx.cardsDetected} cards</span>
+          )}
+          {!tabCtx.pageEligible && tabCtx.eligibilityReason && (
+            <span className="tab-status-reason">{tabCtx.eligibilityReason}</span>
+          )}
+        </div>
+      )}
+
       {/* Graceful degradation banner when no activity detected */}
       {isUnavailable && (
         <div

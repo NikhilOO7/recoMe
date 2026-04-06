@@ -53,7 +53,7 @@ function getMenuPortal(): HTMLDivElement {
     const portal = document.createElement('div');
     portal.id = 'recome-menu-portal';
     portal.style.cssText =
-      'position:fixed;top:0;left:0;width:0;height:0;overflow:visible;pointer-events:none;z-index:2147483640;';
+      'position:fixed;top:0;left:0;width:100vw;height:100vh;overflow:visible;pointer-events:none;z-index:2147483640;';
     document.body.appendChild(portal);
     sharedMenuPortal = portal;
   }
@@ -586,11 +586,15 @@ export abstract class BaseAdapter {
       const rect = trigger.getBoundingClientRect();
       const menuBottom = window.innerHeight - rect.top + 6;
       const menuRight = window.innerWidth - rect.right;
+      // Clamp menu position to stay within viewport
+      const clampedBottom = Math.max(8, menuBottom);
+      const clampedRight = Math.max(8, Math.min(menuRight, window.innerWidth - 280));
       menu.style.cssText = `
         position: fixed;
-        bottom: ${menuBottom}px;
-        right: ${menuRight}px;
+        bottom: ${clampedBottom}px;
+        right: ${clampedRight}px;
         pointer-events: auto;
+        z-index: 2147483647;
       `;
 
       outsideClickHandler = (e: Event) => {
@@ -936,11 +940,14 @@ export abstract class BaseAdapter {
       const rect = trigger.getBoundingClientRect();
       const menuBottom = window.innerHeight - rect.top + 6;
       const menuRight = window.innerWidth - rect.right;
+      const clampedMenuBottom = Math.max(8, menuBottom);
+      const clampedMenuRight = Math.max(8, Math.min(menuRight, window.innerWidth - 240));
       menu.style.cssText = `
         position: fixed;
-        bottom: ${menuBottom}px;
-        right: ${menuRight}px;
+        bottom: ${clampedMenuBottom}px;
+        right: ${clampedMenuRight}px;
         pointer-events: auto;
+        z-index: 2147483647;
       `;
 
       // Close on outside click

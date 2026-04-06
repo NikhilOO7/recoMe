@@ -1,0 +1,61 @@
+<!-- LinkedIn feed post fixture for selector validation -->
+<main class="scaffold-layout__main">
+  <div class="scaffold-finite-scroll__content">
+    <!-- Standard feed post -->
+    <div class="feed-shared-update-v2" data-urn="urn:li:activity:7100000000000000001">
+      <div class="feed-shared-actor">
+        <span class="feed-shared-actor__name">
+          <span>Jane Smith</span>
+        </span>
+        <span class="feed-shared-actor__description">Software Engineer at Acme Corp</span>
+      </div>
+      <div class="feed-shared-text">
+        <span class="break-words">
+          Excited to share our latest project on machine learning infrastructure!
+          #MachineLearning #Engineering
+        </span>
+      </div>
+      <div class="social-details-social-counts">
+        <span>142 reactions</span>
+        <span>23 comments</span>
+      </div>
+    </div>
+
+    <!-- Activity URN variant -->
+    <div data-urn="urn:li:activity:7100000000000000002" data-id="urn:li:activity:7100000000000000002">
+      <div class="feed-shared-actor">
+        <span class="feed-shared-actor__name">
+          <span>John Doe</span>
+        </span>
+      </div>
+      <div class="feed-shared-text">
+        <span class="break-words">Great article on cloud architecture patterns.</span>
+      </div>
+    </div>
+
+    <!-- Promoted post -->
+    <div class="feed-shared-update-v2" data-urn="urn:li:activity:7100000000000000003">
+      <div class="feed-shared-actor">
+        <span class="feed-shared-actor__sub-description">Promoted</span>
+        <span class="feed-shared-actor__name"><span>TechCorp</span></span>
+      </div>
+      <div class="feed-shared-text">
+        <span class="break-words">Try our new developer tools platform.</span>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Jobs search results (separate page type, included for combined selector test) -->
+<div class="jobs-search-results-list">
+  <li class="jobs-search-results__list-item">
+    <div class="job-card-container" data-job-id="3800000001">
+      <a class="job-card-list__title" href="/jobs/view/3800000001/">
+        Senior Frontend Engineer
+      </a>
+      <span class="job-card-container__company-name">Acme Corp</span>
+      <span class="job-card-container__metadata-item">San Francisco, CA</span>
+      <span class="job-card-container__metadata-item">$150,000 - $200,000</span>
+    </div>
+  </li>
+</div>

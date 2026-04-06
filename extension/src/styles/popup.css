@@ -501,6 +501,52 @@ body {
   line-height: 1.5;
 }
 
+/* ── Tab Status Bar ──────────────────────────────────────────────────────────── */
+
+.tab-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.tab-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tab-status-dot.active {
+  background: var(--accent4);
+}
+
+.tab-status-dot.inactive {
+  background: var(--text-muted);
+}
+
+.tab-status-platform {
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.tab-status-cards {
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.tab-status-reason {
+  color: var(--text-muted);
+  font-style: italic;
+  margin-left: auto;
+}
+
 /* ── Loading / Error ─────────────────────────────────────────────────────────── */
 .dashboard-loading {
   display: flex;
@@ -2191,12 +2237,13 @@ body {
 }
 
 .agent-module-card {
-  background: var(--surface);
+  background: var(--surface2);
   border: 1px solid var(--border);
   border-left: 3px solid var(--accent);
   border-radius: 8px;
   overflow: hidden;
   transition: box-shadow 0.15s ease;
+  color: var(--text);
 }
 
 .agent-module-card:hover {
@@ -2209,12 +2256,15 @@ body {
   gap: 8px;
   width: 100%;
   padding: 8px 10px;
-  background: none;
+  background: transparent;
   border: none;
   cursor: pointer;
   color: var(--text);
   font-size: 12px;
+  font-family: inherit;
   text-align: left;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .agent-module-icon {
@@ -2311,7 +2361,7 @@ body {
   gap: 1px;
   margin-top: 4px;
   padding: 4px 6px;
-  background: var(--surface2);
+  background: var(--surface);
   border-radius: 4px;
 }
 
@@ -2391,6 +2441,12 @@ body {
 
 /* ── Cloud Sync Section ───────────────────────────────────────────────────── */
 
+.cloud-auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
 .cloud-tabs {
   display: flex;
   gap: 0;
@@ -2425,15 +2481,23 @@ body {
   margin-bottom: 8px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: var(--bg-card);
+  background: var(--surface2);
   color: var(--text);
   font-size: 12px;
   box-sizing: border-box;
 }
 
+.cloud-input::placeholder {
+  color: var(--text-muted);
+}
+
 .cloud-input:focus {
   outline: none;
   border-color: var(--accent);
+}
+
+.cloud-auth-form .setting-btn {
+  margin-top: 4px;
 }
 
 .cloud-error {
@@ -2469,7 +2533,7 @@ body {
   justify-content: space-between;
   padding: 8px 10px;
   margin-bottom: 4px;
-  background: var(--bg-card);
+  background: var(--surface2);
   border-radius: 6px;
   border: 1px solid var(--border);
 }
@@ -2507,7 +2571,7 @@ body {
   justify-content: space-between;
   padding: 8px 10px;
   margin-bottom: 4px;
-  background: var(--bg-card);
+  background: var(--surface2);
   border-radius: 6px;
   border: 1px solid var(--border);
 }

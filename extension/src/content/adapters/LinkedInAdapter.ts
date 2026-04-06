@@ -37,13 +37,16 @@ export class LinkedInAdapter extends BaseAdapter {
         'div[data-urn^="urn:li:ugcPost"]',
 
         // ── Job cards ───────────────────────────────────────────────────
+        // Entity-based selectors (most stable — tied to data model, not UI)
+        'div[data-job-id]',
+        '[data-view-name="job-card"]',
+        'a[href*="/jobs/view/"]',
+        // Class-based selectors (may change with redesigns)
         'li.jobs-search-results__list-item',
         'div.job-card-container',
         'li.scaffold-layout__list-item',
-        // Job collections / recommendations
         'div.jobs-unified-top-card',
         'li.job-card-container--clickable',
-        'div[data-job-id]',
         // "Jobs you might be interested in" shelf
         'li.ember-view.occludable-update',
 
@@ -237,13 +240,15 @@ export class LinkedInAdapter extends BaseAdapter {
   }
 
   private extractJobMetadata(element: Element): ContentMetadata | null {
-    // Job title
+    // Job title — prefer stable structural selectors over BEM class names
     const titleEl =
+      element.querySelector('a[href*="/jobs/view/"]') ??
       element.querySelector('.job-card-list__title') ??
       element.querySelector('.job-card-container__link') ??
       element.querySelector('a.job-card-list__title--link') ??
       element.querySelector('.jobs-unified-top-card__job-title') ??
       element.querySelector('h2.job-card-container__link') ??
+      element.querySelector('h3 a[href*="/jobs/"]') ??
       element.querySelector('strong');
     let title = titleEl ? extractTextContent(titleEl).trim() : '';
     if (!title) title = heuristicTitle(element) ?? '';

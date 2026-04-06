@@ -7,6 +7,8 @@ import {
   looksLikePrice,
 } from './MetadataHeuristics';
 import type { ContentMetadata } from '@shared/types';
+import type { CandidateEntity } from '@schema/entities';
+import type { PageContext } from '@schema/decisions';
 
 /**
  * WalmartAdapter — hardened selector coverage + defensive page handling.
@@ -38,11 +40,16 @@ export class WalmartAdapter extends BaseAdapter {
         '.product-tile',
         // Tempo product tile inside grids and carousels
         '[data-testid="product-tile"]',
+        // Stable fallbacks when data-testid is stripped in production
+        'a[href*="/ip/"][data-item-id]',
+        'div[data-item-id] a[href*="/ip/"]',
 
         // ── Browse / Category pages ─────────────────────────────────────
         '[data-testid="browse-item"]',
         '.browse-grid-item',
         '[data-testid="category-item"]',
+        // Structural fallback: any product link tile in main content
+        '#maincontent a[href*="/ip/"]:has(img)',
 
         // ── Homepage hero / featured product tiles ──────────────────────
         '[data-testid="hero-item"]',
@@ -97,6 +104,14 @@ export class WalmartAdapter extends BaseAdapter {
         '.comparison-item-card',
         '[data-testid="btf-item"]',
         '.product-comparison-tile',
+
+        // ── Tempo product pod (newer Walmart grid rendering) ─────────
+        '[data-testid="product-pod"]',
+        '[data-testid="tempo-product-tile"]',
+        '[data-testid="flash-deal-item"]',
+        // Any product link tile inside a Tempo module
+        '[data-testid="tempo-module"] [data-item-id]',
+        '[data-testid="tempo-module"] a[href*="/ip/"]',
       ].join(', '),
       feedSelector: [
         // Search results
@@ -115,6 +130,8 @@ export class WalmartAdapter extends BaseAdapter {
         // Deals
         '[data-testid="deal-grid"]',
         '.flash-deals-container',
+        '[data-testid="flash-deals-grid"]',
+        '[data-testid="flash-deals"]',
         '[data-testid="rollback-grid"]',
         // Product page recommendations
         '[data-testid="recommendations"]',
@@ -136,8 +153,93 @@ export class WalmartAdapter extends BaseAdapter {
     });
   }
 
+  private rescanTimers: ReturnType<typeof setTimeout>[] = [];
+  private carouselObserver: IntersectionObserver | null = null;
+
+  override init(): void {
+    super.init();
+
+    // Walmart's Tempo modules and Flash Deal carousels lazy-render product cards.
+    // Schedule delayed re-scans to pick up cards that arrive after the initial pass.
+    for (const delay of [2000, 5000, 10000]) {
+      this.rescanTimers.push(
+        setTimeout(() => {
+          const cards = document.querySelectorAll(this.activeCardSelector);
+          cards.forEach((card) => this.onCardFound(card));
+        }, delay),
+      );
+    }
+
+    // Watch carousel containers — re-scan when they scroll into view
+    this.carouselObserver = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const cards = entry.target.querySelectorAll(this.activeCardSelector);
+            cards.forEach((card) => this.onCardFound(card));
+          }
+        }
+      },
+      { rootMargin: '200px', threshold: 0.1 },
+    );
+
+    // Observe all carousel/shelf containers
+    // Use both data-testid and structural selectors since data-testid may be stripped
+    const carouselContainers = document.querySelectorAll(
+      '[data-testid="product-carousel"], [data-testid="tempo-module"], .flash-deals-container, [role="group"], [data-testid="deal-grid"], [data-automation-id="search-result-set"], section[data-automation-id]',
+    );
+    carouselContainers.forEach((c) => this.carouselObserver?.observe(c));
+  }
+
+  override destroy(): void {
+    this.rescanTimers.forEach(clearTimeout);
+    this.rescanTimers = [];
+    this.carouselObserver?.disconnect();
+    this.carouselObserver = null;
+    super.destroy();
+  }
+
+  protected override get isCommerceAdapter(): boolean {
+    return true;
+  }
+
   protected override isUserInitiatedSearch(): boolean {
     return window.location.pathname.startsWith('/search');
+  }
+
+  override buildPageContext(): PageContext {
+    const path = window.location.pathname;
+    const params = new URLSearchParams(window.location.search);
+    let pageType: 'search' | 'product' | 'feed' | 'home' = 'home';
+    if (path.startsWith('/search')) pageType = 'search';
+    else if (path.includes('/ip/')) pageType = 'product';
+    else if (path.includes('/browse') || path.includes('/cp/')) pageType = 'feed';
+    return {
+      site: 'walmart',
+      pageType,
+      url: window.location.href,
+      query: params.get('q') ?? undefined,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  override extractCandidate(element: Element): CandidateEntity | null {
+    const metadata = this.extractMetadata(element);
+    if (!metadata) return null;
+    return {
+      candidateId: metadata.id,
+      entityType: 'product',
+      rawText: metadata.title,
+      normalizedText: metadata.title.toLowerCase().trim(),
+      productId: metadata.id,
+      brandId: metadata.creator
+        ? `brand:${metadata.creator.toLowerCase().replace(/\s+/g, '_')}`
+        : undefined,
+      metadata: {
+        brand: metadata.creator,
+        ...(metadata.raw_metadata ?? {}),
+      },
+    };
   }
 
   extractMetadata(element: Element): ContentMetadata | null {

@@ -53,11 +53,21 @@ export async function loadPanelState(): Promise<PanelSnapshot> {
   try {
     const [syncResult, localResult] = await Promise.all([
       safeStorageSyncGet([STORAGE_KEYS.onboardingDone, STORAGE_KEYS.onboardingVersion]),
-      chrome.storage.local.get([STORAGE_KEYS.activeTab, STORAGE_KEYS.qaBypassOnboarding]),
+      chrome.storage.local.get([
+        STORAGE_KEYS.activeTab,
+        STORAGE_KEYS.qaBypassOnboarding,
+        STORAGE_KEYS.onboardingDone,
+        STORAGE_KEYS.onboardingVersion,
+      ]),
     ]);
 
-    const done = !!syncResult[STORAGE_KEYS.onboardingDone];
-    const version = (syncResult[STORAGE_KEYS.onboardingVersion] as number) || 0;
+    // Check both sync and local storage — content scripts may not access sync
+    const done =
+      !!syncResult[STORAGE_KEYS.onboardingDone] || !!localResult[STORAGE_KEYS.onboardingDone];
+    const version = Math.max(
+      (syncResult[STORAGE_KEYS.onboardingVersion] as number) || 0,
+      (localResult[STORAGE_KEYS.onboardingVersion] as number) || 0,
+    );
     const qaBypass = !!localResult[STORAGE_KEYS.qaBypassOnboarding];
     const savedTab = localResult[STORAGE_KEYS.activeTab] as PanelTab | undefined;
 
@@ -99,12 +109,18 @@ export async function loadPanelState(): Promise<PanelSnapshot> {
 
 /**
  * Mark onboarding as complete. Called from BOTH popup and overlay paths.
+ * Writes to both sync and local storage to ensure the overlay (content script)
+ * can always read the state, even if sync storage is inaccessible.
  */
 export async function completeOnboarding(): Promise<void> {
-  await safeStorageSyncSet({
+  const data = {
     [STORAGE_KEYS.onboardingDone]: true,
     [STORAGE_KEYS.onboardingVersion]: CURRENT_ONBOARDING_VERSION,
-  });
+  };
+  await safeStorageSyncSet(data);
+  // Also write directly to local storage (without prefix) as a fallback for
+  // content scripts that may not be able to access sync storage.
+  await chrome.storage.local.set(data).catch(() => undefined);
 }
 
 /**

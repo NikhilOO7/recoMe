@@ -365,34 +365,34 @@ function isDefensivePage(): boolean {
 // ── Main eligibility check ───────────────────────────────────────────────────
 
 export function checkPageEligibility(): EligibilityResult {
-  // Check each gate in priority order
+  // Check each gate in priority order — labels match QA report taxonomy
 
   if (isCaptchaPage()) {
     log.info('Page blocked: CAPTCHA / anti-bot challenge detected');
-    return { eligible: false, reason: 'captcha' };
+    return { eligible: false, reason: 'page_invalid_captcha' };
   }
 
   if (isDefensivePage()) {
     log.info('Page blocked: defensive / robot verification page');
-    return { eligible: false, reason: 'defensive' };
+    return { eligible: false, reason: 'page_invalid_antibot' };
   }
 
   if (isAuthPage()) {
     log.info('Page blocked: login / signup / auth page');
-    return { eligible: false, reason: 'auth' };
+    return { eligible: false, reason: 'page_invalid_auth' };
   }
 
   if (isLoggedOutSocialPage()) {
     log.info('Page blocked: logged-out social platform landing page');
-    return { eligible: false, reason: 'logged-out' };
+    return { eligible: false, reason: 'page_invalid_logged_out' };
   }
 
   if (isErrorOrInterstitialPage()) {
     log.info('Page blocked: error / interstitial / redirect page');
-    return { eligible: false, reason: 'error' };
+    return { eligible: false, reason: 'page_invalid_interstitial' };
   }
 
-  return { eligible: true, reason: 'ok' };
+  return { eligible: true, reason: 'page_eligible_feed' };
 }
 
 // ── Per-platform minimum card thresholds ─────────────────────────────────────
@@ -446,16 +446,12 @@ declare global {
 
 /**
  * Publish a debug snapshot to `window.__RECOME_DEBUG`.
- * Only runs when the `recome_debug` flag is set in chrome.storage.local.
+ * Always publishes — accessible only from DevTools console, not a security risk.
+ * Includes page-classifier label in `eligibility.reason` for QA verification.
  */
-export async function publishDebugSnapshot(snapshot: DebugSnapshot): Promise<void> {
-  try {
-    const r = await chrome.storage.local.get('recome_debug');
-    if (!r['recome_debug']) return;
-  } catch {
-    return;
-  }
-
+export function publishDebugSnapshot(snapshot: DebugSnapshot): void {
   window.__RECOME_DEBUG = snapshot;
-  log.info('Debug snapshot published to window.__RECOME_DEBUG', snapshot);
+  log.debug(
+    `Page classifier: ${snapshot.eligibility.reason} | ${snapshot.platform} | ${snapshot.detectedCards} cards`,
+  );
 }

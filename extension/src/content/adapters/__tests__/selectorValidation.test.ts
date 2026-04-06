@@ -71,6 +71,17 @@ const ADAPTERS: Record<
     feedSelectors: ['[role="feed"]', '[role="main"]'],
     expectedCardCount: 1,
   },
+  LinkedIn: {
+    fixture: 'linkedin-feed-post.html',
+    cardSelectors: [
+      'div.feed-shared-update-v2',
+      'div[data-urn^="urn:li:activity"]',
+      'li.jobs-search-results__list-item',
+      'div.job-card-container',
+    ],
+    feedSelectors: ['div.scaffold-finite-scroll__content', 'main.scaffold-layout__main'],
+    expectedCardCount: 1,
+  },
 };
 
 describe('Adapter selector validation', () => {

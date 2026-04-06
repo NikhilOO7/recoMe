@@ -117,6 +117,8 @@ export type MessageType =
   | 'TWIN_GET_RECOMMENDATIONS'
   | 'TWIN_ACCEPT_MATCH'
   | 'TWIN_BLOCK_MATCH'
+  // Tab context for popup synchronization
+  | 'GET_TAB_CONTEXT'
   | 'TWIN_DISMISS_RECOMMENDATION';
 
 // ── Individual message shapes ─────────────────────────────────────────────────
@@ -729,6 +731,26 @@ export interface TwinRecommendationInfo {
   createdAt: string;
 }
 
+// ── Tab context for popup synchronization ────────────────────────────────────
+
+export interface GetTabContextMessage {
+  type: 'GET_TAB_CONTEXT';
+  payload: null;
+}
+
+/** Tab context returned by GET_TAB_CONTEXT */
+export interface TabContext {
+  platform: string;
+  url: string;
+  title: string;
+  adapterActive: boolean;
+  cardsDetected: number;
+  controlsInjected: number;
+  pageEligible: boolean;
+  eligibilityReason?: string;
+  onboardingDone: boolean;
+}
+
 // ── Union type for all messages ───────────────────────────────────────────────
 
 export type RecoMeMessage =
@@ -819,7 +841,8 @@ export type RecoMeMessage =
   | TwinGetRecommendationsMessage
   | TwinAcceptMatchMessage
   | TwinBlockMatchMessage
-  | TwinDismissRecommendationMessage;
+  | TwinDismissRecommendationMessage
+  | GetTabContextMessage;
 
 // ── Response wrapper ──────────────────────────────────────────────────────────
 

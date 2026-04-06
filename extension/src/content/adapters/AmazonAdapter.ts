@@ -42,6 +42,9 @@ const PRODUCT_PAGE_CARD_SELECTORS = [
   '#rhf .a-carousel-card',
   '#similarities_feature_div .a-carousel-card',
   '#day0-btf-recommendations .a-carousel-card',
+  // Thematic recommendation widgets (A/B tested replacements for #similarities)
+  '[id*="sp_detail_thematic"] .a-carousel-card',
+  '#sp_detail .a-carousel-card',
   // Class-based (least resilient — keep as last resort)
   'div.comparison_table_image_row div.a-section',
 ];
@@ -69,18 +72,21 @@ const HOMEPAGE_CARD_SELECTORS = [
   'div[data-a-carousel-options] .a-carousel-card',
   // Hero deal cards
   '.deals-shoveler .a-section[data-deal-id]',
-  'div.DealContent-module_dealContainer__mask',
+  '[class*="DealContent-module"]',
 ];
 
 const DEALS_CARD_SELECTORS = [
-  // Deal cards on /deals and /gp/goldbox
+  // Deal cards on /deals and /gp/goldbox — entity selectors first (most stable)
   '[data-deal-id]',
+  'div[data-asin]:not([data-asin=""])',
   '.dealTile',
   '.octopus-dlp-asin-section',
-  '.DealCard-module_card__container',
+  // CSS Module classes (fragile — hash suffix changes between deploys)
+  '[class*="DealCard-module"]',
+  '[class*="DealContent-module"]',
   // Lightning deals grid
   '.a-section.octopus-dlp-asin-section',
-  '.inlineBlock-module_wrapper',
+  '[class*="inlineBlock-module"]',
 ];
 
 const SEARCH_FEED_SELECTORS = [

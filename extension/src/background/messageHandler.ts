@@ -22,6 +22,7 @@ import type { Platform } from '@schema/context';
 import type { RecoMeMessage, MessageResponse, CloudAccountStatus } from '@shared/messages';
 import { safeStorageSyncGet, safeStorageSyncSet } from '@shared/storageSync';
 import { getSyncManager, getLicenseManager } from './cloudServices';
+import { saveApiKeys, loadApiKeys } from '@shared/KeyVault';
 import {
   handleTwinGetStatus,
   handleTwinOptIn,
@@ -141,15 +142,13 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
     }
 
     case 'GET_SETTINGS': {
-      const [syncResult, localResult] = await Promise.all([
+      const [syncResult, keys] = await Promise.all([
         safeStorageSyncGet('recome_settings'),
-        chrome.storage.local.get('recome_api_keys'),
+        loadApiKeys(),
       ]);
       const base = (syncResult['recome_settings'] ?? defaultSettings()) as Record<string, unknown>;
-      const keys = localResult['recome_api_keys'] as Record<string, string> | undefined;
       // Merge masked API key indicators — the popup only needs to know
       // whether a key is configured and show a preview, not the full secret.
-      // LLMClient reads keys directly from local storage.
       if (keys) {
         for (const [k, v] of Object.entries(keys)) {
           if (k.endsWith('_api_key') && typeof v === 'string' && v.trim()) {
@@ -245,7 +244,12 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
       } catch (e) {
         log.warn('Failed to clear some IDB stores', e);
       }
-      await chrome.storage.local.remove(['recome_stats', 'recome_api_keys', 'recome_focus']);
+      await chrome.storage.local.remove([
+        'recome_stats',
+        'recome_api_keys',
+        'recome_api_keys_encrypted',
+        'recome_focus',
+      ]);
       return ok(undefined);
     }
 
@@ -325,9 +329,7 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
         }
       }
       if (hasKeys) {
-        const existingKeys =
-          (await chrome.storage.local.get('recome_api_keys'))['recome_api_keys'] ?? {};
-        await chrome.storage.local.set({ recome_api_keys: { ...existingKeys, ...apiKeys } });
+        await saveApiKeys(apiKeys);
       }
 
       const merged = { ...existing, ...patch };
@@ -891,12 +893,12 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
     // ── Sprint 5: Cloud sync & auth ──────────────────────────────────────────
 
     case 'CLOUD_REGISTER': {
-      const sm = getSyncManager();
+      const sm = await getSyncManager();
       const client = sm.getClient();
       const { email, password, displayName } = message.payload;
       const success = await client.register(email, password, displayName);
       if (!success) return err('Registration failed');
-      const lm = getLicenseManager();
+      const lm = await getLicenseManager();
       await lm.setTier('FREE', email);
       sm.startAutoSync();
       lm.startValidation('http://localhost:3001');
@@ -904,12 +906,12 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
     }
 
     case 'CLOUD_LOGIN': {
-      const sm = getSyncManager();
+      const sm = await getSyncManager();
       const client = sm.getClient();
       const { email, password } = message.payload;
       const success = await client.login(email, password);
       if (!success) return err('Invalid email or password');
-      const lm = getLicenseManager();
+      const lm = await getLicenseManager();
       await lm.setTier('FREE', email);
       sm.startAutoSync();
       lm.startValidation('http://localhost:3001');
@@ -917,19 +919,19 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
     }
 
     case 'CLOUD_LOGOUT': {
-      const sm = getSyncManager();
+      const sm = await getSyncManager();
       const client = sm.getClient();
       sm.stopAutoSync();
       await client.logout();
-      const lm = getLicenseManager();
+      const lm = await getLicenseManager();
       lm.stopValidation();
       await lm.clear();
       return ok(undefined);
     }
 
     case 'CLOUD_GET_STATUS': {
-      const sm = getSyncManager();
-      const lm = getLicenseManager();
+      const sm = await getSyncManager();
+      const lm = await getLicenseManager();
       const state = lm.getState();
       const status: CloudAccountStatus = {
         authenticated: sm.isAvailable(),
@@ -942,14 +944,14 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
     }
 
     case 'CLOUD_SYNC_NOW': {
-      const sm = getSyncManager();
+      const sm = await getSyncManager();
       if (!sm.isAvailable()) return err('Not authenticated');
       await sm.syncAll();
       return ok(undefined);
     }
 
     case 'CLOUD_SET_PASSPHRASE': {
-      const sm = getSyncManager();
+      const sm = await getSyncManager();
       const client = sm.getClient();
       await client.setPassphrase(message.payload.passphrase);
       return ok(undefined);
@@ -986,6 +988,58 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
 
     case 'TWIN_DISMISS_RECOMMENDATION':
       return handleTwinDismissRecommendation(message.payload.recommendationId);
+
+    // ── Tab context for popup synchronization ─────────────────────────────
+
+    case 'GET_TAB_CONTEXT': {
+      try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!tab?.id)
+          return ok({
+            platform: 'unknown',
+            url: '',
+            title: '',
+            adapterActive: false,
+            cardsDetected: 0,
+            controlsInjected: 0,
+            pageEligible: false,
+            onboardingDone: false,
+          });
+
+        // Ask the content script for its current state
+        try {
+          const response = await chrome.tabs.sendMessage(tab.id, {
+            type: 'RECOME_GET_CONTENT_STATE',
+          });
+          return ok({
+            platform: response?.platform ?? 'unknown',
+            url: tab.url ?? '',
+            title: tab.title ?? '',
+            adapterActive: response?.adapterActive ?? false,
+            cardsDetected: response?.cardsDetected ?? 0,
+            controlsInjected: response?.controlsInjected ?? 0,
+            pageEligible: response?.pageEligible ?? false,
+            eligibilityReason: response?.eligibilityReason,
+            onboardingDone: true,
+          });
+        } catch {
+          // Content script not injected on this tab (unsupported page)
+          return ok({
+            platform: 'unknown',
+            url: tab.url ?? '',
+            title: tab.title ?? '',
+            adapterActive: false,
+            cardsDetected: 0,
+            controlsInjected: 0,
+            pageEligible: false,
+            eligibilityReason: 'Content script not active',
+            onboardingDone: true,
+          });
+        }
+      } catch {
+        return err('Failed to query tab context');
+      }
+    }
 
     // Monitoring messages are handled before the switch via handleMonitoringMessage()
     case 'GET_MONITOR_TIMELINE':

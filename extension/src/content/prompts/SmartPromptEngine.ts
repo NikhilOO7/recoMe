@@ -42,6 +42,10 @@ export class SmartPromptEngine {
   private promptCounter = 0;
   /** Track prompts already shown for specific content to avoid duplicates */
   private shownForContent = new Set<string>();
+  /** Track prompts shown per topic+type within a time window to avoid topic spam */
+  private shownForTopic = new Map<string, number>();
+  /** Time window for topic-level dedup (5 minutes) */
+  private static readonly TOPIC_DEDUP_WINDOW_MS = 5 * 60 * 1000;
 
   constructor(platform: Platform) {
     this.platform = platform;
@@ -64,6 +68,15 @@ export class SmartPromptEngine {
       return false;
     }
 
+    // Topic-level dedup: don't spam same topic across different content items
+    const topicKey = this.getTopicKey(trigger);
+    if (topicKey) {
+      const lastShown = this.shownForTopic.get(topicKey);
+      if (lastShown && Date.now() - lastShown < SmartPromptEngine.TOPIC_DEDUP_WINDOW_MS) {
+        return false;
+      }
+    }
+
     // Build prompt based on trigger type
     const promptData = this.buildPrompt(trigger);
     if (!promptData) return false;
@@ -71,6 +84,7 @@ export class SmartPromptEngine {
     // Record and render
     this.fatigue.recordShown();
     if (contentKey) this.shownForContent.add(contentKey);
+    if (topicKey) this.shownForTopic.set(topicKey, Date.now());
 
     renderPrompt(promptData, (promptId, action) => {
       this.handleResponse(promptId, action, trigger);
@@ -361,5 +375,14 @@ export class SmartPromptEngine {
     const meta = trigger.metadata;
     if (!meta) return null;
     return `${trigger.type}:${meta.id}`;
+  }
+
+  /** Topic-level key: trigger type + first topic/category (not content ID) */
+  private getTopicKey(trigger: PromptTrigger): string | null {
+    const meta = trigger.metadata;
+    if (!meta) return null;
+    const topic = trigger.context?.categoryName ?? meta.topics[0] ?? meta.creator;
+    if (!topic) return null;
+    return `${trigger.type}:topic:${topic.toLowerCase().trim()}`;
   }
 }

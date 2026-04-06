@@ -11,15 +11,14 @@ export class FacebookAdapter extends BaseAdapter {
     super({
       platform: 'facebook',
       cardSelector: [
-        // Pagelet-based feed units (stable data attributes)
+        // ARIA-based selectors (most durable — accessibility requirements)
+        'div[role="article"][aria-label]',
+        'div[role="article"]',
+        // Pagelet-based feed units (data attributes — can rotate)
         'div[data-pagelet^="FeedUnit"]',
-        // Reel containers
         'div[data-pagelet^="Reels"]',
         // Video tab
         'div[data-video-id]',
-        // Modern feed articles (News Feed + Groups) — ARIA role is resilient to obfuscation
-        'div[role="article"][aria-label]',
-        'div[role="article"]',
         // Marketplace listings
         'div[aria-label][data-virtualized]',
         // Watch feed

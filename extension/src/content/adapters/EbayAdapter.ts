@@ -7,6 +7,8 @@ import {
   looksLikePrice,
 } from './MetadataHeuristics';
 import type { ContentMetadata } from '@shared/types';
+import type { CandidateEntity } from '@schema/entities';
+import type { PageContext } from '@schema/decisions';
 
 /**
  * EbayAdapter — hardened selector coverage.
@@ -41,6 +43,8 @@ export class EbayAdapter extends BaseAdapter {
         '.dne-itemtile-detail',
         '.ebayui-dne-featured-card',
         '.deal-tile',
+        // Stable fallback: any item link on deals pages
+        'a[href*="/itm/"]:has(img)',
 
         // ── "More items from this seller" / shop page ───────────────────
         '.str-item-card',
@@ -53,6 +57,8 @@ export class EbayAdapter extends BaseAdapter {
         '.saved-search-item',
         '.merch-item',
         '[data-testid="merch-card"]',
+        // Stable: b-tile is the current primary tile class
+        '.b-tile a[href*="/itm/"]',
 
         // ── Watchlist ───────────────────────────────────────────────────
         '.watchlist-item',
@@ -89,8 +95,47 @@ export class EbayAdapter extends BaseAdapter {
     });
   }
 
+  protected override get isCommerceAdapter(): boolean {
+    return true;
+  }
+
   protected override isUserInitiatedSearch(): boolean {
     return window.location.pathname.startsWith('/sch/');
+  }
+
+  override buildPageContext(): PageContext {
+    const path = window.location.pathname;
+    const params = new URLSearchParams(window.location.search);
+    let pageType: 'search' | 'product' | 'feed' | 'home' = 'home';
+    if (path.startsWith('/sch/')) pageType = 'search';
+    else if (path.startsWith('/itm/')) pageType = 'product';
+    else if (path.includes('/deals') || path.includes('/e/')) pageType = 'feed';
+    return {
+      site: 'ebay',
+      pageType,
+      url: window.location.href,
+      query: params.get('_nkw') ?? undefined,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  override extractCandidate(element: Element): CandidateEntity | null {
+    const metadata = this.extractMetadata(element);
+    if (!metadata) return null;
+    return {
+      candidateId: metadata.id,
+      entityType: 'product',
+      rawText: metadata.title,
+      normalizedText: metadata.title.toLowerCase().trim(),
+      productId: metadata.id,
+      sellerId: metadata.creator
+        ? `seller:${metadata.creator.toLowerCase().replace(/\s+/g, '_')}`
+        : undefined,
+      metadata: {
+        seller: metadata.creator,
+        ...(metadata.raw_metadata ?? {}),
+      },
+    };
   }
 
   /**
