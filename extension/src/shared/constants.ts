@@ -8,6 +8,9 @@ import type { ContextBucket, Platform } from './types';
  */
 export const CLOUD_URL = 'https://recome-api.fly.dev';
 
+/** Web app URL — for auth redirects and settings deep links */
+export const WEB_APP_URL = 'https://recome.vercel.app';
+
 // ── Database ──────────────────────────────────────────────────────────────────
 
 export const DB_NAME = 'recome_db';

@@ -3,6 +3,12 @@ import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../db.js';
 import { TokenService } from './TokenService.js';
+import {
+  getAuthorizationUrl,
+  handleOAuthCallback,
+  findOrCreateOAuthUser,
+  isProviderConfigured,
+} from './OAuthService.js';
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -105,6 +111,107 @@ export function createAuthRoutes(): Hono {
       await tokenService.revokeAllTokens(userId);
     }
     return c.json({ ok: true });
+  });
+
+  // ── OAuth Routes ────────────────────────────────────────────────────────
+
+  const SUPPORTED_PROVIDERS = ['google', 'github', 'facebook'] as const;
+
+  // GET /auth/:provider — redirect to OAuth provider
+  app.get('/:provider', async (c) => {
+    const provider = c.req.param('provider');
+    if (!SUPPORTED_PROVIDERS.includes(provider as (typeof SUPPORTED_PROVIDERS)[number])) {
+      return c.json({ error: 'Unsupported provider' }, 400);
+    }
+
+    if (!isProviderConfigured(provider)) {
+      return c.json({ error: `${provider} OAuth is not configured` }, 501);
+    }
+
+    const redirectUri = `${c.req.url.split('/auth/')[0]}/auth/${provider}/callback`;
+
+    // State carries the client's return URL for after auth completes
+    const returnUrl = c.req.query('return_url') ?? '';
+    const extId = c.req.query('ext_id') ?? '';
+    const state = Buffer.from(JSON.stringify({ returnUrl, extId })).toString('base64url');
+
+    const authUrl = getAuthorizationUrl(provider, redirectUri, state);
+    if (!authUrl) {
+      return c.json({ error: 'Failed to generate auth URL' }, 500);
+    }
+
+    return c.redirect(authUrl);
+  });
+
+  // GET /auth/:provider/callback — handle OAuth callback
+  app.get('/:provider/callback', async (c) => {
+    const provider = c.req.param('provider');
+    if (!SUPPORTED_PROVIDERS.includes(provider as (typeof SUPPORTED_PROVIDERS)[number])) {
+      return c.json({ error: 'Unsupported provider' }, 400);
+    }
+
+    const code = c.req.query('code');
+    const stateParam = c.req.query('state') ?? '';
+
+    if (!code) {
+      const error = c.req.query('error') ?? 'no_code';
+      return c.json({ error: `OAuth failed: ${error}` }, 400);
+    }
+
+    // Decode state
+    let returnUrl = '';
+    let extId = '';
+    try {
+      const decoded = JSON.parse(Buffer.from(stateParam, 'base64url').toString());
+      returnUrl = decoded.returnUrl ?? '';
+      extId = decoded.extId ?? '';
+    } catch {
+      // State is optional — continue without it
+    }
+
+    const redirectUri = `${c.req.url.split('?')[0]}`; // Same callback URL without query params
+    const profile = await handleOAuthCallback(provider, code, redirectUri);
+    if (!profile) {
+      return c.json({ error: 'Failed to authenticate with provider' }, 401);
+    }
+
+    // Find or create user
+    const user = await findOrCreateOAuthUser(profile);
+
+    // Issue tokens
+    const tokens = await tokenService.issueTokens(user.id, user.tier);
+
+    // If coming from extension, redirect back with tokens
+    if (extId) {
+      const callbackUrl = `chrome-extension://${extId}/callback.html?token=${tokens.accessToken}&refresh=${tokens.refreshToken}`;
+      return c.redirect(callbackUrl);
+    }
+
+    // If return URL provided (web app), redirect with tokens
+    if (returnUrl) {
+      const separator = returnUrl.includes('?') ? '&' : '?';
+      return c.redirect(
+        `${returnUrl}${separator}token=${tokens.accessToken}&refresh=${tokens.refreshToken}`,
+      );
+    }
+
+    // Default: return JSON (for API clients)
+    return c.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        tier: user.tier,
+        isNew: user.isNew,
+      },
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+    });
+  });
+
+  // GET /auth/providers — list configured providers
+  app.get('/providers/list', async (c) => {
+    const configured = SUPPORTED_PROVIDERS.filter((p) => isProviderConfigured(p));
+    return c.json({ providers: configured });
   });
 
   return app;

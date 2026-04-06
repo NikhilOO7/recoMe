@@ -1,0 +1,51 @@
+@import 'tailwindcss';
+
+:root {
+  --background: #060d1a;
+  --foreground: #ffffff;
+  --ink: #060d1a;
+  --ink2: #0d1a30;
+  --ink3: #1a2540;
+  --accent: #5eead4;
+  --ext: #2356e8;
+  --agent: #7c3aed;
+  --sdk: #d97706;
+  --muted: rgba(255, 255, 255, 0.55);
+  --line-dark: rgba(255, 255, 255, 0.08);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--ink);
+  color: #fff;
+  font-family:
+    var(--font-sans),
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Glow effects */
+.glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+/* Gradient text */
+.grad {
+  background: linear-gradient(100deg, #fff 20%, #5eead4 80%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

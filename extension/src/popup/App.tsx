@@ -94,13 +94,104 @@ export function App() {
   // Still loading — show nothing to avoid flash
   if (panelMode === 'loading') return null;
 
-  if (panelMode === 'onboarding_required' || panelMode === 'onboarding_replay') {
+  // First-time: redirect to web app for account creation
+  if (panelMode === 'onboarding_required') {
+    return (
+      <div
+        className="app"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          textAlign: 'center',
+          gap: 12,
+          padding: '40px 20px',
+          minHeight: 400,
+        }}
+      >
+        <img
+          src={chrome.runtime.getURL('icons/recome_logo_128.png')}
+          alt="RecoMe"
+          style={{ width: 64, height: 64, borderRadius: 16 }}
+        />
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Welcome to RecoMe</h2>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, maxWidth: 260 }}>
+          Your research, connected across YouTube, Reddit, and Amazon.
+        </p>
+        <button
+          style={{
+            background: 'var(--accent)',
+            color: '#000',
+            border: 'none',
+            borderRadius: 8,
+            padding: '10px 24px',
+            fontWeight: 700,
+            fontSize: 13,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            marginTop: 8,
+            width: '100%',
+            maxWidth: 240,
+          }}
+          onClick={() => {
+            const extId = chrome.runtime.id;
+            chrome.tabs.create({
+              url: `https://recome.vercel.app/signup?return=extension&ext_id=${extId}`,
+            });
+          }}
+        >
+          Create Account
+        </button>
+        <button
+          style={{
+            background: 'transparent',
+            color: 'var(--text-muted)',
+            border: '1px solid var(--border)',
+            borderRadius: 8,
+            padding: '8px 20px',
+            fontWeight: 500,
+            fontSize: 12,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            width: '100%',
+            maxWidth: 240,
+          }}
+          onClick={async () => {
+            await handleOnboardingComplete([], []);
+          }}
+        >
+          Skip — use with defaults
+        </button>
+        <button
+          style={{
+            background: 'transparent',
+            color: 'var(--text-muted)',
+            border: 'none',
+            padding: '6px 12px',
+            fontSize: 11,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            textDecoration: 'underline',
+          }}
+          onClick={() => {
+            const extId = chrome.runtime.id;
+            chrome.tabs.create({
+              url: `https://recome.vercel.app/login?return=extension&ext_id=${extId}`,
+            });
+          }}
+        >
+          Already have an account? Log in
+        </button>
+      </div>
+    );
+  }
+
+  // Replay from Settings: show in-extension onboarding
+  if (panelMode === 'onboarding_replay') {
     return (
       <div className="app">
-        <Onboarding
-          onComplete={handleOnboardingComplete}
-          isReplay={panelMode === 'onboarding_replay'}
-        />
+        <Onboarding onComplete={handleOnboardingComplete} isReplay={true} />
       </div>
     );
   }

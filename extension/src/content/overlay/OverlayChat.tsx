@@ -118,16 +118,82 @@ export function OverlayChat({ onClose, theme, onToggleTheme }: OverlayChatProps)
   // Still loading onboarding state
   if (panelMode === 'loading') return null;
 
-  // Show onboarding if not complete
-  if (panelMode === 'onboarding_required' || panelMode === 'onboarding_replay') {
+  // First-time onboarding: redirect to web app for account creation
+  // Replay onboarding (from Settings): show in-extension flow
+  if (panelMode === 'onboarding_required') {
+    return (
+      <>
+        <OverlayHeader theme={theme} onToggleTheme={onToggleTheme} onClose={onClose} />
+        <div
+          className="recome-overlay-popup-content"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            gap: 12,
+            padding: '40px 24px',
+          }}
+        >
+          <div style={{ fontSize: 48 }}>🧩</div>
+          <h2 style={{ fontSize: 18, fontWeight: 700 }}>Welcome to RecoMe</h2>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, maxWidth: 280 }}>
+            Your research, connected. Set up your account to get started — or skip to browse with
+            defaults.
+          </p>
+          <button
+            style={{
+              background: 'var(--accent)',
+              color: '#000',
+              border: 'none',
+              borderRadius: 8,
+              padding: '10px 24px',
+              fontWeight: 700,
+              fontSize: 13,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              marginTop: 8,
+            }}
+            onClick={() => {
+              const extId = chrome.runtime.id;
+              window.open(
+                `https://recome.vercel.app/signup?return=extension&ext_id=${extId}`,
+                '_blank',
+              );
+            }}
+          >
+            Create Account
+          </button>
+          <button
+            style={{
+              background: 'transparent',
+              color: 'var(--text-muted)',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              padding: '8px 20px',
+              fontWeight: 500,
+              fontSize: 12,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+            onClick={async () => {
+              await handleOnboardingComplete([], []);
+            }}
+          >
+            Skip — browse with defaults
+          </button>
+        </div>
+      </>
+    );
+  }
+
+  if (panelMode === 'onboarding_replay') {
     return (
       <>
         <OverlayHeader theme={theme} onToggleTheme={onToggleTheme} onClose={onClose} />
         <div className="recome-overlay-popup-content">
-          <Onboarding
-            onComplete={handleOnboardingComplete}
-            isReplay={panelMode === 'onboarding_replay'}
-          />
+          <Onboarding onComplete={handleOnboardingComplete} isReplay={true} />
         </div>
       </>
     );

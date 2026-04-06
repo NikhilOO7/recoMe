@@ -21,6 +21,7 @@ model User {
   // OAuth
   googleId      String?   @unique
   githubId      String?   @unique
+  facebookId    String?   @unique
 
   // Subscription
   tier          Tier      @default(FREE)
