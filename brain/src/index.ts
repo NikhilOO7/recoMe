@@ -8,7 +8,8 @@ import { RecommendationEngine } from './recommendation/RecommendationEngine';
 import { Explainer } from './recommendation/Explainer';
 import { PatternDetector } from './memory/PatternDetector';
 import { MemoryStore } from './memory/storage/MemoryStore';
-import type { ContentMetadata, RecommendationResult, FeedbackType } from '@shared/types';
+import type { ContentMetadata, RecommendationResult, FeedbackType, Platform } from '@shared/types';
+import { IMPLICIT_SIGNAL_WEIGHTS } from '@shared/constants';
 import { createLogger } from '@shared/Logger';
 
 const log = createLogger('IntelligenceService');
@@ -113,6 +114,86 @@ export class IntelligenceService {
     }
 
     log.debug(`Learned ${feedback} for "${content.title}"`);
+  }
+
+  /**
+   * Record an implicit browsing signal AND bridge it to the KnowledgeGraph.
+   * This is the critical path for the Phase 0 thesis:
+   * YouTube dwell → graph entity → Research Card on Amazon PDP.
+   */
+  async recordImplicitSignalWithGraphBridge(params: {
+    topics: string[];
+    entities: string[];
+    platform: Platform;
+    signalType: keyof typeof IMPLICIT_SIGNAL_WEIGHTS;
+    contentId: string;
+    contentTitle?: string;
+    confidenceOverride?: number;
+  }): Promise<void> {
+    await this.initialize();
+
+    // 1. Write to MemoryStore (existing behavior)
+    await this.memory.recordImplicitSignal(params);
+
+    // 2. Bridge to KnowledgeGraph — only for positive signals above threshold
+    const weights = IMPLICIT_SIGNAL_WEIGHTS[params.signalType];
+    if (!weights || weights.sentiment !== 'positive' || weights.strength < 0.3) return;
+
+    const graphWeight = weights.strength * (params.confidenceOverride ?? weights.confidence);
+
+    // Write raw topics as graph entities + relations
+    for (let topic of params.topics) {
+      if (!topic || topic.length < 2) continue;
+      // Clean common anchor text noise: "Go to X", "Visit the X Store", "See all X"
+      topic = topic
+        .replace(/^(go to|visit the|see all|shop for|browse|view all|back to)\s+/i, '')
+        .replace(/\s+(store|page|section|category|department)$/i, '')
+        .replace(/^searched:/i, '')
+        .trim();
+      if (!topic || topic.length < 2) continue;
+      // Upsert entity (creates if new, updates timestamp if exists)
+      await this.graph.upsertEntity({
+        name: topic,
+        type: 'topic',
+        aliases: [],
+        metadata: { source_platform: params.platform, signal_type: params.signalType },
+      });
+      // Upsert relation (reinforces if exists, creates if new)
+      await this.graph.upsertRelation(
+        'local_user',
+        topic.toLowerCase().replace(/\s+/g, '_'),
+        'interested_in',
+        graphWeight,
+      );
+    }
+
+    // Write entities (brands, products, creators) with higher weight
+    for (let entity of params.entities) {
+      if (!entity || entity.length < 2) continue;
+      // Clean anchor text noise
+      entity = entity
+        .replace(/^(go to|visit the|see all|shop for|browse)\s+/i, '')
+        .replace(/\s+(store|page|section)$/i, '')
+        .trim();
+      if (!entity || entity.length < 2) continue;
+      await this.graph.upsertEntity({
+        name: entity,
+        type: 'brand', // entities are typically brands/creators
+        aliases: [],
+        metadata: { source_platform: params.platform, signal_type: params.signalType },
+      });
+      await this.graph.upsertRelation(
+        'local_user',
+        entity.toLowerCase().replace(/\s+/g, '_'),
+        'interested_in',
+        Math.min(graphWeight * 1.2, 1.0), // entities get slightly higher weight
+      );
+    }
+
+    this.affinity.invalidateUser('local_user');
+    log.debug(
+      `Graph bridge: ${params.topics.length} topics + ${params.entities.length} entities from ${params.platform} [${params.signalType}]`,
+    );
   }
 
   getMemoryService(): MemoryService {

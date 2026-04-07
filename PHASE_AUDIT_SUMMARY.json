@@ -1,0 +1,43 @@
+{
+  "audit_date": "2026-04-07",
+  "phase_0_status": "NOT READY — 4 critical blockers",
+  "phase_1_status": "NOT READY — 8 blockers remaining after Phase 0",
+  "phase_0_beta_ready": false,
+  "phase_1_beta_ready": false,
+  "top_blockers": [
+    "P0-CRITICAL: Research signals from browsing do NOT write to KnowledgeGraph — only explicit feedback does. The Research Card reads from KnowledgeGraph. So the card will always be EMPTY for new users who haven't manually liked/blocked topics.",
+    "P0-CRITICAL: Reddit platform is missing from IMPLICIT_SIGNAL platform union type — Reddit signals get cast to 'unknown' and lose platform attribution.",
+    "P0-CRITICAL: No end-to-end test of the cross-platform research trail (YouTube→Reddit→Amazon). The topic matching in injectResearchCardOnPDP uses naive word overlap on product title keywords vs graph entity names — likely produces zero matches for real products.",
+    "P0-CRITICAL: Web app dashboard is a placeholder — shows 'Research topics appear here once cloud sync is enabled' instead of actual research data.",
+    "P0-HIGH: Extension popup still builds and ships but manifest has no default_popup — popup code is dead weight. Overlay is the only UI, but its overlay toggle depends on content script being injected (fails on chrome://, about:, new tab).",
+    "P1-HIGH: Zero automated tests across the entire repository. No unit tests, no integration tests, no E2E tests.",
+    "P1-HIGH: Cloud backend tsc build fails with type errors (Hono context typing). Uses '|| true' workaround — JS emits but type safety is compromised.",
+    "P1-HIGH: No plans/pricing page exists anywhere. Billing routes exist in backend but UI is missing."
+  ],
+  "systems": {
+    "extension": "Partial — builds and runs, but core thesis flow (research trail) is broken at data layer",
+    "overlay": "Partial — renders, auth-aware, but depends on popup components that duplicate functionality",
+    "popup": "Broken — still builds but manifest doesn't reference it; dead code",
+    "onboarding": "Partial — 3-step flow exists but web app redirect path is untested with real OAuth",
+    "amazon": "Partial — adapter is strong, Research Card code exists but data pipeline is empty",
+    "youtube": "Partial — adapter works, signals captured via DwellTracker but go to MemoryStore not KnowledgeGraph",
+    "reddit": "Broken — adapter exists but platform missing from IMPLICIT_SIGNAL union; signals lose attribution",
+    "web_app": "Partial — landing/extension/auth pages work; dashboard/settings are placeholders",
+    "auth_token_flow": "Partial — callback.html exists, AuthManager exists, OAuth routes work for Google/GitHub; end-to-end with extension untested",
+    "privacy_settings": "Partial — PrivacyReport component exists in extension popup; web app /privacy is static content page not interactive controls",
+    "dashboard": "Missing — web app shows placeholder text; extension ResearchTopics reads from graph that is empty for new users",
+    "admin_panel": "Done — 7 pages with RBAC, working API, but no admin users exist yet (your GitHub account not signed up)"
+  },
+  "recommended_next_10_actions": [
+    "1. FIX DATA PIPELINE: Make processContent or a new handler write browsing topics to KnowledgeGraph (not just MemoryStore) so Research Card has data to show",
+    "2. FIX REDDIT PLATFORM: Add 'reddit' to IMPLICIT_SIGNAL platform union in messageHandler.ts",
+    "3. BUILD REAL TOPIC MATCHING: Replace naive word-overlap in injectResearchCardOnPDP with proper semantic matching against graph entities",
+    "4. TEST THE THESIS E2E: Manually browse YouTube headphone reviews → Reddit r/headphones → Amazon headphone product page and verify Research Card appears with correct cross-platform signals",
+    "5. REMOVE DEAD POPUP: Delete popup entry from webpack, remove popup files, make overlay the sole UI",
+    "6. BUILD REAL DASHBOARD: Replace placeholder in web app /dashboard with actual research topics fetched from cloud sync or displayed after login",
+    "7. SIGN UP WITH GITHUB: Create your account on the web app, promote to SUPER_ADMIN, verify admin panel works",
+    "8. ADD BASIC E2E TESTS: At minimum test the Research Card data flow, Reddit signal capture, and OAuth callback",
+    "9. FIX CLOUD TSC: Resolve Hono context typing errors properly instead of using '|| true' workaround",
+    "10. DE-EMPHASIZE NON-CORE PLATFORMS: Beta-label or hide Walmart/eBay/Facebook/Instagram/LinkedIn from user-facing UI — they dilute the Phase 0 thesis"
+  ]
+}

@@ -146,6 +146,42 @@ export class KnowledgeGraph {
     return relation;
   }
 
+  /**
+   * Upsert a relation — if an identical (source, target, type) exists, update its weight
+   * using a reinforcement strategy (exponential moving average). Otherwise create new.
+   * This prevents duplicate relations when implicit signals fire repeatedly.
+   */
+  async upsertRelation(
+    sourceId: string,
+    targetId: string,
+    type: RelationType,
+    weight: number,
+    bidirectional = false,
+  ): Promise<GraphRelation> {
+    const db = await getDB();
+
+    // Check for existing relation with same source, target, type
+    const allFromSource = await db.getAllFromIndex('relations', 'by_source', sourceId);
+    const existing = allFromSource.find((r) => r.target_id === targetId && r.type === type);
+
+    if (existing) {
+      // Reinforce: EMA blend — new weight pulls existing weight toward it
+      const alpha = 0.3; // learning rate
+      const reinforced = existing.weight * (1 - alpha) + weight * alpha;
+      const updated: GraphRelation = {
+        ...existing,
+        weight: Math.max(0, Math.min(1, reinforced)),
+        updated_at: now(),
+      };
+      await db.put('relations', updated);
+      relationsCache.delete(sourceId);
+      return updated;
+    }
+
+    // No existing — create new
+    return this.addRelation(sourceId, targetId, type, weight, bidirectional);
+  }
+
   async getRelationsFrom(sourceId: string): Promise<GraphRelation[]> {
     const cached = relationsCache.get(sourceId);
     if (cached) return cached;

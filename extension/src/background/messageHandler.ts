@@ -118,7 +118,9 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
 
     case 'IMPLICIT_SIGNAL': {
       const sig = message.payload;
-      await svc.getMemoryService().recordImplicitSignal({
+      // Use the graph-bridged method so browsing signals also populate
+      // the KnowledgeGraph — required for Research Card on Amazon PDP
+      await svc.recordImplicitSignalWithGraphBridge({
         topics: sig.topics,
         entities: sig.entities,
         platform: sig.platform as
@@ -127,8 +129,11 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
           | 'twitter'
           | 'facebook'
           | 'instagram'
+          | 'reddit'
           | 'ebay'
           | 'walmart'
+          | 'linkedin'
+          | 'tiktok'
           | 'unknown',
         signalType: sig.signalType,
         contentId: sig.contentId,
@@ -773,6 +778,7 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
           type: entity?.type ?? 'unknown',
           weight: r.weight,
           relation: r.type,
+          metadata: entity?.metadata ?? {},
         };
       });
 
@@ -808,7 +814,13 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
         recentEntities: entities
           .sort((a, b) => b.updated_at - a.updated_at)
           .slice(0, 5)
-          .map((e) => ({ id: e.id, name: e.name, type: e.type, updated_at: e.updated_at })),
+          .map((e) => ({
+            id: e.id,
+            name: e.name,
+            type: e.type,
+            updated_at: e.updated_at,
+            metadata: e.metadata ?? {},
+          })),
       });
     }
 

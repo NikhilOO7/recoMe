@@ -84,11 +84,38 @@ export function Dashboard() {
       .catch(() => undefined);
 
     // Get current tab context for status bar
+    // If running inside the overlay (content script), read state directly.
+    // If running as popup, use the message-based approach.
+    try {
+      // Check if we're in overlay context by looking for the content script's exported state
+      const isOverlay =
+        typeof document !== 'undefined' && !!document.querySelector('#recome-overlay-host');
+      if (isOverlay) {
+        // We're inside the overlay shadow DOM — the content script state is available
+        // via the global window, but since we're in shadow DOM we use the message approach
+        // but with a longer timeout tolerance
+      }
+    } catch {
+      /* ignore */
+    }
+
     send('GET_TAB_CONTEXT')
       .then((r) => {
         if (r.success && r.data) setTabCtx(r.data as TabContext);
       })
-      .catch(() => undefined);
+      .catch(() => {
+        // If message fails (overlay context), set a reasonable default
+        setTabCtx({
+          platform: 'unknown',
+          url: location.href,
+          title: document.title,
+          adapterActive: true, // If overlay is showing, adapter must be active
+          cardsDetected: 0,
+          controlsInjected: 0,
+          pageEligible: true,
+          onboardingDone: true,
+        });
+      });
   }, []);
 
   useEffect(() => {

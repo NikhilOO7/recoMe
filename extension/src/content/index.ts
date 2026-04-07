@@ -136,6 +136,11 @@ function updateContentState(patch: Partial<typeof contentState>): void {
   Object.assign(contentState, patch);
 }
 
+/** Expose content state for overlay components running in the same context */
+export function getContentState(): typeof contentState {
+  return contentState;
+}
+
 // Listen for tab context queries from the background script
 chrome.runtime.onMessage.addListener(
   (message: { type: string }, _sender, sendResponse: (response: unknown) => void) => {
@@ -309,6 +314,23 @@ async function bootstrap(): Promise<void> {
     showFirstActionNudge();
   }
 
+  // ── Phase 0: Page-level research signal capture ──────────────────────────
+  // On content pages (YouTube watch, Reddit posts), capture the page's topic
+  // as a research signal. This is distinct from DwellTracker (which tracks
+  // individual card interactions) — this captures "you visited this page".
+  if (platform === 'youtube' && location.pathname.startsWith('/watch')) {
+    trackTimeout(() => capturePageResearchSignal(platform, adapter), 3000);
+  } else if (platform === 'reddit' && location.pathname.includes('/comments/')) {
+    trackTimeout(() => capturePageResearchSignal(platform, adapter), 2000);
+  } else if (
+    platform === 'reddit' &&
+    location.pathname.startsWith('/r/') &&
+    !location.pathname.includes('/comments/')
+  ) {
+    // Subreddit pages — capture the subreddit as a topic
+    trackTimeout(() => capturePageResearchSignal(platform, adapter), 2000);
+  }
+
   // P0.2: Inject "Research Detected" card on Amazon product detail pages
   if (
     platform === 'amazon' &&
@@ -429,98 +451,206 @@ async function bootstrap(): Promise<void> {
  */
 /**
  * P0.2: Inject "Research Detected" card on Amazon product detail pages.
- * Queries the interest graph for topics matching the current product,
- * then shows a cross-platform research summary card near the product title.
+ *
+ * Matching strategy (Phase 0 — production-ready):
+ * 1. Extract product title + brand + category from the Amazon PDP DOM
+ * 2. Query KnowledgeGraph for ALL entities with interested_in relations
+ * 3. Query MemoryStore active_entries for platform-attributed signals
+ * 4. Match using: exact entity name match, substring containment,
+ *    and multi-word phrase overlap (not single-word tokenization)
+ * 5. Deduplicate and rank by weight, attribute platforms
  */
 async function injectResearchCardOnPDP(): Promise<void> {
   try {
-    // Get product title from the page
+    // ── 1. Extract product context from Amazon DOM ──────────────────────
     const titleEl = document.querySelector('#productTitle') ?? document.querySelector('h1#title');
     const productTitle = titleEl?.textContent?.trim() ?? '';
     if (!productTitle) return;
 
-    // Query interest graph for research signals
+    const brandEl = document.querySelector('#bylineInfo') ?? document.querySelector('#brand');
+    const brandText =
+      brandEl?.textContent
+        ?.trim()
+        ?.replace(/^(Visit the |Brand: )/i, '')
+        ?.replace(/ Store$/, '') ?? '';
+
+    const categoryEls = document.querySelectorAll('#wayfinding-breadcrumbs_feature_div a');
+    const categories = Array.from(categoryEls)
+      .map((el) => el.textContent?.trim() ?? '')
+      .filter(Boolean);
+
+    // Build a set of product keywords: title words, brand, categories
+    const titleLower = productTitle.toLowerCase();
+    // Extract meaningful phrases (2-3 word sequences) alongside single words
+    const titleTokens = titleLower.split(/[\s,\-–—/|]+/).filter((w) => w.length > 2);
+    // Also keep full title for broad matching
+    const searchTerms = new Set<string>([
+      ...titleTokens,
+      ...(brandText ? [brandText.toLowerCase()] : []),
+      ...categories.map((c) => c.toLowerCase()),
+    ]);
+    // Remove noise words
+    const NOISE = new Set([
+      'the',
+      'and',
+      'for',
+      'with',
+      'from',
+      'that',
+      'this',
+      'new',
+      'best',
+      'pack',
+      'set',
+      'size',
+      'color',
+      'black',
+      'white',
+      'blue',
+      'red',
+      'green',
+      'inch',
+      'count',
+    ]);
+    for (const n of NOISE) searchTerms.delete(n);
+
+    // ── 2. Query graph + memory ─────────────────────────────────────────
     const graphRes = await chrome.runtime.sendMessage({ type: 'GET_GRAPH_SUMMARY', payload: null });
+
     const graph = graphRes?.data as
       | {
-          topInterests?: Array<{ name: string; type: string; weight: number }>;
-          recentEntities?: Array<{ name: string; type: string; updated_at: number }>;
-        }
-      | undefined;
-    if (!graph) return;
-
-    // Query DB stats for platform-specific signals
-    const dbRes = await chrome.runtime.sendMessage({ type: 'GET_DB_STATS', payload: null });
-    const dbStats = dbRes?.data as
-      | {
-          active_entries?: Array<{
-            topic_key: string;
-            context_bucket: string;
-            value: { strength?: number };
+          topInterests?: Array<{
+            name: string;
+            type: string;
+            weight: number;
+            metadata?: Record<string, unknown>;
+          }>;
+          recentEntities?: Array<{
+            name: string;
+            type: string;
+            updated_at: number;
+            metadata?: Record<string, unknown>;
           }>;
         }
       | undefined;
 
-    // Extract product keywords from title
-    const titleWords = productTitle
-      .toLowerCase()
-      .split(/\s+/)
-      .filter((w) => w.length > 3);
+    // ── 3. Build platform-attributed topic index from graph entity metadata ──
+    // The recordImplicitSignalWithGraphBridge() stores source_platform in entity metadata.
+    // This is more reliable than MemoryStore context_bucket (which stores 'general'/'shopping', not platform name).
+    const platformIndex = new Map<string, Set<string>>(); // topic → platforms
 
-    // Find matching research signals across platforms
+    // Index platforms from graph entities (topInterests + recentEntities)
+    for (const entity of [...(graph?.topInterests ?? []), ...(graph?.recentEntities ?? [])]) {
+      const name = entity.name.toLowerCase();
+      const sourcePlatform = (entity.metadata?.source_platform as string) ?? '';
+      if (sourcePlatform && sourcePlatform !== 'unknown') {
+        if (!platformIndex.has(name)) platformIndex.set(name, new Set());
+        platformIndex.get(name)!.add(sourcePlatform);
+      }
+    }
+
+    // ── 4. Match graph entities against product context ──────────────────
     const signals: ResearchCardData['signals'] = [];
     const seenTopics = new Set<string>();
 
-    for (const interest of graph.topInterests ?? []) {
-      const name = interest.name.toLowerCase();
-      const matches = titleWords.some((w) => name.includes(w) || w.includes(name));
-      if (!matches) continue;
-      if (seenTopics.has(name)) continue;
-      seenTopics.add(name);
+    const allInterests = graph?.topInterests ?? [];
+    const allRecent = graph?.recentEntities ?? [];
+    // Combine both lists for matching
+    const candidateEntities = [
+      ...allInterests.map((i) => ({ name: i.name, weight: i.weight, type: i.type })),
+      ...allRecent.map((e) => ({ name: e.name, weight: 0.4, type: e.type })),
+    ];
 
-      // Find which platforms this topic appeared on
+    for (const entity of candidateEntities) {
+      const entityLower = entity.name.toLowerCase();
+      if (seenTopics.has(entityLower)) continue;
+
+      // Match: entity name appears in product title, OR product keywords appear in entity name
+      const matchesTitle = titleLower.includes(entityLower) || entityLower.includes(titleLower);
+      const matchesToken =
+        !matchesTitle &&
+        // Entity name matches any search term (bidirectional substring)
+        [...searchTerms].some(
+          (term) =>
+            (term.length >= 3 && entityLower.includes(term)) ||
+            (entityLower.length >= 3 && term.includes(entityLower)),
+        );
+
+      if (!matchesTitle && !matchesToken) continue;
+      seenTopics.add(entityLower);
+
+      // Find platform attribution from MemoryStore
       const platforms = new Set<string>();
-      for (const entry of dbStats?.active_entries ?? []) {
-        const entryTopic = entry.topic_key
-          .replace(/^(blocked|interested|entity):/, '')
-          .toLowerCase();
-        if (entryTopic.includes(name) || name.includes(entryTopic)) {
-          const plat = entry.context_bucket?.split(':')[0];
-          if (plat) platforms.add(plat);
+      for (const [topic, plats] of platformIndex) {
+        if (topic.includes(entityLower) || entityLower.includes(topic)) {
+          for (const p of plats) platforms.add(p);
         }
       }
 
-      // Find most recent activity
-      const recentMatch = (graph.recentEntities ?? []).find((e) => e.name.toLowerCase() === name);
+      // Also check graph entity metadata for source_platform
+      const recentMatch = allRecent.find((e) => e.name.toLowerCase() === entityLower);
 
-      if (platforms.size > 0 || recentMatch) {
-        signals.push({
-          platform: [...platforms][0] ?? 'amazon',
-          topic: interest.name,
-          signalCount: platforms.size + (recentMatch ? 1 : 0),
-          lastSeen: recentMatch?.updated_at ?? Date.now(),
-        });
-      }
+      signals.push({
+        platform: [...platforms][0] ?? 'amazon',
+        topic: entity.name,
+        signalCount: Math.max(platforms.size, 1),
+        lastSeen: recentMatch?.updated_at ?? Date.now(),
+      });
+    }
+
+    // ── 5. Also check MemoryStore topics directly (may have topics not yet in graph) ──
+    for (const [topic, platforms] of platformIndex) {
+      if (seenTopics.has(topic)) continue;
+      const matchesTitle = titleLower.includes(topic) || topic.includes(titleLower);
+      const matchesToken =
+        !matchesTitle &&
+        [...searchTerms].some(
+          (term) =>
+            (term.length >= 3 && topic.includes(term)) ||
+            (topic.length >= 3 && term.includes(topic)),
+        );
+      if (!matchesTitle && !matchesToken) continue;
+      seenTopics.add(topic);
+
+      signals.push({
+        platform: [...platforms][0] ?? 'amazon',
+        topic,
+        signalCount: platforms.size,
+        lastSeen: Date.now(),
+      });
     }
 
     if (signals.length === 0) return;
 
-    // Build match reason
-    const platformNames = [...new Set(signals.map((s) => s.platform))];
-    const topTopics = signals.slice(0, 3).map((s) => s.topic);
-    const matchReason =
-      platformNames.length > 1
-        ? `You've been researching ${topTopics.join(', ')} across ${platformNames.length} platforms. This product aligns with your research.`
-        : `Based on your interest in ${topTopics.join(', ')}, this product matches your research.`;
+    // ── 6. Rank and build card data ─────────────────────────────────────
+    // Sort: more platforms first, then by signal count
+    signals.sort((a, b) => b.signalCount - a.signalCount);
 
-    // Calculate match score
+    const allPlatforms = [
+      ...new Set(
+        signals.flatMap((s) => {
+          const plats: string[] = [s.platform];
+          // Also include all platforms from platformIndex for this topic
+          const topicPlats = platformIndex.get(s.topic.toLowerCase());
+          if (topicPlats) plats.push(...topicPlats);
+          return plats;
+        }),
+      ),
+    ].filter((p) => p !== 'amazon'); // Exclude amazon from "researched on" list
+
+    const topTopics = signals.slice(0, 3).map((s) => s.topic);
+
+    const matchReason =
+      allPlatforms.length > 0
+        ? `You've been researching ${topTopics.join(', ')} on ${allPlatforms.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(' and ')}. This product connects to your research.`
+        : `Based on your interest in ${topTopics.join(', ')}, this product matches your research trail.`;
+
+    // Calculate match score from graph weights
     const avgWeight =
-      signals.reduce((sum, s) => {
-        const interest = (graph.topInterests ?? []).find(
-          (i) => i.name.toLowerCase() === s.topic.toLowerCase(),
-        );
+      signals.slice(0, 4).reduce((sum, s) => {
+        const interest = allInterests.find((i) => i.name.toLowerCase() === s.topic.toLowerCase());
         return sum + (interest?.weight ?? 0.3);
-      }, 0) / signals.length;
+      }, 0) / Math.min(signals.length, 4);
 
     injectResearchCard({
       productTitle,
@@ -531,6 +661,175 @@ async function injectResearchCardOnPDP(): Promise<void> {
   } catch (err) {
     // Silently fail — research card is non-critical
     void err;
+  }
+}
+
+/**
+ * Phase 0: Capture a page-level research signal from the current page.
+ * Unlike DwellTracker (which observes individual card interactions), this
+ * captures the topic of the page the user is actively viewing:
+ * - YouTube /watch → video title keywords
+ * - Reddit /r/xxx/comments/ → post title + subreddit
+ * - Reddit /r/xxx → subreddit name as topic
+ */
+function capturePageResearchSignal(platform: Platform, _adapter: BaseAdapter): void {
+  try {
+    const topics: string[] = [];
+    const entities: string[] = [];
+    let contentId = location.href;
+    let contentTitle = document.title;
+
+    if (platform === 'youtube') {
+      // Extract from YouTube watch page
+      const titleEl =
+        document.querySelector('h1.ytd-watch-metadata yt-formatted-string') ??
+        document.querySelector('h1.ytd-video-primary-info-renderer yt-formatted-string') ??
+        document.querySelector('#title h1 yt-formatted-string') ??
+        document.querySelector('h1.style-scope.ytd-watch-metadata');
+      const videoTitle =
+        titleEl?.textContent?.trim() ?? document.title.replace(' - YouTube', '').trim();
+
+      const channelEl =
+        document.querySelector('ytd-channel-name yt-formatted-string a') ??
+        document.querySelector('#channel-name a');
+      const channel = channelEl?.textContent?.trim();
+
+      // Extract meaningful keywords from video title (skip noise)
+      const NOISE = new Set([
+        'the',
+        'and',
+        'for',
+        'with',
+        'this',
+        'that',
+        'you',
+        'are',
+        'was',
+        'how',
+        'why',
+        'what',
+        'best',
+        'top',
+        'new',
+        'vs',
+        'review',
+        'unboxing',
+        'video',
+      ]);
+      const titleWords = videoTitle
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .split(/\s+/)
+        .filter((w) => w.length > 3 && !NOISE.has(w));
+
+      // Take up to 5 most unique keywords as topics
+      const seen = new Set<string>();
+      for (const word of titleWords) {
+        if (!seen.has(word) && seen.size < 5) {
+          seen.add(word);
+          topics.push(word);
+        }
+      }
+
+      // Also add multi-word phrases from title (2-word combos)
+      const words = videoTitle
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '')
+        .split(/\s+/)
+        .filter((w) => w.length > 2 && !NOISE.has(w));
+      for (let i = 0; i < words.length - 1 && topics.length < 8; i++) {
+        const phrase = `${words[i]} ${words[i + 1]}`;
+        if (phrase.length > 5 && !topics.includes(phrase)) {
+          topics.push(phrase);
+        }
+      }
+
+      if (channel) entities.push(channel);
+      contentId = new URLSearchParams(location.search).get('v') ?? location.href;
+      contentTitle = videoTitle;
+    } else if (platform === 'reddit') {
+      // Extract from Reddit post page or subreddit
+      const subredditMatch = location.pathname.match(/^\/r\/([^/]+)/);
+      const subreddit = subredditMatch?.[1];
+
+      if (subreddit) {
+        topics.push(subreddit);
+      }
+
+      if (location.pathname.includes('/comments/')) {
+        // Post page — extract post title
+        const postTitleEl =
+          document.querySelector('shreddit-post h1') ??
+          document.querySelector('[data-testid="post-container"] h1') ??
+          document.querySelector('h1') ??
+          document.querySelector('a.title'); // old reddit
+        const postTitle = postTitleEl?.textContent?.trim() ?? '';
+
+        if (postTitle) {
+          // Extract keywords from post title
+          const NOISE = new Set([
+            'the',
+            'and',
+            'for',
+            'with',
+            'this',
+            'that',
+            'you',
+            'are',
+            'was',
+            'just',
+            'got',
+            'anyone',
+            'does',
+            'have',
+            'help',
+            'question',
+          ]);
+          const titleWords = postTitle
+            .toLowerCase()
+            .replace(/[^a-z0-9\s]/g, ' ')
+            .split(/\s+/)
+            .filter((w) => w.length > 3 && !NOISE.has(w));
+
+          for (const word of titleWords) {
+            if (topics.length < 8 && !topics.includes(word)) {
+              topics.push(word);
+            }
+          }
+          contentTitle = postTitle;
+        }
+
+        // Extract flair as a topic
+        const flairEl =
+          document.querySelector('[data-click-id="flair"]') ??
+          document.querySelector('span.linkflairlabel');
+        const flair = flairEl?.textContent?.trim();
+        if (flair && !topics.includes(flair.toLowerCase())) {
+          topics.push(flair.toLowerCase());
+        }
+      }
+    }
+
+    if (topics.length === 0) return;
+
+    // Send as implicit signal with correct platform attribution
+    chrome.runtime
+      .sendMessage({
+        type: 'IMPLICIT_SIGNAL',
+        payload: {
+          topics,
+          entities,
+          platform,
+          signalType: 'dwell_extended', // page visit = extended dwell
+          contentId,
+          contentTitle,
+        },
+      })
+      .catch(() => undefined);
+
+    log.info(`Page research signal captured on ${platform}: ${topics.join(', ')}`);
+  } catch (err) {
+    log.debug('Failed to capture page research signal', err);
   }
 }
 
