@@ -10,6 +10,7 @@ import {
   type PanelTab,
   type PanelMode,
 } from '../../shared/PanelState';
+import { WEB_APP_URL } from '../../shared/constants';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -23,7 +24,7 @@ export interface OverlayChatProps {
   onToggleTheme: () => void;
 }
 
-// ── Header (shared between onboarding and main views) ───────────────────────
+// ── Header ────────────────────────────────────────────────────────────────────
 
 function OverlayHeader({
   theme,
@@ -95,7 +96,6 @@ export function OverlayChat({ onClose, theme, onToggleTheme }: OverlayChatProps)
         .sendMessage({ type: 'LIKE_TOPIC', payload: { topic } })
         .catch(() => undefined);
     }
-    // Save seed preferences for cold-start scoring (now also saved from overlay)
     if (seedPrefs) {
       await chrome.storage.local
         .set({
@@ -115,79 +115,73 @@ export function OverlayChat({ onClose, theme, onToggleTheme }: OverlayChatProps)
     setPanelMode('dashboard_default');
   }
 
-  // Still loading onboarding state
+  // Still loading
   if (panelMode === 'loading') return null;
 
-  // First-time onboarding: redirect to web app for account creation
-  // Replay onboarding (from Settings): show in-extension flow
+  // First-time: classy welcome screen with web app redirect
   if (panelMode === 'onboarding_required') {
     return (
       <>
         <OverlayHeader theme={theme} onToggleTheme={onToggleTheme} onClose={onClose} />
-        <div
-          className="recome-overlay-popup-content"
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            textAlign: 'center',
-            gap: 12,
-            padding: '40px 24px',
-          }}
-        >
-          <div style={{ fontSize: 48 }}>🧩</div>
-          <h2 style={{ fontSize: 18, fontWeight: 700 }}>Welcome to RecoMe</h2>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, maxWidth: 280 }}>
-            Your research, connected. Set up your account to get started — or skip to browse with
-            defaults.
+        <div className="recome-overlay-popup-content recome-welcome-screen">
+          <div className="recome-welcome-icon">
+            <img
+              src={chrome.runtime.getURL('icons/recome_logo_128.png')}
+              alt="RecoMe"
+              style={{ width: 56, height: 56, borderRadius: 14 }}
+            />
+          </div>
+          <h2 className="recome-welcome-title">Your research, connected</h2>
+          <p className="recome-welcome-desc">
+            RecoMe remembers what you research across YouTube, Reddit, and Amazon — then shows you
+            why a product matches what you care about.
           </p>
+          <div className="recome-welcome-features">
+            <div className="recome-welcome-feature">
+              <span className="recome-welcome-feature-icon">🔍</span>
+              <span>Cross-platform research memory</span>
+            </div>
+            <div className="recome-welcome-feature">
+              <span className="recome-welcome-feature-icon">🔒</span>
+              <span>100% private — all data on your device</span>
+            </div>
+            <div className="recome-welcome-feature">
+              <span className="recome-welcome-feature-icon">🧠</span>
+              <span>Gets smarter as you browse</span>
+            </div>
+          </div>
           <button
-            style={{
-              background: 'var(--accent)',
-              color: '#000',
-              border: 'none',
-              borderRadius: 8,
-              padding: '10px 24px',
-              fontWeight: 700,
-              fontSize: 13,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              marginTop: 8,
-            }}
+            className="recome-welcome-btn-primary"
             onClick={() => {
               const extId = chrome.runtime.id;
-              window.open(
-                `https://recome-web.vercel.app/signup?return=extension&ext_id=${extId}`,
-                '_blank',
-              );
+              window.open(`${WEB_APP_URL}/signup?return=extension&ext_id=${extId}`, '_blank');
             }}
           >
-            Create Account
+            Create Free Account
           </button>
           <button
-            style={{
-              background: 'transparent',
-              color: 'var(--text-muted)',
-              border: '1px solid var(--border)',
-              borderRadius: 8,
-              padding: '8px 20px',
-              fontWeight: 500,
-              fontSize: 12,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-            }}
+            className="recome-welcome-btn-secondary"
             onClick={async () => {
               await handleOnboardingComplete([], []);
             }}
           >
             Skip — browse with defaults
           </button>
+          <button
+            className="recome-welcome-btn-link"
+            onClick={() => {
+              const extId = chrome.runtime.id;
+              window.open(`${WEB_APP_URL}/login?return=extension&ext_id=${extId}`, '_blank');
+            }}
+          >
+            Already have an account? Sign in
+          </button>
         </div>
       </>
     );
   }
 
+  // Replay from Settings
   if (panelMode === 'onboarding_replay') {
     return (
       <>
@@ -199,33 +193,26 @@ export function OverlayChat({ onClose, theme, onToggleTheme }: OverlayChatProps)
     );
   }
 
+  // ── Main overlay UI ─────────────────────────────────────────────────────
+
   return (
     <>
       <OverlayHeader theme={theme} onToggleTheme={onToggleTheme} onClose={onClose} />
 
       {/* Tab Navigation */}
       <div className="recome-tab-nav">
-        <button
-          className={`recome-tab-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
-          onClick={() => handleTabChange('dashboard')}
-        >
-          Dashboard
-        </button>
-        <button
-          className={`recome-tab-btn ${activeTab === 'agent' ? 'active' : ''}`}
-          onClick={() => handleTabChange('agent')}
-        >
-          Agent
-        </button>
-        <button
-          className={`recome-tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
-          onClick={() => handleTabChange('settings')}
-        >
-          Settings
-        </button>
+        {(['dashboard', 'agent', 'settings'] as PanelTab[]).map((tab) => (
+          <button
+            key={tab}
+            className={`recome-tab-btn ${activeTab === tab ? 'active' : ''}`}
+            onClick={() => handleTabChange(tab)}
+          >
+            {tab === 'dashboard' ? 'Research' : tab === 'agent' ? 'Agent' : 'Settings'}
+          </button>
+        ))}
       </div>
 
-      {/* Tab Content — renders popup components directly */}
+      {/* Tab Content */}
       {activeTab === 'dashboard' && (
         <div className="recome-overlay-popup-content">
           <Dashboard />
@@ -243,6 +230,16 @@ export function OverlayChat({ onClose, theme, onToggleTheme }: OverlayChatProps)
           <SettingsPanel />
         </div>
       )}
+
+      {/* Web app link bar */}
+      <div className="recome-overlay-webapp-bar">
+        <button
+          className="recome-overlay-webapp-link"
+          onClick={() => window.open(WEB_APP_URL, '_blank')}
+        >
+          Open full dashboard ↗
+        </button>
+      </div>
     </>
   );
 }

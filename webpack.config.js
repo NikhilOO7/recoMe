@@ -14,7 +14,8 @@ module.exports = {
     background: './extension/src/background/index.ts',
     content: './extension/src/content/index.ts',
     popup: './extension/src/popup/index.tsx',
-    devtools: './extension/src/devtools/index.tsx',
+    // devtools removed from public build — admin panel only
+    // devtools: './extension/src/devtools/index.tsx',
   },
 
   output: {
@@ -75,10 +76,18 @@ module.exports = {
       chunks: ['vendor', 'popup'],
     }),
 
+    // devtools removed from public build — admin panel only
+    // new HtmlWebpackPlugin({
+    //   template: './public/devtools.html',
+    //   filename: 'devtools.html',
+    //   chunks: ['devtools'],
+    // }),
+
     new HtmlWebpackPlugin({
-      template: './public/devtools.html',
-      filename: 'devtools.html',
-      chunks: ['devtools'],
+      template: './public/callback.html',
+      filename: 'callback.html',
+      chunks: [],
+      inject: false,
     }),
 
     new CopyWebpackPlugin({

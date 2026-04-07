@@ -178,4 +178,19 @@ chrome.commands.onCommand.addListener(async (command) => {
   }
 });
 
+// ── Action button click (no popup — toggle overlay or open web app) ──────────
+
+chrome.action.onClicked.addListener(async (tab) => {
+  if (!tab?.id) return;
+
+  try {
+    // Try to toggle the overlay on the current tab
+    await chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_OVERLAY' });
+  } catch {
+    // Content script not injected (unsupported page) — open web app
+    const { WEB_APP_URL } = await import('@shared/constants');
+    chrome.tabs.create({ url: WEB_APP_URL });
+  }
+});
+
 log.info('Background service worker registered');

@@ -11,6 +11,14 @@ import {
   type PanelTab,
   type PanelMode,
 } from '../shared/PanelState';
+import {
+  getAuthState,
+  openLogin,
+  openSignup,
+  openSettings as openWebSettings,
+  type AuthState,
+} from '../shared/AuthManager';
+import { WEB_APP_URL } from '../shared/constants';
 import '../styles/popup.css';
 
 type Theme = 'light' | 'dark';
@@ -22,38 +30,55 @@ function applyTheme(theme: Theme) {
 export function App() {
   const [activeTab, setActiveTab] = useState<PanelTab>('dashboard');
   const [panelMode, setPanelMode] = useState<PanelMode>('loading');
-  const [theme, setTheme] = useState<Theme>('light');
+  const [theme, setTheme] = useState<Theme>('dark');
+  const [authState, setAuthState] = useState<AuthState | null>(null);
   const connectionStatus = useConnectionStatus();
 
   useEffect(() => {
+    // Load theme
     chrome.storage.local
       .get('recome_theme')
       .then((r) => {
         const saved = r['recome_theme'] as Theme | undefined;
-        if (saved === 'light' || saved === 'dark') {
+        if (saved) {
           setTheme(saved);
           applyTheme(saved);
+        } else {
+          applyTheme('dark');
         }
       })
-      .catch(() => undefined);
+      .catch(() => applyTheme('dark'));
 
+    // Load panel state
     loadPanelState().then((snapshot) => {
       setPanelMode(snapshot.mode);
       setActiveTab(snapshot.activeTab);
     });
+
+    // Load auth state
+    getAuthState().then(setAuthState);
+
+    // Listen for auth changes (callback.html stores tokens)
+    const listener = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
+      if (area === 'local' && changes['recome_cloud_access_token']) {
+        getAuthState().then(setAuthState);
+      }
+    };
+    chrome.storage.onChanged.addListener(listener);
+    return () => chrome.storage.onChanged.removeListener(listener);
   }, []);
+
+  const toggleTheme = useCallback(() => {
+    const next: Theme = theme === 'light' ? 'dark' : 'light';
+    setTheme(next);
+    applyTheme(next);
+    chrome.storage.local.set({ recome_theme: next }).catch(() => undefined);
+  }, [theme]);
 
   const handleTabChange = useCallback((tab: PanelTab) => {
     setActiveTab(tab);
     persistActiveTab(tab);
   }, []);
-
-  function toggleTheme() {
-    const next: Theme = theme === 'light' ? 'dark' : 'light';
-    setTheme(next);
-    applyTheme(next);
-    chrome.storage.local.set({ recome_theme: next }).catch(() => undefined);
-  }
 
   async function handleOnboardingComplete(
     quickBlocks: string[],
@@ -70,7 +95,6 @@ export function App() {
         .sendMessage({ type: 'LIKE_TOPIC', payload: { topic } })
         .catch(() => undefined);
     }
-    // Save seed preferences for cold-start scoring
     if (seedPrefs) {
       await chrome.storage.local
         .set({
@@ -78,23 +102,15 @@ export function App() {
           recome_seed_prefs_at: new Date().toISOString(),
         })
         .catch(() => undefined);
-      // Map intensity to aggressiveness setting
-      const aggressivenessMap = { casual: 0.3, moderate: 0.5, power: 0.8 };
-      await chrome.runtime
-        .sendMessage({
-          type: 'SAVE_SETTINGS',
-          payload: { aggressiveness: aggressivenessMap[seedPrefs.intensity] },
-        })
-        .catch(() => undefined);
     }
     await completeOnboarding();
     setPanelMode('dashboard_default');
   }
 
-  // Still loading — show nothing to avoid flash
+  // Still loading
   if (panelMode === 'loading') return null;
 
-  // First-time: redirect to web app for account creation
+  // First-time: show compact auth screen that redirects to web app
   if (panelMode === 'onboarding_required') {
     return (
       <div
@@ -119,75 +135,25 @@ export function App() {
         <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, maxWidth: 260 }}>
           Your research, connected across YouTube, Reddit, and Amazon.
         </p>
-        <button
-          style={{
-            background: 'var(--accent)',
-            color: '#000',
-            border: 'none',
-            borderRadius: 8,
-            padding: '10px 24px',
-            fontWeight: 700,
-            fontSize: 13,
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-            marginTop: 8,
-            width: '100%',
-            maxWidth: 240,
-          }}
-          onClick={() => {
-            const extId = chrome.runtime.id;
-            chrome.tabs.create({
-              url: `https://recome-web.vercel.app/signup?return=extension&ext_id=${extId}`,
-            });
-          }}
-        >
+        <button className="popup-btn-primary" onClick={openSignup}>
           Create Account
         </button>
         <button
-          style={{
-            background: 'transparent',
-            color: 'var(--text-muted)',
-            border: '1px solid var(--border)',
-            borderRadius: 8,
-            padding: '8px 20px',
-            fontWeight: 500,
-            fontSize: 12,
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-            width: '100%',
-            maxWidth: 240,
-          }}
+          className="popup-btn-secondary"
           onClick={async () => {
             await handleOnboardingComplete([], []);
           }}
         >
           Skip — use with defaults
         </button>
-        <button
-          style={{
-            background: 'transparent',
-            color: 'var(--text-muted)',
-            border: 'none',
-            padding: '6px 12px',
-            fontSize: 11,
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-            textDecoration: 'underline',
-          }}
-          onClick={() => {
-            const extId = chrome.runtime.id;
-            chrome.tabs.create({
-              url: `https://recome-web.vercel.app/login?return=extension&ext_id=${extId}`,
-            });
-          }}
-        >
+        <button className="popup-btn-link" onClick={openLogin}>
           Already have an account? Log in
         </button>
       </div>
     );
   }
 
-  // Replay from Settings: show in-extension onboarding
+  // Replay from Settings
   if (panelMode === 'onboarding_replay') {
     return (
       <div className="app">
@@ -196,36 +162,64 @@ export function App() {
     );
   }
 
+  // ── Main compact popup ────────────────────────────────────────────────────
+
   return (
     <div className="app">
+      {/* Header */}
       <header className="app-header">
         <div className="app-header-row">
           <a
             className="app-logo"
-            href="https://nikhiloo7.github.io/recome-website/"
+            href={WEB_APP_URL}
             target="_blank"
             rel="noopener noreferrer"
-            title="Visit RecoMe website"
+            title="Open RecoMe web app"
           >
             <img className="logo-icon" src="icons/recome_logo_48.png" alt="RecoMe" />
             <span className="logo-text">RecoMe</span>
           </a>
-          <button
-            className="theme-toggle"
-            onClick={toggleTheme}
-            title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-          >
-            {theme === 'light' ? '🌙' : '☀️'}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {authState?.authenticated && authState.profile && (
+              <span
+                style={{
+                  fontSize: 10,
+                  color: 'var(--text-muted)',
+                  maxWidth: 100,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {authState.profile.displayName || authState.profile.email}
+              </span>
+            )}
+            <button
+              className="theme-toggle"
+              onClick={toggleTheme}
+              title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            >
+              {theme === 'light' ? '🌙' : '☀️'}
+            </button>
+          </div>
         </div>
-        <p className="app-tagline">Your feed, your rules.</p>
+        {!authState?.authenticated && (
+          <div style={{ display: 'flex', gap: 6, padding: '6px 0' }}>
+            <button className="popup-btn-mini-primary" onClick={openSignup}>
+              Sign up
+            </button>
+            <button className="popup-btn-mini-secondary" onClick={openLogin}>
+              Log in
+            </button>
+          </div>
+        )}
       </header>
 
+      {/* Nav tabs */}
       <nav className="app-nav" role="tablist" aria-label="Main navigation">
         <button
           role="tab"
           aria-selected={activeTab === 'dashboard'}
-          aria-controls="tabpanel-dashboard"
           className={`nav-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
           onClick={() => handleTabChange('dashboard')}
         >
@@ -234,7 +228,6 @@ export function App() {
         <button
           role="tab"
           aria-selected={activeTab === 'agent'}
-          aria-controls="tabpanel-agent"
           className={`nav-btn ${activeTab === 'agent' ? 'active' : ''}`}
           onClick={() => handleTabChange('agent')}
         >
@@ -243,7 +236,6 @@ export function App() {
         <button
           role="tab"
           aria-selected={activeTab === 'settings'}
-          aria-controls="tabpanel-settings"
           className={`nav-btn ${activeTab === 'settings' ? 'active' : ''}`}
           onClick={() => handleTabChange('settings')}
         >
@@ -253,12 +245,8 @@ export function App() {
 
       {connectionStatus !== 'connected' && <ConnectionBanner status={connectionStatus} />}
 
-      <main
-        className="app-content"
-        role="tabpanel"
-        id={`tabpanel-${activeTab}`}
-        aria-label={`${activeTab} panel`}
-      >
+      {/* Tab content */}
+      <div className="app-body">
         {activeTab === 'dashboard' && <Dashboard />}
         {activeTab === 'agent' && (
           <AgentChat onNavigateToSettings={() => handleTabChange('settings')} />
@@ -266,49 +254,36 @@ export function App() {
         {activeTab === 'settings' && (
           <SettingsPanel onReplayOnboarding={() => setPanelMode('onboarding_replay')} />
         )}
-      </main>
+      </div>
 
-      <footer className="app-footer">
-        <span>
-          v1.0.0 ·{' '}
-          <a
-            href="https://nikhiloo7.github.io/recome-website/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="footer-site-link"
-          >
-            recome.dev
-          </a>
-        </span>
+      {/* Web app links bar at bottom */}
+      <div className="popup-web-links">
         <button
-          className="devtools-link"
-          onClick={() => chrome.tabs.create({ url: chrome.runtime.getURL('devtools.html') })}
-          title="Open developer monitoring page"
+          className="popup-web-link"
+          onClick={() => chrome.tabs.create({ url: `${WEB_APP_URL}/extension` })}
         >
-          DevTools
+          Full Dashboard
         </button>
-      </footer>
+        <span className="popup-web-divider" />
+        <button className="popup-web-link" onClick={openWebSettings}>
+          Advanced Settings
+        </button>
+        <span className="popup-web-divider" />
+        <button className="popup-web-link" onClick={() => chrome.tabs.create({ url: WEB_APP_URL })}>
+          recome-web.vercel.app
+        </button>
+      </div>
     </div>
   );
 }
 
 function ConnectionBanner({ status }: { status: ConnectionStatus }) {
-  const isOffline = status === 'offline';
-  const bannerStyle: React.CSSProperties = {
-    padding: '6px 20px',
-    fontSize: '11px',
-    fontWeight: 500,
-    textAlign: 'center',
-    background: isOffline ? 'rgba(245, 158, 11, 0.12)' : 'rgba(249, 115, 22, 0.12)',
-    color: isOffline ? '#b45309' : '#c2410c',
-    borderBottom: `1px solid ${isOffline ? 'rgba(245, 158, 11, 0.3)' : 'rgba(249, 115, 22, 0.3)'}`,
-  };
-
+  if (status === 'connected') return null;
   return (
-    <div role="status" style={bannerStyle}>
-      {isOffline
-        ? 'You\u2019re offline \u2014 RecoMe works locally but AI features are unavailable'
-        : 'Background service restarting\u2026'}
+    <div className="connection-banner">
+      {status === 'offline'
+        ? 'Extension offline. Reload the page.'
+        : 'Connection degraded — some features limited.'}
     </div>
   );
 }

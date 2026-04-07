@@ -1047,6 +1047,50 @@ function getPopupComponentStyles(theme: 'light' | 'dark'): string {
     .twin-rec-dismiss { background: none; border: none; color: var(--text-muted); font-size: 16px; cursor: pointer; padding: 0 4px; line-height: 1; flex-shrink: 0; }
     .twin-rec-dismiss:hover { color: var(--text); }
 
+    /* ── Welcome Screen (first-run) ─────────────────────────── */
+    .recome-welcome-screen {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; gap: 10px; padding: 32px 24px !important;
+    }
+    .recome-welcome-title { font-size: 18px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; }
+    .recome-welcome-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; max-width: 280px; }
+    .recome-welcome-features { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 260px; margin: 8px 0; }
+    .recome-welcome-feature {
+      display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-dim);
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px;
+    }
+    .recome-welcome-feature-icon { font-size: 14px; flex-shrink: 0; }
+    .recome-welcome-btn-primary {
+      width: 100%; max-width: 260px; background: var(--accent); color: #000; border: none; border-radius: 10px;
+      padding: 11px 24px; font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit;
+      margin-top: 6px; transition: opacity 0.15s;
+    }
+    .recome-welcome-btn-primary:hover { opacity: 0.88; }
+    .recome-welcome-btn-secondary {
+      width: 100%; max-width: 260px; background: transparent; color: var(--text-muted);
+      border: 1px solid var(--border); border-radius: 10px; padding: 9px 20px;
+      font-weight: 500; font-size: 12px; cursor: pointer; font-family: inherit; transition: all 0.15s;
+    }
+    .recome-welcome-btn-secondary:hover { border-color: var(--accent); color: var(--text-dim); }
+    .recome-welcome-btn-link {
+      background: none; border: none; color: var(--text-muted); font-size: 11px;
+      cursor: pointer; font-family: inherit; text-decoration: underline; padding: 4px;
+      transition: color 0.15s;
+    }
+    .recome-welcome-btn-link:hover { color: var(--text-dim); }
+
+    /* ── Web App Link Bar ────────────────────────────────────── */
+    .recome-overlay-webapp-bar {
+      display: flex; align-items: center; justify-content: center; padding: 8px 16px;
+      border-top: 1px solid var(--border); flex-shrink: 0;
+    }
+    .recome-overlay-webapp-link {
+      background: none; border: none; color: var(--accent); font-size: 11px; font-weight: 500;
+      cursor: pointer; font-family: inherit; padding: 4px 8px; border-radius: 6px;
+      transition: all 0.15s;
+    }
+    .recome-overlay-webapp-link:hover { background: var(--surface2); }
+
     /* ── Generic focus visible ──────────────────────────────── */
     :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   `;
