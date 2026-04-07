@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SocialLoginButtons } from '@/components/SocialLoginButtons';
 
 export default function LoginPage() {
@@ -10,13 +10,32 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Extract extension params from URL
+  // Extract params from URL
   const params =
     typeof window !== 'undefined'
       ? new URLSearchParams(window.location.search)
       : new URLSearchParams();
   const returnTo = params.get('return') ?? undefined;
   const extId = params.get('ext_id') ?? undefined;
+
+  useEffect(() => {
+    // Handle OAuth callback — tokens arrive as URL params from the API redirect
+    const token = params.get('token');
+    const refresh = params.get('refresh');
+    if (token) {
+      localStorage.setItem('recome_token', token);
+      if (refresh) localStorage.setItem('recome_refresh', refresh);
+      // Clean URL and redirect
+      window.location.href = '/dashboard';
+      return;
+    }
+
+    // Auto-redirect if already logged in
+    const existing = localStorage.getItem('recome_token');
+    if (existing && !returnTo) {
+      window.location.href = '/dashboard';
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

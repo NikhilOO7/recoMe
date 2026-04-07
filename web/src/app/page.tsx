@@ -390,26 +390,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── FOOTER ─────────────────────────────────────────────────── */}
-      <footer className="py-10 border-t border-white/[0.08]">
-        <div className="max-w-5xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/30">
-          <span>RecoMe {new Date().getFullYear()} — Your research, connected.</span>
-          <div className="flex gap-5">
-            <Link href="/extension" className="hover:text-white/60 transition-colors">
-              Extension
-            </Link>
-            <Link href="/sdk" className="hover:text-white/60 transition-colors">
-              SDK
-            </Link>
-            <Link href="/agents" className="hover:text-white/60 transition-colors">
-              Agents
-            </Link>
-            <Link href="/login" className="hover:text-white/60 transition-colors">
-              Sign in
-            </Link>
-          </div>
-        </div>
-      </footer>
+      {/* Footer provided by layout */}
     </>
   );
 }

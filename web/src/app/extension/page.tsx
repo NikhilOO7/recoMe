@@ -1,4 +1,4 @@
-import Link from 'next/link';
+// Link import removed — footer is now in layout
 
 const CWS_URL = 'https://chromewebstore.google.com/detail/recome/fgpjboodmfnjbpdmbapjjjbfkflhbkcf';
 
@@ -277,23 +277,7 @@ export default function ExtensionPage() {
         </div>
       </section>
 
-      {/* ── FOOTER ─────────────────────────────────────────────────── */}
-      <footer className="py-10 border-t border-white/[0.08]">
-        <div className="max-w-5xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/30">
-          <span>RecoMe {new Date().getFullYear()}</span>
-          <div className="flex gap-5">
-            <Link href="/" className="hover:text-white/60 transition-colors">
-              Home
-            </Link>
-            <Link href="/sdk" className="hover:text-white/60 transition-colors">
-              SDK
-            </Link>
-            <Link href="/agents" className="hover:text-white/60 transition-colors">
-              Agents
-            </Link>
-          </div>
-        </div>
-      </footer>
+      {/* Footer provided by layout */}
     </>
   );
 }

@@ -1,4 +1,4 @@
-import Link from 'next/link';
+// Footer is in layout
 
 const CWS_URL = 'https://chromewebstore.google.com/detail/recome/fgpjboodmfnjbpdmbapjjjbfkflhbkcf';
 
@@ -111,22 +111,7 @@ const ranked = await reco.rank({
         </div>
       </section>
 
-      <footer className="py-10 border-t border-white/[0.08]">
-        <div className="max-w-5xl mx-auto px-6 flex items-center justify-between text-xs text-white/30">
-          <span>RecoMe {new Date().getFullYear()}</span>
-          <div className="flex gap-5">
-            <Link href="/" className="hover:text-white/60">
-              Home
-            </Link>
-            <Link href="/extension" className="hover:text-white/60">
-              Extension
-            </Link>
-            <Link href="/agents" className="hover:text-white/60">
-              Agents
-            </Link>
-          </div>
-        </div>
-      </footer>
+      {/* Footer provided by layout */}
     </>
   );
 }
