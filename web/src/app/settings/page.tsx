@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { authFetch, clearTokens } from '@/lib/auth';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://recome-api.fly.dev';
 
@@ -14,17 +15,11 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('recome_token');
-    if (!token) {
-      window.location.href = '/login';
-      return;
-    }
-    fetch(`${API_URL}/user/profile`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    authFetch('/user/profile')
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then(setProfile)
       .catch(() => {
+        clearTokens();
         window.location.href = '/login';
       })
       .finally(() => setLoading(false));

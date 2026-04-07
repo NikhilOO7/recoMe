@@ -19,19 +19,23 @@ export default function SignupPage() {
   const extId = params.get('ext_id') ?? undefined;
 
   useEffect(() => {
+    // Re-read params inside useEffect for correct client-side URL
+    const currentParams = new URLSearchParams(window.location.search);
+
     // Handle OAuth callback — tokens arrive as URL params from the API redirect
-    const token = params.get('token');
-    const refresh = params.get('refresh');
+    const token = currentParams.get('token');
+    const refresh = currentParams.get('refresh');
     if (token) {
       localStorage.setItem('recome_token', token);
       if (refresh) localStorage.setItem('recome_refresh', refresh);
+      window.history.replaceState({}, '', '/signup');
       window.location.href = '/dashboard';
       return;
     }
 
     // Auto-redirect if already logged in
     const existing = localStorage.getItem('recome_token');
-    if (existing && !returnTo) {
+    if (existing && !currentParams.get('return')) {
       window.location.href = '/dashboard';
     }
   }, []);
