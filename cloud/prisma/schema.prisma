@@ -23,7 +23,8 @@ model User {
   githubId      String?   @unique
   facebookId    String?   @unique
 
-  // Subscription
+  // Role & Subscription
+  role          Role      @default(USER)
   tier          Tier      @default(FREE)
   stripeCustomerId   String?  @unique
   stripeSubscriptionId String?
@@ -193,12 +194,150 @@ model TwinRecommendation {
   @@index([matchId])
 }
 
+// ── Admin: Feature Flags ────────────────────────────────────────────────────
+
+model FeatureFlag {
+  id            String    @id @default(cuid())
+  key           String    @unique
+  name          String
+  description   String?
+  enabled       Boolean   @default(false)
+  /// Rollout percentage (0-100). 100 = all users. 0 = disabled.
+  rolloutPercent Int      @default(0)
+  /// Target tiers (empty = all tiers)
+  targetTiers   String[]  @default([])
+  /// Target user IDs for beta testing
+  targetUsers   String[]  @default([])
+  /// Which app this flag applies to
+  app           AppType   @default(EXTENSION)
+  createdBy     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// ── Admin: Error Logs ──────────────────────────────────────────────────────
+
+model ErrorLog {
+  id            String    @id @default(cuid())
+  /// Source app: extension, web, cloud, mobile
+  source        AppType
+  /// Error level: error, warn, info
+  level         String    @default("error")
+  message       String
+  stack         String?
+  /// User who triggered it (optional)
+  userId        String?
+  /// Additional metadata (browser, version, platform, URL)
+  metadata      Json?
+  createdAt     DateTime  @default(now())
+
+  @@index([source])
+  @@index([createdAt])
+  @@index([userId])
+}
+
+// ── Admin: Deployment Pipelines ────────────────────────────────────────────
+
+model Deployment {
+  id            String          @id @default(cuid())
+  app           AppType
+  version       String
+  environment   DeployEnv       @default(PRODUCTION)
+  status        DeployStatus    @default(PENDING)
+  /// Git commit SHA or tag
+  commitSha     String?
+  /// Deployment notes
+  notes         String?
+  /// Who triggered the deployment
+  triggeredBy   String?
+  /// Deployment URL (e.g., fly.io URL, vercel URL)
+  deployUrl     String?
+  /// Build log or error output
+  buildLog      String?
+  startedAt     DateTime        @default(now())
+  completedAt   DateTime?
+  createdAt     DateTime        @default(now())
+
+  @@index([app])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ── Admin: App Configuration ───────────────────────────────────────────────
+
+model AppConfig {
+  id            String    @id @default(cuid())
+  app           AppType
+  /// Config key (e.g., "min_extension_version", "maintenance_mode")
+  key           String
+  value         String
+  /// Type hint for the admin UI (string, number, boolean, json)
+  valueType     String    @default("string")
+  description   String?
+  updatedBy     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([app, key])
+  @@index([app])
+}
+
+// ── Admin: Audit Log ───────────────────────────────────────────────────────
+
+model AuditLog {
+  id            String    @id @default(cuid())
+  /// Admin user who performed the action
+  adminId       String
+  /// Action type (e.g., "feature_flag.update", "user.ban", "deploy.trigger")
+  action        String
+  /// Target resource type and ID
+  resourceType  String?
+  resourceId    String?
+  /// Before/after values
+  details       Json?
+  createdAt     DateTime  @default(now())
+
+  @@index([adminId])
+  @@index([action])
+  @@index([createdAt])
+}
+
 // ── Enums ────────────────────────────────────────────────────────────────────
+
+enum Role {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
 
 enum Tier {
   FREE
   PRO
   PREMIUM
+}
+
+enum AppType {
+  EXTENSION
+  WEB
+  CLOUD
+  MOBILE
+  SDK
+  AGENTS
+}
+
+enum DeployEnv {
+  DEVELOPMENT
+  STAGING
+  PRODUCTION
+}
+
+enum DeployStatus {
+  PENDING
+  BUILDING
+  DEPLOYING
+  SUCCESS
+  FAILED
+  ROLLED_BACK
 }
 
 enum SyncDataType {
