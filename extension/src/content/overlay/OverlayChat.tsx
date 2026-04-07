@@ -158,7 +158,7 @@ export function OverlayChat({ onClose, theme, onToggleTheme }: OverlayChatProps)
             onClick={() => {
               const extId = chrome.runtime.id;
               window.open(
-                `https://recome.vercel.app/signup?return=extension&ext_id=${extId}`,
+                `https://recome-web.vercel.app/signup?return=extension&ext_id=${extId}`,
                 '_blank',
               );
             }}

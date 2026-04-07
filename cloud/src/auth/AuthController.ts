@@ -128,7 +128,10 @@ export function createAuthRoutes(): Hono {
       return c.json({ error: `${provider} OAuth is not configured` }, 501);
     }
 
-    const redirectUri = `${c.req.url.split('/auth/')[0]}/auth/${provider}/callback`;
+    // Build redirect URI — use X-Forwarded-Proto to get correct scheme behind reverse proxy
+    const proto = c.req.header('x-forwarded-proto') ?? 'https';
+    const host = c.req.header('host') ?? 'recome-api.fly.dev';
+    const redirectUri = `${proto}://${host}/auth/${provider}/callback`;
 
     // State carries the client's return URL for after auth completes
     const returnUrl = c.req.query('return_url') ?? '';
@@ -169,7 +172,10 @@ export function createAuthRoutes(): Hono {
       // State is optional — continue without it
     }
 
-    const redirectUri = `${c.req.url.split('?')[0]}`; // Same callback URL without query params
+    // Must match exactly what was sent in the initial auth request
+    const proto = c.req.header('x-forwarded-proto') ?? 'https';
+    const host = c.req.header('host') ?? 'recome-api.fly.dev';
+    const redirectUri = `${proto}://${host}/auth/${provider}/callback`;
     const profile = await handleOAuthCallback(provider, code, redirectUri);
     if (!profile) {
       return c.json({ error: 'Failed to authenticate with provider' }, 401);

@@ -137,7 +137,7 @@ export function App() {
           onClick={() => {
             const extId = chrome.runtime.id;
             chrome.tabs.create({
-              url: `https://recome.vercel.app/signup?return=extension&ext_id=${extId}`,
+              url: `https://recome-web.vercel.app/signup?return=extension&ext_id=${extId}`,
             });
           }}
         >
@@ -177,7 +177,7 @@ export function App() {
           onClick={() => {
             const extId = chrome.runtime.id;
             chrome.tabs.create({
-              url: `https://recome.vercel.app/login?return=extension&ext_id=${extId}`,
+              url: `https://recome-web.vercel.app/login?return=extension&ext_id=${extId}`,
             });
           }}
         >
