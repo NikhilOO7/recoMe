@@ -1,5 +1,18 @@
 import '../styles/content.css';
 import 'webextension-polyfill';
+
+// ── Extension context invalidation guard ───────────────────────────────────
+// When the extension is reloaded/updated, old content scripts on open tabs
+// lose their connection to the background. All chrome.runtime calls throw
+// "Extension context invalidated". Detect this early and bail out.
+function isContextValid(): boolean {
+  try {
+    return !!chrome.runtime?.id;
+  } catch {
+    return false;
+  }
+}
+
 import { detectPlatform, initAdapter } from './observer';
 import { YouTubeAdapter } from './adapters/YouTubeAdapter';
 import { AmazonAdapter } from './adapters/AmazonAdapter';
@@ -89,6 +102,7 @@ interface Settings {
 }
 
 async function getSettings(): Promise<Settings> {
+  if (!isContextValid()) return { enabled: false, platforms: {} };
   try {
     const response = await chrome.runtime.sendMessage({ type: 'GET_SETTINGS', payload: null });
     if (!response?.success) return { enabled: false, platforms: {} }; // fail closed
@@ -141,11 +155,27 @@ export function getContentState(): typeof contentState {
   return contentState;
 }
 
-// Listen for tab context queries from the background script
+// Listen for tab context queries from the background script.
+// Responds with the most complete state available — prefers __RECOME_DEBUG
+// (set after full bootstrap + eligibility + card detection) over contentState
+// (set incrementally during bootstrap, may be stale due to race condition).
 chrome.runtime.onMessage.addListener(
   (message: { type: string }, _sender, sendResponse: (response: unknown) => void) => {
     if (message.type === 'RECOME_GET_CONTENT_STATE') {
-      sendResponse(contentState);
+      const debug = window.__RECOME_DEBUG;
+      if (debug) {
+        // Use the authoritative debug snapshot
+        sendResponse({
+          platform: debug.platform ?? contentState.platform,
+          adapterActive: debug.overlayInjected || contentState.adapterActive,
+          cardsDetected: debug.detectedCards ?? contentState.cardsDetected,
+          controlsInjected: contentState.controlsInjected,
+          pageEligible: debug.eligibility?.eligible ?? contentState.pageEligible,
+          eligibilityReason: debug.eligibility?.reason ?? contentState.eligibilityReason,
+        });
+      } else {
+        sendResponse(contentState);
+      }
       return true;
     }
     return false;
@@ -153,6 +183,9 @@ chrome.runtime.onMessage.addListener(
 );
 
 async function bootstrap(): Promise<void> {
+  // Bail if extension context is invalidated (extension reloaded while page open)
+  if (!isContextValid()) return;
+
   // Never run on pure chat/messaging sites
   if (isChatOnlySite()) {
     log.info(`Chat-only site detected (${location.hostname}), skipping`);
@@ -271,6 +304,36 @@ async function bootstrap(): Promise<void> {
   await initAdapter(adapter, () => {
     // SPA navigation: clear stale timers and rebind overlay with fresh adapter ref
     clearPendingTimers();
+
+    // ── Re-trigger page-level signal capture after SPA navigation ──────
+    // This is critical: YouTube and Reddit are SPAs. When the user navigates
+    // from home→watch or feed→post, capturePageResearchSignal() must re-fire
+    // for the NEW page. Without this, signals are only captured on the initial
+    // page load and missed on all subsequent SPA navigations.
+    if (platform === 'youtube' && location.pathname.startsWith('/watch')) {
+      trackTimeout(() => capturePageResearchSignal(platform, adapter), 3000);
+    } else if (platform === 'reddit' && location.pathname.includes('/comments/')) {
+      trackTimeout(() => capturePageResearchSignal(platform, adapter), 2000);
+    } else if (
+      platform === 'reddit' &&
+      location.pathname.startsWith('/r/') &&
+      !location.pathname.includes('/comments/')
+    ) {
+      trackTimeout(() => capturePageResearchSignal(platform, adapter), 2000);
+    }
+
+    // Re-trigger Research Card injection on Amazon PDP after SPA navigation
+    if (
+      platform === 'amazon' &&
+      (location.pathname.includes('/dp/') || location.pathname.includes('/gp/product/'))
+    ) {
+      trackTimeout(() => injectResearchCardOnPDP(), 1500);
+    }
+
+    // Update card count for the new page
+    const newCardCount = countDetectedCards(adapter);
+    updateContentState({ cardsDetected: newCardCount });
+
     if (overlayInstance) {
       overlayInstance.onNavigate(() => {
         // P3.1: Use activeAdapter (module-level) to avoid stale closure
@@ -539,14 +602,21 @@ async function injectResearchCardOnPDP(): Promise<void> {
     // This is more reliable than MemoryStore context_bucket (which stores 'general'/'shopping', not platform name).
     const platformIndex = new Map<string, Set<string>>(); // topic → platforms
 
-    // Index platforms from graph entities (topInterests + recentEntities)
+    // Index platforms from graph entities (topInterests + recentEntities).
+    // Read BOTH source_platforms (array, accumulated) and source_platform (string, latest).
     for (const entity of [...(graph?.topInterests ?? []), ...(graph?.recentEntities ?? [])]) {
       const name = entity.name.toLowerCase();
-      const sourcePlatform = (entity.metadata?.source_platform as string) ?? '';
-      if (sourcePlatform && sourcePlatform !== 'unknown') {
-        if (!platformIndex.has(name)) platformIndex.set(name, new Set());
-        platformIndex.get(name)!.add(sourcePlatform);
+      if (!platformIndex.has(name)) platformIndex.set(name, new Set());
+      const platSet = platformIndex.get(name)!;
+
+      // Accumulated platforms array (set by upsertEntity merge)
+      const platforms = (entity.metadata?.source_platforms as string[]) ?? [];
+      for (const p of platforms) {
+        if (p && p !== 'unknown') platSet.add(p);
       }
+      // Fallback: single source_platform field
+      const singlePlat = (entity.metadata?.source_platform as string) ?? '';
+      if (singlePlat && singlePlat !== 'unknown') platSet.add(singlePlat);
     }
 
     // ── 4. Match graph entities against product context ──────────────────
@@ -564,6 +634,12 @@ async function injectResearchCardOnPDP(): Promise<void> {
     for (const entity of candidateEntities) {
       const entityLower = entity.name.toLowerCase();
       if (seenTopics.has(entityLower)) continue;
+
+      // Skip creator entities ONLY if they don't match the product context.
+      // Brands like "Sony" might be tagged as 'creator' from YouTube (channel-name heuristic)
+      // but still need to match against product titles. Only skip creators that are clearly
+      // channel names — they won't appear in the product title anyway, so the match check
+      // below handles this naturally. No blanket skip needed.
 
       // Match: entity name appears in product title, OR product keywords appear in entity name
       const matchesTitle = titleLower.includes(entityLower) || entityLower.includes(titleLower);
@@ -590,8 +666,10 @@ async function injectResearchCardOnPDP(): Promise<void> {
       // Also check graph entity metadata for source_platform
       const recentMatch = allRecent.find((e) => e.name.toLowerCase() === entityLower);
 
+      // Use first non-amazon platform for display, prefer youtube/reddit
+      const platformArr = [...platforms].filter((p) => p !== 'amazon');
       signals.push({
-        platform: [...platforms][0] ?? 'amazon',
+        platform: platformArr[0] ?? [...platforms][0] ?? 'amazon',
         topic: entity.name,
         signalCount: Math.max(platforms.size, 1),
         lastSeen: recentMatch?.updated_at ?? Date.now(),
@@ -645,16 +723,22 @@ async function injectResearchCardOnPDP(): Promise<void> {
         ? `You've been researching ${topTopics.join(', ')} on ${allPlatforms.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(' and ')}. This product connects to your research.`
         : `Based on your interest in ${topTopics.join(', ')}, this product matches your research trail.`;
 
-    // Calculate match score from graph weights
+    // Calculate match score: base from graph weights + cross-platform bonus
     const avgWeight =
       signals.slice(0, 4).reduce((sum, s) => {
         const interest = allInterests.find((i) => i.name.toLowerCase() === s.topic.toLowerCase());
         return sum + (interest?.weight ?? 0.3);
       }, 0) / Math.min(signals.length, 4);
 
+    // Cross-platform bonus: having research from 2+ platforms is a strong
+    // confidence signal (the core thesis). 1 platform = 1.5x, 2+ = 2x.
+    // Also: 3+ matched entities is strong even with 1 platform.
+    const platformMultiplier = allPlatforms.length >= 2 ? 2.0 : signals.length >= 3 ? 1.8 : 1.5;
+    const matchScore = Math.min(avgWeight * platformMultiplier, 1);
+
     injectResearchCard({
       productTitle,
-      matchScore: Math.min(avgWeight * 1.5, 1),
+      matchScore,
       signals: signals.slice(0, 4),
       matchReason,
     });
@@ -673,6 +757,79 @@ async function injectResearchCardOnPDP(): Promise<void> {
  * - Reddit /r/xxx → subreddit name as topic
  */
 function capturePageResearchSignal(platform: Platform, _adapter: BaseAdapter): void {
+  // Known brands — extracted as entities (type: brand), not topics
+  const KNOWN_BRANDS = new Set([
+    'sony',
+    'bose',
+    'apple',
+    'samsung',
+    'google',
+    'microsoft',
+    'amazon',
+    'sennheiser',
+    'jabra',
+    'beats',
+    'jbl',
+    'anker',
+    'soundcore',
+    'shure',
+    'audio-technica',
+    'beyerdynamic',
+    'hifiman',
+    'audeze',
+    'focal',
+    'akg',
+    'dell',
+    'hp',
+    'lenovo',
+    'asus',
+    'acer',
+    'razer',
+    'logitech',
+    'corsair',
+    'nvidia',
+    'amd',
+    'intel',
+    'lg',
+    'panasonic',
+    'philips',
+    'yamaha',
+    'nike',
+    'adidas',
+    'dyson',
+    'ikea',
+    'nintendo',
+    'playstation',
+    'xbox',
+  ]);
+
+  // Product categories — extracted as topics for cross-platform matching.
+  // Includes both generic keywords AND known model-name patterns so that
+  // "Sony WH-1000XM5 Review" matches 'headphones' even without the word.
+  const PRODUCT_CATEGORIES = new Map([
+    [
+      /headphones?|headsets?|over-?ears?|on-?ears?|wh-?1000|xm[345]|momentum|qc[234]|qc\s?ultra|px[78]|hd\s?[456]\d\d|dt\s?\d{3}/i,
+      'headphones',
+    ],
+    [
+      /earbuds?|in-?ears?|iems?|earphones?|airpods?|wf-?1000|galaxy\s?buds|freebuds|linkbuds/i,
+      'earbuds',
+    ],
+    [/laptops?|notebooks?|ultrabooks?/i, 'laptops'],
+    [/phones?|smartphones?|iphones?|androids?|pixels?|galaxy/i, 'smartphones'],
+    [/tablets?|ipads?/i, 'tablets'],
+    [/monitors?|displays?/i, 'monitors'],
+    [/keyboards?|keycaps?|mechanical/i, 'keyboards'],
+    [/mouse|mice|trackpads?/i, 'mouse'],
+    [/cameras?|dslrs?|mirrorless/i, 'cameras'],
+    [/speakers?|soundbars?/i, 'speakers'],
+    [/tvs?|televisions?|oleds?/i, 'tvs'],
+    [/routers?|wi-?fi|mesh/i, 'routers'],
+    [/watches?|smartwatches?|wearables?/i, 'smartwatches'],
+    [/shoes?|sneakers?|boots?|running/i, 'shoes'],
+    [/vacuums?|robot\s*vacuums?/i, 'vacuums'],
+  ]);
+
   try {
     const topics: string[] = [];
     const entities: string[] = [];
@@ -694,7 +851,24 @@ function capturePageResearchSignal(platform: Platform, _adapter: BaseAdapter): v
         document.querySelector('#channel-name a');
       const channel = channelEl?.textContent?.trim();
 
-      // Extract meaningful keywords from video title (skip noise)
+      const titleLower = videoTitle.toLowerCase();
+
+      // 1. Extract known brands from the title as entities
+      for (const brand of KNOWN_BRANDS) {
+        if (titleLower.includes(brand)) {
+          // Capitalize brand name
+          entities.push(brand.charAt(0).toUpperCase() + brand.slice(1));
+        }
+      }
+
+      // 2. Extract product categories from the title
+      for (const [pattern, category] of PRODUCT_CATEGORIES) {
+        if (pattern.test(titleLower) && !topics.includes(category)) {
+          topics.push(category);
+        }
+      }
+
+      // 3. Extract meaningful keywords (skip noise, model numbers, short words)
       const NOISE = new Set([
         'the',
         'and',
@@ -711,36 +885,54 @@ function capturePageResearchSignal(platform: Platform, _adapter: BaseAdapter): v
         'best',
         'top',
         'new',
-        'vs',
         'review',
         'unboxing',
         'video',
+        'later',
+        'years',
+        'months',
+        'weeks',
+        'days',
+        'worth',
+        'still',
+        'after',
+        'before',
+        'should',
+        'buy',
+        'buying',
+        'guide',
+        'ultimate',
+        'complete',
+        'first',
+        'look',
+        'hands',
+        'here',
+        'my',
+        'thoughts',
+        'opinion',
+        'honest',
+        'real',
+        'truth',
+        'tier',
+        'list',
       ]);
-      const titleWords = videoTitle
-        .toLowerCase()
-        .replace(/[^a-z0-9\s]/g, ' ')
+      const titleWords = titleLower
+        .replace(/[^a-z0-9\s-]/g, ' ')
         .split(/\s+/)
-        .filter((w) => w.length > 3 && !NOISE.has(w));
+        .filter(
+          (w) =>
+            w.length > 3 &&
+            !NOISE.has(w) &&
+            !KNOWN_BRANDS.has(w) &&
+            !/^\d+$/.test(w) && // skip pure numbers
+            !/^[a-z]{1,2}\d+/i.test(w), // skip model numbers like wh1000xm5
+        );
 
-      // Take up to 5 most unique keywords as topics
-      const seen = new Set<string>();
+      const seen = new Set<string>(topics);
       for (const word of titleWords) {
         if (!seen.has(word) && seen.size < 5) {
           seen.add(word);
           topics.push(word);
-        }
-      }
-
-      // Also add multi-word phrases from title (2-word combos)
-      const words = videoTitle
-        .toLowerCase()
-        .replace(/[^a-z0-9\s]/g, '')
-        .split(/\s+/)
-        .filter((w) => w.length > 2 && !NOISE.has(w));
-      for (let i = 0; i < words.length - 1 && topics.length < 8; i++) {
-        const phrase = `${words[i]} ${words[i + 1]}`;
-        if (phrase.length > 5 && !topics.includes(phrase)) {
-          topics.push(phrase);
         }
       }
 
@@ -753,7 +945,19 @@ function capturePageResearchSignal(platform: Platform, _adapter: BaseAdapter): v
       const subreddit = subredditMatch?.[1];
 
       if (subreddit) {
-        topics.push(subreddit);
+        // Don't push raw subreddit name as a topic — it creates noise like "HeadphoneAdvice".
+        // Instead, check if the subreddit name contains a product category.
+        let subredditMatchedCategory = false;
+        for (const [pattern, category] of PRODUCT_CATEGORIES) {
+          if (pattern.test(subreddit) && !topics.includes(category)) {
+            topics.push(category);
+            subredditMatchedCategory = true;
+          }
+        }
+        // Only keep the raw subreddit name if no category was extracted from it
+        if (!subredditMatchedCategory) {
+          topics.push(subreddit);
+        }
       }
 
       if (location.pathname.includes('/comments/')) {
@@ -766,6 +970,22 @@ function capturePageResearchSignal(platform: Platform, _adapter: BaseAdapter): v
         const postTitle = postTitleEl?.textContent?.trim() ?? '';
 
         if (postTitle) {
+          const postLower = postTitle.toLowerCase();
+
+          // Extract brands from post title
+          for (const brand of KNOWN_BRANDS) {
+            if (postLower.includes(brand)) {
+              entities.push(brand.charAt(0).toUpperCase() + brand.slice(1));
+            }
+          }
+
+          // Extract product categories from post title
+          for (const [pattern, category] of PRODUCT_CATEGORIES) {
+            if (pattern.test(postLower) && !topics.includes(category)) {
+              topics.push(category);
+            }
+          }
+
           // Extract keywords from post title
           const NOISE = new Set([
             'the',
@@ -784,12 +1004,32 @@ function capturePageResearchSignal(platform: Platform, _adapter: BaseAdapter): v
             'have',
             'help',
             'question',
+            'which',
+            'should',
+            'looking',
+            'need',
+            'want',
+            'between',
+            'better',
+            'best',
+            'good',
+            'worth',
+            'opinions',
+            'thoughts',
+            'advice',
+            'recommendation',
           ]);
-          const titleWords = postTitle
-            .toLowerCase()
-            .replace(/[^a-z0-9\s]/g, ' ')
+          const titleWords = postLower
+            .replace(/[^a-z0-9\s-]/g, ' ')
             .split(/\s+/)
-            .filter((w) => w.length > 3 && !NOISE.has(w));
+            .filter(
+              (w) =>
+                w.length > 3 &&
+                !NOISE.has(w) &&
+                !KNOWN_BRANDS.has(w) &&
+                !/^\d+$/.test(w) &&
+                !/^[a-z]{1,2}\d+/i.test(w),
+            );
 
           for (const word of titleWords) {
             if (topics.length < 8 && !topics.includes(word)) {
@@ -810,9 +1050,9 @@ function capturePageResearchSignal(platform: Platform, _adapter: BaseAdapter): v
       }
     }
 
-    if (topics.length === 0) return;
+    if (topics.length === 0 && entities.length === 0) return;
 
-    // Send as implicit signal with correct platform attribution
+    // Step 1: Offline signal — fires immediately, no latency
     chrome.runtime
       .sendMessage({
         type: 'IMPLICIT_SIGNAL',
@@ -828,6 +1068,30 @@ function capturePageResearchSignal(platform: Platform, _adapter: BaseAdapter): v
       .catch(() => undefined);
 
     log.info(`Page research signal captured on ${platform}: ${topics.join(', ')}`);
+
+    // Step 2: AI enrichment — async, only if user has LLM key configured.
+    // Extracts cleaner entities (brands, categories) and merges into graph
+    // with higher confidence. No-op if no API key is set.
+    chrome.runtime
+      .sendMessage({
+        type: 'ENRICH_PAGE_SIGNAL',
+        payload: {
+          title: contentTitle,
+          platform,
+          url: location.href,
+          ...(platform === 'youtube' && {
+            channel:
+              document
+                .querySelector('ytd-channel-name yt-formatted-string a')
+                ?.textContent?.trim() ??
+              document.querySelector('#channel-name a')?.textContent?.trim(),
+          }),
+          ...(platform === 'reddit' && {
+            subreddit: location.pathname.match(/^\/r\/([^/]+)/)?.[1],
+          }),
+        },
+      })
+      .catch(() => undefined); // Fire-and-forget — AI enrichment is optional
   } catch (err) {
     log.debug('Failed to capture page research signal', err);
   }
@@ -1079,35 +1343,39 @@ function setupSearchTracking(platform: Platform): void {
 }
 
 bootstrap().catch((err) => {
+  // Suppress "Extension context invalidated" — expected after extension reload
+  if (/context invalidated/i.test(String(err))) return;
   log.error('Content script bootstrap failed', err);
 });
 
 // Listen for achievement/milestone toasts from the background service worker
-chrome.runtime.onMessage.addListener(
-  (message: { type: string; payload?: Record<string, unknown> }) => {
-    if (message.type === 'ACHIEVEMENT_TOAST' && message.payload) {
-      const { message: msg, kind } = message.payload as { message: string; kind: string };
-      const isMilestone = kind === 'milestone';
-      showToast(msg, isMilestone ? 'success' : 'info');
-      if (isMilestone && /\b(100|500|1000)\b/.test(msg)) {
-        showConfetti();
+// Guard: skip if extension was reloaded (context invalidated)
+if (isContextValid())
+  chrome.runtime.onMessage.addListener(
+    (message: { type: string; payload?: Record<string, unknown> }) => {
+      if (message.type === 'ACHIEVEMENT_TOAST' && message.payload) {
+        const { message: msg, kind } = message.payload as { message: string; kind: string };
+        const isMilestone = kind === 'milestone';
+        showToast(msg, isMilestone ? 'success' : 'info');
+        if (isMilestone && /\b(100|500|1000)\b/.test(msg)) {
+          showConfetti();
+        }
       }
-    }
 
-    // Proactive insights — show a toast when new insights are available
-    if (message.type === 'INSIGHT_AVAILABLE' && message.payload) {
-      const { count } = message.payload as { count: number };
-      if (count > 0) {
-        showInsightToast();
+      // Proactive insights — show a toast when new insights are available
+      if (message.type === 'INSIGHT_AVAILABLE' && message.payload) {
+        const { count } = message.payload as { count: number };
+        if (count > 0) {
+          showInsightToast();
+        }
       }
-    }
 
-    // Toggle overlay from keyboard command
-    if (message.type === 'TOGGLE_OVERLAY') {
-      overlayInstance?.toggle();
-    }
-  },
-);
+      // Toggle overlay from keyboard command
+      if (message.type === 'TOGGLE_OVERLAY') {
+        overlayInstance?.toggle();
+      }
+    },
+  );
 
 async function showInsightToast(): Promise<void> {
   try {

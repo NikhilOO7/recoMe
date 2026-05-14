@@ -418,6 +418,11 @@ const PLATFORM_MIN_CARDS: Record<string, number> = {
 };
 
 export function getMinCardThreshold(platform: string): number {
+  // YouTube watch pages and Reddit post pages are content-first, not feed pages.
+  // The main value is the video/post itself, not sidebar recommendations.
+  // Use a threshold of 0 so the overlay activates immediately.
+  if (platform === 'youtube' && location.pathname.startsWith('/watch')) return 0;
+  if (platform === 'reddit' && location.pathname.includes('/comments/')) return 0;
   return PLATFORM_MIN_CARDS[platform] ?? 1;
 }
 

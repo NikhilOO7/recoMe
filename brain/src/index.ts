@@ -141,6 +141,38 @@ export class IntelligenceService {
 
     const graphWeight = weights.strength * (params.confidenceOverride ?? weights.confidence);
 
+    // Noise topics — too generic to be useful research signals
+    const NOISE_TOPICS = new Set([
+      'music',
+      'tech',
+      'news',
+      'sports',
+      'gaming',
+      'entertainment',
+      'finance',
+      'politics',
+      'science',
+      'health',
+      'food',
+      'travel',
+      'fashion',
+      'art',
+      'education',
+      'business',
+      'popular',
+      'trending',
+      'home',
+      'live',
+      'shorts',
+      'videos',
+      'posts',
+      'comments',
+      'submit',
+      'search',
+      'about',
+      'wiki',
+    ]);
+
     // Write raw topics as graph entities + relations
     for (let topic of params.topics) {
       if (!topic || topic.length < 2) continue;
@@ -151,6 +183,8 @@ export class IntelligenceService {
         .replace(/^searched:/i, '')
         .trim();
       if (!topic || topic.length < 2) continue;
+      // Skip overly generic topics
+      if (NOISE_TOPICS.has(topic.toLowerCase())) continue;
       // Upsert entity (creates if new, updates timestamp if exists)
       await this.graph.upsertEntity({
         name: topic,
@@ -167,7 +201,54 @@ export class IntelligenceService {
       );
     }
 
-    // Write entities (brands, products, creators) with higher weight
+    // Write entities (brands, products, creators) with higher weight.
+    // Determine type per-entity: known product brands → 'brand', everything else → 'creator'.
+    // This correctly handles YouTube where both brands (Sony) and channel names (SoundGuys)
+    // arrive in the same entities[] array.
+    const KNOWN_BRAND_NAMES = new Set([
+      'sony',
+      'bose',
+      'apple',
+      'samsung',
+      'google',
+      'microsoft',
+      'amazon',
+      'sennheiser',
+      'jabra',
+      'beats',
+      'jbl',
+      'anker',
+      'soundcore',
+      'shure',
+      'audio-technica',
+      'beyerdynamic',
+      'hifiman',
+      'audeze',
+      'focal',
+      'akg',
+      'dell',
+      'hp',
+      'lenovo',
+      'asus',
+      'acer',
+      'razer',
+      'logitech',
+      'corsair',
+      'nvidia',
+      'amd',
+      'intel',
+      'lg',
+      'panasonic',
+      'philips',
+      'yamaha',
+      'nike',
+      'adidas',
+      'dyson',
+      'ikea',
+      'nintendo',
+      'playstation',
+      'xbox',
+    ]);
     for (let entity of params.entities) {
       if (!entity || entity.length < 2) continue;
       // Clean anchor text noise
@@ -176,9 +257,10 @@ export class IntelligenceService {
         .replace(/\s+(store|page|section)$/i, '')
         .trim();
       if (!entity || entity.length < 2) continue;
+      const entityType = KNOWN_BRAND_NAMES.has(entity.toLowerCase()) ? 'brand' : 'creator';
       await this.graph.upsertEntity({
         name: entity,
-        type: 'brand', // entities are typically brands/creators
+        type: entityType,
         aliases: [],
         metadata: { source_platform: params.platform, signal_type: params.signalType },
       });

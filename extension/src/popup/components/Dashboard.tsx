@@ -49,7 +49,7 @@ function send(
   return chrome.runtime.sendMessage({ type, payload });
 }
 
-export function Dashboard() {
+export function Dashboard({ compact = false }: { compact?: boolean } = {}) {
   const [stats, setStats] = useState<RecoMeStats | null>(null);
   const [dbStats, setDbStats] = useState<DbStats | null>(null);
   const [context, setContext] = useState<ContextBucket>('general');
@@ -171,7 +171,28 @@ export function Dashboard() {
         <div className="tab-status-bar">
           <span className={`tab-status-dot ${tabCtx.adapterActive ? 'active' : 'inactive'}`} />
           <span className="tab-status-platform">
-            {tabCtx.platform === 'unknown' ? 'Unsupported page' : tabCtx.platform}
+            {(() => {
+              // Derive platform from URL if content script reported 'unknown'
+              // (may happen if bootstrap is still running or message round-trip failed)
+              let displayPlatform = tabCtx.platform;
+              if (displayPlatform === 'unknown' && tabCtx.url) {
+                try {
+                  const host = new URL(tabCtx.url).hostname.replace(/^www\./, '');
+                  if (host.includes('youtube.com')) displayPlatform = 'youtube';
+                  else if (host.includes('amazon.')) displayPlatform = 'amazon';
+                  else if (host.includes('reddit.com')) displayPlatform = 'reddit';
+                  else if (host.includes('twitter.com') || host.includes('x.com'))
+                    displayPlatform = 'twitter';
+                  else if (host.includes('facebook.com')) displayPlatform = 'facebook';
+                  else if (host.includes('instagram.com')) displayPlatform = 'instagram';
+                  else if (host.includes('ebay.')) displayPlatform = 'ebay';
+                  else if (host.includes('linkedin.com')) displayPlatform = 'linkedin';
+                } catch {
+                  /* ignore */
+                }
+              }
+              return displayPlatform === 'unknown' ? 'Unsupported page' : displayPlatform;
+            })()}
           </span>
           {tabCtx.adapterActive && tabCtx.cardsDetected > 0 && (
             <span className="tab-status-cards">{tabCtx.cardsDetected} cards</span>
@@ -248,54 +269,67 @@ export function Dashboard() {
         </div>
       )}
 
-      <div className="stats-grid">
-        <StatsCard label="Hidden today" value={hiddenToday} icon="🙈" color="#ef4444" />
-        <StatsCard label="Total hidden" value={totalHidden} icon="🛡️" color="#6366f1" />
-        <StatsCard label="Active blocks" value={blockedCount} icon="🚫" color="#f59e0b" />
-        <StatsCard label="Memory entries" value={memoryCount} icon="🧠" color="#06b6d4" />
-      </div>
-
-      {/* Learning progress — visible during early usage, hides when graph is mature */}
-      <LearningProgress />
-
-      {/* Preference graph summary — collapsible */}
-      <GraphSummary />
-
-      {/* AI Agent modules — shows which agents are active and their activity */}
-      <AgentInsights />
-
-      {/* Recent action history — decision timeline with explanations */}
-      <ActionHistory />
-
-      {/* Achievements */}
-      <div className="achievements">
-        <h3 className="section-title">
-          Achievements
-          {unlockedIds.length > 0 && (
-            <span className="achievement-count">
-              {unlockedIds.length}/{ALL_ACHIEVEMENTS.length}
-            </span>
-          )}
-        </h3>
-        <div className="achievement-grid">
-          {ALL_ACHIEVEMENTS.map((a) => {
-            const unlocked = unlockedIds.includes(a.id);
-            return (
-              <div
-                key={a.id}
-                className={`achievement-badge ${unlocked ? 'unlocked' : 'locked'}`}
-                title={a.label}
-              >
-                <span className="achievement-icon">{a.icon}</span>
-                <span className="achievement-label">{a.label}</span>
-              </div>
-            );
-          })}
+      {/* In compact mode (overlay), show only a mini stats row. Full analytics in web app. */}
+      {compact ? (
+        <div className="stats-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
+          <StatsCard label="Blocks" value={blockedCount} icon="🚫" color="#f59e0b" />
+          <StatsCard label="Memory" value={memoryCount} icon="🧠" color="#06b6d4" />
+          <StatsCard label="Hidden" value={totalHidden} icon="🛡️" color="#6366f1" />
         </div>
-      </div>
+      ) : (
+        <>
+          <div className="stats-grid">
+            <StatsCard label="Hidden today" value={hiddenToday} icon="🙈" color="#ef4444" />
+            <StatsCard label="Total hidden" value={totalHidden} icon="🛡️" color="#6366f1" />
+            <StatsCard label="Active blocks" value={blockedCount} icon="🚫" color="#f59e0b" />
+            <StatsCard label="Memory entries" value={memoryCount} icon="🧠" color="#06b6d4" />
+          </div>
 
-      {/* Active patterns */}
-      {patternCount > 0 && (
+          {/* Learning progress — visible during early usage, hides when graph is mature */}
+          <LearningProgress />
+
+          {/* Preference graph summary — collapsible */}
+          <GraphSummary />
+
+          {/* AI Agent modules — shows which agents are active and their activity */}
+          <AgentInsights />
+
+          {/* Recent action history — decision timeline with explanations */}
+          <ActionHistory />
+        </>
+      )}
+
+      {/* Achievements — hidden in compact overlay mode */}
+      {!compact && (
+        <div className="achievements">
+          <h3 className="section-title">
+            Achievements
+            {unlockedIds.length > 0 && (
+              <span className="achievement-count">
+                {unlockedIds.length}/{ALL_ACHIEVEMENTS.length}
+              </span>
+            )}
+          </h3>
+          <div className="achievement-grid">
+            {ALL_ACHIEVEMENTS.map((a) => {
+              const unlocked = unlockedIds.includes(a.id);
+              return (
+                <div
+                  key={a.id}
+                  className={`achievement-badge ${unlocked ? 'unlocked' : 'locked'}`}
+                  title={a.label}
+                >
+                  <span className="achievement-icon">{a.icon}</span>
+                  <span className="achievement-label">{a.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Active patterns — hidden in compact mode */}
+      {!compact && patternCount > 0 && (
         <div className="blocked-topics" style={{ marginBottom: 12 }}>
           <h3 className="section-title">
             Active Patterns{' '}

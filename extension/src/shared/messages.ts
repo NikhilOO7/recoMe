@@ -119,7 +119,9 @@ export type MessageType =
   | 'TWIN_BLOCK_MATCH'
   // Tab context for popup synchronization
   | 'GET_TAB_CONTEXT'
-  | 'TWIN_DISMISS_RECOMMENDATION';
+  | 'TWIN_DISMISS_RECOMMENDATION'
+  // Hybrid AI enrichment (Phase 0)
+  | 'ENRICH_PAGE_SIGNAL';
 
 // ── Individual message shapes ─────────────────────────────────────────────────
 
@@ -751,6 +753,19 @@ export interface TabContext {
   onboardingDone: boolean;
 }
 
+// ── Hybrid AI enrichment (Phase 0) ────────────────────────────────────────────
+
+export interface EnrichPageSignalMessage {
+  type: 'ENRICH_PAGE_SIGNAL';
+  payload: {
+    title: string;
+    platform: string;
+    url: string;
+    channel?: string;
+    subreddit?: string;
+  };
+}
+
 // ── Union type for all messages ───────────────────────────────────────────────
 
 export type RecoMeMessage =
@@ -842,7 +857,8 @@ export type RecoMeMessage =
   | TwinAcceptMatchMessage
   | TwinBlockMatchMessage
   | TwinDismissRecommendationMessage
-  | GetTabContextMessage;
+  | GetTabContextMessage
+  | EnrichPageSignalMessage;
 
 // ── Response wrapper ──────────────────────────────────────────────────────────
 

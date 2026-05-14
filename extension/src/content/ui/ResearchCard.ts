@@ -217,7 +217,7 @@ export function injectResearchCard(data: ResearchCardData): void {
 
   const logoUrl =
     typeof chrome !== 'undefined' && chrome.runtime?.getURL
-      ? chrome.runtime.getURL('icons/recome_logo_16.png')
+      ? chrome.runtime.getURL('icons/recome_logo_48.png')
       : '';
 
   card.innerHTML = `

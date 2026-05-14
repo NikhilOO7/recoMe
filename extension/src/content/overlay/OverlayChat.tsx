@@ -215,7 +215,7 @@ export function OverlayChat({ onClose, theme, onToggleTheme }: OverlayChatProps)
       {/* Tab Content */}
       {activeTab === 'dashboard' && (
         <div className="recome-overlay-popup-content">
-          <Dashboard />
+          <Dashboard compact />
         </div>
       )}
 

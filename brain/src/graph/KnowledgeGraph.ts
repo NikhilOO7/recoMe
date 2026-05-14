@@ -85,7 +85,30 @@ export class KnowledgeGraph {
     const existing = await this.findEntityByName(entity.name);
 
     if (existing) {
-      const updated: GraphEntity = { ...existing, ...entity, updated_at: now() };
+      // Merge metadata — accumulate source_platforms instead of overwriting.
+      // This preserves cross-platform attribution: "headphones" seen on YouTube AND Reddit.
+      const mergedMetadata = { ...(existing.metadata ?? {}), ...(entity.metadata ?? {}) };
+      const existingPlatforms = (existing.metadata?.source_platforms as string[]) ?? [];
+      const existingPlatform = existing.metadata?.source_platform as string | undefined;
+      const newPlatform = entity.metadata?.source_platform as string | undefined;
+      const platformSet = new Set([
+        ...existingPlatforms,
+        ...(existingPlatform ? [existingPlatform] : []),
+        ...(newPlatform ? [newPlatform] : []),
+      ]);
+      platformSet.delete('');
+      platformSet.delete('unknown');
+      mergedMetadata.source_platforms = [...platformSet];
+      if (newPlatform && newPlatform !== 'unknown') {
+        mergedMetadata.source_platform = newPlatform;
+      }
+
+      const updated: GraphEntity = {
+        ...existing,
+        ...entity,
+        metadata: mergedMetadata,
+        updated_at: now(),
+      };
       await db.put('entities', updated);
       entityCache.set(existing.id, updated);
       return updated;

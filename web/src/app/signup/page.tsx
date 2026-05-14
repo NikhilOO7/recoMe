@@ -69,7 +69,7 @@ export default function SignupPage() {
       } else {
         localStorage.setItem('recome_token', data.accessToken);
         localStorage.setItem('recome_refresh', data.refreshToken);
-        window.location.href = '/';
+        window.location.href = '/dashboard';
       }
     } catch {
       setError('Connection failed. Please try again.');
@@ -79,7 +79,7 @@ export default function SignupPage() {
   }
 
   return (
-    <section className="min-h-screen flex items-center justify-center px-6">
+    <section className="min-h-screen flex items-center justify-center px-6 pt-16">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <Link href="/" className="text-2xl font-bold tracking-tight">

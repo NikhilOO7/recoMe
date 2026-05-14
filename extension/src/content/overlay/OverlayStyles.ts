@@ -246,6 +246,7 @@ export function getOverlayStyles(theme: 'light' | 'dark'): string {
     /* ── Popup content wrapper ──────────────────────────────── */
     .recome-overlay-popup-content {
       flex: 1;
+      min-height: 0;
       overflow-y: auto;
       padding: 16px 20px;
     }
@@ -260,6 +261,7 @@ export function getOverlayStyles(theme: 'light' | 'dark'): string {
 
     .recome-overlay-popup-agent {
       flex: 1;
+      min-height: 0;
       overflow: hidden;
       display: flex;
       flex-direction: column;
@@ -1090,6 +1092,60 @@ function getPopupComponentStyles(theme: 'light' | 'dark'): string {
       transition: all 0.15s;
     }
     .recome-overlay-webapp-link:hover { background: var(--surface2); }
+
+    /* ── Research Topics ─────────────────────────────────────── */
+    .research-topics { margin-bottom: 12px; }
+    .research-topics-list { display: flex; flex-direction: column; gap: 4px; }
+    .research-topic-card {
+      display: flex; flex-direction: column; gap: 2px;
+      padding: 8px 10px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 8px;
+    }
+    .research-topic-main {
+      display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    }
+    .research-topic-name {
+      font-size: 12px; font-weight: 600; color: var(--text);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .research-topic-type {
+      font-size: 9px; color: var(--text-muted); background: var(--surface2);
+      padding: 1px 6px; border-radius: 6px; text-transform: uppercase;
+      letter-spacing: 0.5px; flex-shrink: 0;
+    }
+    .research-topic-meta {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 10px; color: var(--text-muted);
+    }
+    .research-topic-platforms { letter-spacing: 2px; }
+    .research-topic-signals { color: var(--accent); font-weight: 500; }
+    .research-topic-time { margin-left: auto; }
+
+    /* ── Privacy Report ──────────────────────────────────────── */
+    .privacy-report { display: flex; flex-direction: column; gap: 10px; }
+    .privacy-section { display: flex; flex-direction: column; gap: 4px; }
+    .privacy-section-title {
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 2px;
+    }
+    .privacy-row {
+      display: flex; align-items: center; gap: 8px; padding: 6px 8px;
+      background: var(--surface); border-radius: 6px; border: 1px solid var(--border);
+    }
+    .privacy-icon { font-size: 14px; flex-shrink: 0; width: 20px; text-align: center; }
+    .privacy-info {
+      display: flex; justify-content: space-between; align-items: center;
+      flex: 1; min-width: 0; gap: 8px;
+    }
+    .privacy-label { font-size: 11px; color: var(--text); font-weight: 500; }
+    .privacy-value { font-size: 10px; color: var(--text-muted); text-align: right; flex-shrink: 0; }
+    .privacy-flow-item {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 8px; padding: 5px 8px; border-radius: 6px; font-size: 10px;
+    }
+    .privacy-flow-safe { background: var(--chip-green-bg); color: var(--accent4); }
+    .privacy-flow-limited { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+    .privacy-flow-badge { font-size: 9px; font-weight: 600; flex-shrink: 0; white-space: nowrap; }
 
     /* ── Generic focus visible ──────────────────────────────── */
     :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

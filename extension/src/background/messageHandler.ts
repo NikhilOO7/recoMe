@@ -39,6 +39,32 @@ import {
 
 const log = createLogger('MessageHandler');
 
+/** Derive platform name from a tab URL — used as fallback when content script message fails */
+function derivePlatformFromUrl(url: string | undefined): string {
+  if (!url) return 'unknown';
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, '');
+    if (host.includes('youtube.com')) return 'youtube';
+    if (host.includes('amazon.')) return 'amazon';
+    if (host.includes('reddit.com')) return 'reddit';
+    if (host.includes('twitter.com') || host.includes('x.com')) return 'twitter';
+    if (host.includes('facebook.com')) return 'facebook';
+    if (host.includes('instagram.com')) return 'instagram';
+    if (host.includes('ebay.')) return 'ebay';
+    if (host.includes('walmart.com')) return 'walmart';
+    if (host.includes('linkedin.com')) return 'linkedin';
+    if (host.includes('tiktok.com')) return 'tiktok';
+    if (host.includes('indeed.com')) return 'indeed';
+    if (host.includes('glassdoor.com')) return 'glassdoor';
+    if (host.includes('udemy.com')) return 'udemy';
+    if (host.includes('coursera.org')) return 'coursera';
+    if (host.includes('edx.org')) return 'edx';
+  } catch {
+    /* invalid URL */
+  }
+  return 'unknown';
+}
+
 export function handleMessage(
   message: RecoMeMessage,
   sender: chrome.runtime.MessageSender,
@@ -145,6 +171,120 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
         type: sig.signalType,
       });
       return ok(undefined);
+    }
+
+    // ── Hybrid AI enrichment: runs AFTER offline signal capture ────────────
+    // If user has an API key configured, use LLM to extract clean entities
+    // from page title/content. Merges into graph with higher confidence.
+    case 'ENRICH_PAGE_SIGNAL': {
+      try {
+        const { getLLMClient } = await import('@agent/llm/LLMClient');
+        const llm = getLLMClient();
+        if (!(await llm.isConfigured())) {
+          return ok({ enriched: false, reason: 'no_api_key' });
+        }
+
+        const { title, platform, url, channel, subreddit } = message.payload;
+
+        const contextHint = channel
+          ? `Channel: ${channel}`
+          : subreddit
+            ? `Subreddit: r/${subreddit}`
+            : '';
+
+        const prompt = `Extract structured product research data from this ${platform} page.
+
+Title: "${title}"
+${contextHint}
+URL: ${url}
+
+Return ONLY valid JSON with these fields:
+{
+  "brands": ["brand names mentioned (manufacturers, not channels)"],
+  "categories": ["product categories like headphones, laptops, shoes"],
+  "topics": ["what the content is about, 2-4 key topics"],
+  "intent": "review|comparison|purchase|troubleshooting|discussion|other"
+}
+
+Rules:
+- brands = product manufacturers only (Sony, Bose, Apple). NOT YouTube channels or Reddit users.
+- categories = broad product types (headphones, not WH-1000XM5)
+- topics = key themes, max 4
+- If no products discussed, return empty arrays`;
+
+        const response = await llm.call(prompt, {
+          system:
+            'You extract structured product research signals from web page titles. Return only valid JSON, no markdown.',
+          maxTokens: 200,
+        });
+
+        if (!response) {
+          return ok({ enriched: false, reason: 'llm_failed' });
+        }
+
+        // Parse LLM response
+        let parsed: {
+          brands?: string[];
+          categories?: string[];
+          topics?: string[];
+          intent?: string;
+        };
+        try {
+          // Strip markdown code fences if present
+          const cleaned = response
+            .replace(/```json?\n?/g, '')
+            .replace(/```/g, '')
+            .trim();
+          parsed = JSON.parse(cleaned);
+        } catch {
+          log.debug('AI enrichment: failed to parse LLM response', response);
+          return ok({ enriched: false, reason: 'parse_error' });
+        }
+
+        // Merge AI-extracted entities into graph with higher confidence
+        const enrichedTopics = [...(parsed.categories ?? []), ...(parsed.topics ?? [])].filter(
+          Boolean,
+        );
+        const enrichedEntities = (parsed.brands ?? []).filter(Boolean);
+
+        if (enrichedTopics.length > 0 || enrichedEntities.length > 0) {
+          await svc.recordImplicitSignalWithGraphBridge({
+            topics: enrichedTopics,
+            entities: enrichedEntities,
+            platform: platform as
+              | 'youtube'
+              | 'amazon'
+              | 'reddit'
+              | 'twitter'
+              | 'facebook'
+              | 'instagram'
+              | 'ebay'
+              | 'walmart'
+              | 'linkedin'
+              | 'tiktok'
+              | 'unknown',
+            signalType: 'dwell_extended',
+            contentId: url,
+            contentTitle: title,
+            confidenceOverride: 0.85, // AI extraction = higher confidence than offline
+          });
+
+          log.info(
+            `AI enrichment: ${enrichedEntities.length} brands + ${enrichedTopics.length} topics from ${platform} [${parsed.intent ?? 'unknown'}]`,
+          );
+        }
+
+        return ok({
+          enriched: true,
+          brands: enrichedEntities,
+          categories: parsed.categories ?? [],
+          topics: parsed.topics ?? [],
+          intent: parsed.intent ?? 'other',
+        });
+      } catch (e) {
+        log.debug('AI enrichment failed', e);
+        return ok({ enriched: false, reason: 'error' });
+      }
     }
 
     case 'GET_SETTINGS': {
@@ -1019,33 +1159,42 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
             onboardingDone: false,
           });
 
+        // Derive platform from URL — reliable even when content script can't respond
+        const tabPlatform = derivePlatformFromUrl(tab.url);
+
         // Ask the content script for its current state
         try {
           const response = await chrome.tabs.sendMessage(tab.id, {
             type: 'RECOME_GET_CONTENT_STATE',
           });
           return ok({
-            platform: response?.platform ?? 'unknown',
+            platform:
+              response?.platform && response.platform !== 'unknown'
+                ? response.platform
+                : tabPlatform,
             url: tab.url ?? '',
             title: tab.title ?? '',
-            adapterActive: response?.adapterActive ?? false,
+            adapterActive: response?.adapterActive ?? tabPlatform !== 'unknown',
             cardsDetected: response?.cardsDetected ?? 0,
             controlsInjected: response?.controlsInjected ?? 0,
-            pageEligible: response?.pageEligible ?? false,
+            pageEligible: response?.pageEligible ?? tabPlatform !== 'unknown',
             eligibilityReason: response?.eligibilityReason,
             onboardingDone: true,
           });
         } catch {
-          // Content script not injected on this tab (unsupported page)
+          // Content script message failed — use URL-derived platform.
+          // The content script IS likely injected (manifest matches these URLs)
+          // but the message round-trip can fail in MV3 overlay contexts.
+          const isKnownPlatform = tabPlatform !== 'unknown';
           return ok({
-            platform: 'unknown',
+            platform: tabPlatform,
             url: tab.url ?? '',
             title: tab.title ?? '',
-            adapterActive: false,
+            adapterActive: isKnownPlatform,
             cardsDetected: 0,
             controlsInjected: 0,
-            pageEligible: false,
-            eligibilityReason: 'Content script not active',
+            pageEligible: isKnownPlatform,
+            eligibilityReason: isKnownPlatform ? undefined : 'Content script not active',
             onboardingDone: true,
           });
         }

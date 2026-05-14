@@ -76,20 +76,24 @@ export function Navbar() {
               </button>
             </>
           ) : (
-            <>
-              <Link
-                href="/login"
-                className="hidden sm:block text-sm font-medium text-white/60 hover:text-white transition-colors"
-              >
-                Log in
-              </Link>
-              <Link
-                href="/signup"
-                className="text-sm font-semibold bg-white text-[var(--ink)] px-4 py-2 rounded-lg hover:bg-white/90 transition-colors"
-              >
-                Get Started
-              </Link>
-            </>
+            // Hide auth buttons when already on login/signup pages
+            pathname !== '/login' &&
+            pathname !== '/signup' && (
+              <>
+                <Link
+                  href="/login"
+                  className="hidden sm:block text-sm font-medium text-white/60 hover:text-white transition-colors"
+                >
+                  Log in
+                </Link>
+                <Link
+                  href="/signup"
+                  className="text-sm font-semibold bg-white text-[var(--ink)] px-4 py-2 rounded-lg hover:bg-white/90 transition-colors"
+                >
+                  Get Started
+                </Link>
+              </>
+            )
           )}
 
           {/* Mobile hamburger */}

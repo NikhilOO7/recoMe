@@ -587,6 +587,8 @@ body {
   border-radius: 8px;
   font-size: 11px;
   color: var(--text-dim);
+  overflow: hidden;
+  flex-wrap: wrap;
 }
 
 .tab-status-dot {
