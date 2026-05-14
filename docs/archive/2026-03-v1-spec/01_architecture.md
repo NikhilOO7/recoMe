@@ -17,7 +17,9 @@ flowchart LR
 ## Layer Responsibilities
 
 ### 1. Browser Layer
+
 Examples:
+
 - Amazon search results pages
 - Amazon product detail pages
 - Walmart product pages
@@ -25,12 +27,15 @@ Examples:
 - future content surfaces like YouTube
 
 Responsibilities:
+
 - provide DOM surface for extraction
 - expose recommendation units and page entities
 - receive overlay UI from the extension
 
 ### 2. Extension Runtime
+
 Core modules:
+
 - MV3 service worker
 - content scripts
 - page adapters
@@ -40,6 +45,7 @@ Core modules:
 - entity extraction pipeline
 
 Responsibilities:
+
 - detect supported surfaces
 - load site-specific adapters
 - read product and seller data from pages
@@ -48,7 +54,9 @@ Responsibilities:
 - call brain services locally
 
 ### 3. RecoMe Brain
+
 Core modules:
+
 - intent service
 - preference graph
 - context manager
@@ -58,6 +66,7 @@ Core modules:
 - watchlist service
 
 Responsibilities:
+
 - store durable recommendation memory
 - normalize entities across sites
 - connect products, brands, sellers, and contexts
@@ -65,7 +74,9 @@ Responsibilities:
 - explain each decision in user-readable text
 
 ### 4. RecoMe Agent
+
 Core modules:
+
 - conversational interface
 - retrieval layer over preference graph
 - recommendation orchestrator
@@ -73,18 +84,22 @@ Core modules:
 - watchlist and follow-up actions
 
 Responsibilities:
+
 - answer shopping questions
 - compare candidates across stores
 - retrieve user context and preferences
 - hand users back into extension-aware browsing flows
 
 ### 5. Optional Sync Layer
+
 Core modules:
+
 - encrypted profile sync
 - watchlist sync
 - import/export package service
 
 Responsibilities:
+
 - sync preference memory across devices later
 - preserve portability
 - keep the local-first MVP intact
@@ -140,53 +155,69 @@ flowchart TD
 ## Design Principles
 
 ### Local-first by default
+
 - Core recommendation logic must work without a cloud dependency.
 - Storage should begin in browser-managed local storage or IndexedDB.
 - Import and export should exist before sync.
 
 ### Shared schema early
+
 - Product, offer, brand, seller, context, and intent schemas must be defined once.
 - Extension and agent should read and write the same semantic objects.
 
 ### Adapter-based page integration
+
 - Every supported website should have its own adapter.
 - Shared extraction utilities should exist, but selectors and heuristics should remain site-specific.
 
 ### Explainability at the decision boundary
+
 - Every visible badge or ranking change must be explainable in one sentence.
 - The reason shown to the user must be derived from the same decision record used by the engine.
 
 ### Policy before autonomy
+
 - User intent, time horizon, and safety policy must be checked before any future action system is allowed.
 
 ## Technical Decisions
 
 ### Browser platform
+
 Recommended first target:
+
 - Chrome Manifest V3
 
 Future targets:
+
 - Edge
 - Brave
 - Firefox with compatibility review later
 
 ### Storage
+
 Recommended v1:
+
 - IndexedDB for normalized entities, intents, contexts, graph edges, and decision history
 - chrome.storage.local for user settings and lightweight feature flags
 
 ### Inter-process communication
+
 Use:
+
 - typed message contracts between content scripts, background worker, popup, and overlay
 
 ### Schema distribution
+
 Use:
+
 - shared TypeScript package for all core domain models
 
 ## Core Interfaces
 
 ### Extension to Brain interface
+
 Operations:
+
 - extractEntities(pageSnapshot)
 - scoreEntities(entities, context)
 - recordIntent(intentEvent)
@@ -194,7 +225,9 @@ Operations:
 - getRecommendations(pageContext)
 
 ### Agent to Brain interface
+
 Operations:
+
 - getUserContext(queryContext)
 - compareCandidates(candidateList, context)
 - createWatchlist(watchRequest)
@@ -202,6 +235,7 @@ Operations:
 - openInExtensionContext(target)
 
 ## Non-Goals for v1 Architecture
+
 - no autonomous checkout system
 - no retailer account automation
 - no mandatory backend to use the extension

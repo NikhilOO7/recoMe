@@ -178,9 +178,9 @@ interface MemoryEntry {
   user_id: string;
   context_bucket: 'work' | 'learning' | 'shopping' | 'entertainment' | 'social' | 'general';
   memory_type: 'short_term' | 'mid_term' | 'working_set' | 'facts_prefs' | 'long_term';
-  topic_key: string;           // e.g., "blocked:crypto", "interested:apple"
-  value: MemoryValue;          // Flexible JSON content
-  confidence: number;          // 0.0 - 1.0
+  topic_key: string; // e.g., "blocked:crypto", "interested:apple"
+  value: MemoryValue; // Flexible JSON content
+  confidence: number; // 0.0 - 1.0
   status: 'core' | 'dream' | 'forgotten' | 'archived' | 'deleted';
   valid_from: number;
   valid_to: number | null;
@@ -203,9 +203,17 @@ interface MemoryEvent {
   context_bucket: ContextBucket;
   memory_type: MemoryType;
   topic_key: string;
-  event_type: 'preference_set' | 'preference_inferred' | 'interaction' | 
-              'confirmation' | 'decay' | 'reactivation' | 'deletion' |
-              'context_switch' | 'session_start' | 'session_end';
+  event_type:
+    | 'preference_set'
+    | 'preference_inferred'
+    | 'interaction'
+    | 'confirmation'
+    | 'decay'
+    | 'reactivation'
+    | 'deletion'
+    | 'context_switch'
+    | 'session_start'
+    | 'session_end';
   payload: Record<string, unknown>;
   source_ref: string;
   occurred_at: number;
@@ -220,14 +228,18 @@ interface MidTermCard {
   card_id: string;
   user_id: string;
   context_bucket: ContextBucket;
-  summary: string;             // "User blocks crypto content"
+  summary: string; // "User blocks crypto content"
   entities: CardEntity[];
   tags: string[];
   source_refs: SourceRef[];
   confidence: number;
   status: MemoryStatus;
-  pattern_type: 'block_pattern' | 'interest_pattern' | 'research_pattern' | 
-                'time_pattern' | 'context_pattern';
+  pattern_type:
+    | 'block_pattern'
+    | 'interest_pattern'
+    | 'research_pattern'
+    | 'time_pattern'
+    | 'context_pattern';
   occurrence_count: number;
   first_seen_at: number;
   last_seen_at: number;
@@ -241,9 +253,18 @@ interface MidTermCard {
 ```typescript
 interface Entity {
   id: string;
-  type: 'user' | 'creator' | 'brand' | 'product' | 'topic' | 
-        'category' | 'content_type' | 'sentiment' | 'audience' | 
-        'format' | 'content';
+  type:
+    | 'user'
+    | 'creator'
+    | 'brand'
+    | 'product'
+    | 'topic'
+    | 'category'
+    | 'content_type'
+    | 'sentiment'
+    | 'audience'
+    | 'format'
+    | 'content';
   name: string;
   aliases: string[];
   properties: Record<string, unknown>;
@@ -260,13 +281,28 @@ interface Relation {
   id: string;
   source_id: string;
   target_id: string;
-  type: 'interested_in' | 'not_interested_in' | 'one_time_interest' |
-        'follows' | 'blocked' | 'created_by' | 'about' | 'features' |
-        'belongs_to' | 'has_type' | 'targets' | 'has_format' | 'is_a' |
-        'part_of' | 'owned_by' | 'similar_to' | 'opposite_of' |
-        'related_to' | 'competes_with';
-  weight: number;              // 0.0 - 1.0
-  confidence: number;          // 0.0 - 1.0
+  type:
+    | 'interested_in'
+    | 'not_interested_in'
+    | 'one_time_interest'
+    | 'follows'
+    | 'blocked'
+    | 'created_by'
+    | 'about'
+    | 'features'
+    | 'belongs_to'
+    | 'has_type'
+    | 'targets'
+    | 'has_format'
+    | 'is_a'
+    | 'part_of'
+    | 'owned_by'
+    | 'similar_to'
+    | 'opposite_of'
+    | 'related_to'
+    | 'competes_with';
+  weight: number; // 0.0 - 1.0
+  confidence: number; // 0.0 - 1.0
   bidirectional: boolean;
   properties: Record<string, unknown>;
   created_at: number;
@@ -287,18 +323,18 @@ interface IMemoryService {
   blockForever(topic: string, entityType?: EntityType): Promise<void>;
   markInterested(topic: string, entityType?: EntityType, strength?: number): Promise<void>;
   setCurrentResearch(topic: string, criteria?: string[], candidates?: string[]): Promise<void>;
-  
+
   // Read operations
   retrieve(contextBucket: ContextBucket): Promise<MemoryPack>;
   shouldHide(topics: string[], creator?: string, context?: ContextBucket): Promise<HideResult>;
   shouldBoost(topics: string[], creator?: string, context?: ContextBucket): Promise<BoostResult>;
   getWorkingSet(): Promise<WorkingSetState>;
   getTimeline(topicKey: string, limit?: number): Promise<MemoryEvent[]>;
-  
+
   // Context operations
   detectContext(platform: Platform, topics: string[], time: Date): Promise<ContextBucket>;
   switchContext(context: ContextBucket): Promise<void>;
-  
+
   // Lifecycle operations
   runDecayCycle(): Promise<DecayResult>;
   reactivate(topicKeys: string[]): Promise<number>;
@@ -315,8 +351,8 @@ interface IRecommendationEngine {
 
 interface RecommendationResult {
   action: 'show' | 'hide' | 'boost' | 'suppress' | 'prompt';
-  score: number;               // -1 to 1
-  confidence: number;          // 0 to 1
+  score: number; // -1 to 1
+  confidence: number; // 0 to 1
   explanation: string;
   factors: RecommendationFactor[];
 }
@@ -337,11 +373,15 @@ interface IKnowledgeGraph {
   addEntity(entity: Omit<Entity, 'id' | 'created_at' | 'updated_at'>): Entity;
   getEntity(idOrAlias: string): Entity | null;
   getEntitiesByType(type: EntityType): Entity[];
-  
+
   // Relation operations
   addRelation(relation: Omit<Relation, 'id' | 'created_at' | 'updated_at'>): Relation;
-  getRelations(entityId: string, direction?: 'outgoing' | 'incoming' | 'both', type?: RelationType): Relation[];
-  
+  getRelations(
+    entityId: string,
+    direction?: 'outgoing' | 'incoming' | 'both',
+    type?: RelationType,
+  ): Relation[];
+
   // Traversal
   traverse(sourceId: string, options?: TraverseOptions): TraversalResult[];
   findPath(sourceId: string, targetId: string, maxDepth?: number): string[] | null;
@@ -355,21 +395,21 @@ interface IKnowledgeGraph {
 
 ```typescript
 const FACTOR_WEIGHTS = {
-  direct_block: 10,      // Explicit user block (highest priority)
-  pattern_match: 7,      // Mid-term pattern card match
-  working_set: 6,        // Current research/goals relevance
-  interest_match: 5,     // Explicit interest match
-  graph_affinity: 4,     // Knowledge graph path score
-  context_fit: 3,        // Context appropriateness
-  similarity: 2,         // Content similarity
-  recency: 1,            // Recent interaction weight
+  direct_block: 10, // Explicit user block (highest priority)
+  pattern_match: 7, // Mid-term pattern card match
+  working_set: 6, // Current research/goals relevance
+  interest_match: 5, // Explicit interest match
+  graph_affinity: 4, // Knowledge graph path score
+  context_fit: 3, // Context appropriateness
+  similarity: 2, // Content similarity
+  recency: 1, // Recent interaction weight
 };
 
 const THRESHOLDS = {
-  hide: -0.5,            // score < -0.5 → hide
-  suppress: -0.2,        // score < -0.2 → suppress (dim)
-  boost: 0.5,            // score > 0.5 → boost (highlight)
-  prompt: 0.3,           // confidence < 0.3 → prompt user
+  hide: -0.5, // score < -0.5 → hide
+  suppress: -0.2, // score < -0.2 → suppress (dim)
+  boost: 0.5, // score > 0.5 → boost (highlight)
+  prompt: 0.3, // confidence < 0.3 → prompt user
 };
 ```
 
@@ -397,12 +437,12 @@ REACTIVATION: User interacts with topic → status returns to CORE
 
 ### Decay Policy
 
-| Memory Type | Core → Dream | Dream → Forgotten | → Deleted |
-|-------------|--------------|-------------------|-----------|
-| mid_term | 30 days | 90 days | 180 days |
-| working_set | 7 days | 30 days | 90 days |
-| facts_prefs | NEVER | NEVER | Manual only |
-| short_term | Session end | N/A | Immediate |
+| Memory Type | Core → Dream | Dream → Forgotten | → Deleted   |
+| ----------- | ------------ | ----------------- | ----------- |
+| mid_term    | 30 days      | 90 days           | 180 days    |
+| working_set | 7 days       | 30 days           | 90 days     |
+| facts_prefs | NEVER        | NEVER             | Manual only |
+| short_term  | Session end  | N/A               | Immediate   |
 
 ---
 
@@ -410,22 +450,22 @@ REACTIVATION: User interacts with topic → status returns to CORE
 
 ### Context Buckets
 
-| Context | When Detected | Boost | Suppress |
-|---------|---------------|-------|----------|
-| work | Weekday 9-5, programming content | Productivity, coding, business | Gaming, entertainment |
-| learning | Tutorial content, courses | Educational, how-to | Distractions |
-| shopping | Amazon/eBay/Walmart | Products, reviews | Unrelated |
-| entertainment | Evening, weekend, fun content | Gaming, movies, music | Work-related |
-| social | Twitter/Facebook | Social, news | N/A |
-| general | Always active | N/A | Blocked forever items |
+| Context       | When Detected                    | Boost                          | Suppress              |
+| ------------- | -------------------------------- | ------------------------------ | --------------------- |
+| work          | Weekday 9-5, programming content | Productivity, coding, business | Gaming, entertainment |
+| learning      | Tutorial content, courses        | Educational, how-to            | Distractions          |
+| shopping      | Amazon/eBay/Walmart              | Products, reviews              | Unrelated             |
+| entertainment | Evening, weekend, fun content    | Gaming, movies, music          | Work-related          |
+| social        | Twitter/Facebook                 | Social, news                   | N/A                   |
+| general       | Always active                    | N/A                            | Blocked forever items |
 
 ### Detection Signals
 
 ```typescript
 interface ContextSignals {
-  time: Date;           // Time of day, day of week
-  platform: Platform;   // Which site user is on
-  topics: string[];     // Detected content topics
+  time: Date; // Time of day, day of week
+  platform: Platform; // Which site user is on
+  topics: string[]; // Detected content topics
   explicit?: ContextBucket; // User explicitly switched
 }
 ```
@@ -462,30 +502,35 @@ interface MessageResponse<T = unknown> {
 ## Implementation Priorities
 
 ### Phase 1: Core Memory (Week 1)
+
 1. IndexedDB schema and MemoryStore
 2. Basic MemoryService (writeTurn, retrieve, blockForever, shouldHide)
 3. Facts/prefs storage
 4. General overlay in all retrievals
 
 ### Phase 2: Context System (Week 2)
+
 1. ContextDetector
 2. Context state tracking
 3. Context-specific retrieval
 4. switchContext()
 
 ### Phase 3: Pattern Detection (Week 3)
+
 1. PatternDetector
 2. Mid-term card creation
 3. Pattern-based recommendation boost
 4. Card lifecycle management
 
 ### Phase 4: Knowledge Graph (Week 4)
+
 1. KnowledgeGraph class
 2. Entity extraction (rule-based)
 3. Seed data for common topics
 4. AffinityCalculator
 
 ### Phase 5: Integration (Week 5)
+
 1. Full recommendation pipeline
 2. Decay cycle via chrome.alarms
 3. LLM extraction (optional)
@@ -542,7 +587,10 @@ try {
 
 // Use custom error types for specific errors
 class MemoryStoreError extends Error {
-  constructor(message: string, public readonly operation: string) {
+  constructor(
+    message: string,
+    public readonly operation: string,
+  ) {
     super(message);
     this.name = 'MemoryStoreError';
   }
@@ -577,29 +625,29 @@ if (DEBUG) {
 describe('MemoryService', () => {
   let service: MemoryService;
   let store: MockMemoryStore;
-  
+
   beforeEach(() => {
     store = new MockMemoryStore();
     service = new MemoryService(store);
   });
-  
+
   describe('blockForever', () => {
     it('should create a blocked entry in facts_prefs', async () => {
       await service.blockForever('crypto');
-      
+
       const entries = await store.getEntriesByType('facts_prefs');
       expect(entries).toContainEqual(
         expect.objectContaining({
           topic_key: 'blocked:crypto',
           memory_type: 'facts_prefs',
           context_bucket: 'general',
-        })
+        }),
       );
     });
-    
+
     it('should include blocked topic in shouldHide check', async () => {
       await service.blockForever('crypto');
-      
+
       const result = await service.shouldHide(['bitcoin', 'crypto']);
       expect(result.hide).toBe(true);
       expect(result.reason).toContain('crypto');
@@ -626,7 +674,7 @@ export abstract class BaseAdapter {
 export class YouTubeAdapter extends BaseAdapter {
   detectContent(container: HTMLElement): ContentItem[] {
     return Array.from(container.querySelectorAll('ytd-rich-item-renderer'))
-      .map(el => this.parseItem(el as HTMLElement))
+      .map((el) => this.parseItem(el as HTMLElement))
       .filter(Boolean);
   }
 }
@@ -638,14 +686,14 @@ export class YouTubeAdapter extends BaseAdapter {
 // observer.ts
 export function observeContainer(
   selector: string,
-  callback: (mutations: MutationRecord[]) => void
+  callback: (mutations: MutationRecord[]) => void,
 ): MutationObserver {
   const container = document.querySelector(selector);
   if (!container) throw new Error(`Container not found: ${selector}`);
-  
+
   const observer = new MutationObserver(callback);
   observer.observe(container, { childList: true, subtree: true });
-  
+
   return observer;
 }
 ```

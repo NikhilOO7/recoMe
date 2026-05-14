@@ -13,6 +13,7 @@
 **Core Problem**: Platforms optimize for engagement, not user wellbeing. Blocking "crypto" doesn't stop bitcoin/ethereum content. Research phases never end. Context doesn't matter.
 
 **Solution**: Intelligent recommendation filtering with:
+
 1. **Mnemosyne Memory** - Human-like memory with context, decay, and patterns
 2. **Knowledge Graph** - Entity relationships (crypto → bitcoin → ethereum)
 3. **Explainable AI** - User knows why content was hidden/shown
@@ -50,6 +51,7 @@ INTELLIGENCE LAYER:
 ## 📁 Complete File Map
 
 ### Configuration Files
+
 ```
 /
 ├── package.json              # Dependencies and scripts
@@ -63,6 +65,7 @@ INTELLIGENCE LAYER:
 ```
 
 ### Source Files
+
 ```
 src/
 ├── manifest.json             # Extension manifest V3
@@ -158,44 +161,47 @@ src/
 ## 🧠 Memory System (Mnemosyne)
 
 ### Context Buckets
+
 ```typescript
-type ContextBucket = 
-  | 'work'           // 9-5 weekdays, productivity
-  | 'learning'       // Tutorials, courses
-  | 'shopping'       // E-commerce platforms
-  | 'entertainment'  // Evenings, weekends, fun
-  | 'social'         // Social media
-  | 'general';       // ALWAYS included (blocked_forever)
+type ContextBucket =
+  | 'work' // 9-5 weekdays, productivity
+  | 'learning' // Tutorials, courses
+  | 'shopping' // E-commerce platforms
+  | 'entertainment' // Evenings, weekends, fun
+  | 'social' // Social media
+  | 'general'; // ALWAYS included (blocked_forever)
 ```
 
 ### Memory Lanes
+
 ```typescript
-type MemoryType = 
-  | 'short_term'     // Session ring buffer (20 items)
-  | 'mid_term'       // Pattern cards with decay
-  | 'working_set'    // Current research, goals
-  | 'facts_prefs'    // Permanent preferences
-  | 'long_term';     // Historical timeline
+type MemoryType =
+  | 'short_term' // Session ring buffer (20 items)
+  | 'mid_term' // Pattern cards with decay
+  | 'working_set' // Current research, goals
+  | 'facts_prefs' // Permanent preferences
+  | 'long_term'; // Historical timeline
 ```
 
 ### Memory Entry Schema
+
 ```typescript
 interface MemoryEntry {
   entry_id: string;
   user_id: string;
   context_bucket: ContextBucket;
   memory_type: MemoryType;
-  topic_key: string;              // "blocked:crypto", "interested:apple"
+  topic_key: string; // "blocked:crypto", "interested:apple"
   value: {
     sentiment?: 'positive' | 'negative' | 'neutral';
-    strength?: number;            // 0-1
+    strength?: number; // 0-1
     entity_type?: EntityType;
     entity_name?: string;
     related_entities?: string[];
     source_type?: 'explicit' | 'inferred' | 'llm';
     [key: string]: unknown;
   };
-  confidence: number;             // 0-1
+  confidence: number; // 0-1
   status: 'core' | 'dream' | 'forgotten' | 'archived' | 'deleted';
   valid_from: number;
   valid_to: number | null;
@@ -210,6 +216,7 @@ interface MemoryEntry {
 ```
 
 ### Forgetting Lifecycle
+
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                                                              │
@@ -225,19 +232,21 @@ interface MemoryEntry {
 ```
 
 ### Decay Policy
-| Type | Core → Dream | Dream → Forgotten | → Deleted |
-|------|--------------|-------------------|-----------|
-| mid_term | 30 days | 90 days | 180 days |
-| working_set | 7 days | 30 days | 90 days |
-| facts_prefs | NEVER | NEVER | Manual |
+
+| Type        | Core → Dream | Dream → Forgotten | → Deleted |
+| ----------- | ------------ | ----------------- | --------- |
+| mid_term    | 30 days      | 90 days           | 180 days  |
+| working_set | 7 days       | 30 days           | 90 days   |
+| facts_prefs | NEVER        | NEVER             | Manual    |
 
 ### Key Rule: General Overlay
+
 ```typescript
 // ALWAYS include general context in retrieval
 async retrieve(contextBucket: ContextBucket): Promise<MemoryPack> {
   const contextMemory = await this.getForContext(contextBucket);
   const generalMemory = await this.getForContext('general');  // ALWAYS
-  
+
   return {
     ...contextMemory,
     general_overlay: generalMemory,  // blocked_forever lives here
@@ -250,28 +259,52 @@ async retrieve(contextBucket: ContextBucket): Promise<MemoryPack> {
 ## 🕸️ Knowledge Graph
 
 ### Entity Types
+
 ```typescript
-type EntityType = 
-  | 'user' | 'creator' | 'brand' | 'product' 
-  | 'topic' | 'category' | 'content_type' 
-  | 'sentiment' | 'audience' | 'format' | 'content';
+type EntityType =
+  | 'user'
+  | 'creator'
+  | 'brand'
+  | 'product'
+  | 'topic'
+  | 'category'
+  | 'content_type'
+  | 'sentiment'
+  | 'audience'
+  | 'format'
+  | 'content';
 ```
 
 ### Relation Types
+
 ```typescript
 type RelationType =
   // User preferences
-  | 'interested_in' | 'not_interested_in' | 'one_time_interest'
-  | 'follows' | 'blocked'
+  | 'interested_in'
+  | 'not_interested_in'
+  | 'one_time_interest'
+  | 'follows'
+  | 'blocked'
   // Content
-  | 'created_by' | 'about' | 'features' | 'belongs_to'
-  | 'has_type' | 'targets' | 'has_format'
+  | 'created_by'
+  | 'about'
+  | 'features'
+  | 'belongs_to'
+  | 'has_type'
+  | 'targets'
+  | 'has_format'
   // Entity-entity
-  | 'is_a' | 'part_of' | 'owned_by' | 'similar_to'
-  | 'opposite_of' | 'related_to' | 'competes_with';
+  | 'is_a'
+  | 'part_of'
+  | 'owned_by'
+  | 'similar_to'
+  | 'opposite_of'
+  | 'related_to'
+  | 'competes_with';
 ```
 
 ### Affinity Calculation
+
 ```typescript
 // Path decay: 0.7^depth
 // user ─blocked→ crypto ─similar_to→ bitcoin
@@ -279,7 +312,7 @@ type RelationType =
 
 calculateAffinity(userId: string, entityId: string): number {
   let score = 0;
-  
+
   // Direct relations
   const direct = this.getRelations(userId, 'outgoing');
   for (const rel of direct) {
@@ -287,19 +320,20 @@ calculateAffinity(userId: string, entityId: string): number {
       score += this.getRelationScore(rel);  // ±1 × weight
     }
   }
-  
+
   // Indirect (traverse with decay)
   const paths = this.findPaths(userId, entityId, maxDepth: 3);
   for (const path of paths) {
     const pathScore = this.calculatePathScore(path);  // decay^depth
     score += pathScore;
   }
-  
+
   return Math.max(-1, Math.min(1, score));
 }
 ```
 
 ### Seed Data (Pre-loaded)
+
 ```typescript
 const SEED_RELATIONS = [
   // Crypto cluster
@@ -308,11 +342,11 @@ const SEED_RELATIONS = [
   { source: 'crypto', target: 'NFT', type: 'similar_to', weight: 0.85 },
   { source: 'crypto', target: 'DeFi', type: 'similar_to', weight: 0.8 },
   { source: 'crypto', target: 'Web3', type: 'similar_to', weight: 0.75 },
-  
+
   // Product hierarchies
   { source: 'iPhone', target: 'smartphone', type: 'is_a', weight: 1.0 },
   { source: 'iPhone', target: 'Apple', type: 'owned_by', weight: 1.0 },
-  
+
   // Categories
   { source: 'gaming', target: 'entertainment', type: 'belongs_to', weight: 1.0 },
   // ... more
@@ -324,30 +358,33 @@ const SEED_RELATIONS = [
 ## ⚖️ Recommendation Engine
 
 ### Factor Weights
+
 ```typescript
 const FACTOR_WEIGHTS = {
-  direct_block: 10,    // Explicit block → instant hide
-  pattern_match: 7,    // Mid-term card match
-  working_set: 6,      // Research relevance
-  interest_match: 5,   // Explicit interest
-  graph_affinity: 4,   // Knowledge graph score
-  context_fit: 3,      // Context appropriateness
-  similarity: 2,       // Content similarity
-  recency: 1,          // Recent interaction
+  direct_block: 10, // Explicit block → instant hide
+  pattern_match: 7, // Mid-term card match
+  working_set: 6, // Research relevance
+  interest_match: 5, // Explicit interest
+  graph_affinity: 4, // Knowledge graph score
+  context_fit: 3, // Context appropriateness
+  similarity: 2, // Content similarity
+  recency: 1, // Recent interaction
 };
 ```
 
 ### Thresholds
+
 ```typescript
 const THRESHOLDS = {
-  hide: -0.5,       // score < -0.5 → HIDE
-  suppress: -0.2,   // score < -0.2 → dim/suppress
-  boost: 0.5,       // score > 0.5 → BOOST
-  prompt: 0.3,      // confidence < 0.3 → ask user
+  hide: -0.5, // score < -0.5 → HIDE
+  suppress: -0.2, // score < -0.2 → dim/suppress
+  boost: 0.5, // score > 0.5 → BOOST
+  prompt: 0.3, // confidence < 0.3 → ask user
 };
 ```
 
 ### Recommendation Flow
+
 ```typescript
 async recommend(content: AnalyzedContent): Promise<RecommendationResult> {
   // 1. Check instant-block first
@@ -355,7 +392,7 @@ async recommend(content: AnalyzedContent): Promise<RecommendationResult> {
   if (blockFactor.score < -0.9) {
     return { action: 'hide', score: -1, confidence: 1, ... };
   }
-  
+
   // 2. Calculate all factors
   const factors = [
     blockFactor,
@@ -365,17 +402,17 @@ async recommend(content: AnalyzedContent): Promise<RecommendationResult> {
     await this.calculateGraphAffinity(content),
     await this.calculateContextFit(content),
   ];
-  
+
   // 3. Weighted score
   const totalWeight = factors.reduce((s, f) => s + Math.abs(f.weight), 0);
   const score = factors.reduce((s, f) => s + f.score * f.weight, 0) / totalWeight;
-  
+
   // 4. Determine action
-  const action = score < -0.5 ? 'hide' 
+  const action = score < -0.5 ? 'hide'
     : score < -0.2 ? 'suppress'
-    : score > 0.5 ? 'boost' 
+    : score > 0.5 ? 'boost'
     : 'show';
-  
+
   return { action, score, factors, explanation: '...' };
 }
 ```
@@ -385,6 +422,7 @@ async recommend(content: AnalyzedContent): Promise<RecommendationResult> {
 ## 📨 Message Protocol
 
 ### Content Script → Background
+
 ```typescript
 // Process content item
 { type: 'PROCESS_CONTENT', payload: { id, title, creator, platform, metadata } }
@@ -397,6 +435,7 @@ async recommend(content: AnalyzedContent): Promise<RecommendationResult> {
 ```
 
 ### Popup → Background
+
 ```typescript
 { type: 'GET_STATS', payload: null }
 { type: 'GET_MEMORY_PACK', payload: { contextBucket } }
@@ -406,6 +445,7 @@ async recommend(content: AnalyzedContent): Promise<RecommendationResult> {
 ```
 
 ### Response Format
+
 ```typescript
 interface MessageResponse<T> {
   success: boolean;
@@ -467,19 +507,33 @@ const STORES = {
 ## 🎨 UI Components
 
 ### Hide Animation
+
 ```css
 .recome-hiding {
   animation: recome-hide 400ms ease-out forwards;
 }
 
 @keyframes recome-hide {
-  0% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.95); }
-  100% { opacity: 0; transform: scale(0.9); height: 0; margin: 0; padding: 0; }
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.9);
+    height: 0;
+    margin: 0;
+    padding: 0;
+  }
 }
 ```
 
 ### Toast Notification
+
 ```typescript
 function showToast(message: string, type: 'success' | 'info' | 'warning') {
   const toast = document.createElement('div');
@@ -494,6 +548,7 @@ function showToast(message: string, type: 'success' | 'info' | 'warning') {
 ```
 
 ### Feedback Buttons
+
 ```typescript
 function injectFeedbackUI(element: HTMLElement, contentId: string) {
   const container = document.createElement('div');
@@ -503,12 +558,12 @@ function injectFeedbackUI(element: HTMLElement, contentId: string) {
     <button class="recome-btn recome-btn-dislike" data-action="not_interested">👎</button>
     <button class="recome-btn recome-btn-onetime" data-action="one_time">⏱️</button>
   `;
-  
+
   container.addEventListener('click', (e) => {
     const action = (e.target as HTMLElement).dataset.action;
     if (action) handleFeedback(contentId, action as IntentType);
   });
-  
+
   element.appendChild(container);
 }
 ```
@@ -518,24 +573,25 @@ function injectFeedbackUI(element: HTMLElement, contentId: string) {
 ## 🧪 Testing Patterns
 
 ### Memory Service Tests
+
 ```typescript
 describe('MemoryService', () => {
   it('should block topic forever', async () => {
     await memoryService.blockForever('crypto');
-    
+
     const result = await memoryService.shouldHide(['bitcoin', 'crypto']);
     expect(result.hide).toBe(true);
   });
-  
+
   it('should include general overlay in all contexts', async () => {
     await memoryService.blockForever('crypto');
-    
+
     const pack = await memoryService.retrieve('entertainment');
     expect(pack.general_overlay.entries).toContainEqual(
-      expect.objectContaining({ topic_key: 'blocked:crypto' })
+      expect.objectContaining({ topic_key: 'blocked:crypto' }),
     );
   });
-  
+
   it('should create pattern card after 3 similar actions', async () => {
     for (let i = 0; i < 5; i++) {
       await memoryService.writeTurn({
@@ -543,16 +599,15 @@ describe('MemoryService', () => {
         action: 'not_interested',
       });
     }
-    
+
     const cards = await memoryService.getMidTermCards();
-    expect(cards).toContainEqual(
-      expect.objectContaining({ pattern_type: 'block_pattern' })
-    );
+    expect(cards).toContainEqual(expect.objectContaining({ pattern_type: 'block_pattern' }));
   });
 });
 ```
 
 ### Knowledge Graph Tests
+
 ```typescript
 describe('KnowledgeGraph', () => {
   it('should find similar entities', () => {
@@ -563,14 +618,14 @@ describe('KnowledgeGraph', () => {
       type: 'blocked',
       weight: 1.0,
     });
-    
+
     const similar = graph.findSimilar('crypto', 5);
-    expect(similar.map(s => s.entity.name)).toContain('bitcoin');
+    expect(similar.map((s) => s.entity.name)).toContain('bitcoin');
   });
-  
+
   it('should propagate negative affinity', () => {
     const affinity = affinityCalculator.calculateEntityAffinity('user', 'bitcoin');
-    expect(affinity).toBeLessThan(0);  // crypto blocked → bitcoin negative
+    expect(affinity).toBeLessThan(0); // crypto blocked → bitcoin negative
   });
 });
 ```
@@ -580,6 +635,7 @@ describe('KnowledgeGraph', () => {
 ## 📋 Implementation Checklist
 
 ### Phase 1: Core Memory (Week 1)
+
 - [ ] IndexedDB schema (schema.ts)
 - [ ] MemoryStore CRUD operations
 - [ ] MemoryService.writeTurn()
@@ -590,6 +646,7 @@ describe('KnowledgeGraph', () => {
 - [ ] Unit tests
 
 ### Phase 2: Context System (Week 2)
+
 - [ ] ContextDetector
 - [ ] Time-based detection
 - [ ] Platform-based detection
@@ -599,6 +656,7 @@ describe('KnowledgeGraph', () => {
 - [ ] Unit tests
 
 ### Phase 3: Pattern Detection (Week 3)
+
 - [ ] PatternDetector
 - [ ] Mid-term card creation
 - [ ] Pattern-based recommendation
@@ -606,6 +664,7 @@ describe('KnowledgeGraph', () => {
 - [ ] Unit tests
 
 ### Phase 4: Knowledge Graph (Week 4)
+
 - [ ] KnowledgeGraph class
 - [ ] Entity/Relation storage
 - [ ] Seed data
@@ -614,6 +673,7 @@ describe('KnowledgeGraph', () => {
 - [ ] Unit tests
 
 ### Phase 5: Integration (Week 5)
+
 - [ ] Full recommendation pipeline
 - [ ] DecayManager + chrome.alarms
 - [ ] YouTube adapter complete

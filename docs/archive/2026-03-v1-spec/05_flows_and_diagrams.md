@@ -97,24 +97,28 @@ sequenceDiagram
 ## Event Taxonomy
 
 ### Page Events
+
 - page_loaded
 - page_type_detected
 - visible_entities_extracted
 - extraction_failed
 
 ### Scoring Events
+
 - score_requested
 - score_completed
 - score_failed
 - explanation_generated
 
 ### User Intent Events
+
 - intent_clicked
 - intent_resolved
 - intent_persisted
 - intent_reverted
 
 ### Agent Events
+
 - agent_query_submitted
 - agent_candidates_gathered
 - agent_rank_completed
@@ -140,19 +144,25 @@ stateDiagram-v2
 ## Intent Scope Model
 
 ### Entity-level
+
 Examples:
+
 - this exact product
 - this seller
 - this brand
 
 ### Category-level
+
 Examples:
+
 - running shoes
 - gaming headsets
 - baby products
 
 ### Session-level
+
 Examples:
+
 - gift shopping
 - researching
 - budget sensitive today
@@ -160,6 +170,7 @@ Examples:
 ## Testing Flows
 
 ### Happy Path
+
 - user opens Amazon search page
 - extension extracts products
 - at least one badge appears
@@ -167,16 +178,19 @@ Examples:
 - future similar products downgrade appropriately
 
 ### Reversal Path
+
 - user marks product as already bought
 - user later reverts or changes to interested
 - scoring and explanations update cleanly
 
 ### Low-confidence Path
+
 - extraction quality is partial
 - extension renders neutral state
 - user can still submit explicit intent
 
 ### Agent Handoff Path
+
 - user asks for best option
 - agent ranks products
 - user opens top result

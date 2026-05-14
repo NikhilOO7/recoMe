@@ -170,7 +170,7 @@
   box-shadow: var(--recome-shadow-md);
   opacity: 0;
   transform: translateY(4px);
-  transition: 
+  transition:
     opacity var(--recome-transition-fast),
     transform var(--recome-transition-fast);
   pointer-events: none;
@@ -197,7 +197,7 @@
   border: none;
   border-radius: var(--recome-radius-md);
   cursor: pointer;
-  transition: 
+  transition:
     background-color var(--recome-transition-fast),
     transform var(--recome-transition-fast),
     box-shadow var(--recome-transition-fast);
@@ -958,7 +958,7 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  
+
   .recome-hiding {
     animation: none;
     opacity: 0;
@@ -971,7 +971,7 @@
   .recome-btn {
     border: 2px solid currentColor;
   }
-  
+
   .recome-toast {
     border: 2px solid var(--recome-gray-900);
   }
@@ -991,7 +991,8 @@
 }
 
 @keyframes recome-pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -1000,7 +1001,8 @@
 }
 
 @keyframes recome-bounce {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -1009,13 +1011,21 @@
 }
 
 @keyframes recome-shake {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateX(0);
   }
-  10%, 30%, 50%, 70%, 90% {
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
     transform: translateX(-2px);
   }
-  20%, 40%, 60%, 80% {
+  20%,
+  40%,
+  60%,
+  80% {
     transform: translateX(2px);
   }
 }
@@ -1080,26 +1090,26 @@
     --recome-gray-700: #e4e4e7;
     --recome-gray-800: #f4f4f5;
     --recome-gray-900: #fafafa;
-    
+
     --recome-success-light: rgba(16, 185, 129, 0.2);
     --recome-warning-light: rgba(245, 158, 11, 0.2);
     --recome-error-light: rgba(239, 68, 68, 0.2);
     --recome-info-light: rgba(59, 130, 246, 0.2);
   }
-  
+
   .recome-feedback {
     background: rgba(39, 39, 42, 0.95);
   }
-  
+
   .recome-toast {
     background: var(--recome-gray-100);
     color: var(--recome-gray-900);
   }
-  
+
   .recome-popup {
     background: var(--recome-gray-50);
   }
-  
+
   .recome-hidden-placeholder {
     background: var(--recome-gray-100);
     color: var(--recome-gray-500);

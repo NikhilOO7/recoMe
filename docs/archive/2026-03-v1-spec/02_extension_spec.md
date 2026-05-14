@@ -5,12 +5,14 @@
 Build a browser extension that improves e-commerce recommendations by extracting page entities, showing user-facing guidance, and capturing explicit intent.
 
 ## Primary MVP Surface
+
 - Amazon search results pages
 - Amazon product detail pages
 
 ## User Value
 
 The extension should help users:
+
 - understand why products are being shown
 - declare intent directly on recommendations and products
 - reduce repeated irrelevant recommendations
@@ -27,7 +29,9 @@ The extension should help users:
 ## Surfaces
 
 ### Search Results Page
+
 Behaviors:
+
 - detect product cards
 - extract product metadata
 - score each product candidate
@@ -35,7 +39,9 @@ Behaviors:
 - expose quick actions
 
 ### Product Detail Page
+
 Behaviors:
+
 - extract product, brand, seller, price, category, and availability
 - show a recommendation assessment panel
 - allow detailed intent declaration
@@ -44,29 +50,35 @@ Behaviors:
 ## Extension Modules
 
 ### 1. Site Adapter Registry
+
 Responsibilities:
+
 - map hostname and page pattern to adapter
 - expose extraction methods per page type
 
 Example interface:
+
 ```ts
 interface SiteAdapter {
-  canHandle(url: string): boolean
-  detectPageType(document: Document): 'search' | 'product' | 'unknown'
-  extractPageContext(document: Document): PageContext
-  extractEntities(document: Document): ExtractedEntity[]
-  getMountTargets(document: Document): MountTargets
+  canHandle(url: string): boolean;
+  detectPageType(document: Document): 'search' | 'product' | 'unknown';
+  extractPageContext(document: Document): PageContext;
+  extractEntities(document: Document): ExtractedEntity[];
+  getMountTargets(document: Document): MountTargets;
 }
 ```
 
 ### 2. Entity Extraction Pipeline
+
 Responsibilities:
+
 - parse DOM
 - normalize text values
 - identify products, brands, sellers, prices, ratings, and delivery cues
 - generate stable temporary IDs before canonical resolution
 
 Pipeline steps:
+
 1. DOM snapshot or selective DOM read
 2. adapter extraction
 3. field normalization
@@ -75,21 +87,27 @@ Pipeline steps:
 6. scoring request
 
 ### 3. Overlay UI
+
 Responsibilities:
+
 - inject badges near product cards
 - inject action tray on product cards or PDP
 - render explanation popovers
 - provide clear reversible actions
 
 ### 4. Popup UI
+
 Responsibilities:
+
 - show recent intents
 - allow global contexts like budget mode or research mode
 - allow import/export later
 - display watchlists later
 
 ### 5. Background Worker
+
 Responsibilities:
+
 - orchestrate messages
 - coordinate storage
 - debounce heavy extraction and scoring
@@ -98,6 +116,7 @@ Responsibilities:
 ## Recommended Intent Actions
 
 Minimum set:
+
 - Interested
 - Not interested
 - Already bought
@@ -105,6 +124,7 @@ Minimum set:
 - Researching
 
 Recommended next set:
+
 - Prefer this brand
 - Avoid this seller
 - Quality first
@@ -113,28 +133,36 @@ Recommended next set:
 ## UI Elements
 
 ### Product Card Badge
+
 Examples:
+
 - Good fit
 - Consider with caution
 - Lower priority
 - Already bought similar
 
 Rules:
+
 - badge must be short
 - badge must be explainable
 - badge color must not be the only signal
 
 ### Explanation Popover
+
 Format:
+
 - one sentence primary explanation
 - optional secondary details
 - recent intent signals if relevant
 
 Example:
+
 - Lower priority because you marked similar gaming headsets as already bought in the last 30 days.
 
 ### Action Tray
+
 Suggested actions:
+
 - Interested
 - Not interested
 - Already bought
@@ -165,44 +193,52 @@ stateDiagram-v2
 ## Error Handling
 
 ### Extraction failure
+
 Fallback:
+
 - do not show broken UI
 - log adapter failure locally
 - show no badge state rather than incorrect badge state
 
 ### Scoring failure
+
 Fallback:
+
 - allow intent actions if extraction succeeded
 - show neutral UI with no ranking adjustment
 
 ### Storage failure
+
 Fallback:
+
 - degrade to session memory if possible
 - notify user only if persistent preference saving fails repeatedly
 
 ## Data Written by Extension
 
 ### PageContext
+
 ```ts
 type PageContext = {
-  site: 'amazon' | 'walmart' | 'ebay' | 'youtube' | 'unknown'
-  pageType: 'search' | 'product' | 'feed' | 'unknown'
-  url: string
-  query?: string
-  categoryPath?: string[]
-  timestamp: string
-}
+  site: 'amazon' | 'walmart' | 'ebay' | 'youtube' | 'unknown';
+  pageType: 'search' | 'product' | 'feed' | 'unknown';
+  url: string;
+  query?: string;
+  categoryPath?: string[];
+  timestamp: string;
+};
 ```
 
 ### IntentEvent
+
 ```ts
 type IntentEvent = {
-  id: string
-  createdAt: string
-  source: 'overlay' | 'popup' | 'agent'
-  site: string
-  entityType: 'product' | 'brand' | 'seller' | 'category'
-  entityId: string
+  id: string;
+  createdAt: string;
+  source: 'overlay' | 'popup' | 'agent';
+  site: string;
+  entityType: 'product' | 'brand' | 'seller' | 'category';
+  entityId: string;
   intentType:
     | 'interested'
     | 'not_interested'
@@ -212,11 +248,11 @@ type IntentEvent = {
     | 'prefer_brand'
     | 'avoid_seller'
     | 'quality_first'
-    | 'budget_sensitive'
-  scope: 'entity' | 'category' | 'brand' | 'session'
-  expiresAt?: string
-  metadata?: Record<string, unknown>
-}
+    | 'budget_sensitive';
+  scope: 'entity' | 'category' | 'brand' | 'session';
+  expiresAt?: string;
+  metadata?: Record<string, unknown>;
+};
 ```
 
 ## Acceptance Criteria

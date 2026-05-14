@@ -23,6 +23,7 @@
 ### The Problem
 
 Traditional content filtering is literal:
+
 - Block "crypto" → Only blocks content with exact word "crypto"
 - Bitcoin videos still appear
 - Ethereum content still shows
@@ -31,6 +32,7 @@ Traditional content filtering is literal:
 ### The Solution
 
 RecoMe's Knowledge Graph understands relationships:
+
 - Block "crypto" → Also blocks bitcoin, ethereum, NFT, DeFi, Web3
 - Like "Apple" → Boosts iPhone, MacBook, related tech content
 - Relationships propagate with decay over distance
@@ -54,12 +56,12 @@ Entities are nodes in the graph representing concepts, people, brands, etc.
 
 ```typescript
 interface Entity {
-  id: string;               // Unique identifier
-  type: EntityType;         // Category of entity
-  name: string;             // Display name
-  aliases: string[];        // Alternative names for matching
-  properties: Record<string, unknown>;  // Additional metadata
-  embedding?: number[];     // Optional vector embedding
+  id: string; // Unique identifier
+  type: EntityType; // Category of entity
+  name: string; // Display name
+  aliases: string[]; // Alternative names for matching
+  properties: Record<string, unknown>; // Additional metadata
+  embedding?: number[]; // Optional vector embedding
   created_at: number;
   updated_at: number;
 }
@@ -71,13 +73,13 @@ Relations are edges connecting entities with typed, weighted connections.
 
 ```typescript
 interface Relation {
-  id: string;               // Unique identifier
-  source_id: string;        // From entity
-  target_id: string;        // To entity
-  type: RelationType;       // Type of relationship
-  weight: number;           // Strength (0.0 - 1.0)
-  confidence: number;       // How sure we are (0.0 - 1.0)
-  bidirectional: boolean;   // Applies both ways?
+  id: string; // Unique identifier
+  source_id: string; // From entity
+  target_id: string; // To entity
+  type: RelationType; // Type of relationship
+  weight: number; // Strength (0.0 - 1.0)
+  confidence: number; // How sure we are (0.0 - 1.0)
+  bidirectional: boolean; // Applies both ways?
   properties: Record<string, unknown>;
   created_at: number;
   updated_at: number;
@@ -122,7 +124,7 @@ type UserEntityType = 'user';
 ### Content Entities
 
 ```typescript
-type ContentEntityType = 
+type ContentEntityType =
   | 'creator'      // Content creators (channels, authors)
   | 'brand'        // Companies, brands
   | 'product'      // Specific products
@@ -143,7 +145,7 @@ type ContentEntityType =
 ### Context Entities
 
 ```typescript
-type ContextEntityType = 
+type ContextEntityType =
   | 'sentiment'    // Positive, negative, neutral
   | 'audience'     // Beginner, expert, general
   | 'format';      // Long-form, short, tutorial
@@ -162,13 +164,13 @@ type ContextEntityType =
 
 These connect the user to entities expressing preferences.
 
-| Type | Direction | Description | Weight Meaning |
-|------|-----------|-------------|----------------|
-| `interested_in` | user → entity | User likes this | 0.5-1.0 = strength |
-| `not_interested_in` | user → entity | User dislikes | 0.5-1.0 = strength |
-| `one_time_interest` | user → entity | Temporary interest | 1.0 = full strength |
-| `follows` | user → creator | User follows creator | 1.0 = following |
-| `blocked` | user → entity | Permanent block | 1.0 = blocked forever |
+| Type                | Direction      | Description          | Weight Meaning        |
+| ------------------- | -------------- | -------------------- | --------------------- |
+| `interested_in`     | user → entity  | User likes this      | 0.5-1.0 = strength    |
+| `not_interested_in` | user → entity  | User dislikes        | 0.5-1.0 = strength    |
+| `one_time_interest` | user → entity  | Temporary interest   | 1.0 = full strength   |
+| `follows`           | user → creator | User follows creator | 1.0 = following       |
+| `blocked`           | user → entity  | Permanent block      | 1.0 = blocked forever |
 
 ```typescript
 // User blocks crypto
@@ -186,29 +188,29 @@ These connect the user to entities expressing preferences.
 
 These describe how content relates to other entities.
 
-| Type | Direction | Description |
-|------|-----------|-------------|
-| `created_by` | content → creator | Who made this content |
-| `about` | content → topic | What the content is about |
-| `features` | content → product | Products shown/discussed |
-| `belongs_to` | content → category | Content category |
-| `has_type` | content → content_type | Type of content |
-| `targets` | content → audience | Intended audience |
-| `has_format` | content → format | Content format |
+| Type         | Direction              | Description               |
+| ------------ | ---------------------- | ------------------------- |
+| `created_by` | content → creator      | Who made this content     |
+| `about`      | content → topic        | What the content is about |
+| `features`   | content → product      | Products shown/discussed  |
+| `belongs_to` | content → category     | Content category          |
+| `has_type`   | content → content_type | Type of content           |
+| `targets`    | content → audience     | Intended audience         |
+| `has_format` | content → format       | Content format            |
 
 ### Entity-Entity Relations
 
 These define relationships between non-user entities.
 
-| Type | Bidirectional | Description |
-|------|---------------|-------------|
-| `is_a` | No | Hierarchy (iPhone is_a smartphone) |
-| `part_of` | No | Composition (DeFi part_of crypto) |
-| `owned_by` | No | Ownership (iPhone owned_by Apple) |
-| `similar_to` | Yes | Similarity (bitcoin similar_to ethereum) |
-| `opposite_of` | Yes | Opposition (AMD opposite_of Intel) |
-| `related_to` | Yes | Generic relation |
-| `competes_with` | Yes | Competition |
+| Type            | Bidirectional | Description                              |
+| --------------- | ------------- | ---------------------------------------- |
+| `is_a`          | No            | Hierarchy (iPhone is_a smartphone)       |
+| `part_of`       | No            | Composition (DeFi part_of crypto)        |
+| `owned_by`      | No            | Ownership (iPhone owned_by Apple)        |
+| `similar_to`    | Yes           | Similarity (bitcoin similar_to ethereum) |
+| `opposite_of`   | Yes           | Opposition (AMD opposite_of Intel)       |
+| `related_to`    | Yes           | Generic relation                         |
+| `competes_with` | Yes           | Competition                              |
 
 ---
 
@@ -221,9 +223,9 @@ For direct user-entity relations:
 ```typescript
 function getDirectAffinity(userId: string, entityId: string): number {
   const relation = getRelation(userId, entityId);
-  
+
   if (!relation) return 0;
-  
+
   switch (relation.type) {
     case 'blocked':
       return -1.0 * relation.weight;
@@ -269,24 +271,22 @@ When multiple paths exist, aggregate with max-magnitude:
 ```typescript
 function calculateEntityAffinity(userId: string, entityId: string): number {
   const scores: number[] = [];
-  
+
   // Direct relation
   const direct = getDirectAffinity(userId, entityId);
   if (direct !== 0) scores.push(direct);
-  
+
   // Path-based (BFS with depth limit)
   const paths = findAllPaths(userId, entityId, MAX_DEPTH);
   for (const path of paths) {
     const pathScore = calculatePathScore(path);
     scores.push(pathScore);
   }
-  
+
   if (scores.length === 0) return 0;
-  
+
   // Take max magnitude (most extreme wins)
-  return scores.reduce((max, score) => 
-    Math.abs(score) > Math.abs(max) ? score : max
-  , 0);
+  return scores.reduce((max, score) => (Math.abs(score) > Math.abs(max) ? score : max), 0);
 }
 ```
 
@@ -296,13 +296,13 @@ Different relation types have different propagation weights:
 
 ```typescript
 const RELATION_WEIGHTS = {
-  similar_to: 0.9,      // High propagation
-  is_a: 0.8,            // Strong inheritance
-  part_of: 0.7,         // Good propagation
-  owned_by: 0.6,        // Moderate
-  related_to: 0.5,      // Weak propagation
-  competes_with: 0.3,   // Opposite effect
-  opposite_of: -0.8,    // Inverts affinity
+  similar_to: 0.9, // High propagation
+  is_a: 0.8, // Strong inheritance
+  part_of: 0.7, // Good propagation
+  owned_by: 0.6, // Moderate
+  related_to: 0.5, // Weak propagation
+  competes_with: 0.3, // Opposite effect
+  opposite_of: -0.8, // Inverts affinity
 };
 ```
 
@@ -322,7 +322,7 @@ const crypto = graph.addEntity({
   type: 'topic',
   name: 'crypto',
   aliases: ['cryptocurrency', 'cryptocurrencies'],
-  properties: {}
+  properties: {},
 });
 // Returns: { id: 'topic_crypto', type: 'topic', name: 'crypto', ... }
 ```
@@ -342,7 +342,7 @@ graph.addRelation({
   weight: 0.95,
   confidence: 1.0,
   bidirectional: true,
-  properties: {}
+  properties: {},
 });
 ```
 
@@ -352,20 +352,20 @@ graph.addRelation({
 interface IKnowledgeGraph {
   // Get entity by ID or alias
   getEntity(idOrAlias: string): Entity | null;
-  
+
   // Get all entities of a type
   getEntitiesByType(type: EntityType): Entity[];
-  
+
   // Get relations for an entity
   getRelations(
-    entityId: string, 
+    entityId: string,
     direction?: 'outgoing' | 'incoming' | 'both',
-    type?: RelationType
+    type?: RelationType,
   ): Relation[];
-  
+
   // Find similar entities
   findSimilar(entityId: string, limit?: number): Array<{ entity: Entity; score: number }>;
-  
+
   // Find path between entities
   findPath(sourceId: string, targetId: string, maxDepth?: number): string[] | null;
 }
@@ -375,9 +375,9 @@ interface IKnowledgeGraph {
 
 ```typescript
 interface TraverseOptions {
-  maxDepth?: number;       // Default: 3
-  relationTypes?: RelationType[];  // Filter by relation type
-  decayFactor?: number;    // Default: 0.7
+  maxDepth?: number; // Default: 3
+  relationTypes?: RelationType[]; // Filter by relation type
+  decayFactor?: number; // Default: 0.7
 }
 
 interface TraversalResult {
@@ -387,10 +387,7 @@ interface TraversalResult {
   score: number;
 }
 
-function traverse(
-  sourceId: string, 
-  options?: TraverseOptions
-): TraversalResult[] {
+function traverse(sourceId: string, options?: TraverseOptions): TraversalResult[] {
   // BFS traversal with score decay
 }
 ```
@@ -415,7 +412,7 @@ const CRYPTO_SEED = [
   { type: 'topic', name: 'DeFi', aliases: ['decentralized finance'] },
   { type: 'topic', name: 'Web3' },
   { type: 'topic', name: 'blockchain' },
-  
+
   // Relations
   { source: 'crypto', target: 'bitcoin', type: 'similar_to', weight: 0.95 },
   { source: 'crypto', target: 'ethereum', type: 'similar_to', weight: 0.9 },
@@ -442,7 +439,7 @@ const TECH_BRANDS_SEED = [
   { type: 'product', name: 'Galaxy' },
   { type: 'category', name: 'smartphone' },
   { type: 'category', name: 'laptop' },
-  
+
   // Relations
   { source: 'iPhone', target: 'Apple', type: 'owned_by', weight: 1.0 },
   { source: 'MacBook', target: 'Apple', type: 'owned_by', weight: 1.0 },
@@ -466,16 +463,16 @@ const CATEGORIES_SEED = [
   { type: 'category', name: 'gaming' },
   { type: 'category', name: 'movies' },
   { type: 'category', name: 'music' },
-  
+
   { source: 'gaming', target: 'entertainment', type: 'belongs_to', weight: 1.0 },
   { source: 'movies', target: 'entertainment', type: 'belongs_to', weight: 1.0 },
   { source: 'music', target: 'entertainment', type: 'belongs_to', weight: 1.0 },
-  
+
   // Education
   { type: 'category', name: 'education' },
   { type: 'category', name: 'tutorial' },
   { type: 'category', name: 'how-to' },
-  
+
   { source: 'tutorial', target: 'education', type: 'belongs_to', weight: 1.0 },
   { source: 'how-to', target: 'education', type: 'belongs_to', weight: 1.0 },
   { source: 'tutorial', target: 'how-to', type: 'similar_to', weight: 0.9 },
@@ -494,26 +491,26 @@ const CATEGORIES_SEED = [
 export class KnowledgeGraph implements IKnowledgeGraph {
   private entities: Map<string, Entity> = new Map();
   private relations: Map<string, Relation> = new Map();
-  private aliasIndex: Map<string, string> = new Map();  // alias → entityId
-  private outgoingIndex: Map<string, Set<string>> = new Map();  // entityId → relationIds
-  private incomingIndex: Map<string, Set<string>> = new Map();  // entityId → relationIds
-  
+  private aliasIndex: Map<string, string> = new Map(); // alias → entityId
+  private outgoingIndex: Map<string, Set<string>> = new Map(); // entityId → relationIds
+  private incomingIndex: Map<string, Set<string>> = new Map(); // entityId → relationIds
+
   constructor(private store: IGraphStore) {}
-  
+
   async initialize(): Promise<void> {
     // Load from IndexedDB
     const entities = await this.store.getAllEntities();
     const relations = await this.store.getAllRelations();
-    
+
     for (const entity of entities) {
       this.indexEntity(entity);
     }
-    
+
     for (const relation of relations) {
       this.indexRelation(relation);
     }
   }
-  
+
   addEntity(data: Omit<Entity, 'id' | 'created_at' | 'updated_at'>): Entity {
     const entity: Entity = {
       ...data,
@@ -521,29 +518,29 @@ export class KnowledgeGraph implements IKnowledgeGraph {
       created_at: Date.now(),
       updated_at: Date.now(),
     };
-    
+
     this.indexEntity(entity);
-    this.store.saveEntity(entity);  // Async, fire-and-forget
-    
+    this.store.saveEntity(entity); // Async, fire-and-forget
+
     return entity;
   }
-  
+
   getEntity(idOrAlias: string): Entity | null {
     // Check direct ID
     if (this.entities.has(idOrAlias)) {
       return this.entities.get(idOrAlias)!;
     }
-    
+
     // Check alias
     const normalized = idOrAlias.toLowerCase().trim();
     const entityId = this.aliasIndex.get(normalized);
     if (entityId) {
       return this.entities.get(entityId) || null;
     }
-    
+
     return null;
   }
-  
+
   addRelation(data: Omit<Relation, 'id' | 'created_at' | 'updated_at'>): Relation {
     const relation: Relation = {
       ...data,
@@ -551,10 +548,10 @@ export class KnowledgeGraph implements IKnowledgeGraph {
       created_at: Date.now(),
       updated_at: Date.now(),
     };
-    
+
     this.indexRelation(relation);
     this.store.saveRelation(relation);
-    
+
     // Handle bidirectional
     if (data.bidirectional) {
       const reverseRelation: Relation = {
@@ -566,17 +563,17 @@ export class KnowledgeGraph implements IKnowledgeGraph {
       this.indexRelation(reverseRelation);
       this.store.saveRelation(reverseRelation);
     }
-    
+
     return relation;
   }
-  
+
   getRelations(
     entityId: string,
     direction: 'outgoing' | 'incoming' | 'both' = 'both',
-    type?: RelationType
+    type?: RelationType,
   ): Relation[] {
     const relations: Relation[] = [];
-    
+
     if (direction === 'outgoing' || direction === 'both') {
       const outgoing = this.outgoingIndex.get(entityId) || new Set();
       for (const relId of outgoing) {
@@ -586,7 +583,7 @@ export class KnowledgeGraph implements IKnowledgeGraph {
         }
       }
     }
-    
+
     if (direction === 'incoming' || direction === 'both') {
       const incoming = this.incomingIndex.get(entityId) || new Set();
       for (const relId of incoming) {
@@ -596,78 +593,79 @@ export class KnowledgeGraph implements IKnowledgeGraph {
         }
       }
     }
-    
+
     return relations;
   }
-  
+
   findSimilar(entityId: string, limit: number = 10): Array<{ entity: Entity; score: number }> {
     const visited = new Set<string>([entityId]);
     const scores = new Map<string, number>();
-    
+
     // BFS with score decay
     const queue: Array<{ id: string; score: number; depth: number }> = [
-      { id: entityId, score: 1.0, depth: 0 }
+      { id: entityId, score: 1.0, depth: 0 },
     ];
-    
+
     while (queue.length > 0) {
       const current = queue.shift()!;
-      
-      if (current.depth >= 3) continue;  // Max depth
-      
+
+      if (current.depth >= 3) continue; // Max depth
+
       const relations = this.getRelations(current.id, 'outgoing');
-      
+
       for (const rel of relations) {
         if (visited.has(rel.target_id)) continue;
-        
+
         const weight = RELATION_WEIGHTS[rel.type] || 0.5;
-        const newScore = current.score * weight * rel.weight * 0.7;  // 0.7 decay
-        
-        if (newScore > 0.1) {  // Minimum threshold
+        const newScore = current.score * weight * rel.weight * 0.7; // 0.7 decay
+
+        if (newScore > 0.1) {
+          // Minimum threshold
           visited.add(rel.target_id);
           scores.set(rel.target_id, Math.max(scores.get(rel.target_id) || 0, newScore));
           queue.push({ id: rel.target_id, score: newScore, depth: current.depth + 1 });
         }
       }
     }
-    
+
     // Sort by score and limit
     return Array.from(scores.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, limit)
       .map(([id, score]) => ({
         entity: this.entities.get(id)!,
-        score
+        score,
       }));
   }
-  
+
   // ... private helper methods
-  
+
   private indexEntity(entity: Entity): void {
     this.entities.set(entity.id, entity);
-    
+
     // Index name and aliases
     this.aliasIndex.set(entity.name.toLowerCase(), entity.id);
     for (const alias of entity.aliases) {
       this.aliasIndex.set(alias.toLowerCase(), entity.id);
     }
   }
-  
+
   private indexRelation(relation: Relation): void {
     this.relations.set(relation.id, relation);
-    
+
     // Outgoing index
     if (!this.outgoingIndex.has(relation.source_id)) {
       this.outgoingIndex.set(relation.source_id, new Set());
     }
     this.outgoingIndex.get(relation.source_id)!.add(relation.id);
-    
+
     // Incoming index
     if (!this.incomingIndex.has(relation.target_id)) {
       this.incomingIndex.set(relation.target_id, new Set());
     }
     this.incomingIndex.get(relation.target_id)!.add(relation.id);
   }
-  
+
   private generateEntityId(type: EntityType, name: string): string {
     const normalized = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
     return `${type}_${normalized}`;
@@ -683,12 +681,12 @@ export class KnowledgeGraph implements IKnowledgeGraph {
 export class AffinityCalculator {
   private readonly DECAY_FACTOR = 0.7;
   private readonly MAX_DEPTH = 3;
-  
+
   constructor(private graph: IKnowledgeGraph) {}
-  
+
   calculateEntityAffinity(userId: string, entityId: string): number {
     const scores: number[] = [];
-    
+
     // 1. Check direct relation
     const directRelations = this.graph.getRelations(userId, 'outgoing');
     for (const rel of directRelations) {
@@ -696,78 +694,75 @@ export class AffinityCalculator {
         scores.push(this.getRelationScore(rel));
       }
     }
-    
+
     // 2. Check indirect paths via BFS
     const paths = this.findPaths(userId, entityId);
     for (const path of paths) {
       scores.push(this.calculatePathScore(path));
     }
-    
+
     if (scores.length === 0) return 0;
-    
+
     // Return max magnitude
-    return scores.reduce((max, score) => 
-      Math.abs(score) > Math.abs(max) ? score : max
-    , 0);
+    return scores.reduce((max, score) => (Math.abs(score) > Math.abs(max) ? score : max), 0);
   }
-  
+
   calculateContentAffinity(
-    userId: string, 
-    entities: string[]
+    userId: string,
+    entities: string[],
   ): { score: number; factors: AffinityFactor[] } {
     const factors: AffinityFactor[] = [];
-    
+
     for (const entityId of entities) {
       const affinity = this.calculateEntityAffinity(userId, entityId);
       if (affinity !== 0) {
         factors.push({
           entityId,
           affinity,
-          path: this.getAffinityExplanation(userId, entityId)
+          path: this.getAffinityExplanation(userId, entityId),
         });
       }
     }
-    
+
     if (factors.length === 0) {
       return { score: 0, factors: [] };
     }
-    
+
     // Aggregate: use max magnitude but consider count
-    const maxFactor = factors.reduce((max, f) => 
-      Math.abs(f.affinity) > Math.abs(max.affinity) ? f : max
+    const maxFactor = factors.reduce((max, f) =>
+      Math.abs(f.affinity) > Math.abs(max.affinity) ? f : max,
     );
-    
+
     return {
       score: maxFactor.affinity,
-      factors
+      factors,
     };
   }
-  
+
   private getRelationScore(relation: Relation): number {
-    const baseScore = relation.type === 'blocked' || 
-                      relation.type === 'not_interested_in' 
-      ? -1 
-      : relation.type === 'interested_in' || 
-        relation.type === 'follows' 
-      ? 1 
-      : 0;
-    
+    const baseScore =
+      relation.type === 'blocked' || relation.type === 'not_interested_in'
+        ? -1
+        : relation.type === 'interested_in' || relation.type === 'follows'
+          ? 1
+          : 0;
+
     return baseScore * relation.weight * relation.confidence;
   }
-  
+
   private findPaths(sourceId: string, targetId: string): RelationPath[] {
     const paths: RelationPath[] = [];
     const visited = new Set<string>();
-    
+
     const dfs = (currentId: string, path: Relation[], depth: number): void => {
       if (depth > this.MAX_DEPTH) return;
       if (currentId === targetId && path.length > 0) {
         paths.push([...path]);
         return;
       }
-      
+
       visited.add(currentId);
-      
+
       const relations = this.graph.getRelations(currentId, 'outgoing');
       for (const rel of relations) {
         if (!visited.has(rel.target_id)) {
@@ -776,21 +771,21 @@ export class AffinityCalculator {
           path.pop();
         }
       }
-      
+
       visited.delete(currentId);
     };
-    
+
     dfs(sourceId, [], 0);
     return paths;
   }
-  
+
   private calculatePathScore(path: Relation[]): number {
     let score = 1.0;
-    
+
     for (let i = 0; i < path.length; i++) {
       const rel = path[i];
       const typeWeight = RELATION_WEIGHTS[rel.type] || 0.5;
-      
+
       // Handle opposite_of which inverts
       if (rel.type === 'opposite_of') {
         score *= -1 * rel.weight * this.DECAY_FACTOR;
@@ -798,7 +793,7 @@ export class AffinityCalculator {
         score *= typeWeight * rel.weight * this.DECAY_FACTOR;
       }
     }
-    
+
     // Apply sign based on first relation (user preference)
     if (path.length > 0) {
       const firstRel = path[0];
@@ -806,25 +801,25 @@ export class AffinityCalculator {
         score = -Math.abs(score);
       }
     }
-    
+
     return score;
   }
-  
+
   private getAffinityExplanation(userId: string, entityId: string): string {
     const paths = this.findPaths(userId, entityId);
     if (paths.length === 0) return 'No path found';
-    
+
     // Use shortest path for explanation
-    const shortestPath = paths.reduce((shortest, path) => 
-      path.length < shortest.length ? path : shortest
+    const shortestPath = paths.reduce((shortest, path) =>
+      path.length < shortest.length ? path : shortest,
     );
-    
-    const steps = shortestPath.map(rel => {
+
+    const steps = shortestPath.map((rel) => {
       const source = this.graph.getEntity(rel.source_id);
       const target = this.graph.getEntity(rel.target_id);
       return `${source?.name} ${rel.type.replace('_', ' ')} ${target?.name}`;
     });
-    
+
     return steps.join(' → ');
   }
 }
@@ -845,7 +840,7 @@ const RELATION_WEIGHTS: Record<RelationType, number> = {
   related_to: 0.5,
   belongs_to: 0.5,
   competes_with: 0.3,
-  opposite_of: 0.8,  // High weight but inverts
+  opposite_of: 0.8, // High weight but inverts
   // User relations have special handling
   interested_in: 1.0,
   not_interested_in: 1.0,
@@ -931,7 +926,7 @@ Legend:
       │   +0.44   │
       └───────────┘
 
-* Samsung gets reduced positive because competes_with 
+* Samsung gets reduced positive because competes_with
   has lower weight (0.3) - competing brands get mild boost
 ```
 
@@ -945,7 +940,7 @@ Legend:
 async function onUserBlock(topic: string): Promise<void> {
   // 1. Memory: Create facts_prefs entry
   await memoryService.blockForever(topic);
-  
+
   // 2. Graph: Get or create entity
   let entity = knowledgeGraph.getEntity(topic);
   if (!entity) {
@@ -953,10 +948,10 @@ async function onUserBlock(topic: string): Promise<void> {
       type: 'topic',
       name: topic,
       aliases: [],
-      properties: { source: 'user_created' }
+      properties: { source: 'user_created' },
     });
   }
-  
+
   // 3. Graph: Add blocked relation
   knowledgeGraph.addRelation({
     source_id: 'user_local',
@@ -965,9 +960,9 @@ async function onUserBlock(topic: string): Promise<void> {
     weight: 1.0,
     confidence: 1.0,
     bidirectional: false,
-    properties: { created_by: 'explicit_action' }
+    properties: { created_by: 'explicit_action' },
   });
-  
+
   // 4. Emit event
   eventBus.emit(Events.ENTITY_BLOCKED, { entityId: entity.id });
 }
@@ -979,26 +974,23 @@ async function onUserBlock(topic: string): Promise<void> {
 async function shouldHideContent(content: AnalyzedContent): Promise<boolean> {
   // 1. Extract entities from content
   const entities = await extractor.extract(content);
-  
+
   // 2. Check memory for direct blocks
   const memoryResult = await memoryService.shouldHide(entities.topics);
   if (memoryResult.hide) return true;
-  
+
   // 3. Check graph affinity for propagated blocks
   for (const entityName of entities.topics) {
     const entity = knowledgeGraph.getEntity(entityName);
     if (!entity) continue;
-    
-    const affinity = affinityCalculator.calculateEntityAffinity(
-      'user_local',
-      entity.id
-    );
-    
+
+    const affinity = affinityCalculator.calculateEntityAffinity('user_local', entity.id);
+
     if (affinity < -0.5) {
-      return true;  // Strong negative affinity → hide
+      return true; // Strong negative affinity → hide
     }
   }
-  
+
   return false;
 }
 ```

@@ -8,24 +8,24 @@
 
 ### Core Principles
 
-| Principle | Description |
-|-----------|-------------|
-| **Invisible Until Needed** | RecoMe works silently. The best interaction is no interaction. |
-| **Instant Gratification** | Actions result in immediate, satisfying feedback. |
-| **Transparent Intelligence** | Users always know WHY something was hidden or shown. |
-| **Respectful of Attention** | Minimal UI footprint. Never interrupt. Never nag. |
-| **Delightfully Human** | Warm copy, playful animations, small surprises. |
+| Principle                    | Description                                                    |
+| ---------------------------- | -------------------------------------------------------------- |
+| **Invisible Until Needed**   | RecoMe works silently. The best interaction is no interaction. |
+| **Instant Gratification**    | Actions result in immediate, satisfying feedback.              |
+| **Transparent Intelligence** | Users always know WHY something was hidden or shown.           |
+| **Respectful of Attention**  | Minimal UI footprint. Never interrupt. Never nag.              |
+| **Delightfully Human**       | Warm copy, playful animations, small surprises.                |
 
 ### Emotional Design Goals
 
-| Moment | Desired Emotion | Design Response |
-|--------|-----------------|-----------------|
-| First install | Curiosity, hope | Welcoming animation, clean feed promise |
-| First hide | Satisfaction, power | "Poof" animation, celebratory copy |
-| Seeing clean feed | Calm, control | Subtle work-done indicator |
-| Opening popup | Informed, proud | Progress visualization |
-| Pattern discovery | Surprised, impressed | "RecoMe learned!" celebration |
-| Milestone reached | Accomplished | Confetti, badge unlock |
+| Moment            | Desired Emotion      | Design Response                         |
+| ----------------- | -------------------- | --------------------------------------- |
+| First install     | Curiosity, hope      | Welcoming animation, clean feed promise |
+| First hide        | Satisfaction, power  | "Poof" animation, celebratory copy      |
+| Seeing clean feed | Calm, control        | Subtle work-done indicator              |
+| Opening popup     | Informed, proud      | Progress visualization                  |
+| Pattern discovery | Surprised, impressed | "RecoMe learned!" celebration           |
+| Milestone reached | Accomplished         | Confetti, badge unlock                  |
 
 ---
 
@@ -37,13 +37,13 @@
 
 **Copy Examples**:
 
-| ✅ Good | ❌ Bad |
-|---------|--------|
-| "Gone forever ✨" | "Content blocked" |
-| "RecoMe learned something!" | "Pattern detected" |
-| "Your feed, your rules" | "Recommendation filtered" |
-| "Taking out the trash" | "Removing unwanted content" |
-| "That's 47 annoyances dodged" | "47 items hidden" |
+| ✅ Good                       | ❌ Bad                      |
+| ----------------------------- | --------------------------- |
+| "Gone forever ✨"             | "Content blocked"           |
+| "RecoMe learned something!"   | "Pattern detected"          |
+| "Your feed, your rules"       | "Recommendation filtered"   |
+| "Taking out the trash"        | "Removing unwanted content" |
+| "That's 47 annoyances dodged" | "47 items hidden"           |
 
 ### Logo Concept
 
@@ -85,21 +85,21 @@ PRIMARY MARK:          ICON:
 
 ```css
 --font-sans: 'Inter', system-ui, sans-serif;
---text-xs: 0.75rem;    /* 12px */
---text-sm: 0.875rem;   /* 14px */
---text-base: 1rem;     /* 16px */
---text-xl: 1.25rem;    /* 20px */
---text-2xl: 1.5rem;    /* 24px */
+--text-xs: 0.75rem; /* 12px */
+--text-sm: 0.875rem; /* 14px */
+--text-base: 1rem; /* 16px */
+--text-xl: 1.25rem; /* 20px */
+--text-2xl: 1.5rem; /* 24px */
 ```
 
 ### Spacing
 
 ```css
---space-1: 0.25rem;    /* 4px */
---space-2: 0.5rem;     /* 8px */
---space-4: 1rem;       /* 16px */
---space-6: 1.5rem;     /* 24px */
---radius-lg: 0.5rem;   /* 8px */
+--space-1: 0.25rem; /* 4px */
+--space-2: 0.5rem; /* 8px */
+--space-4: 1rem; /* 16px */
+--space-6: 1.5rem; /* 24px */
+--radius-lg: 0.5rem; /* 8px */
 --popup-width: 380px;
 ```
 
@@ -157,39 +157,64 @@ Button States:
 ```css
 /* Fade In Up - toasts */
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Scale Pop - buttons */
 @keyframes scalePop {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.15); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* Collapse Height - hide items */
 @keyframes collapseHeight {
-  from { max-height: var(--item-height); opacity: 0.3; }
-  to { max-height: 0; opacity: 0; padding: 0; }
+  from {
+    max-height: var(--item-height);
+    opacity: 0.3;
+  }
+  to {
+    max-height: 0;
+    opacity: 0;
+    padding: 0;
+  }
 }
 
 /* Confetti - milestones */
 @keyframes confettiBurst {
-  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-  100% { transform: translateY(-200px) rotate(720deg); opacity: 0; }
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-200px) rotate(720deg);
+    opacity: 0;
+  }
 }
 ```
 
 ### Timing Guidelines
 
-| Action | Duration | Easing |
-|--------|----------|--------|
-| Button hover | 150ms | ease-out |
-| Button click | 200ms | spring |
-| Toast appear | 300ms | ease-out-expo |
-| Content hide | 400ms | ease-in-out-quart |
-| Confetti | 1000ms | ease-out |
+| Action       | Duration | Easing            |
+| ------------ | -------- | ----------------- |
+| Button hover | 150ms    | ease-out          |
+| Button click | 200ms    | spring            |
+| Toast appear | 300ms    | ease-out-expo     |
+| Content hide | 400ms    | ease-in-out-quart |
+| Confetti     | 1000ms   | ease-out          |
 
 ---
 
@@ -198,20 +223,24 @@ Button States:
 ### Achievement System
 
 **First Steps:**
+
 - 🎯 "First Block" - Block your first topic
 - ✨ "Clean Start" - Hide 10 items
 - 🎓 "Quick Learner" - First pattern created
 
 **Growing:**
+
 - 💯 "Clean Sweep" - Hide 100 items
 - 🧠 "Mind Reader" - 10 patterns created
 - 🎯 "Laser Focus" - Block 5 topics
 
 **Mastery:**
+
 - 🏆 "Feed Master" - Hide 1,000 items
 - ⚡ "Power User" - Active for 30 days
 
 **Secret:**
+
 - 🦄 "Unicorn" - Found an Easter egg
 - 🎉 "Party Time" - Block 10 items in 1 minute
 
@@ -222,7 +251,7 @@ const MILESTONES = [
   { count: 10, emoji: '🎉', message: "You're on a roll!" },
   { count: 100, emoji: '💯', message: 'Triple digits! Impressive!' },
   { count: 500, emoji: '🚀', message: 'Half a thousand banished!' },
-  { count: 1000, emoji: '🏆', message: "Feed Master achieved!" },
+  { count: 1000, emoji: '🏆', message: 'Feed Master achieved!' },
 ];
 ```
 
@@ -240,6 +269,7 @@ MILESTONE:┌─ 🎉 100 items hidden! On fire!     ─┐
 ```
 
 ### Behavior
+
 - Position: Bottom-right, 16px from edges
 - Stack: Upward if multiple
 - Auto-dismiss: 4s (achievements: 6s)
@@ -250,17 +280,19 @@ MILESTONE:┌─ 🎉 100 items hidden! On fire!     ─┐
 ## Onboarding Flow
 
 ### Step 1: Welcome
+
 ```
         ╭──────╮
         │RecoMe│
         ╰──────╯
    Your feed, your rules.
-   
+
    [Let's get started]
         ○ ○ ○ ○
 ```
 
 ### Step 2: Quick Blocks
+
 ```
 What would you rather not see?
 
@@ -276,9 +308,10 @@ Skip ───────────── Next
 ```
 
 ### Step 3: How It Works
+
 ```
    [Thumbnail]    👍 👎 ⏱️
-   
+
    👍 More like this
    👎 Never show this
    ⏱️ Not right now
@@ -288,13 +321,14 @@ Back ───────────── Next
 ```
 
 ### Step 4: All Set
+
 ```
           🎉
      You're all set!
-     
+
 💡 Click RecoMe icon to
    see stats & preferences
-   
+
    [Start browsing 🚀]
         ○ ○ ○ ●
 ```
@@ -339,15 +373,15 @@ Back ───────────── Next
 
 ### Requirements (WCAG 2.1 AA)
 
-| Requirement | Standard |
-|-------------|----------|
-| Text contrast | 4.5:1 minimum |
-| Large text | 3:1 minimum |
-| UI components | 3:1 minimum |
-| Touch targets | 44×44px minimum |
-| Focus visible | 2px outline |
-| Screen readers | aria-labels |
-| Motion | prefers-reduced-motion |
+| Requirement    | Standard               |
+| -------------- | ---------------------- |
+| Text contrast  | 4.5:1 minimum          |
+| Large text     | 3:1 minimum            |
+| UI components  | 3:1 minimum            |
+| Touch targets  | 44×44px minimum        |
+| Focus visible  | 2px outline            |
+| Screen readers | aria-labels            |
+| Motion         | prefers-reduced-motion |
 
 ### CSS
 
@@ -358,7 +392,9 @@ Back ───────────── Next
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * { animation-duration: 0.01ms !important; }
+  * {
+    animation-duration: 0.01ms !important;
+  }
 }
 ```
 
@@ -367,6 +403,7 @@ Back ───────────── Next
 ## Implementation Checklist
 
 ### Phase 1: Core UI
+
 - [ ] Design tokens
 - [ ] Button component
 - [ ] Toast component
@@ -374,6 +411,7 @@ Back ───────────── Next
 - [ ] Hide animation
 
 ### Phase 2: Popup
+
 - [ ] Dashboard layout
 - [ ] Stats card
 - [ ] Preference list
@@ -381,12 +419,14 @@ Back ───────────── Next
 - [ ] Context switcher
 
 ### Phase 3: Delight
+
 - [ ] Achievement system
 - [ ] Milestones
 - [ ] Onboarding
 - [ ] Easter eggs
 
 ### Phase 4: Polish
+
 - [ ] Accessibility audit
 - [ ] Dark mode
 - [ ] Animation refinement

@@ -121,13 +121,13 @@ npm run test:watch
 
 ### After Making Changes
 
-| Change Type | Action Required |
-|-------------|-----------------|
-| TypeScript/JavaScript | Auto-rebuilt by webpack |
-| Manifest changes | Reload extension in chrome://extensions/ |
-| Content script changes | Refresh the target page |
-| Background script changes | Click "Reload" on extension card |
-| Popup changes | Close and reopen popup |
+| Change Type               | Action Required                          |
+| ------------------------- | ---------------------------------------- |
+| TypeScript/JavaScript     | Auto-rebuilt by webpack                  |
+| Manifest changes          | Reload extension in chrome://extensions/ |
+| Content script changes    | Refresh the target page                  |
+| Background script changes | Click "Reload" on extension card         |
+| Popup changes             | Close and reopen popup                   |
 
 ### Code Quality Commands
 
@@ -244,13 +244,13 @@ recome/
 // src/content/index.ts
 async function processContentItem(item: ContentItem): Promise<void> {
   console.log('[RecoMe] Processing content:', item.title);
-  
+
   // Send to background for analysis
   const result = await sendMessage({
     type: 'PROCESS_CONTENT',
     payload: item,
   });
-  
+
   // Apply result
   if (result.action === 'hide') {
     hideElement(item.element);
@@ -319,6 +319,7 @@ npm run test:coverage
 ### Manual Testing Checklist
 
 #### YouTube Testing
+
 - [ ] Content items detected on home page
 - [ ] Content items detected in search results
 - [ ] Feedback buttons appear on hover
@@ -327,6 +328,7 @@ npm run test:coverage
 - [ ] Hidden items stay hidden on refresh
 
 #### Memory Testing
+
 - [ ] Blocked topics persist across sessions
 - [ ] Context detection works correctly
 - [ ] Pattern detection creates cards after 3+ similar actions
@@ -351,7 +353,7 @@ export class NewPlatformAdapter extends BaseAdapter {
       observerConfig: { childList: true, subtree: true },
     });
   }
-  
+
   // Implement abstract methods...
 }
 
@@ -372,10 +374,10 @@ private readonly FACTOR_WEIGHTS = {
 
 async recommend(content: AnalyzedContent): Promise<RecommendationResult> {
   const factors: RecommendationFactor[] = [];
-  
+
   // ... existing factors
   factors.push(await this.calculateNewFactor(content));
-  
+
   // ... rest of method
 }
 
@@ -423,24 +425,24 @@ await indexedDB.deleteDatabase('recome_db');
 
 ### Key Commands
 
-| Command | Purpose |
-|---------|---------|
-| `npm run dev` | Watch mode development |
-| `npm run build` | Production build |
-| `npm test` | Run tests |
-| `npm run lint` | Check code style |
-| `npm run typecheck` | TypeScript validation |
+| Command             | Purpose                |
+| ------------------- | ---------------------- |
+| `npm run dev`       | Watch mode development |
+| `npm run build`     | Production build       |
+| `npm test`          | Run tests              |
+| `npm run lint`      | Check code style       |
+| `npm run typecheck` | TypeScript validation  |
 
 ### Key Concepts
 
-| Concept | Description |
-|---------|-------------|
-| **Context Bucket** | Scoped memory container (work, entertainment, etc.) |
-| **Memory Lane** | Type of memory (short-term, mid-term, facts, etc.) |
-| **Pattern Card** | Auto-created rule from repeated behavior |
-| **Affinity** | User's preference score for an entity (-1 to 1) |
-| **Entity** | Node in knowledge graph (topic, brand, creator, etc.) |
-| **Relation** | Edge in knowledge graph (similar_to, blocked, etc.) |
+| Concept            | Description                                           |
+| ------------------ | ----------------------------------------------------- |
+| **Context Bucket** | Scoped memory container (work, entertainment, etc.)   |
+| **Memory Lane**    | Type of memory (short-term, mid-term, facts, etc.)    |
+| **Pattern Card**   | Auto-created rule from repeated behavior              |
+| **Affinity**       | User's preference score for an entity (-1 to 1)       |
+| **Entity**         | Node in knowledge graph (topic, brand, creator, etc.) |
+| **Relation**       | Edge in knowledge graph (similar_to, blocked, etc.)   |
 
 ---
 

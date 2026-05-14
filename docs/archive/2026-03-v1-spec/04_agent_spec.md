@@ -11,6 +11,7 @@ It should help users compare, understand, and track options before it ever attem
 The agent is not the primary product in v1.
 
 The sequence should be:
+
 1. extension proves value on page
 2. brain proves durable memory
 3. agent adds higher-level comparison and planning
@@ -55,6 +56,7 @@ flowchart TD
 ## Inputs
 
 The agent should use:
+
 - current user question
 - active contexts
 - preference graph state
@@ -65,6 +67,7 @@ The agent should use:
 ## Outputs
 
 The agent should return:
+
 - ranked options
 - short explanations
 - key tradeoffs
@@ -73,7 +76,9 @@ The agent should return:
 ## UX Model
 
 ### Response Structure
+
 Recommended answer format:
+
 - best match
 - alternatives
 - why this ranking
@@ -81,6 +86,7 @@ Recommended answer format:
 - suggested next step
 
 ### Example response skeleton
+
 ```text
 Best match: Product A
 Why: You prefer durability over lowest price, and this brand has positive history in your profile.
@@ -93,10 +99,13 @@ Next: Save to watchlist or open product page
 ## Agent Capabilities
 
 ### 1. Ask-and-rank
+
 Given a category or shopping goal, return ranked products.
 
 ### 2. Compare-and-explain
+
 Given multiple products, identify differences across:
+
 - price
 - shipping
 - seller trust
@@ -104,14 +113,18 @@ Given multiple products, identify differences across:
 - feature fit
 
 ### 3. Watchlists
+
 Users can:
+
 - save products
 - save categories
 - save retailer-specific listings
 - attach price or preference notes later
 
 ### 4. Intent updates from conversation
+
 Examples:
+
 - I already bought this kind of item
 - I only need this once
 - I prefer Sony for headphones
@@ -124,23 +137,26 @@ These statements should be normalized into IntentEvent records.
 The agent should not complete the shopping flow itself in v1.
 
 Instead it should hand off via:
+
 - deep link to product page
 - extension-aware open action
 - optional compare list view later
 
 ### Handoff contract
+
 ```ts
 type AgentOpenAction = {
-  action: 'open_product' | 'open_compare' | 'save_watchlist'
-  targetUrl?: string
-  candidateIds?: string[]
-  metadata?: Record<string, unknown>
-}
+  action: 'open_product' | 'open_compare' | 'save_watchlist';
+  targetUrl?: string;
+  candidateIds?: string[];
+  metadata?: Record<string, unknown>;
+};
 ```
 
 ## Retrieval Strategy
 
 The agent should retrieve:
+
 - matching intents
 - relevant contexts
 - relevant category history
@@ -175,6 +191,7 @@ sequenceDiagram
 ## Launch Criteria
 
 The agent is ready for MVP only when:
+
 - the brain schema is stable enough for shared access
 - extension intent capture is already useful
 - recommendations can be explained clearly
@@ -183,6 +200,7 @@ The agent is ready for MVP only when:
 ## Future Directions
 
 Only after trust and signal quality are proven:
+
 - proactive watchlist alerts
 - richer compare pages
 - cross-retailer bundles

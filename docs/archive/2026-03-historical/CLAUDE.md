@@ -9,6 +9,7 @@ This file is read automatically by Claude Code at the start of every session.
 **RecoMe** is a Chrome Manifest V3 browser extension that gives users intelligent control over recommendation feeds on YouTube, Amazon, Twitter, Facebook, eBay, and Walmart.
 
 Core innovations:
+
 - **Mnemosyne** — a human-like memory system with context buckets, forgetting lifecycle, and pattern detection
 - **Knowledge Graph** — semantic entity relationships that enable affinity propagation ("block crypto → auto-blocks BTC, NFT, Ethereum…")
 
@@ -39,11 +40,11 @@ chub annotate <id> "note about the gap or workaround"
 
 ### Docs relevant to RecoMe
 
-| When you are working on… | Run this |
-|---|---|
-| Any Claude API / Anthropic SDK integration | `chub get anthropic/claude-api --lang js` |
+| When you are working on…                   | Run this                                    |
+| ------------------------------------------ | ------------------------------------------- |
+| Any Claude API / Anthropic SDK integration | `chub get anthropic/claude-api --lang js`   |
 | ChromaDB vector search (future AI feature) | `chub get chromadb/embeddings-db --lang js` |
-| Analytics / event tracking | `chub get amplitude/analytics --lang js` |
+| Analytics / event tracking                 | `chub get amplitude/analytics --lang js`    |
 
 > **Note:** Chrome extension APIs, IndexedDB, MutationObserver, React, Webpack, and Jest are **not yet in context-hub**. Use MDN Web Docs and Chrome Developer docs for these. If you find a gap that would be useful to the community, run `chub feedback <id> up/down` or suggest contributing.
 
@@ -58,15 +59,15 @@ chub annotate <id> "note about the gap or workaround"
 
 ## Tech Stack (quick ref)
 
-| Layer | Technology |
-|---|---|
-| Language | TypeScript 5 |
-| Extension | Chrome Manifest V3 |
-| UI | React 18 |
-| Storage | IndexedDB via `idb` library |
-| Build | Webpack 5 |
-| Tests | Jest |
-| Style | TailwindCSS |
+| Layer     | Technology                  |
+| --------- | --------------------------- |
+| Language  | TypeScript 5                |
+| Extension | Chrome Manifest V3          |
+| UI        | React 18                    |
+| Storage   | IndexedDB via `idb` library |
+| Build     | Webpack 5                   |
+| Tests     | Jest                        |
+| Style     | TailwindCSS                 |
 
 ---
 
@@ -114,12 +115,12 @@ Load the extension in Chrome: `chrome://extensions` → Developer mode → Load 
 
 ## Implementation Phases
 
-| Phase | Focus |
-|---|---|
-| 1 | Foundation: MV3 scaffold, build, message broker, IndexedDB schema |
-| 2 | Mnemosyne memory system |
-| 3 | Knowledge graph + affinity calculator |
-| 4 | Recommendation engine + all 6 platform adapters |
-| 5 | React popup, onboarding, achievements, polish |
+| Phase | Focus                                                             |
+| ----- | ----------------------------------------------------------------- |
+| 1     | Foundation: MV3 scaffold, build, message broker, IndexedDB schema |
+| 2     | Mnemosyne memory system                                           |
+| 3     | Knowledge graph + affinity calculator                             |
+| 4     | Recommendation engine + all 6 platform adapters                   |
+| 5     | React popup, onboarding, achievements, polish                     |
 
 Start at Phase 1 unless a phase is explicitly marked done.

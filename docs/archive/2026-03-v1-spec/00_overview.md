@@ -3,6 +3,7 @@
 ## Product Thesis
 
 RecoMe should be built as one product with three coordinated parts:
+
 - RecoMe Extension
 - RecoMe Brain
 - RecoMe Agent
@@ -14,6 +15,7 @@ The extension captures intent and reshapes recommendations in the browser. The b
 RecoMe is a consumer-controlled recommendation intelligence layer.
 
 Its job is to help users:
+
 - express explicit intent
 - reduce unwanted recommendations
 - improve shopping relevance
@@ -23,11 +25,13 @@ Its job is to help users:
 ## Build Order
 
 ### Phase Order
+
 1. Extension utility first
 2. Shared brain second
 3. Agent companion after trust is earned
 
 ### Why this order
+
 - The extension creates immediate user value on real pages.
 - The extension is the best place to capture explicit signals.
 - The brain should be designed early but can begin as local-first data structures.
@@ -37,7 +41,9 @@ Its job is to help users:
 ## Product Boundaries
 
 ### RecoMe Extension
+
 Responsibilities:
+
 - Run on supported sites in the browser
 - Extract products, brands, sellers, and contextual entities from pages
 - Show overlays, badges, and explanation UI
@@ -45,12 +51,15 @@ Responsibilities:
 - Apply local recommendation adjustments in real time
 
 Should not do in v1:
+
 - act as a full autonomous browser automation system
 - perform checkout automatically
 - host heavy agent orchestration logic
 
 ### RecoMe Brain
+
 Responsibilities:
+
 - Maintain the preference graph
 - Store user intents and contexts
 - Score offers and recommendation candidates
@@ -59,11 +68,14 @@ Responsibilities:
 - Support import/export and future encrypted sync
 
 Should not do in v1:
+
 - depend on a complex cloud backend for the core MVP
 - require cross-device sync to prove value
 
 ### RecoMe Agent
+
 Responsibilities:
+
 - answer recommendation questions
 - compare options across retailers
 - explain best matches
@@ -71,6 +83,7 @@ Responsibilities:
 - hand users back to extension-aware browsing contexts
 
 Should not do in v1:
+
 - autonomously purchase
 - own the primary recommendation UX
 - replace extension overlays for in-page interventions
@@ -78,12 +91,15 @@ Should not do in v1:
 ## MVP Scope
 
 ### MVP Goal
+
 Prove that RecoMe can own preference memory and improve shopping recommendations on one e-commerce surface.
 
 ### Recommended MVP Surface
+
 - Amazon-first browsing workflow
 
 ### MVP Capabilities
+
 - product and PDP extraction
 - explicit intent capture
 - confidence scoring v1
@@ -94,12 +110,14 @@ Prove that RecoMe can own preference memory and improve shopping recommendations
 ## Key Guardrails
 
 ### Must do now
+
 - Keep the extension useful on its own
 - Make intent explicit and easy to edit
 - Keep explanations short and visible
 - Design a stable shared schema early
 
 ### Do not do yet
+
 - Do not make the extension a full automation runtime
 - Do not start with autonomous purchasing
 - Do not mix heavy agent logic into page overlays
