@@ -60,21 +60,6 @@ export default function AdminDashboard() {
               ))}
             </div>
           </div>
-
-          {/* Quick actions */}
-          <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6">
-            <h2 className="text-sm font-bold uppercase tracking-widest text-white/40 mb-4">
-              Quick Actions
-            </h2>
-            <div className="flex flex-wrap gap-3">
-              <QuickAction href="/admin/users" label="Manage Users" icon="👥" />
-              <QuickAction href="/admin/flags" label="Feature Flags" icon="🚩" />
-              <QuickAction href="/admin/deployments" label="Deployments" icon="🚀" />
-              <QuickAction href="/admin/config" label="App Config" icon="⚙️" />
-              <QuickAction href="/admin/errors" label="Error Logs" icon="🐛" />
-              <QuickAction href="/admin/audit" label="Audit Log" icon="📋" />
-            </div>
-          </div>
         </>
       )}
     </div>
@@ -90,17 +75,5 @@ function StatCard({ label, value, icon }: { label: string; value: number; icon: 
       </div>
       <div className="text-2xl font-black">{value.toLocaleString()}</div>
     </div>
-  );
-}
-
-function QuickAction({ href, label, icon }: { href: string; label: string; icon: string }) {
-  return (
-    <a
-      href={href}
-      className="flex items-center gap-2 bg-white/[0.04] border border-white/[0.08] rounded-lg px-4 py-2.5 text-sm font-medium text-white/60 hover:text-white hover:bg-white/[0.08] transition-colors"
-    >
-      <span>{icon}</span>
-      {label}
-    </a>
   );
 }

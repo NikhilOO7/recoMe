@@ -6,15 +6,7 @@ import { useEffect, useState } from 'react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://recome-api.fly.dev';
 
-const ADMIN_NAV = [
-  { href: '/admin', label: 'Dashboard', icon: '📊' },
-  { href: '/admin/users', label: 'Users', icon: '👥' },
-  { href: '/admin/flags', label: 'Feature Flags', icon: '🚩' },
-  { href: '/admin/deployments', label: 'Deployments', icon: '🚀' },
-  { href: '/admin/config', label: 'App Config', icon: '⚙️' },
-  { href: '/admin/errors', label: 'Error Logs', icon: '🐛' },
-  { href: '/admin/audit', label: 'Audit Log', icon: '📋' },
-];
+const ADMIN_NAV = [{ href: '/admin', label: 'Dashboard', icon: '📊' }];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
