@@ -14,22 +14,28 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "graph:migrate": "tsx scripts/migrate.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.8",
     "@prisma/client": "^6.5.0",
+    "@qdrant/js-client-rest": "^1.11.0",
+    "bcryptjs": "^3.0.2",
     "hono": "^4.7.6",
     "jsonwebtoken": "^9.0.2",
+    "nanoid": "^5.1.5",
+    "neo4j-driver": "^5.24.0",
+    "openai": "^4.73.1",
+    "pino": "^9.5.0",
     "stripe": "^17.7.0",
-    "bcryptjs": "^3.0.2",
-    "zod": "^3.24.3",
-    "nanoid": "^5.1.5"
+    "zod": "^3.24.3"
   },
   "devDependencies": {
-    "@types/jsonwebtoken": "^9.0.9",
     "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^22.14.1",
+    "pino-pretty": "^11.3.0",
     "prisma": "^6.5.0",
     "tsx": "^4.19.4",
     "typescript": "^5.9.3",

@@ -37,6 +37,18 @@ export default [
     },
   },
   {
-    ignores: ['dist/**', 'node_modules/**', '*.config.js', '*.config.mjs'],
+    // cloud/ has its own tooling (cloud/tsconfig.json + vitest), web/ has its
+    // own eslint.config.mjs, mobile/ uses Expo's setup, and graveyard/ is
+    // intentionally out of build. None of these should be linted from root.
+    ignores: [
+      'dist/**',
+      'node_modules/**',
+      '*.config.js',
+      '*.config.mjs',
+      'cloud/**',
+      'web/**',
+      'mobile/**',
+      'graveyard/**',
+    ],
   },
 ];

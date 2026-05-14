@@ -24,6 +24,24 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(3001),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   CORS_ORIGINS: z.string().default('chrome-extension://,http://localhost:*'),
+
+  // ── Intelligence stack (ADR-0001) ──────────────────────────────────────────
+  INTELLIGENCE_ENABLED: z.coerce.boolean().default(false),
+  INTELLIGENCE_RUN_MIGRATIONS_ON_BOOT: z.coerce.boolean().default(false),
+
+  NEO4J_URI: z.string().optional(),
+  NEO4J_USERNAME: z.string().optional(),
+  NEO4J_PASSWORD: z.string().optional(),
+  NEO4J_DATABASE: z.string().default('neo4j'),
+
+  QDRANT_URL: z.string().optional(),
+  QDRANT_API_KEY: z.string().optional(),
+  QDRANT_COLLECTION: z.string().default('recome_v1'),
+
+  OPENAI_API_KEY: z.string().optional(),
+  OPENAI_EMBEDDING_MODEL: z.string().default('text-embedding-3-small'),
+
+  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).optional(),
 });
 
 export type Config = z.infer<typeof envSchema>;
