@@ -82,6 +82,11 @@ jest.mock('@intelligence/index', () => ({
     getMemoryService: () => mockMemoryService,
     getGraph: () => mockGraph,
     invalidateSettingsCache: mockInvalidateSettingsCache,
+    // IMPLICIT_SIGNAL handler calls this directly on IntelligenceService
+    // (not on MemoryService). Forwarding to mockRecordImplicitSignal keeps
+    // assertions consistent across the existing and new platform-attribution
+    // tests.
+    recordImplicitSignalWithGraphBridge: (...args: unknown[]) => mockRecordImplicitSignal(...args),
   })),
 }));
 
@@ -162,6 +167,16 @@ jest.mock('../decisionLog', () => ({
 jest.mock('../achievements', () => ({
   trackProductsScored: jest.fn().mockResolvedValue(undefined),
   trackWatchlistAdd: jest.fn().mockResolvedValue(undefined),
+}));
+
+// GraphSync forwards signals to the cloud intelligence stack.
+// Unit tests mock it out — the cloud round-trip is exercised by the
+// cloud/src/intelligence/__tests__/thesis-flow.integration.test.ts suite.
+const mockEnqueueGraphSignal = jest.fn();
+jest.mock('../cloudSync/GraphSyncService', () => ({
+  enqueueGraphSignal: (...args: unknown[]) => mockEnqueueGraphSignal(...args),
+  initGraphSync: jest.fn(),
+  getGraphSync: jest.fn(() => null),
 }));
 
 // ── Helpers ──────────────────────────────────────────────────────────────────────
@@ -480,6 +495,34 @@ describe('messageHandler', () => {
         type: 'view',
       });
     });
+
+    // Regression guard for the April 7 audit P0:
+    //   "Reddit signals lose platform attribution"
+    // Reddit must travel through the pipeline with platform preserved exactly
+    // so cross-platform research trails can attribute the hop correctly.
+    it.each(['reddit', 'youtube', 'amazon', 'twitter', 'instagram', 'tiktok', 'linkedin'] as const)(
+      'preserves platform="%s" attribution through the IMPLICIT_SIGNAL path',
+      async (platform) => {
+        mockRecordImplicitSignal.mockClear();
+        const res = await dispatch({
+          type: 'IMPLICIT_SIGNAL',
+          payload: {
+            topics: ['eames-lounge-chair'],
+            entities: ['eames-lounge-chair'],
+            platform,
+            signalType: 'dwell_extended',
+            contentId: `c-${platform}`,
+            contentTitle: `Eames discussion on ${platform}`,
+          },
+        });
+
+        expect(res.success).toBe(true);
+        expect(mockRecordImplicitSignal).toHaveBeenCalledTimes(1);
+        const callArg = mockRecordImplicitSignal.mock.calls[0][0];
+        expect(callArg.platform).toBe(platform);
+        expect(callArg.topics).toEqual(['eames-lounge-chair']);
+      },
+    );
   });
 
   describe('GET_MEMORY_PACK', () => {

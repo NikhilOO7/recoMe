@@ -22,6 +22,7 @@ import type { Platform } from '@schema/context';
 import type { RecoMeMessage, MessageResponse, CloudAccountStatus } from '@shared/messages';
 import { safeStorageSyncGet, safeStorageSyncSet } from '@shared/storageSync';
 import { getSyncManager, getLicenseManager } from './cloudServices';
+import { enqueueGraphSignal } from './cloudSync/GraphSyncService';
 import { saveApiKeys, loadApiKeys } from '@shared/KeyVault';
 import { CLOUD_URL } from '@shared/constants';
 import {
@@ -63,6 +64,73 @@ function derivePlatformFromUrl(url: string | undefined): string {
     /* invalid URL */
   }
   return 'unknown';
+}
+
+/**
+ * Translate the extension's implicit signal vocabulary into the cloud
+ * intelligence SignalKind. Indeed/Glassdoor/Udemy/Coursera/Edx don't have
+ * cloud platform identities yet — they fall through to 'generic'.
+ */
+type CloudSignalKind =
+  | 'view'
+  | 'dwell'
+  | 'like'
+  | 'block'
+  | 'boost'
+  | 'purchase'
+  | 'comparison'
+  | 'search';
+type CloudPlatform =
+  | 'youtube'
+  | 'reddit'
+  | 'amazon'
+  | 'walmart'
+  | 'ebay'
+  | 'twitter'
+  | 'facebook'
+  | 'instagram'
+  | 'tiktok'
+  | 'linkedin'
+  | 'generic';
+
+function mapSignalKind(signalType: string): CloudSignalKind {
+  switch (signalType) {
+    case 'dwell_extended':
+      return 'dwell';
+    case 'click_through':
+    case 'revisit':
+      return 'like';
+    case 'dwell_short':
+    case 'scroll_past':
+    case 'view':
+      return 'view';
+    case 'block':
+    case 'boost':
+    case 'purchase':
+    case 'comparison':
+    case 'search':
+      return signalType;
+    default:
+      return 'view';
+  }
+}
+
+function normalizeCloudPlatform(platform: string | undefined): CloudPlatform {
+  switch (platform) {
+    case 'youtube':
+    case 'reddit':
+    case 'amazon':
+    case 'walmart':
+    case 'ebay':
+    case 'twitter':
+    case 'facebook':
+    case 'instagram':
+    case 'tiktok':
+    case 'linkedin':
+      return platform;
+    default:
+      return 'generic';
+  }
 }
 
 export function handleMessage(
@@ -145,7 +213,7 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
     case 'IMPLICIT_SIGNAL': {
       const sig = message.payload;
       // Use the graph-bridged method so browsing signals also populate
-      // the KnowledgeGraph — required for Research Card on Amazon PDP
+      // the local KnowledgeGraph — required for Research Card on Amazon PDP
       await svc.recordImplicitSignalWithGraphBridge({
         topics: sig.topics,
         entities: sig.entities,
@@ -170,6 +238,19 @@ async function dispatch(message: RecoMeMessage): Promise<MessageResponse> {
         topicKey: `implicit:${sig.signalType}`,
         type: sig.signalType,
       });
+
+      // Fan out to the cloud intelligence stack. No-op if the user hasn't
+      // opted in to cloud sync; GraphSync handles batching, retry, and the
+      // opt-in gate internally.
+      enqueueGraphSignal({
+        kind: mapSignalKind(sig.signalType),
+        platform: normalizeCloudPlatform(sig.platform),
+        pageUrl: sig.contentId.startsWith('http') ? sig.contentId : undefined,
+        pageTitle: sig.contentTitle,
+        topics: sig.topics.map((name) => ({ name })),
+        entities: sig.entities.map((name) => ({ name, kind: 'product' })),
+      });
+
       return ok(undefined);
     }
 

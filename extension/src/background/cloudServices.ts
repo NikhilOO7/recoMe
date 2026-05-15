@@ -3,6 +3,7 @@ import { LicenseManager } from '@shared/sync/LicenseManager';
 import { FeatureGate } from '@shared/sync/FeatureGate';
 import { createLogger } from '@shared/Logger';
 import { CLOUD_URL } from '@shared/constants';
+import { initGraphSync } from './cloudSync/GraphSyncService';
 
 const log = createLogger('CloudServices');
 
@@ -22,6 +23,11 @@ export async function initCloudServices(): Promise<void> {
     await syncManager.init();
 
     featureGate = new FeatureGate(() => licenseManager!.getTier());
+
+    // GraphSync is independent of the legacy SyncManager — it gates on its
+    // own opt-in setting and only ships signals to /intelligence/signals.
+    // Safe to init unconditionally; it is a no-op until the user opts in.
+    initGraphSync();
 
     // If user was previously authenticated, start auto-sync and license validation
     if (syncManager.isAvailable()) {
