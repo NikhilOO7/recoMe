@@ -302,6 +302,76 @@ model AuditLog {
   @@index([createdAt])
 }
 
+// ── IaaS: Tenants & API Keys ──────────────────────────────────────────────
+// Multi-tenant surface for the public /v1/ API (see ADR-0003).
+// Tenant isolation in the graph/vector store is enforced via composed
+// userIds (tenant_<id>__<externalUserId>) — see lib/tenantUserId.ts.
+
+model Tenant {
+  id            String      @id @default(cuid())
+  /// Human-readable name (e.g. "Acme Notes")
+  name          String
+  /// Optional billing email; can differ from the owner's account email.
+  billingEmail  String?
+  /// Pricing tier — gates rate limits and monthly quotas.
+  plan          TenantPlan  @default(FREE)
+  /// Soft-disable a tenant without deleting (suspends key auth + ingestion).
+  status        TenantStatus @default(ACTIVE)
+  /// Optional Stripe customer for usage-based billing.
+  stripeCustomerId String?  @unique
+  /// Owner — the human / account responsible for this tenant.
+  /// Nullable for first-party Recome tenants seeded by ops.
+  ownerUserId   String?
+  apiKeys       ApiKey[]
+  usage         TenantUsage[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([ownerUserId])
+  @@index([status])
+}
+
+model ApiKey {
+  id            String      @id @default(cuid())
+  tenantId      String
+  tenant        Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  /// Human label shown in the dashboard (e.g. "production-server-1").
+  label         String
+  /// SHA-256 of the raw key. Raw key is shown to the user exactly once.
+  keyHash       String      @unique
+  /// First 12 chars of the raw key, stored cleartext for UI display
+  /// (e.g. "rk_live_a3f8…"). Safe to expose; not enough to authenticate.
+  keyPrefix     String
+  /// "live" or "test" — informational; auth is identical for both.
+  environment   ApiKeyEnv   @default(LIVE)
+  /// Optional scopes; null = full access. Reserved for future granularity.
+  scopes        String[]    @default([])
+  lastUsedAt    DateTime?
+  expiresAt     DateTime?
+  revokedAt     DateTime?
+  createdAt     DateTime    @default(now())
+
+  @@index([tenantId])
+  @@index([keyHash])
+}
+
+/// Per-tenant, per-period usage counters. Window is "YYYY-MM" (monthly).
+/// Updated on every signal ingest / query. Used for quota enforcement and billing.
+model TenantUsage {
+  id            String      @id @default(cuid())
+  tenantId      String
+  tenant        Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  /// "YYYY-MM" window. Composite-unique with tenantId.
+  period        String
+  signalsIngested  Int      @default(0)
+  queriesServed    Int      @default(0)
+  embeddingsBilled Int      @default(0)
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([tenantId, period])
+  @@index([period])
+}
+
 // ── Enums ────────────────────────────────────────────────────────────────────
 
 enum Role {
@@ -346,4 +416,22 @@ enum SyncDataType {
   FILTER_RULES
   DECISION_HISTORY
   PLATFORM_SETTINGS
+}
+
+enum TenantPlan {
+  FREE
+  STARTER
+  PRO
+  ENTERPRISE
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum ApiKeyEnv {
+  LIVE
+  TEST
 }

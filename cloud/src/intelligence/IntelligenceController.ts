@@ -1,71 +1,8 @@
 import { Hono } from 'hono';
-import { z } from 'zod';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { getIntelligence } from './IntelligenceService.js';
+import { signalBatchSchema } from './schemas.js';
 import { logger } from '../observability/logger.js';
-
-const platformEnum = z.enum([
-  'youtube',
-  'reddit',
-  'amazon',
-  'walmart',
-  'ebay',
-  'twitter',
-  'facebook',
-  'instagram',
-  'tiktok',
-  'linkedin',
-  'generic',
-]);
-
-const signalKindEnum = z.enum([
-  'view',
-  'dwell',
-  'like',
-  'block',
-  'boost',
-  'purchase',
-  'comparison',
-  'search',
-]);
-
-const entityKindEnum = z.enum([
-  'product',
-  'brand',
-  'creator',
-  'category',
-  'media',
-  'place',
-  'person',
-]);
-
-const signalSchema = z.object({
-  id: z.string().min(1).max(64).optional(),
-  kind: signalKindEnum,
-  ts: z.number().int().positive().optional(),
-  weight: z.number().min(0).max(100).optional(),
-  pageUrl: z.string().url().optional(),
-  pageTitle: z.string().max(500).optional(),
-  platform: platformEnum.optional(),
-  topics: z
-    .array(z.object({ name: z.string().min(1).max(120) }))
-    .max(20)
-    .optional(),
-  entities: z
-    .array(
-      z.object({
-        name: z.string().min(1).max(200),
-        kind: entityKindEnum,
-        platform: platformEnum.optional(),
-      }),
-    )
-    .max(20)
-    .optional(),
-  sessionId: z.string().max(64).optional(),
-  metadata: z.record(z.union([z.string(), z.number(), z.boolean()])).optional(),
-});
-
-const batchSchema = z.object({ signals: z.array(signalSchema).min(1).max(100) });
 
 type AuthVars = { Variables: { userId: string; tier?: string; deviceId?: string } };
 
@@ -75,7 +12,7 @@ export function createIntelligenceRoutes(): Hono<AuthVars> {
 
   /** POST /intelligence/signals — batched signal ingestion. */
   app.post('/signals', async (c) => {
-    const parsed = batchSchema.safeParse(await c.req.json().catch(() => null));
+    const parsed = signalBatchSchema.safeParse(await c.req.json().catch(() => null));
     if (!parsed.success) {
       return c.json({ error: 'invalid_signals', details: parsed.error.flatten() }, 400);
     }

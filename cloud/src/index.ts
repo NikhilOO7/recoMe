@@ -12,6 +12,7 @@ import { createAgentRoutes } from './agent/AgentController.js';
 import { createTasteTwinRoutes } from './tastetwin/TasteTwinController.js';
 import { createAdminRoutes } from './admin/AdminController.js';
 import { createIntelligenceRoutes } from './intelligence/IntelligenceController.js';
+import { createV1Routes } from './iaas/V1Controller.js';
 import { rateLimiter } from './middleware/rateLimiter.js';
 import { logger } from './observability/logger.js';
 import { installSignalHandlers } from './observability/lifecycle.js';
@@ -76,6 +77,9 @@ app.route('/admin', createAdminRoutes());
 
 if (getConfig().INTELLIGENCE_ENABLED) {
   app.route('/intelligence', createIntelligenceRoutes());
+  // Public IaaS surface — same backend, API-key auth + tenant scoping.
+  // See ADR-0003 §2.3 and cloud/src/iaas/V1Controller.ts for the contract.
+  app.route('/v1', createV1Routes());
 }
 
 // ── 404 / Error ──────────────────────────────────────────────────────────────
