@@ -629,12 +629,15 @@
         <a href="#architecture">Architecture</a>
         <a href="#capture">Capture</a>
         <a href="#graph">Graph</a>
+        <a href="#agents">Agents</a>
         <a href="#tenant">IaaS isolation</a>
         <a href="#stack">Stack</a>
         <a href="#api">API</a>
+        <a href="#surfaces">Unique</a>
         <a href="#roadmap">Roadmap</a>
         <a href="#pricing">Pricing</a>
-        <a href="#vs">vs Perplexity</a>
+        <a href="#vs">vs landscape</a>
+        <a href="#docs">Docs</a>
       </div>
     </nav>
 
@@ -1320,6 +1323,85 @@
       </div>
     </section>
 
+    <!-- ───────── Active Agents (ADR-0012) ───────── -->
+    <section id="agents">
+      <div class="wrap">
+        <div class="reveal">
+          <div class="eyebrow">Active agents</div>
+          <h2>Background workers that bring you things. Perplexity is reactive. Recome is proactive.</h2>
+          <p class="sub">
+            Six agents read your graph on a schedule or on capture events and surface forgotten captures,
+            price drops, fresh content, and stalled decisions. Every output cites the signals it drew from.
+            None of them takes irreversible action &mdash; recommend only.
+            See <a href="0012-active-agents-and-personality-mirror.md">ADR-0012</a>.
+          </p>
+        </div>
+
+        <div class="grid grid-3" style="margin-top: 32px;">
+          <div class="card reveal">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+              <h3 style="margin: 0;">Recall</h3>
+              <span style="font-size:11px; color:var(--green); font-weight:600;">SHIPPED</span>
+            </div>
+            <p>Event-triggered. When a new signal lands on a topic, surfaces the right forgotten capture from ≥14 days ago. Zero LLM cost &mdash; deterministic ranking. Throttled to ≤2/wk per user.</p>
+            <p style="color:var(--text-faint); font-size:13px; margin-top:8px;">F-313 &middot; <code>cloud/src/agents/recall/</code></p>
+          </div>
+          <div class="card reveal" data-delay="1">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+              <h3 style="margin: 0;">Concierge</h3>
+              <span style="font-size:11px; color:var(--amber); font-weight:600;">PHASE 2</span>
+            </div>
+            <p>Tracks prices + alternatives + reviews on active purchase intents. 4×/day per active trail. Notifies on $-drop or stock change. Does NOT click buy &mdash; ever.</p>
+            <p style="color:var(--text-faint); font-size:13px; margin-top:8px;">F-311 &middot; needs price-API vendor decision</p>
+          </div>
+          <div class="card reveal" data-delay="2">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+              <h3 style="margin: 0;">Curator</h3>
+              <span style="font-size:11px; color:var(--amber); font-weight:600;">PHASE 2</span>
+            </div>
+            <p>Pulls fresh content from RSS / YouTube uploads / Reddit / Substack matching active interests. Daily digest. Read-only &mdash; never posts on your behalf.</p>
+            <p style="color:var(--text-faint); font-size:13px; margin-top:8px;">F-312 &middot; needs RSS + YouTube adapters</p>
+          </div>
+          <div class="card reveal">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+              <h3 style="margin: 0;">Decision</h3>
+              <span style="font-size:11px; color:var(--violet); font-weight:600;">PHASE 3</span>
+            </div>
+            <p>On-demand. Pulls the full trail for one decision, summarizes options, recommends with full citations back to your captured signals.</p>
+            <p style="color:var(--text-faint); font-size:13px; margin-top:8px;">F-316 &middot; replaces &quot;chat&quot;</p>
+          </div>
+          <div class="card reveal" data-delay="1">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+              <h3 style="margin: 0;">Watchlist</h3>
+              <span style="font-size:11px; color:var(--violet); font-weight:600;">PHASE 3</span>
+            </div>
+            <p>User-set explicit watch on a topic, entity, or person. Notifies on graph changes &mdash; price, new mention, sentiment shift. Real-time on signal arrival.</p>
+            <p style="color:var(--text-faint); font-size:13px; margin-top:8px;">F-315</p>
+          </div>
+          <div class="card reveal" data-delay="2">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+              <h3 style="margin: 0;">Synthesist</h3>
+              <span style="font-size:11px; color:var(--violet); font-weight:600;">PHASE 3</span>
+            </div>
+            <p>Weekly long-form &quot;where you are on each active intent&quot; report. Replaces the templated digest with an LLM-synthesized one.</p>
+            <p style="color:var(--text-faint); font-size:13px; margin-top:8px;">F-317</p>
+          </div>
+        </div>
+
+        <div class="reveal" style="margin-top: 48px; padding: 24px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg-elev-1);">
+          <div class="eyebrow" style="margin-bottom: 8px;">Trust constraints (binding)</div>
+          <ul style="margin: 0; padding-left: 20px; color: var(--text-dim); line-height: 1.8;">
+            <li><strong>No irreversible action.</strong> Every agent output is a recommendation. User clicks buy / post / send / delete.</li>
+            <li><strong>Sources mandatory.</strong> Every event cites the captured signals it drew from.</li>
+            <li><strong>One-click pause per agent.</strong> Pause persists. No re-enable without explicit user action.</li>
+            <li><strong>Quiet hours respected</strong> (default 22:00&ndash;08:00 local).</li>
+            <li><strong>Daily cost ceiling per user</strong> (default $0.10 LLM spend, hard cap).</li>
+            <li><strong>Personality Mirror = opt-in.</strong> Wipeable in one click. No psychometric labels. Never visible outside the user&apos;s own view.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
     <!-- ───────── Tech stack ───────── -->
     <section id="stack">
       <div class="wrap">
@@ -1499,6 +1581,127 @@
             <h3>GDPR delete</h3>
             <p><code>DELETE /v1/users/:id</code> drops everything: Neo4j namespace, Qdrant points, Postgres rows. Idempotent.</p>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── Unique Product Surfaces (0014) ───────── -->
+    <section id="surfaces">
+      <div class="wrap">
+        <div class="reveal">
+          <div class="eyebrow">Unique surfaces</div>
+          <h2>Eight features no competitor can ship without invalidating their core product.</h2>
+          <p class="sub">
+            Every surface below has a structural reason why Perplexity, Anthropic, Glean, Karma, Mem,
+            and the agentic browsers can&rsquo;t ship it from where they sit today.
+            Full per-competitor argument in <a href="0014-unique-product-surfaces.md">0014</a>.
+          </p>
+        </div>
+
+        <div class="grid grid-2" style="margin-top: 32px;">
+          <div class="card reveal">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+              <h3 style="margin: 0;">F-401 &middot; Mind Map</h3>
+              <span style="font-size:11px; color:var(--amber); font-weight:600;">SPEC</span>
+            </div>
+            <p>Your own interest graph rendered spatially. Topic nodes sized by signal count, colored by cluster, edges by co-occurrence. Time-scrub the past 90 days.</p>
+            <p style="color:var(--text-faint); font-size:13px; margin-top:8px;">
+              <strong>Why structurally unique:</strong> Perplexity/Claude store opaque text memory.
+              Mem renders note-graphs (links between things you typed). Karma has a wishlist, not a graph.
+              We render YOUR graph back to YOU.
+            </p>
+          </div>
+          <div class="card reveal" data-delay="1">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+              <h3 style="margin: 0;">F-402 &middot; Recall</h3>
+              <span style="font-size:11px; color:var(--green); font-weight:600;">SHIPPED</span>
+            </div>
+            <p>&ldquo;You looked at this 21 days ago &mdash; still relevant.&rdquo; Surfaces forgotten captures at the moment of re-engagement on the same topic.</p>
+            <p style="color:var(--text-faint); font-size:13px; margin-top:8px;">
+              <strong>Why structurally unique:</strong> Perplexity Memory only knows what you asked Perplexity.
+              Comet only knows what happened in Comet. Mem only knows what you typed.
+              We have the cross-platform temporal graph.
+            </p>
+          </div>
+          <div class="card reveal">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+              <h3 style="margin: 0;">F-403 &middot; Cross-platform Concierge</h3>
+              <span style="font-size:11px; color:var(--amber); font-weight:600;">SPEC</span>
+            </div>
+            <p>You land on an Amazon page. We surface: &ldquo;Three weeks ago this YouTube reviewer said this exact model has bad bearings. There&rsquo;s a $200-cheaper alternative on Wayfair you also viewed.&rdquo;</p>
+            <p style="color:var(--text-faint); font-size:13px; margin-top:8px;">
+              <strong>Why structurally unique:</strong> Karma explicitly does not collect browsing history (their architectural ceiling).
+              Honey doesn&rsquo;t see content sites. Amazon&rsquo;s own recommender would never tell you &ldquo;don&rsquo;t buy this.&rdquo;
+            </p>
+          </div>
+          <div class="card reveal" data-delay="1">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+              <h3 style="margin: 0;">F-404 &middot; Curriculum mode</h3>
+              <span style="font-size:11px; color:var(--amber); font-weight:600;">SPEC</span>
+            </div>
+            <p>&ldquo;I want to understand climate policy.&rdquo; → A 4-week reading list where each week bridges from a topic you already know to a new concept, using creators and platforms you already engage with.</p>
+            <p style="color:var(--text-faint); font-size:13px; margin-top:8px;">
+              <strong>Why structurally unique:</strong> Coursera/Khan personalize the destination.
+              We personalize the BRIDGE from your existing graph to a learning goal.
+            </p>
+          </div>
+          <div class="card reveal">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+              <h3 style="margin: 0;">F-405 &middot; Interest-Graph-as-API</h3>
+              <span style="font-size:11px; color:var(--green); font-weight:600;">FOUNDATION SHIPPED</span>
+            </div>
+            <p>Other developers POST signals on behalf of their users, GET trails. <code>rk_live_*</code> bearer auth, per-tenant quotas, Stripe Meters. Same backend as recome.app.</p>
+            <p style="color:var(--text-faint); font-size:13px; margin-top:8px;">
+              <strong>Why structurally unique:</strong> Glean is enterprise-only ($7.2B valuation on that motion).
+              Perplexity/Anthropic sell answers, not graphs. People Data Labs sells contact records &mdash; wrong category.
+            </p>
+          </div>
+          <div class="card reveal" data-delay="1">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+              <h3 style="margin: 0;">F-406 &middot; Decision Completion</h3>
+              <span style="font-size:11px; color:var(--amber); font-weight:600;">SPEC</span>
+            </div>
+            <p>&ldquo;You&rsquo;ve been comparing standing desks for 23 days. You evaluated three. The Reddit consensus you saw said Uplift is the safer choice for &gt;5 years. Want me to walk through your evidence?&rdquo;</p>
+            <p style="color:var(--text-faint); font-size:13px; margin-top:8px;">
+              <strong>Why structurally unique:</strong> Chat products have no temporal stall detection.
+              Amazon would never tell you &ldquo;you&rsquo;re overthinking this.&rdquo; We have the cross-session graph.
+            </p>
+          </div>
+          <div class="card reveal">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+              <h3 style="margin: 0;">F-407 &middot; Attention Composition</h3>
+              <span style="font-size:11px; color:var(--amber); font-weight:600;">SPEC &middot; OPT-IN</span>
+            </div>
+            <p>Weekly: &ldquo;38% career/craft, 22% home setup, 18% news&mdash;up 12% w/w. You haven&rsquo;t touched fitness in 6 weeks. Want to set a target?&rdquo; Descriptive shape, NOT personality inference.</p>
+            <p style="color:var(--text-faint); font-size:13px; margin-top:8px;">
+              <strong>Hard framing constraints:</strong> Mirror, not judgment. No psychometric labels. Single-button wipe.
+              Never shown to anyone but you.
+            </p>
+          </div>
+          <div class="card reveal" data-delay="1">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;">
+              <h3 style="margin: 0;">F-408 &middot; The Audit Log of You</h3>
+              <span style="font-size:11px; color:var(--teal); font-weight:600;">FOUNDATION SHIPPED</span>
+            </div>
+            <p>Every signal we have. Every agent run. Every event surfaced. Every IaaS tenant that touched your data. Per-row delete. Full JSON export. Single button to wipe everything.</p>
+            <p style="color:var(--text-faint); font-size:13px; margin-top:8px;">
+              <strong>Why structurally unique:</strong> Every other memory product deliberately obscures this.
+              We make it the loud feature. Marketing isn&rsquo;t trust theatre &mdash; it&rsquo;s the design.
+            </p>
+          </div>
+        </div>
+
+        <div class="reveal" style="margin-top: 48px; padding: 24px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg-elev-1);">
+          <div class="eyebrow" style="margin-bottom: 8px;">Anti-features (will not build)</div>
+          <ul style="margin: 0; padding-left: 20px; color: var(--text-dim); line-height: 1.8;">
+            <li><strong>Personality type quiz.</strong> Big Five / MBTI inference from browsing is scientifically weak and privacy-hostile. Composition (F-407) is descriptive, not diagnostic.</li>
+            <li><strong>Auto-purchase / auto-post / auto-anything irreversible.</strong> User clicks every action button.</li>
+            <li><strong>Selling aggregate user data.</strong> Even anonymised. Closes the IaaS conversation forever.</li>
+            <li><strong>Engagement-optimised feed.</strong> We surface specific cited items, not infinite scrolls.</li>
+            <li><strong>Email / calendar replacement.</strong> Comet and OS providers own that. We stay in the interest-graph lane.</li>
+            <li><strong>A browser.</strong> We work with whatever browser you use. Plus mobile. Plus the PWA share-sheet.</li>
+            <li><strong>Always-on screen / audio capture.</strong> Limitless tried; Meta absorbed them; capture disabled Dec 2025. Different value model from ours.</li>
+          </ul>
         </div>
       </div>
     </section>
@@ -1719,6 +1922,71 @@
           in week 1. The product only feels magical in week 2&ndash;3 once the
           graph is dense. That&rsquo;s why bulk-import on day 1 is the load-bearing
           retention bet in Phase&nbsp;1, not Phase&nbsp;2.
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── Architecture documents ───────── -->
+    <section id="docs">
+      <div class="wrap">
+        <div class="reveal">
+          <div class="eyebrow">Architecture documents</div>
+          <h2>The full reading order. Strategic on top. Technical underneath.</h2>
+          <p class="sub">
+            Two fast paths. To pitch the product: <strong>0013 → 0014 → 0003 → 0012</strong>, forty minutes.
+            To write code: <strong>0001 → 0005 → 0006 → 0009 → 0015 → 0016</strong>.
+            Every ADR is dated, sourced, and append-only.
+          </p>
+        </div>
+
+        <div class="grid grid-2" style="margin-top: 32px;">
+          <div class="card reveal">
+            <div class="eyebrow" style="margin-bottom: 4px;">Strategy &amp; positioning</div>
+            <ul style="margin: 12px 0 0; padding-left: 18px; line-height: 1.9; color: var(--text-dim);">
+              <li><a href="0003-pivot-web-first-with-iaas.md">ADR-0003</a> &mdash; the pivot from extension-led to web+IaaS</li>
+              <li><a href="0012-active-agents-and-personality-mirror.md">ADR-0012</a> &mdash; active agents replace chat as the proactive surface</li>
+              <li><a href="0013-competitive-positioning.md">ADR-0013</a> &mdash; battle cards vs Perplexity / Anthropic / Glean / Karma / Limitless (May 2026, with sources)</li>
+              <li><a href="0014-unique-product-surfaces.md">0014</a> &mdash; F-401..F-408, the eight surfaces nobody else can ship</li>
+            </ul>
+          </div>
+          <div class="card reveal" data-delay="1">
+            <div class="eyebrow" style="margin-bottom: 4px;">Architecture &amp; design</div>
+            <ul style="margin: 12px 0 0; padding-left: 18px; line-height: 1.9; color: var(--text-dim);">
+              <li><a href="0001-graph-vector-stack.md">ADR-0001</a> &mdash; why Neo4j + Qdrant + OpenAI embeddings</li>
+              <li><a href="0005-tech-stack.md">0005</a> &mdash; definitive tech choices with rationale</li>
+              <li><a href="0006-system-architecture.md">0006</a> &mdash; components, flows, deployment</li>
+              <li><a href="0009-data-model.md">0009</a> &mdash; Postgres / Neo4j / Qdrant / Redis schemas</li>
+              <li><a href="0015-hld.md"><strong>0015 HLD</strong></a> &mdash; consolidated high-level design, single-document view</li>
+              <li><a href="0016-lld.md"><strong>0016 LLD</strong></a> &mdash; per-module detail with API contracts &amp; sequence diagrams</li>
+            </ul>
+          </div>
+          <div class="card reveal">
+            <div class="eyebrow" style="margin-bottom: 4px;">Plan &amp; execution</div>
+            <ul style="margin: 12px 0 0; padding-left: 18px; line-height: 1.9; color: var(--text-dim);">
+              <li><a href="0004-production-roadmap.md">0004</a> &mdash; phased roadmap with KPIs and kill criteria</li>
+              <li><a href="0007-feature-catalog.md">0007</a> &mdash; every feature with user story + acceptance criteria</li>
+              <li><a href="0008-workflows-and-personas.md">0008</a> &mdash; end-to-end user journeys per persona</li>
+              <li><a href="0011-cost-and-iaas-gtm.md">0011</a> &mdash; unit economics, capacity model, IaaS pricing &amp; GTM</li>
+            </ul>
+          </div>
+          <div class="card reveal" data-delay="1">
+            <div class="eyebrow" style="margin-bottom: 4px;">Ops &amp; deployment</div>
+            <ul style="margin: 12px 0 0; padding-left: 18px; line-height: 1.9; color: var(--text-dim);">
+              <li><a href="0002-deployment-notes.md">ADR-0002</a> &mdash; how to stand up Neo4j AuraDB + Qdrant Cloud</li>
+              <li><a href="0010-security-privacy-ops.md">0010</a> &mdash; threat model, GDPR, SLOs, runbooks, on-call</li>
+              <li><a href="INDEX.md">INDEX</a> &mdash; canonical reading order &amp; doc conventions</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="reveal" style="margin-top: 48px; padding: 24px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg-elev-1);">
+          <div class="eyebrow" style="margin-bottom: 8px;">What this overview deck does NOT replace</div>
+          <p style="margin: 0; color: var(--text-dim);">
+            This page is the demo &mdash; the &ldquo;tell me about Recome in 10 minutes&rdquo; surface.
+            Decisions, trade-offs, sourced claims, and code-level detail live in the ADRs and the
+            HLD/LLD pair above. When this deck and a doc disagree, the doc wins &mdash; this is the
+            marketing surface, those are the contracts.
+          </p>
         </div>
       </div>
     </section>
