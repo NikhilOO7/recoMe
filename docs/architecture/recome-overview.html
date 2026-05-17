@@ -566,6 +566,7 @@
       .compare th { background: var(--bg-elev-2); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); }
       .compare .yes { color: var(--green); font-weight: 700; }
       .compare .no { color: var(--rose); font-weight: 700; }
+      .compare .part { color: var(--amber); font-weight: 700; }
       .compare .col-recome { color: var(--teal); }
 
       /* ── Quote callout ─────────────────────────────────────────────── */
@@ -1863,59 +1864,126 @@
       </div>
     </section>
 
-    <!-- ───────── vs Perplexity ───────── -->
+    <!-- ───────── vs landscape ───────── -->
     <section id="vs">
       <div class="wrap">
         <div class="reveal">
-          <div class="eyebrow">Differentiation</div>
-          <h2>We do not compete with Perplexity. We complement it.</h2>
+          <div class="eyebrow">vs the landscape</div>
+          <h2>The agent layer is no longer the moat. The graph layer is.</h2>
           <p class="sub">
-            Perplexity searches the world. Recome searches your past attention.
-            Different category, different data, different value.
+            Refreshed May 17 2026 against the current shipped state of Perplexity
+            (Comet, Personal Computer, Spaces with memory), Anthropic (Memory + Dreaming +
+            Managed Agents), OpenAI (Codex Background Computer Use, ChatGPT Agent),
+            Pin AI (decentralized on-device knowledge graph), and Glean (enterprise GraphRAG).
+            Per <a href="../../AUDIT_PERPLEXITY_2026-05-17.md">AUDIT_PERPLEXITY_2026-05-17.md</a>.
           </p>
         </div>
 
-        <table class="compare reveal">
+        <table class="compare reveal" style="margin-top: 24px;">
           <thead>
             <tr>
-              <th>Question</th>
-              <th>Perplexity / ChatGPT</th>
+              <th>Capability</th>
+              <th>Perplexity Comet + Personal Computer</th>
+              <th>Anthropic Claude Memory + Dreaming</th>
+              <th>Pin AI</th>
               <th class="col-recome">Recome</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td>What is X?</td>
-              <td><span class="yes">✓</span> Excellent &mdash; world knowledge, fresh.</td>
-              <td><span class="no">✗</span> Wrong tool. We route to Perplexity and say so.</td>
+              <td>Background agent runs 24/7</td>
+              <td><span class="yes">✓</span> Personal Computer (Mac Mini bundle)</td>
+              <td><span class="yes">✓</span> Dreaming (scheduled)</td>
+              <td><span class="yes">✓</span> On-device</td>
+              <td><span class="yes">✓</span> Cloud agents (Recall, Curator, Concierge)</td>
             </tr>
             <tr>
-              <td>What was I researching last Tuesday?</td>
-              <td><span class="no">✗</span> No data. Cannot answer.</td>
-              <td><span class="yes">✓</span> Trail-windowed retrieval over signals.</td>
+              <td>Captures from non-Apple sources</td>
+              <td><span class="no">✗</span> Mac-bound (Personal Computer) + Comet browser only</td>
+              <td><span class="no">✗</span> Chat sessions + Skills only</td>
+              <td><span class="no">✗</span> Single-device per install</td>
+              <td><span class="yes">✓</span> Extension + PWA share + paste + bulk import + IaaS</td>
             </tr>
             <tr>
-              <td>I&rsquo;m about to buy this &mdash; does it conflict with anything I learned?</td>
-              <td><span class="no">✗</span> No record of what you saw.</td>
-              <td><span class="yes">✓</span> Trail intersection + LLM judgment over captures.</td>
+              <td>Cross-platform attention graph</td>
+              <td><span class="no">✗</span> Memory is text/files, not graph</td>
+              <td><span class="no">✗</span> Memory is files, not graph</td>
+              <td><span class="part">~</span> Knowledge graph, single-device scope</td>
+              <td><span class="yes">✓</span> Typed Neo4j graph, cross-device</td>
             </tr>
             <tr>
-              <td>Summarize my [topic] research across all platforms last 3 weeks.</td>
-              <td><span class="no">✗</span> No cross-platform signal.</td>
-              <td><span class="yes">✓</span> Multi-source summarization, dwell-weighted.</td>
+              <td>Renders your graph back to you (Mind Map)</td>
+              <td><span class="no">✗</span> Opaque memory</td>
+              <td><span class="no">✗</span> File browser, not graph UI</td>
+              <td><span class="no">✗</span> Not user-facing</td>
+              <td><span class="yes">✓</span> F-401 spatial visualisation</td>
             </tr>
             <tr>
-              <td>Find the YouTube reviewer who said brand X has bad bearings.</td>
-              <td><span class="no">✗</span> Cannot retrieve from your history.</td>
-              <td><span class="yes">✓</span> Entity-disambig + fine-grained retrieval.</td>
+              <td>IaaS API for other developers</td>
+              <td><span class="no">✗</span> Product company, no graph API</td>
+              <td><span class="part">~</span> LLM API, not personal-graph API</td>
+              <td><span class="no">✗</span> Decentralized architecture precludes</td>
+              <td><span class="yes">✓</span> <code>/v1</code> tenant-scoped (foundation shipped)</td>
             </tr>
             <tr>
-              <td>I&rsquo;ve been on the fence about [thing] &mdash; decide for me.</td>
-              <td><span class="no">✗</span> Generic answer; no context on what you considered.</td>
-              <td><span class="yes">✓</span> Preference modeling + opinion synthesis from your trail.</td>
+              <td>End-user-facing audit log of memory</td>
+              <td><span class="part">~</span> Settings list of remembered facts</td>
+              <td><span class="part">~</span> Developer audit log, not end-user</td>
+              <td><span class="part">~</span> Implicit (on-device)</td>
+              <td><span class="yes">✓</span> F-408 full provenance + per-row delete</td>
+            </tr>
+            <tr>
+              <td>Agents take irreversible action (auto-buy, auto-post)</td>
+              <td><span class="part">~</span> Comet Assistant books / fills forms</td>
+              <td><span class="no">✗</span> N/A — agents are dev infra</td>
+              <td><span class="no">✗</span> N/A</td>
+              <td><span class="no">✗</span> By design. User clicks every action.</td>
             </tr>
           </tbody>
         </table>
+
+        <div class="reveal" style="margin-top: 48px; padding: 24px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg-elev-1);">
+          <div class="eyebrow" style="margin-bottom: 8px;">What changed since the May 14 positioning</div>
+          <ul style="margin: 0; padding-left: 20px; color: var(--text-dim); line-height: 1.8;">
+            <li>
+              <strong>Perplexity is no longer purely reactive.</strong> Personal Computer is a 24/7
+              background agent. Our framing in
+              <a href="0012-active-agents-and-personality-mirror.md">ADR-0012</a> §6 was wrong &mdash;
+              corrected May 17. The agent layer is no longer the moat; <strong>the graph layer is</strong>.
+            </li>
+            <li>
+              <strong>Perplexity Spaces now build memory from interactions.</strong> Still
+              per-Space and per-project (user has to organise); ours is automatic across surfaces.
+              Difference compresses but the cross-platform-capture distinction holds.
+            </li>
+            <li>
+              <strong>Anthropic Memory now has audit log + rollback + export.</strong> For the
+              developer managing the agent &mdash; not for the end user. F-408 (Audit Log of You)
+              remains unique as an end-user-facing surface.
+            </li>
+            <li>
+              <strong>OpenAI Operator shut down Aug 2025</strong> for failing on JS / CAPTCHAs /
+              payments. <em>Validates</em> our binding constraint that agents never take
+              irreversible action (ADR-0012 §5).
+            </li>
+            <li>
+              <strong>Pin AI is the closest direct competitor.</strong> Decentralized on-device
+              personal-intelligence + knowledge graph. We bet on cloud + sync + IaaS; they bet on
+              full on-device privacy. Different bets, same insight that the personal graph is the moat.
+            </li>
+          </ul>
+        </div>
+
+        <div class="reveal" style="margin-top: 32px;">
+          <h3 style="margin-top: 0;">The reframed pitch</h3>
+          <blockquote style="border-left: 3px solid var(--teal); padding-left: 16px; margin: 16px 0; color: var(--text);">
+            Perplexity Personal Computer acts on <em>your Mac</em> (files, apps, calendar).
+            Recome agents act on <em>your interest graph</em> (cross-platform attention).
+            Their substrate is files and apps; ours is what you actually pay attention to across
+            every platform you use. Different products, both 24/7 &mdash; only one of them is
+            structurally cross-platform from non-Apple sources.
+          </blockquote>
+        </div>
 
         <div class="callout reveal" style="margin-top: 32px;">
           <em>The risk is real:</em> with weak capture, Recome is a worse Perplexity

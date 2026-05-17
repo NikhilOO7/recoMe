@@ -138,13 +138,16 @@ Concierge does NOT click "buy now" for the user. Recommend only — see [ADR-001
 
 ### 4.2 Why it's structurally unique
 
-| Competitor                   | Why they can't ship this                                                                                                                                                                                                                  |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Karma                        | Karma explicitly does not collect browsing history ([ADR-0013 §3.6](0013-competitive-positioning.md#36-vs-karma--honey--shopping-agents)). Without knowing the user watched a YouTube review three weeks ago, this surface is impossible. |
-| Honey                        | Same architectural constraint.                                                                                                                                                                                                            |
-| Perplexity Comet             | Captures what happens IN Comet. If the user watched YouTube on the iOS app or the YouTube web site outside Comet, Comet doesn't know.                                                                                                     |
-| Amazon's own recommendations | Optimised for purchase conversion. Negative-signal surfacing ("don't buy this; bearings are bad") is antithetical to Amazon's business model.                                                                                             |
-| Reviews aggregators          | They have reviews but not the user's prior research. Generic "best of" lists.                                                                                                                                                             |
+> **Re-audited 2026-05-17** — Comet Assistant + Personal Computer can now BROWSE and shop autonomously. The differentiator narrows to "we have the user's cross-platform prior research; they don't." Updated table.
+
+| Competitor                   | Why they can't ship this                                                                                                                                                                                                                                                                                                    |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Karma                        | Karma explicitly does not collect browsing history ([ADR-0013 §3.6](0013-competitive-positioning.md#36-vs-karma--honey--shopping-agents)). Without knowing the user watched a YouTube review three weeks ago, this surface is impossible.                                                                                   |
+| Honey                        | Same architectural constraint.                                                                                                                                                                                                                                                                                              |
+| Perplexity Comet             | Comet Assistant can shop autonomously (book, fill forms, manage cart). But it captures only what happens IN Comet — the iOS YouTube app review, the Android Reddit thread, the Substack post you read on Safari are invisible. They can act on commerce; they can't ground recommendations in your cross-platform research. |
+| Perplexity Personal Computer | Reads your Mac (browser history, calendar, files). Doesn't read your phone YouTube or your work-laptop Amazon comparisons. Same cross-platform gap.                                                                                                                                                                         |
+| Amazon's own recommendations | Optimised for purchase conversion. Negative-signal surfacing ("don't buy this; bearings are bad") is antithetical to Amazon's business model.                                                                                                                                                                               |
+| Reviews aggregators          | They have reviews but not the user's prior research. Generic "best of" lists.                                                                                                                                                                                                                                               |
 
 ### 4.3 What it requires from the system
 
@@ -398,18 +401,22 @@ The export is comprehensive — graph nodes, relations, agent runs, agent events
 
 ### 9.2 Why this is the brand feature
 
-Every other personal-memory product obscures this. Perplexity Memory shows you a settings-page list of "remembered facts" you can edit, but doesn't show you the full graph, the full provenance, or the agent decision audit trail. Claude Memory: similar. Limitless: was opaque. Apple: never.
+> **Re-audited 2026-05-17.** Anthropic Memory now ships with audit log + rollback + redact + export. Differentiation narrows to audience (end user vs developer) — clarified below.
 
-We make this the loud feature. Marketing it isn't extra trust theatre; it's the design. The Mind Map (F-401) is the friendly view; the Audit Log is the unfiltered view. Both are first-class.
+Every other **end-user** personal-memory product obscures this. Perplexity Memory shows you a settings-page list of "remembered facts" you can edit, but doesn't show you the full graph, the full provenance, or the agent decision audit trail. Claude Memory (consumer): similar. Limitless: was opaque. Apple: never. **Anthropic Claude Managed Agents Memory ships with audit + rollback + export — but that's for the DEVELOPER managing the agent's memory, not the end user.** Different audience.
+
+We make this the loud END-USER feature. Marketing it isn't extra trust theatre; it's the design. The Mind Map (F-401) is the friendly view; the Audit Log is the unfiltered view. Both are first-class.
 
 ### 9.3 Why it's structurally unique
 
-| Competitor                    | Why they can't / won't ship this                                                                                                                 |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Perplexity / Claude / ChatGPT | They could, but the marketing pitch ("just talk; we remember") is in tension with showing 10,000 rows of audit. They'll do partial — never full. |
-| Karma                         | Doesn't store enough to have an audit log worth showing.                                                                                         |
-| Glean                         | The audit log is for the IT admin, not the employee. Different stakeholder.                                                                      |
-| Limitless                     | Pre-acquisition, was opaque. Post-acquisition, captures are off entirely.                                                                        |
+| Competitor                             | Why they can't / won't ship this                                                                                                                                                                                                          |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Perplexity / Claude consumer / ChatGPT | They could, but the marketing pitch ("just talk; we remember") is in tension with showing 10,000 rows of audit. They'll do partial — never full.                                                                                          |
+| Anthropic Claude Managed Agents Memory | **Has** audit log + rollback + redact + export — but the audience is developers managing agents, not end users inspecting their own personal-attention data. The audit log lives in `claude.ai` developer console, not in a consumer app. |
+| Karma                                  | Doesn't store enough to have an audit log worth showing.                                                                                                                                                                                  |
+| Glean                                  | The audit log is for the IT admin, not the employee. Different stakeholder.                                                                                                                                                               |
+| Limitless                              | Pre-acquisition, was opaque. Post-acquisition, captures are off entirely.                                                                                                                                                                 |
+| Pin AI                                 | Decentralized on-device, so audit is implicit (data never leaves device). Doesn't apply same way for cross-tenant IaaS scenarios where third-party developers access your signals via our `/v1` — we surface those accesses; they can't.  |
 
 ### 9.4 What it requires from the system
 

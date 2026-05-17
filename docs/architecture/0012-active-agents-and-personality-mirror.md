@@ -260,9 +260,20 @@ desks last night and found a $200 price drop." "Curator surfaced 3
 distributed-systems posts you'd care about." "Mind Map: this is
 what your attention looked like this week."
 
-This is the positioning that survives Perplexity Memory because
-Perplexity's chat-centric architecture structurally can't run
-always-on agents per user without their unit economics collapsing.
+This is the positioning that survives Perplexity Memory + Personal
+Computer because Perplexity's background agents act on **your Mac**
+(files, apps, calendar). Recome's background agents act on **your
+interest graph** (cross-platform attention — YouTube + Reddit +
+Amazon + Substack + whatever else). Different substrates. Personal
+Computer is OS-bound to a $599 Mac Mini; our agents work from any
+device with a browser because the substrate they read is a cloud
+graph, not local files.
+
+(The earlier version of this paragraph claimed Perplexity
+structurally couldn't run always-on agents per user. That claim was
+invalidated by Personal Computer in March 2026 — see
+[`AUDIT_PERPLEXITY_2026-05-17.md`](../../AUDIT_PERPLEXITY_2026-05-17.md)
+§2.1. The agent layer is no longer the moat; the graph layer is.)
 
 ## 7. Roadmap impact
 

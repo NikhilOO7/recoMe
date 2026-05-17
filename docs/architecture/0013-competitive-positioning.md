@@ -69,41 +69,48 @@ This is a defensible category because no one else has organised themselves aroun
 
 For each competitor: what they do well, what they structurally cannot ship from where they sit today, and what we say when a user / investor mentions them. "Structurally cannot ship" is critical — it's not enough to say "we're better." A well-funded competitor can always ship features. The question is: can they ship the SAME ARCHITECTURE without invalidating their own core product?
 
-### 3.1 vs Perplexity (Memory + Spaces + Comet)
+### 3.1 vs Perplexity (Memory + Spaces + Comet + Personal Computer)
 
 **What they do well**
 
 - World's-best web-search-grounded answers. We will lose head-to-head on "what is X?" forever.
-- Comet's agentic browser ([perplexity.ai/comet](https://www.perplexity.ai/comet)) acts on your behalf in the live browser, currently with Max-subscriber model choice (Opus 4.6 default, Sonnet 4.5).
-- Spaces ([Perplexity Magazine guide](https://perplexityaimagazine.com/perplexity-hub/perplexity-ai-spaces-guide-2026/)) are persistent project workspaces with up to 50 files (Pro) / 500 (Enterprise) and custom AI instructions. Memory builds within each Space.
+- Comet's agentic browser ([perplexity.ai/comet](https://www.perplexity.ai/comet)) — worldwide on iOS, Android, Mac, Windows; Comet Assistant can perform autonomous multi-step tasks (book flights, manage email, fill forms); Claude Sonnet 4.6 for Pro / Opus 4.6 for Max ([Releasebot May 2026](https://releasebot.io/updates/perplexity-ai)).
+- **Personal Computer** (Mar 2026) — a $599 Mac-Mini-bundled 24/7 background agent with local file + app access, voice orchestration, goal-based task execution ("create an educational guide" → agent picks the apps and files) ([Technology.org](https://www.technology.org/2026/03/13/perplexity-personal-computer-ai/)).
+- Spaces ([Perplexity Magazine guide](https://perplexityaimagazine.com/perplexity-hub/perplexity-ai-spaces-guide-2026/)) — up to 50 files (Pro) / 500 (Enterprise), Space Skills (packageable shared capabilities), files excluded from training by default in Enterprise Pro tier. **Spaces now build memory from interactions** — they get more personalised the more you use them.
 - Strong brand recall ("Perplexity that") and enterprise distribution.
 
 **Where their architecture caps them**
 
-- **Memory is chat-session-scoped.** Memory accumulates from what you ask Perplexity, not from what you actually do on the web. Capture from a Reddit thread you read for 15 minutes? Not there. Capture from a YouTube video you watched twice? Not there. Capture from your Amazon cart? Not there. Their memory only sees what flows through their chat.
-- **Comet is reactive.** Comet acts when you ask it to. There's no Perplexity-side worker pulling threads while you sleep on topics you've never explicitly tasked it with. ([Beginners in AI: What's new in Perplexity 2026](https://beginnersinai.org/whats-new-perplexity-2026/))
-- **Spaces are project containers.** Useful for "research this trip" but not for "everything I've cared about across all platforms over six months."
-- **No public graph to the user.** Memory is opaque text retention. You can't see your own structure, you can't navigate it, you can't export it as a graph, you can't query it as an API.
+> **Re-audited 2026-05-17** ([`AUDIT_PERPLEXITY_2026-05-17.md`](../../AUDIT_PERPLEXITY_2026-05-17.md)). Some prior claims were too confident.
+
+- **Personal Computer agents read your Mac, not your cross-platform attention.** Local files, email, calendar, app windows — yes. The YouTube video you watched on your iPhone, the Reddit thread you read on Android, the Amazon page you compared on your work laptop — invisible to Personal Computer. The agent layer is no longer a moat; **the graph layer is**. They have built a background agent that operates on your computer. We are building a background agent that operates on your cross-platform interest graph. Different substrates.
+- **Memory is captured-from-Perplexity-surfaces.** Memory accumulates from what you ask Perplexity in chat, from Spaces interactions, and from what Comet sees you do in-browser. It does not see what you do outside Perplexity surfaces. Your Reddit reads on the native iOS Reddit app? Your YouTube watches on the YouTube iOS app? Your Amazon cart you opened on someone else's computer? Not in their memory.
+- **Spaces require active organisation.** Spaces build memory per Space — but the user has to set up a Space per project and feed it materials. Our capture is automatic across surfaces; theirs is opt-in per-project. Both store memory; ours is denser by default.
+- **No public graph to the user.** Memory remains opaque text + file retention. You cannot see your own structure, navigate it as a graph, or export it as nodes + edges. No competitor exposes the graph as a UI surface (see [0014 F-401 Mind Map](0014-unique-product-surfaces.md#2-f-401--mind-map)).
+- **No tenant-keyed IaaS for personal-graph signals.** Perplexity is a product company; they do not offer a multi-customer API where another developer's product can ship signals on behalf of their end-users and read back a graph. We do — see [F-405](0014-unique-product-surfaces.md#6-f-405--interest-graph-as-api).
 
 **Our position**
 
-> "Perplexity answers questions when you ask. Recome remembers what you actually did and brings you things when you don't ask. Different products, but only one of them owns the graph of your attention."
+> "Perplexity Personal Computer acts on YOUR MAC. Recome agents act on YOUR INTEREST GRAPH. Their substrate is files and apps; ours is your cross-platform attention. Different products, both 24/7, only one of them is structurally cross-platform from non-Apple sources."
 
-We never frame this as a competition on "answer quality" — we lose. We always frame as a different category.
+We never frame this as a competition on "answer quality" — we lose. We frame as a different substrate: their agents read your computer, ours read your graph.
 
 ### 3.2 vs Anthropic Claude (Memory + Dreaming + Managed Agents)
 
 **What they do well**
 
 - Best-in-class reasoning model — the model itself is the moat.
-- Memory per Managed Agent, "Dreaming" reviews past sessions and curates memory between runs ([MindStudio: Claude Dreaming](https://www.mindstudio.ai/blog/what-is-claude-dreaming-anthropic-managed-agents)), Outcomes for rubric-graded evals ([MindStudio: New agent features](https://www.mindstudio.ai/blog/code-with-claude-2026-new-agent-features)).
+- **Memory on Managed Agents is now public beta** — file-system mounted, audit log per memory file (which agent + session created it), rollback to earlier versions, redact from history, exportable via API. Used in production by Netflix (cross-session context) and Rakuten (97% first-pass error reduction) ([SD Times](https://sdtimes.com/anthropic/anthropic-adds-memory-to-claude-managed-agents/), [9to5Mac](https://9to5mac.com/2026/05/07/anthropic-updates-claude-managed-agents-with-three-new-features/)).
+- "Dreaming" research preview — scheduled background process that reviews past agent sessions, extracts patterns, curates memory between runs ([MindStudio: Claude Dreaming](https://www.mindstudio.ai/blog/what-is-claude-dreaming-anthropic-managed-agents)).
+- "Outcomes" rubric-graded eval loop. Multi-agent orchestration via Managed Agents ([MindStudio: New agent features](https://www.mindstudio.ai/blog/code-with-claude-2026-new-agent-features)).
 - Claude for Excel/Word/PowerPoint GA, Outlook beta, Claude for Small Business (QuickBooks, HubSpot, Microsoft 365 integrations) ([Fazm.ai: Claude update May 2026](https://fazm.ai/t/anthropic-claude-update-may-2026)).
-- Multi-agent orchestration via Managed Agents.
 
 **Where their architecture caps them**
 
-- **Memory is per-agent and job-scoped.** Each agent's memory is theirs. Not a cross-app personal graph of you.
-- **Dreaming runs on agent sessions, not on your life.** "Dreaming" is about an agent improving at its job, not surfacing things back to you about what you've been doing.
+> **Re-audited 2026-05-17.** Memory has matured (audit log, rollback, export) — sharpened framing required.
+
+- **Memory is per-managed-agent, for the developer.** Audit log shows which agent + session created a memory file. Useful for developers running agents; **not** a user-facing personal graph. We are the layer beneath the agent layer — the personal graph that a developer's Claude-Managed-Agent reads from, via our [IaaS API](0014-unique-product-surfaces.md#6-f-405--interest-graph-as-api).
+- **Dreaming runs on agent sessions, not on your life.** Anthropic's Dreaming is about an agent improving at ITS job by reviewing past task runs — not about a graph of YOUR cross-platform attention. Our Curator + Synthesist agents do the latter; they read the user's interest graph and surface to the user.
 - **Anthropic doesn't capture from your browser or your platforms.** Their integrations are enterprise productivity-app integrations (QuickBooks, Excel). They don't see your Reddit threads or your Amazon carts.
 - **They build infrastructure for developers to build agents** — we build infrastructure for developers to build _interest-graph-aware_ products. Different dependency in the stack.
 
@@ -193,22 +200,46 @@ We are explicitly NOT the Glean of consumers. Glean is sold to CIOs; we are sold
 
 Our Concierge agent (ADR-0012 §2.2 Tier 1) is the shopping surface — but it's a feature on top of the graph, not the whole product. Karma cannot replicate this without becoming a different company.
 
-### 3.7 vs agentic browsers (Comet, Arc, Atlas, Dia)
+### 3.7 vs agentic browsers + computer-use agents (Comet, Arc, Atlas, Dia, ChatGPT Agent Mode, Codex Background, Perplexity Personal Computer)
 
 **What they do well**
 
-- Comet uses Anthropic models, can act in-browser on your behalf, integrates with Memory + Spaces.
-- Arc Search and similar offer LLM-blended search results in a familiar Chromium chrome.
+- Comet uses Anthropic models (Sonnet 4.6 default, Opus 4.6 for Max), can act in-browser on your behalf, integrates with Memory + Spaces.
+- Perplexity Personal Computer — 24/7 Mac-Mini-bundled agent with local file + app access (covered in §3.1).
+- OpenAI Codex Background Computer Use (April 2026) — separate macOS environment, opens apps, browses, edits files, multiple concurrent sessions ([Coasty review](https://coasty.ai/blog/openai-operator-review-2026-20260405)).
+- Anthropic Claude Computer Use — same category, different vendor.
+- Arc Search and similar offer LLM-blended search in a familiar Chromium chrome.
 
 **Where their architecture caps them**
 
-- **Browser-only capture.** They see what you do _in their browser_. The moment you switch to Safari on phone, the IG mobile app, the YouTube iOS app, the Amazon iOS app — they go blind.
-- **Browser-bound capture is exactly the install friction we already rejected in [ADR-0003](0003-pivot-web-first-with-iaas.md).** Adoption requires switching browsers, which is a heavier lift than installing an extension was.
-- **No graph surface to the user.** Comet acts; it does not show you your own attention pattern.
+- **OS / browser-bound capture.** Comet sees what's in Comet. Personal Computer sees what's on your Mac. Codex Background sees what's in its macOS env. The moment you switch to your iPhone Safari, the IG mobile app, the YouTube iOS app, the Amazon iOS app — they go blind. **None of them does cross-platform capture from non-Apple sources.** Cross-platform is years of work for any of them — it would require shipping multi-OS clients with capture permissions on each.
+- **Switching cost is the moat we won't try to beat.** Browser switching is a heavier lift than installing an extension. Mac-Mini-bundled is a $599 lock-in. Our PWA share-sheet + extension + paste + IaaS works with whatever browser, whatever OS, whatever app the user already has.
+- **No graph surface to the user.** None of these renders the user's attention graph as a navigable UI. They act; they don't show.
+- **OpenAI's Operator died** ([No Hacks landscape guide](https://nohacks.co/blog/agentic-browser-landscape-2026)) — shut down August 31 2025 for failing on JS / CAPTCHAs / payments. Validates our [ADR-0012 §5](0012-active-agents-and-personality-mirror.md#5-trust--safety-constraints-binding) trust constraint that agents must not take irreversible action.
 
 **Our position**
 
-> "Comet/Arc/Atlas need you to switch browsers. We work with whatever browser you use, plus mobile, plus the PWA share-sheet, plus an IaaS API for any product to send signals. We don't compete for the browser slot."
+> "Comet / Personal Computer / ChatGPT Agent / Codex all need you to switch browsers or buy a Mac Mini. We work with whatever browser you already use, plus mobile, plus the PWA share-sheet, plus an IaaS API for any product to send signals. We don't compete for the OS slot or the browser slot — we sit above all of them."
+
+### 3.8 vs Pin AI — direct competitor in the personal-graph category
+
+**What they do well**
+
+- Decentralized on-device personal-intelligence platform ([StartUs Insights](https://www.startus-insights.com/innovators-guide/american-ai-companies/)).
+- Knowledge graph + LLM organising "digital footprints" into "personalized executive assistance."
+- Privacy posture by architecture — on-device means no cloud-mediated data ever leaves the user.
+
+**Where their architecture caps them**
+
+- **No IaaS API.** Decentralized + on-device is architecturally incompatible with a multi-tenant API that other developers can call. They have chosen the consumer-only path.
+- **No cross-device sync** by design. Decentralized on-device means your data lives on the device that captured it; cross-device merging requires either cloud or peer-to-peer protocols, both of which cut against the decentralized claim.
+- **OS-level capture access required to be useful.** They presumably need OS partnerships (or their own devices) to capture broadly. Without that, capture surface is limited.
+
+**Our position**
+
+> "Pin AI bets on full local-device privacy. We bet on cloud + sync + an IaaS API. Different bets, same insight: the personal graph is the moat. They make end-users their only customers; we make developers our second market."
+
+**Risk to monitor.** Pin AI is the closest direct competitor we've found. If they ship an IaaS API or pivot to cloud sync, our category-of-one shrinks. Resolution: track their roadmap quarterly; revisit this ADR if material change.
 
 ---
 
@@ -319,11 +350,13 @@ Anti-positioning. Saying any of these makes us indistinguishable from a competit
 
 Will the moats described in §5 still be moats in 2029? Honest case for each:
 
-### 8.1 Will Perplexity or Anthropic build cross-platform capture?
+### 8.1 Will Perplexity or Anthropic build cross-platform capture from non-Apple sources?
 
-**Probably not.** Cross-platform capture means asking the user to install a browser extension, a mobile share-target, and email forwarding. That's a heavier ask than "use our chat." For Perplexity / Anthropic, the marginal user they want is the one who'd never install a productivity tool. Forcing them to install our combination is a churn engine, not a growth engine.
+> **Re-audited 2026-05-17.** Personal Computer changed the landscape. Updated framing below.
 
-**If they do build it:** their existing brand (search / model provider) doesn't immediately translate to "I trust this with my browsing history." We have a credibility window before they ship that ours-first positioning matters most.
+**Probably not in 24 months.** Personal Computer is a step toward "agent reads your stuff" — but it's Mac-bundled, OS-bound, and reads your computer's files, not your phone's apps or your work laptop's browser sessions. To match our cross-platform topology they'd need to ship and support: extension on Chrome/Safari/Firefox, iOS share-target, Android share-target, email forwarding intake, bulk-import adapters for YouTube Takeout / Amazon orders / Reddit / etc. That's 6+ surfaces × ongoing maintenance for an LLM-first company. They could; the marginal user they want is the one already in their chat, not the one who'd assemble six capture surfaces.
+
+**If they do build it:** their existing brand still has an asymmetric trust problem with "this product wants to read everything across all your platforms." Our years of dedicated positioning around the user-owned, IaaS-API-accessible, opt-in graph makes us the credible choice. They start at zero on that trust dimension while we compound on it.
 
 ### 8.2 Will Glean go consumer?
 
@@ -331,15 +364,27 @@ Will the moats described in §5 still be moats in 2029? Honest case for each:
 
 **If they do:** they spin out a separate consumer product, which inherits zero of their enterprise contracts and starts at zero MAU. We have the same starting line and three years of head start.
 
-### 8.3 Will someone else build the exact thing?
+### 8.3 Will Pin AI or a similar entrant beat us?
 
-**Likely.** Given the Rewind vacuum, the agentic-browser hype, and the cheap LLM costs, several "memory product" startups will try the cross-platform graph approach. Our defenses against them:
+> **New 2026-05-17.** Pin AI is now in §3.8 — direct competitor.
 
-1. **First-mover on the unique IaaS surface.** Six months of brand and docs trust matter on developer products.
-2. **Our network effects in the IaaS layer.** Once 20+ products embed Recome signals, the underlying graph (over multiple apps the same user uses) becomes deeper for free.
-3. **Honest privacy posture as defensible brand.** Most copycats will overreach (sell aggregate data, train on cross-user, lock to platform). We've already committed in writing (this doc + [ADR-0012 §5](0012-active-agents-and-personality-mirror.md#5-trust--safety-constraints-binding)) to not. That commitment compounds over time.
+**They could beat us in the privacy-purist consumer segment.** Pin AI's decentralized on-device architecture is a stronger privacy story than ours. The consumer who values "my data never leaves my device" will rationally pick them over us.
 
-**Open risk:** if Apple or Google ship a system-level personal-memory API (iOS Intelligence Personal Context, Android Gemini Memory), we have a real problem. Mitigation: integrate with them as a capture source rather than fight. Our differentiation moves up the stack to "the graph + agents," they become input #7.
+**They cannot beat us in the IaaS market.** Their decentralized architecture precludes a multi-tenant API. We have category-of-one on `/v1`.
+
+**They cannot beat us on cross-device sync** without compromising the decentralized claim. The user who has a phone + laptop + work computer + home computer needs a sync substrate — that's us.
+
+**Our defenses:**
+
+1. **First-mover on the unique IaaS surface.** Months of brand and docs trust compound on developer products.
+2. **Network effects in the IaaS layer.** Once 20+ products embed Recome signals, the graph over multi-product usage becomes deeper for free.
+3. **Honest privacy posture as defensible brand.** Most cloud copycats will overreach (sell aggregate data, train on cross-user, lock to platform). We've committed in writing (this doc + [ADR-0012 §5](0012-active-agents-and-personality-mirror.md#5-trust--safety-constraints-binding)) to not. That commitment compounds over time.
+
+### 8.4 Open risk: Apple / Google ship a system-level personal-context API
+
+> Unchanged from prior version. The biggest categorical risk.
+
+If Apple ships iOS Intelligence Personal Context as a public API for third-party apps, or Google ships Android Gemini Memory as a developer API, we have a real problem — they have OS-level capture access we structurally never will. Mitigation: integrate with them as capture source #7, move our differentiation up the stack to "the graph + agents that work it." They become inputs, we remain the layer above.
 
 ---
 
