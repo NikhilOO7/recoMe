@@ -3,6 +3,7 @@ import { initNeo4j } from './graph/Neo4jClient.js';
 import { initQdrant } from './vector/QdrantClient.js';
 import { OpenAIEmbeddings } from './vector/OpenAIEmbeddings.js';
 import { IntelligenceService, setIntelligence } from './intelligence/IntelligenceService.js';
+import { bootAgents } from './agents/index.js';
 import { logger } from './observability/logger.js';
 
 /**
@@ -51,4 +52,14 @@ export async function bootIntelligence(config: Config): Promise<void> {
   });
   await svc.start();
   setIntelligence(svc);
+
+  // Active agents (ADR-0012). Off by default; opt-in via env so the agent
+  // layer can be deployed dark and enabled per environment without code
+  // changes. SignalIngestion fires triggers regardless; the trigger is a
+  // no-op when the registry isn't booted.
+  if (config.INTELLIGENCE_AGENTS_ENABLED) {
+    bootAgents();
+  } else {
+    logger.info('agent layer disabled (INTELLIGENCE_AGENTS_ENABLED=false)');
+  }
 }

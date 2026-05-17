@@ -372,6 +372,92 @@ model TenantUsage {
   @@index([period])
 }
 
+// ── Active Agents (ADR-0012) ──────────────────────────────────────────────
+// Background agents work the user's interest graph and emit AgentEvents
+// into a per-user inbox. AgentSubscription tracks per-user opt-in + state;
+// AgentRun is the audit log of every scheduled or event-triggered pass.
+
+/// Per-user, per-agent enrollment + runtime state.
+/// Created lazily on first attempted run; not seeded.
+model AgentSubscription {
+  id            String          @id @default(cuid())
+  userId        String          // tenant_<id>__<ext> for IaaS; raw cuid for consumer
+  agent         String          // matches BaseAgent.name (e.g. "recall", "concierge")
+  enabled       Boolean         @default(true)
+  /// User-set config (e.g. thresholds, quiet hours overrides). Null = defaults.
+  config        Json?
+  /// Last successful run; nullable until first run.
+  lastRunAt     DateTime?
+  /// Last event emission; used by GuardianAgent throttle checks.
+  lastEmittedAt DateTime?
+  /// Soft-pause without revoking enrollment. "user_paused" or "guardian_capped".
+  pausedReason  String?
+  pausedAt      DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@unique([userId, agent])
+  @@index([userId])
+  @@index([agent])
+}
+
+/// Audit log of every agent invocation. Powers the "what did Recall do this
+/// week" dashboard surface and the per-user cost ceiling enforcement.
+model AgentRun {
+  id            String          @id @default(cuid())
+  userId        String
+  agent         String
+  /// "scheduled" | "event" | "on_demand"
+  trigger       String
+  /// "started" | "succeeded" | "skipped" | "capped" | "failed"
+  status        String
+  /// LLM tokens (in/out summed) attributed to this run. 0 for deterministic agents.
+  llmTokens     Int             @default(0)
+  /// USD cost × 1e6 (microcents) — integer math avoids float drift.
+  costMicros    Int             @default(0)
+  /// Free-form context: trigger signalId, error message, output reference, etc.
+  meta          Json?
+  startedAt     DateTime        @default(now())
+  finishedAt    DateTime?
+
+  @@index([userId, startedAt])
+  @@index([agent, startedAt])
+  @@index([status])
+}
+
+/// Things the agents surfaced to the user. Read by the in-app inbox,
+/// the daily digest email, and PWA push delivery.
+model AgentEvent {
+  id            String          @id @default(cuid())
+  userId        String
+  agent         String          // which agent produced it
+  /// "recall" | "deal_drop" | "new_alternative" | "fresh_content" | "decision_nudge" | "weekly_summary"
+  kind          String
+  /// Short headline for notification surfaces.
+  title         String
+  /// Optional longer body. Markdown allowed.
+  body          String?
+  /// What the user should click. Internal route or external URL.
+  actionUrl     String?
+  /// References to source graph items (signal IDs, topic names, page URLs).
+  /// Mandatory per ADR-0012 §5 — every agent output cites sources.
+  sources       Json            @default("[]")
+  /// Dedupe key — same (userId, dedupeKey) within 24h is suppressed.
+  dedupeKey     String
+  /// User actions on this event.
+  seenAt        DateTime?
+  dismissedAt   DateTime?
+  /// User feedback for ranking improvement ("useful" | "not_useful" | null).
+  feedback      String?
+  feedbackAt    DateTime?
+  createdAt     DateTime        @default(now())
+
+  @@index([userId, createdAt])
+  @@index([userId, dedupeKey])
+  @@index([userId, seenAt])
+  @@index([agent])
+}
+
 // ── Enums ────────────────────────────────────────────────────────────────────
 
 enum Role {

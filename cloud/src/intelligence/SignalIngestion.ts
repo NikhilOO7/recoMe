@@ -5,6 +5,7 @@ import type { EmbeddingClient } from '../vector/EmbeddingClient.js';
 import type { VectorClient } from '../vector/VectorClient.js';
 import type { VectorPoint } from '../vector/types.js';
 import { logger } from '../observability/logger.js';
+import { fireSignalIngestTriggerSync } from '../agents/triggers/signalIngestTrigger.js';
 
 export interface SignalInput {
   /** Client-generated; used for idempotency. */
@@ -146,6 +147,21 @@ export class SignalIngestion {
       metadata: input.metadata,
     };
     await this.graph.recordSignal(signal);
+
+    // 5) Fire event-triggered agents (Recall today, more later). Fire-and-forget
+    // — the ingest response should not block on agent work. AgentRegistry not
+    // being booted is a normal state in tests and dev; the trigger no-ops.
+    // One trigger per topic — Recall scopes by topic. Skipped silently if no
+    // topics were extracted.
+    for (const t of dedupedTopics) {
+      fireSignalIngestTriggerSync({
+        userId: input.userId,
+        signalId,
+        topicNormalizedName: t.normalizedName,
+        topicName: t.name,
+        ts,
+      });
+    }
 
     return {
       signalId,

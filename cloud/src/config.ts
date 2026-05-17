@@ -28,6 +28,8 @@ const envSchema = z.object({
   // ── Intelligence stack (ADR-0001) ──────────────────────────────────────────
   INTELLIGENCE_ENABLED: z.coerce.boolean().default(false),
   INTELLIGENCE_RUN_MIGRATIONS_ON_BOOT: z.coerce.boolean().default(false),
+  /** Active agents (ADR-0012). Off by default — dark deploy → opt-in. */
+  INTELLIGENCE_AGENTS_ENABLED: z.coerce.boolean().default(false),
 
   NEO4J_URI: z.string().optional(),
   NEO4J_USERNAME: z.string().optional(),

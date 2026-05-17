@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { getIntelligence } from './IntelligenceService.js';
 import { signalBatchSchema } from './schemas.js';
+import { createAgentRoutes } from '../agents/AgentController.js';
 import { logger } from '../observability/logger.js';
 
 type AuthVars = { Variables: { userId: string; tier?: string; deviceId?: string } };
@@ -80,6 +81,11 @@ export function createIntelligenceRoutes(): Hono<AuthVars> {
     logger.info({ userId, result }, 'intelligence: forgetUser executed');
     return c.json({ ok: true, ...result });
   });
+
+  // Active agents (ADR-0012) — same auth, mounted here so the consumer
+  // surface is one URL prefix to remember. /v1/agents/* (tenant-scoped)
+  // is a separate route group on the IaaS controller.
+  app.route('/', createAgentRoutes());
 
   return app;
 }
