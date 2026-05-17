@@ -1,0 +1,1775 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Recome — System Overview & Demo</title>
+    <meta name="description" content="Personal interest graph as a product and as an IaaS platform. Architecture, workflows, and roadmap for Recome." />
+    <style>
+      /* ── Design tokens ─────────────────────────────────────────────── */
+      :root {
+        --bg: #0a0a0a;
+        --bg-elev-1: #111;
+        --bg-elev-2: #161616;
+        --line: rgba(255, 255, 255, 0.08);
+        --line-strong: rgba(255, 255, 255, 0.16);
+        --text: rgba(255, 255, 255, 0.92);
+        --text-dim: rgba(255, 255, 255, 0.62);
+        --text-faint: rgba(255, 255, 255, 0.36);
+        --teal: #5eead4;
+        --teal-dim: #14b8a6;
+        --violet: #a78bfa;
+        --amber: #fbbf24;
+        --rose: #fb7185;
+        --blue: #60a5fa;
+        --green: #4ade80;
+        --shadow-1: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 12px 32px -16px rgba(0, 0, 0, 0.6);
+        --shadow-2: 0 24px 80px -32px rgba(0, 0, 0, 0.6);
+        --radius: 16px;
+        --radius-sm: 10px;
+        --maxw: 1180px;
+      }
+
+      *, *::before, *::after { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+        font-size: 15px;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+        background-image:
+          radial-gradient(900px 600px at 15% -10%, rgba(94, 234, 212, 0.06), transparent 60%),
+          radial-gradient(700px 500px at 95% 5%, rgba(167, 139, 250, 0.05), transparent 60%);
+        background-attachment: fixed;
+      }
+      a { color: var(--teal); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      code, .mono { font-family: ui-monospace, "JetBrains Mono", Menlo, monospace; font-size: 0.92em; }
+
+      /* ── Layout ────────────────────────────────────────────────────── */
+      .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+      section { padding: 96px 0; position: relative; }
+      section + section { border-top: 1px solid var(--line); }
+
+      /* ── Top nav (sticky pill) ─────────────────────────────────────── */
+      nav.top {
+        position: sticky; top: 16px; z-index: 100;
+        display: flex; justify-content: center; padding: 0 16px;
+        pointer-events: none;
+      }
+      nav.top .pill {
+        pointer-events: auto;
+        display: inline-flex; gap: 4px;
+        background: rgba(16, 16, 16, 0.7);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid var(--line);
+        padding: 6px;
+        border-radius: 999px;
+        box-shadow: var(--shadow-2);
+        overflow-x: auto;
+        max-width: 100%;
+        scrollbar-width: none;
+      }
+      nav.top .pill::-webkit-scrollbar { display: none; }
+      nav.top a {
+        color: var(--text-dim);
+        font-size: 12px;
+        font-weight: 500;
+        padding: 8px 14px;
+        border-radius: 999px;
+        white-space: nowrap;
+        transition: all 0.15s;
+        text-decoration: none;
+      }
+      nav.top a:hover { color: var(--text); background: rgba(255, 255, 255, 0.04); }
+      nav.top a.active { background: rgba(255, 255, 255, 0.08); color: var(--text); }
+
+      /* ── Hero ──────────────────────────────────────────────────────── */
+      .hero { padding: 140px 0 96px; text-align: center; }
+      .badge {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: rgba(94, 234, 212, 0.08);
+        border: 1px solid rgba(94, 234, 212, 0.2);
+        color: var(--teal);
+        font-size: 11px; font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 28px;
+      }
+      .badge .dot {
+        width: 6px; height: 6px; border-radius: 50%;
+        background: var(--teal);
+        animation: pulse 2s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(1.4); }
+      }
+      h1 {
+        font-size: clamp(40px, 6.5vw, 76px);
+        line-height: 1.04;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        margin: 0 0 24px;
+        background: linear-gradient(180deg, #fff 0%, rgba(255, 255, 255, 0.72) 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .hero p.lead {
+        font-size: clamp(17px, 1.8vw, 21px);
+        line-height: 1.55;
+        max-width: 720px;
+        margin: 0 auto 40px;
+        color: var(--text-dim);
+      }
+      .hero .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 1px;
+        max-width: 760px;
+        margin: 48px auto 0;
+        background: var(--line);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        overflow: hidden;
+      }
+      .hero .stats div { background: var(--bg-elev-1); padding: 20px 16px; text-align: center; }
+      .hero .stats .n { font-size: 28px; font-weight: 800; color: var(--teal); letter-spacing: -0.02em; }
+      .hero .stats .l { font-size: 11px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px; }
+
+      /* ── Section headings ──────────────────────────────────────────── */
+      .eyebrow {
+        display: inline-block;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        color: var(--teal);
+        font-weight: 700;
+        margin-bottom: 16px;
+      }
+      h2 {
+        font-size: clamp(28px, 3.6vw, 42px);
+        line-height: 1.1;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin: 0 0 16px;
+      }
+      h3 {
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        margin: 0 0 8px;
+      }
+      .sub {
+        color: var(--text-dim);
+        font-size: 16px;
+        max-width: 660px;
+        margin: 0 0 48px;
+      }
+
+      /* ── Cards ─────────────────────────────────────────────────────── */
+      .grid { display: grid; gap: 16px; }
+      .grid-3 { grid-template-columns: repeat(3, 1fr); }
+      .grid-2 { grid-template-columns: repeat(2, 1fr); }
+      .grid-4 { grid-template-columns: repeat(4, 1fr); }
+      @media (max-width: 900px) {
+        .grid-3, .grid-4 { grid-template-columns: 1fr; }
+        .grid-2 { grid-template-columns: 1fr; }
+      }
+      .card {
+        background: var(--bg-elev-1);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 24px;
+        box-shadow: var(--shadow-1);
+        transition: transform 0.2s ease, border-color 0.2s ease;
+      }
+      .card:hover { border-color: var(--line-strong); transform: translateY(-2px); }
+      .card .icon {
+        width: 36px; height: 36px;
+        border-radius: 10px;
+        display: grid; place-items: center;
+        background: rgba(94, 234, 212, 0.1);
+        margin-bottom: 14px;
+      }
+      .card .icon.violet { background: rgba(167, 139, 250, 0.1); }
+      .card .icon.amber { background: rgba(251, 191, 36, 0.1); }
+      .card .icon.rose { background: rgba(251, 113, 133, 0.1); }
+      .card .icon.blue { background: rgba(96, 165, 250, 0.1); }
+      .card .icon svg { width: 18px; height: 18px; stroke: currentColor; }
+      .card .icon { color: var(--teal); }
+      .card .icon.violet { color: var(--violet); }
+      .card .icon.amber { color: var(--amber); }
+      .card .icon.rose { color: var(--rose); }
+      .card .icon.blue { color: var(--blue); }
+      .card p { color: var(--text-dim); margin: 8px 0 0; font-size: 14px; }
+
+      /* ── Reveal animation ──────────────────────────────────────────── */
+      .reveal {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.7s ease, transform 0.7s ease;
+      }
+      .reveal.in {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .reveal[data-delay="1"] { transition-delay: 80ms; }
+      .reveal[data-delay="2"] { transition-delay: 160ms; }
+      .reveal[data-delay="3"] { transition-delay: 240ms; }
+      .reveal[data-delay="4"] { transition-delay: 320ms; }
+
+      /* ── Personas ──────────────────────────────────────────────────── */
+      .persona {
+        position: relative;
+        padding: 28px;
+        border-radius: var(--radius);
+        background: linear-gradient(180deg, var(--bg-elev-1), var(--bg-elev-2));
+        border: 1px solid var(--line);
+        overflow: hidden;
+      }
+      .persona::before {
+        content: ""; position: absolute; inset: -1px;
+        background: linear-gradient(135deg, transparent 40%, var(--accent, var(--teal)) 200%);
+        opacity: 0.05;
+        pointer-events: none;
+        transition: opacity 0.3s;
+      }
+      .persona:hover::before { opacity: 0.15; }
+      .persona .avatar {
+        width: 56px; height: 56px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent, var(--teal)), transparent);
+        display: grid; place-items: center;
+        font-size: 22px; font-weight: 700;
+        color: var(--bg);
+        margin-bottom: 16px;
+      }
+      .persona .role {
+        font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;
+        color: var(--accent, var(--teal));
+        font-weight: 700;
+      }
+      .persona ul {
+        list-style: none; margin: 14px 0 0; padding: 0;
+        font-size: 14px; color: var(--text-dim);
+      }
+      .persona ul li { padding: 6px 0; border-top: 1px solid var(--line); }
+      .persona ul li:first-child { border-top: 0; padding-top: 0; }
+      .persona .metric {
+        margin-top: 18px;
+        padding: 12px 14px;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--line);
+        font-size: 13px;
+        color: var(--text);
+      }
+      .persona .metric strong { color: var(--accent, var(--teal)); }
+
+      /* ── Diagrams (SVG) ────────────────────────────────────────────── */
+      .diagram {
+        background: var(--bg-elev-1);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 32px;
+        margin-top: 24px;
+        overflow: hidden;
+        position: relative;
+      }
+      .diagram svg { width: 100%; height: auto; display: block; }
+      .diagram .legend {
+        display: flex; flex-wrap: wrap; gap: 12px;
+        margin-top: 20px; padding-top: 20px;
+        border-top: 1px solid var(--line);
+        font-size: 12px;
+        color: var(--text-faint);
+      }
+      .legend .item { display: inline-flex; align-items: center; gap: 6px; }
+      .legend .swatch { width: 10px; height: 10px; border-radius: 2px; }
+
+      /* SVG node styles */
+      .node-bg { fill: var(--bg-elev-2); stroke: var(--line-strong); stroke-width: 1.5; rx: 8; }
+      .node-bg-accent { fill: rgba(94, 234, 212, 0.06); stroke: var(--teal); stroke-width: 1.5; rx: 8; }
+      .node-bg-violet { fill: rgba(167, 139, 250, 0.06); stroke: var(--violet); stroke-width: 1.5; rx: 8; }
+      .node-bg-amber { fill: rgba(251, 191, 36, 0.06); stroke: var(--amber); stroke-width: 1.5; rx: 8; }
+      .node-bg-rose { fill: rgba(251, 113, 133, 0.06); stroke: var(--rose); stroke-width: 1.5; rx: 8; }
+      .node-label { fill: var(--text); font-size: 12px; font-weight: 600; }
+      .node-sub { fill: var(--text-faint); font-size: 10px; font-weight: 500; }
+      .arrow { stroke: var(--text-faint); stroke-width: 1.5; fill: none; }
+      .arrow-accent { stroke: var(--teal); stroke-width: 2; fill: none; }
+
+      /* Animated dash flow on arrows */
+      .arrow-animated {
+        stroke: var(--teal);
+        stroke-width: 2;
+        fill: none;
+        stroke-dasharray: 6 8;
+        animation: dash-flow 1.8s linear infinite;
+      }
+      @keyframes dash-flow {
+        from { stroke-dashoffset: 0; }
+        to { stroke-dashoffset: -28; }
+      }
+
+      /* Pulsing data dots traveling along paths */
+      .data-dot {
+        fill: var(--teal);
+        r: 3;
+        filter: drop-shadow(0 0 6px var(--teal));
+      }
+
+      /* ── Tabs ──────────────────────────────────────────────────────── */
+      .tabs {
+        display: inline-flex; gap: 4px;
+        padding: 4px;
+        background: var(--bg-elev-1);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        margin-bottom: 24px;
+      }
+      .tabs button {
+        background: transparent;
+        color: var(--text-dim);
+        border: 0;
+        padding: 8px 16px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+        font-family: inherit;
+      }
+      .tabs button:hover { color: var(--text); }
+      .tabs button.active { background: var(--teal); color: var(--bg); }
+      .tab-panel { display: none; }
+      .tab-panel.active { display: block; animation: fade-in 0.4s ease; }
+      @keyframes fade-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+      /* ── Knowledge graph viz ───────────────────────────────────────── */
+      .graph-viz { background: radial-gradient(circle at center, rgba(94, 234, 212, 0.02) 0%, transparent 60%); }
+      .graph-node circle {
+        transition: transform 0.3s, filter 0.3s;
+        cursor: pointer;
+      }
+      .graph-node:hover circle { filter: drop-shadow(0 0 12px currentColor); }
+      .graph-node text { font-size: 11px; font-weight: 600; pointer-events: none; }
+      .graph-edge { stroke: rgba(255, 255, 255, 0.16); stroke-width: 1; fill: none; }
+      .graph-edge.strong { stroke: rgba(94, 234, 212, 0.4); stroke-width: 1.5; }
+
+      /* Stroke-draw animation for graph edges */
+      .draw-stroke {
+        stroke-dasharray: 1000;
+        stroke-dashoffset: 1000;
+        animation: draw 2s ease forwards;
+      }
+      @keyframes draw {
+        to { stroke-dashoffset: 0; }
+      }
+
+      /* ── Sequence diagram ──────────────────────────────────────────── */
+      .seq-lane { stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 3 4; }
+      .seq-msg { stroke: var(--teal); stroke-width: 1.5; fill: none; }
+      .seq-msg-return { stroke: var(--violet); stroke-width: 1.5; fill: none; stroke-dasharray: 4 4; }
+      .seq-label-bg { fill: var(--bg-elev-2); }
+      .seq-label { fill: var(--text); font-size: 11px; font-weight: 600; }
+
+      /* ── Roadmap ───────────────────────────────────────────────────── */
+      .roadmap {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-top: 32px;
+      }
+      @media (max-width: 900px) {
+        .roadmap { grid-template-columns: 1fr; }
+      }
+      .phase {
+        padding: 24px;
+        background: var(--bg-elev-1);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        position: relative;
+        overflow: hidden;
+      }
+      .phase::before {
+        content: ""; position: absolute; top: 0; left: 0; right: 0;
+        height: 3px;
+        background: var(--phase-color, var(--teal));
+        transform: scaleX(0);
+        transform-origin: left;
+        animation: phase-fill 1.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        animation-delay: var(--phase-delay, 0s);
+      }
+      @keyframes phase-fill {
+        to { transform: scaleX(1); }
+      }
+      .phase .ptag {
+        display: inline-block; font-size: 10px;
+        text-transform: uppercase; letter-spacing: 0.12em;
+        color: var(--phase-color, var(--teal));
+        font-weight: 700; margin-bottom: 8px;
+      }
+      .phase h4 { font-size: 18px; margin: 0 0 4px; font-weight: 700; }
+      .phase .when { font-size: 12px; color: var(--text-faint); margin-bottom: 14px; font-family: ui-monospace, monospace; }
+      .phase .hyp {
+        font-size: 13px;
+        color: var(--text-dim);
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.02);
+        border-left: 2px solid var(--phase-color, var(--teal));
+        border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      }
+      .phase .kpis {
+        list-style: none; padding: 14px 0 0; margin: 0;
+        font-size: 12px; color: var(--text-dim);
+      }
+      .phase .kpis li { padding: 4px 0; }
+      .phase .kpis li::before { content: "→ "; color: var(--phase-color, var(--teal)); font-weight: 700; }
+
+      /* ── Pricing tiers ─────────────────────────────────────────────── */
+      .tiers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 24px; }
+      @media (max-width: 900px) { .tiers { grid-template-columns: 1fr; } }
+      .tier {
+        padding: 24px;
+        background: var(--bg-elev-1);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        display: flex; flex-direction: column;
+        position: relative;
+      }
+      .tier.featured { border-color: var(--teal); background: linear-gradient(180deg, rgba(94, 234, 212, 0.04), var(--bg-elev-1)); }
+      .tier .name { font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); font-weight: 700; }
+      .tier .price { font-size: 36px; font-weight: 800; margin: 8px 0; letter-spacing: -0.02em; }
+      .tier .price span { font-size: 14px; color: var(--text-faint); font-weight: 500; }
+      .tier ul { list-style: none; margin: 16px 0 0; padding: 14px 0 0; border-top: 1px solid var(--line); font-size: 13px; color: var(--text-dim); flex: 1; }
+      .tier ul li { padding: 6px 0; }
+      .tier ul li::before { content: "✓ "; color: var(--teal); font-weight: 700; margin-right: 4px; }
+
+      /* ── Tech stack layers ─────────────────────────────────────────── */
+      .stack-layer {
+        background: var(--bg-elev-1);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 20px 24px;
+        display: flex; align-items: center; gap: 24px;
+        margin-bottom: 12px;
+        transition: border-color 0.2s, transform 0.2s;
+      }
+      .stack-layer:hover { border-color: var(--line-strong); transform: translateX(4px); }
+      .stack-layer .layer-tag {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-weight: 700;
+        color: var(--bg);
+        background: var(--layer-color, var(--teal));
+        padding: 4px 10px;
+        border-radius: 999px;
+        flex-shrink: 0;
+        min-width: 90px;
+        text-align: center;
+      }
+      .stack-layer .layer-items {
+        display: flex; flex-wrap: wrap; gap: 8px; flex: 1;
+      }
+      .stack-layer .chip {
+        font-size: 12px;
+        padding: 4px 10px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--text);
+        font-weight: 500;
+      }
+      .stack-layer .chip.muted { color: var(--text-faint); }
+
+      /* ── IaaS demo block ───────────────────────────────────────────── */
+      .api-demo {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-top: 24px;
+      }
+      @media (max-width: 900px) { .api-demo { grid-template-columns: 1fr; } }
+      .api-pane {
+        background: #0f0f0f;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        overflow: hidden;
+      }
+      .api-pane .head {
+        padding: 12px 16px;
+        background: var(--bg-elev-2);
+        border-bottom: 1px solid var(--line);
+        display: flex; align-items: center; gap: 10px;
+        font-family: ui-monospace, monospace;
+        font-size: 12px;
+        color: var(--text-faint);
+      }
+      .api-pane .head .dot {
+        width: 8px; height: 8px; border-radius: 50%; background: var(--green);
+        animation: pulse 2s ease-in-out infinite;
+      }
+      .api-pane .head .method {
+        font-weight: 700; color: var(--teal);
+      }
+      .api-pane pre {
+        margin: 0; padding: 18px 20px;
+        font-family: ui-monospace, "JetBrains Mono", monospace;
+        font-size: 12.5px;
+        line-height: 1.65;
+        overflow-x: auto;
+        color: var(--text);
+      }
+      .api-pane .k { color: var(--violet); }
+      .api-pane .s { color: var(--teal); }
+      .api-pane .n { color: var(--amber); }
+      .api-pane .c { color: var(--text-faint); font-style: italic; }
+      .api-pane .m { color: var(--blue); }
+
+      /* ── Footer ────────────────────────────────────────────────────── */
+      footer {
+        padding: 64px 0 96px;
+        text-align: center;
+        color: var(--text-faint);
+        font-size: 12px;
+        border-top: 1px solid var(--line);
+      }
+      footer a { color: var(--text-dim); }
+
+      /* ── Comparison table ──────────────────────────────────────────── */
+      .compare {
+        width: 100%; border-collapse: collapse;
+        background: var(--bg-elev-1);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        overflow: hidden;
+        margin-top: 24px;
+        font-size: 14px;
+      }
+      .compare th, .compare td {
+        padding: 16px 20px;
+        text-align: left;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+      .compare tr:last-child td { border-bottom: 0; }
+      .compare th { background: var(--bg-elev-2); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); }
+      .compare .yes { color: var(--green); font-weight: 700; }
+      .compare .no { color: var(--rose); font-weight: 700; }
+      .compare .col-recome { color: var(--teal); }
+
+      /* ── Quote callout ─────────────────────────────────────────────── */
+      .callout {
+        padding: 28px 32px;
+        background: linear-gradient(135deg, rgba(94, 234, 212, 0.08), rgba(167, 139, 250, 0.04));
+        border: 1px solid rgba(94, 234, 212, 0.2);
+        border-radius: var(--radius);
+        margin: 24px 0;
+        font-size: 18px;
+        line-height: 1.55;
+        color: var(--text);
+      }
+      .callout em { color: var(--teal); font-style: normal; font-weight: 600; }
+
+      /* ── Cost chart ────────────────────────────────────────────────── */
+      .cost-grid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+        margin-top: 24px;
+      }
+      @media (max-width: 900px) { .cost-grid { grid-template-columns: 1fr; } }
+      .cost-card {
+        background: var(--bg-elev-1);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 24px;
+      }
+      .cost-card h4 { margin: 0 0 4px; font-size: 16px; }
+      .cost-card .summary { font-size: 13px; color: var(--text-faint); margin-bottom: 18px; }
+      .bar { display: grid; grid-template-columns: 140px 1fr 60px; gap: 12px; align-items: center; padding: 6px 0; font-size: 12px; }
+      .bar .name { color: var(--text-dim); }
+      .bar .track { background: rgba(255, 255, 255, 0.04); height: 8px; border-radius: 999px; overflow: hidden; }
+      .bar .fill {
+        height: 100%; background: var(--teal); border-radius: 999px;
+        transform: scaleX(0); transform-origin: left;
+        animation: bar-grow 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      }
+      @keyframes bar-grow { to { transform: scaleX(1); } }
+      .bar .val { text-align: right; color: var(--text); font-weight: 600; font-family: ui-monospace, monospace; }
+      .totals { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; }
+      .totals span { color: var(--teal); }
+
+      @media (prefers-reduced-motion: reduce) {
+        .reveal, .arrow-animated, .draw-stroke, .badge .dot, .phase::before, .bar .fill {
+          animation: none !important;
+          transition: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- ─────────────────────────────────────────────────────────────── -->
+    <nav class="top">
+      <div class="pill">
+        <a href="#hero">Overview</a>
+        <a href="#thesis">Thesis</a>
+        <a href="#personas">Who it&rsquo;s for</a>
+        <a href="#architecture">Architecture</a>
+        <a href="#capture">Capture</a>
+        <a href="#graph">Graph</a>
+        <a href="#tenant">IaaS isolation</a>
+        <a href="#stack">Stack</a>
+        <a href="#api">API</a>
+        <a href="#roadmap">Roadmap</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#vs">vs Perplexity</a>
+      </div>
+    </nav>
+
+    <!-- ───────── Hero ───────── -->
+    <section class="hero" id="hero">
+      <div class="wrap">
+        <div class="badge reveal in">
+          <span class="dot"></span>
+          <span>Recome &middot; System Overview</span>
+        </div>
+        <h1 class="reveal in" data-delay="1">
+          Personal memory as<br/>infrastructure.
+        </h1>
+        <p class="lead reveal in" data-delay="2">
+          Recome remembers what you research across every platform &mdash; then
+          surfaces it back to you, or to any product you build, as a personal
+          interest graph powered by Neo4j, Qdrant, and LLM tool-calling.
+        </p>
+        <div class="stats reveal in" data-delay="3">
+          <div><div class="n">11</div><div class="l">Platforms captured</div></div>
+          <div><div class="n">2</div><div class="l">Surfaces (Consumer + IaaS)</div></div>
+          <div><div class="n">4</div><div class="l">Phases to GA</div></div>
+          <div><div class="n">~80%</div><div class="l">Gross margin target</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── Thesis ───────── -->
+    <section id="thesis">
+      <div class="wrap">
+        <div class="reveal">
+          <div class="eyebrow">The thesis</div>
+          <h2>The chat is not the product. The personal interest graph is.</h2>
+          <p class="sub">
+            Perplexity searches the world. Recome searches your past attention. Two
+            categorically different products powered by two categorically different
+            data sources &mdash; one of which we own and they can&rsquo;t replicate.
+          </p>
+        </div>
+
+        <div class="grid grid-3">
+          <div class="card reveal" data-delay="1">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg></div>
+            <h3>Capture from anywhere</h3>
+            <p>Web paste, PWA share-sheet, browser extension, bulk import, or IaaS API. Five inputs, one graph.</p>
+          </div>
+          <div class="card reveal" data-delay="2">
+            <div class="icon violet"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M5 12H2M22 12h-3M19.07 4.93l-2.12 2.12M7.05 16.95l-2.12 2.12M19.07 19.07l-2.12-2.12M7.05 7.05L4.93 4.93"/></svg></div>
+            <h3>Graph + vector store</h3>
+            <p>Neo4j for typed relationships and traversal. Qdrant for semantic similarity. Together they answer questions Perplexity can&rsquo;t.</p>
+          </div>
+          <div class="card reveal" data-delay="3">
+            <div class="icon amber"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+            <h3>Two surfaces, one backend</h3>
+            <p>recome.app for consumers. <code>/v1</code> for other companies. Same intelligence stack &mdash; double the leverage.</p>
+          </div>
+        </div>
+
+        <div class="callout reveal">
+          <em>&ldquo;Perplexity for what you&rsquo;ve already looked at.&rdquo;</em>
+          &mdash; the one-line pitch. Whether anyone wants this is the real question;
+          everything else is execution.
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── Personas ───────── -->
+    <section id="personas">
+      <div class="wrap">
+        <div class="reveal">
+          <div class="eyebrow">Who it&rsquo;s for</div>
+          <h2>Three personas. Anyone else is a happy accident.</h2>
+          <p class="sub">
+            We don&rsquo;t build for &ldquo;everyone.&rdquo; We build for these three. If a feature
+            request doesn&rsquo;t serve one of them, it goes in the parking lot.
+          </p>
+        </div>
+        <div class="grid grid-3">
+          <div class="persona reveal" data-delay="1" style="--accent: var(--teal);">
+            <div class="avatar">R</div>
+            <div class="role">Consumer &middot; Primary</div>
+            <h3 style="margin-top: 4px;">Riya</h3>
+            <p style="margin: 4px 0 0; color: var(--text-faint); font-size: 13px;">28, designer, Bangalore</p>
+            <ul>
+              <li>3 considered purchases / quarter, $200+</li>
+              <li>Researches across YT / Reddit / Amazon for 1&ndash;3 weeks</li>
+              <li>40+ open tabs; loses the reviewer she liked</li>
+              <li>Phone-first (80% of attention)</li>
+              <li>Will pay $5&ndash;10/mo if it saves re-research</li>
+            </ul>
+            <div class="metric">
+              Success metric: <strong>week&nbsp;2 retention</strong>.
+              She opens it on Sunday, sees a forgotten trail &mdash; that&rsquo;s the moment.
+            </div>
+          </div>
+
+          <div class="persona reveal" data-delay="2" style="--accent: var(--violet);">
+            <div class="avatar">A</div>
+            <div class="role">Consumer &middot; Secondary</div>
+            <h3 style="margin-top: 4px;">Aman</h3>
+            <p style="margin: 4px 0 0; color: var(--text-faint); font-size: 13px;">22, CS undergrad, continuous learner</p>
+            <ul>
+              <li>Learns across Coursera / YT / Reddit / GitHub</li>
+              <li>Bookmarks 5+/day, never revisits</li>
+              <li>Will install the extension; will hit the API</li>
+              <li>Builds his own workflows</li>
+            </ul>
+            <div class="metric">
+              Success metric: <strong>density of capture</strong>.
+              Weekly digest surfaces &ldquo;3 things you saved about distributed systems
+              you didn&rsquo;t revisit.&rdquo;
+            </div>
+          </div>
+
+          <div class="persona reveal" data-delay="3" style="--accent: var(--amber);">
+            <div class="avatar">M</div>
+            <div class="role">IaaS &middot; Primary</div>
+            <h3 style="margin-top: 4px;">Maya</h3>
+            <p style="margin: 4px 0 0; color: var(--text-faint); font-size: 13px;">31, eng at a Series A note-taking startup</p>
+            <ul>
+              <li>Wants &ldquo;memory&rdquo; in her product</li>
+              <li>Won&rsquo;t build graph + vector infra herself</li>
+              <li>Decision-maker (no procurement)</li>
+              <li>$500/mo for experiments, $5k+/mo if it ships</li>
+            </ul>
+            <div class="metric">
+              Success metric: <strong>time-to-first-API-call</strong>.
+              Working integration in a single afternoon, or she walks.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── System Architecture ───────── -->
+    <section id="architecture">
+      <div class="wrap">
+        <div class="reveal">
+          <div class="eyebrow">System architecture</div>
+          <h2>One intelligence stack. Five clients. Animated.</h2>
+          <p class="sub">
+            Every capture surface and every retrieval surface hits the same
+            singleton service. The flowing dots show requests in motion.
+          </p>
+        </div>
+
+        <div class="diagram reveal">
+          <svg viewBox="0 0 1100 560" preserveAspectRatio="xMidYMid meet" aria-label="System architecture diagram">
+            <defs>
+              <marker id="arrow-head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M0,0 L10,5 L0,10 z" fill="var(--teal)"/>
+              </marker>
+              <marker id="arrow-head-faint" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M0,0 L10,5 L0,10 z" fill="rgba(255,255,255,0.36)"/>
+              </marker>
+            </defs>
+
+            <!-- Clients row (top) -->
+            <g>
+              <text x="40" y="32" class="node-sub">CLIENTS</text>
+
+              <g>
+                <rect x="40" y="48" width="180" height="64" class="node-bg" rx="10"/>
+                <text x="130" y="76" class="node-label" text-anchor="middle">Web (Next.js 16)</text>
+                <text x="130" y="94" class="node-sub" text-anchor="middle">recome.app &middot; JWT</text>
+              </g>
+
+              <g>
+                <rect x="240" y="48" width="180" height="64" class="node-bg" rx="10"/>
+                <text x="330" y="76" class="node-label" text-anchor="middle">PWA share-sheet</text>
+                <text x="330" y="94" class="node-sub" text-anchor="middle">iOS / Android &middot; JWT</text>
+              </g>
+
+              <g>
+                <rect x="440" y="48" width="180" height="64" class="node-bg" rx="10"/>
+                <text x="530" y="76" class="node-label" text-anchor="middle">Extension (MV3)</text>
+                <text x="530" y="94" class="node-sub" text-anchor="middle">Chrome &middot; JWT</text>
+              </g>
+
+              <g>
+                <rect x="640" y="48" width="180" height="64" class="node-bg" rx="10"/>
+                <text x="730" y="76" class="node-label" text-anchor="middle">Bulk importers</text>
+                <text x="730" y="94" class="node-sub" text-anchor="middle">YT / Reddit / Pocket &middot; JWT</text>
+              </g>
+
+              <g>
+                <rect x="840" y="48" width="220" height="64" class="node-bg-amber" rx="10"/>
+                <text x="950" y="76" class="node-label" text-anchor="middle" style="fill: var(--amber);">Third-party (IaaS)</text>
+                <text x="950" y="94" class="node-sub" text-anchor="middle">rk_live_… + X-User-Id</text>
+              </g>
+            </g>
+
+            <!-- Edge: Cloudflare bar -->
+            <g>
+              <rect x="40" y="148" width="1020" height="36" rx="8" fill="rgba(96,165,250,0.06)" stroke="var(--blue)" stroke-width="1.2"/>
+              <text x="550" y="172" class="node-label" text-anchor="middle" style="fill: var(--blue);">Cloudflare &middot; DNS &middot; CDN &middot; WAF &middot; TLS</text>
+            </g>
+
+            <!-- Two columns: web (Vercel) and cloud (Fly) -->
+            <g>
+              <rect x="40" y="216" width="380" height="100" class="node-bg-violet" rx="10"/>
+              <text x="230" y="244" class="node-label" text-anchor="middle" style="fill: var(--violet);">Vercel &middot; Next.js 16</text>
+              <text x="230" y="266" class="node-sub" text-anchor="middle">/api/extract (SSRF-safe) &middot; /api/import/*</text>
+              <text x="230" y="284" class="node-sub" text-anchor="middle">Server Components &middot; Edge functions</text>
+              <text x="230" y="302" class="node-sub" text-anchor="middle">PWA shell, share-target receiver</text>
+            </g>
+
+            <g>
+              <rect x="450" y="216" width="610" height="100" class="node-bg-accent" rx="10"/>
+              <text x="755" y="244" class="node-label" text-anchor="middle" style="fill: var(--teal);">Fly.io &middot; Hono cloud API</text>
+              <text x="755" y="266" class="node-sub" text-anchor="middle">Middleware: CORS &middot; rate-limit &middot; JWT or apiKey</text>
+              <text x="755" y="284" class="node-sub" text-anchor="middle">Routes: /auth /sync /billing /intelligence (consumer)</text>
+              <text x="755" y="302" class="node-sub" text-anchor="middle">/v1 (IaaS, tenant-scoped via composeTenantUserId)</text>
+            </g>
+
+            <!-- IntelligenceService block -->
+            <g>
+              <rect x="200" y="348" width="700" height="80" rx="10" fill="rgba(94,234,212,0.04)" stroke="var(--teal)" stroke-width="1.5" stroke-dasharray="5 4"/>
+              <text x="550" y="376" class="node-label" text-anchor="middle">IntelligenceService (singleton)</text>
+              <text x="280" y="402" class="node-sub" text-anchor="middle">SignalIngestion</text>
+              <text x="430" y="402" class="node-sub" text-anchor="middle">ResearchTrail</text>
+              <text x="580" y="402" class="node-sub" text-anchor="middle">GraphRepository</text>
+              <text x="730" y="402" class="node-sub" text-anchor="middle">VectorClient</text>
+              <text x="850" y="402" class="node-sub" text-anchor="middle">EmbeddingClient</text>
+            </g>
+
+            <!-- Data layer -->
+            <g>
+              <rect x="40" y="460" width="170" height="70" class="node-bg" rx="10"/>
+              <text x="125" y="488" class="node-label" text-anchor="middle">Postgres</text>
+              <text x="125" y="506" class="node-sub" text-anchor="middle">Neon &middot; OLTP</text>
+              <text x="125" y="520" class="node-sub" text-anchor="middle">auth / tenants / billing</text>
+
+              <rect x="220" y="460" width="170" height="70" class="node-bg-violet" rx="10"/>
+              <text x="305" y="488" class="node-label" text-anchor="middle" style="fill: var(--violet);">Neo4j</text>
+              <text x="305" y="506" class="node-sub" text-anchor="middle">AuraDB</text>
+              <text x="305" y="520" class="node-sub" text-anchor="middle">interest graph</text>
+
+              <rect x="400" y="460" width="170" height="70" class="node-bg-accent" rx="10"/>
+              <text x="485" y="488" class="node-label" text-anchor="middle" style="fill: var(--teal);">Qdrant</text>
+              <text x="485" y="506" class="node-sub" text-anchor="middle">tenant collections</text>
+              <text x="485" y="520" class="node-sub" text-anchor="middle">semantic vectors</text>
+
+              <rect x="580" y="460" width="170" height="70" class="node-bg-rose" rx="10"/>
+              <text x="665" y="488" class="node-label" text-anchor="middle" style="fill: var(--rose);">Redis</text>
+              <text x="665" y="506" class="node-sub" text-anchor="middle">Upstash</text>
+              <text x="665" y="520" class="node-sub" text-anchor="middle">cache + rate-limit</text>
+
+              <rect x="760" y="460" width="160" height="70" class="node-bg-amber" rx="10"/>
+              <text x="840" y="488" class="node-label" text-anchor="middle" style="fill: var(--amber);">OpenAI</text>
+              <text x="840" y="506" class="node-sub" text-anchor="middle">embeddings</text>
+              <text x="840" y="520" class="node-sub" text-anchor="middle">+ topic enrichment</text>
+
+              <rect x="930" y="460" width="130" height="70" class="node-bg" rx="10"/>
+              <text x="995" y="488" class="node-label" text-anchor="middle">R2</text>
+              <text x="995" y="506" class="node-sub" text-anchor="middle">Cloudflare</text>
+              <text x="995" y="520" class="node-sub" text-anchor="middle">bulk uploads</text>
+            </g>
+
+            <!-- Connecting lines + animated dots -->
+            <!-- Clients -> CF -->
+            <path d="M130,112 L130,148" class="arrow-animated"/>
+            <path d="M330,112 L330,148" class="arrow-animated" style="animation-delay: 0.2s"/>
+            <path d="M530,112 L530,148" class="arrow-animated" style="animation-delay: 0.4s"/>
+            <path d="M730,112 L730,148" class="arrow-animated" style="animation-delay: 0.6s"/>
+            <path d="M950,112 L950,148" class="arrow-animated" style="animation-delay: 0.8s"/>
+
+            <!-- CF -> Vercel / Fly -->
+            <path d="M230,184 L230,216" class="arrow-animated" style="animation-delay: 0.3s"/>
+            <path d="M755,184 L755,216" class="arrow-animated" style="animation-delay: 0.5s"/>
+
+            <!-- Vercel -> Fly (cross-origin POST) -->
+            <path d="M420,266 L450,266" class="arrow" marker-end="url(#arrow-head-faint)"/>
+
+            <!-- Fly -> Intelligence -->
+            <path d="M550,316 L550,348" class="arrow-animated" style="animation-delay: 0.7s"/>
+
+            <!-- Intelligence -> data layer -->
+            <path d="M280,428 L125,460" class="arrow" marker-end="url(#arrow-head-faint)"/>
+            <path d="M430,428 L305,460" class="arrow" marker-end="url(#arrow-head-faint)"/>
+            <path d="M580,428 L485,460" class="arrow" marker-end="url(#arrow-head-faint)"/>
+            <path d="M730,428 L665,460" class="arrow" marker-end="url(#arrow-head-faint)"/>
+            <path d="M850,428 L840,460" class="arrow" marker-end="url(#arrow-head-faint)"/>
+
+            <!-- Active animated flow: full path from extension to Neo4j -->
+            <path id="flow-1" d="M530,112 L530,148 L530,184 L530,216 L530,316 L550,348" fill="none" stroke="none"/>
+            <circle class="data-dot" r="4">
+              <animateMotion dur="3.2s" repeatCount="indefinite">
+                <mpath href="#flow-1"/>
+              </animateMotion>
+            </circle>
+
+            <path id="flow-2" d="M950,112 L950,148 L950,184 L755,216 L755,316 L550,348" fill="none" stroke="none"/>
+            <circle class="data-dot" r="4" style="fill: var(--amber); filter: drop-shadow(0 0 6px var(--amber));">
+              <animateMotion dur="3.6s" repeatCount="indefinite" begin="1.2s">
+                <mpath href="#flow-2"/>
+              </animateMotion>
+            </circle>
+
+            <path id="flow-3" d="M550,428 L305,460" fill="none" stroke="none"/>
+            <circle class="data-dot" r="4" style="fill: var(--violet); filter: drop-shadow(0 0 6px var(--violet));">
+              <animateMotion dur="1.8s" repeatCount="indefinite" begin="2.4s">
+                <mpath href="#flow-3"/>
+              </animateMotion>
+            </circle>
+          </svg>
+          <div class="legend">
+            <span class="item"><span class="swatch" style="background: var(--teal);"></span> Consumer flow</span>
+            <span class="item"><span class="swatch" style="background: var(--amber);"></span> IaaS flow</span>
+            <span class="item"><span class="swatch" style="background: var(--violet);"></span> Graph write</span>
+            <span class="item"><span class="swatch" style="background: rgba(255,255,255,0.36);"></span> Static reference</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── Capture flow ───────── -->
+    <section id="capture">
+      <div class="wrap">
+        <div class="reveal">
+          <div class="eyebrow">Capture flow</div>
+          <h2>From URL paste to graph node, in under a second.</h2>
+          <p class="sub">
+            One request kicks off a chain across the extractor, the LLM
+            enricher, the graph writer, and the vector store &mdash; with
+            idempotency, retry, and tenant scoping baked in.
+          </p>
+        </div>
+
+        <div class="diagram reveal">
+          <svg viewBox="0 0 1100 520" preserveAspectRatio="xMidYMid meet" aria-label="Capture sequence diagram">
+            <defs>
+              <marker id="seq-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M0,0 L10,5 L0,10 z" fill="var(--teal)"/>
+              </marker>
+              <marker id="seq-arrow-violet" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M0,0 L10,5 L0,10 z" fill="var(--violet)"/>
+              </marker>
+            </defs>
+
+            <!-- Actor headers -->
+            <g>
+              <rect x="20" y="20" width="150" height="40" class="node-bg" rx="8"/>
+              <text x="95" y="44" class="node-label" text-anchor="middle">User</text>
+
+              <rect x="200" y="20" width="150" height="40" class="node-bg-violet" rx="8"/>
+              <text x="275" y="44" class="node-label" text-anchor="middle">/api/extract</text>
+
+              <rect x="380" y="20" width="150" height="40" class="node-bg-accent" rx="8"/>
+              <text x="455" y="44" class="node-label" text-anchor="middle">Cloud /intelligence</text>
+
+              <rect x="560" y="20" width="150" height="40" class="node-bg-amber" rx="8"/>
+              <text x="635" y="44" class="node-label" text-anchor="middle">LLM enricher</text>
+
+              <rect x="740" y="20" width="150" height="40" class="node-bg" rx="8"/>
+              <text x="815" y="44" class="node-label" text-anchor="middle">Neo4j</text>
+
+              <rect x="920" y="20" width="160" height="40" class="node-bg-accent" rx="8"/>
+              <text x="1000" y="44" class="node-label" text-anchor="middle">Qdrant</text>
+            </g>
+
+            <!-- Lifelines -->
+            <line x1="95" y1="60" x2="95" y2="500" class="seq-lane"/>
+            <line x1="275" y1="60" x2="275" y2="500" class="seq-lane"/>
+            <line x1="455" y1="60" x2="455" y2="500" class="seq-lane"/>
+            <line x1="635" y1="60" x2="635" y2="500" class="seq-lane"/>
+            <line x1="815" y1="60" x2="815" y2="500" class="seq-lane"/>
+            <line x1="1000" y1="60" x2="1000" y2="500" class="seq-lane"/>
+
+            <!-- Messages -->
+            <g>
+              <line x1="95" y1="100" x2="275" y2="100" class="seq-msg" marker-end="url(#seq-arrow)"/>
+              <rect x="120" y="85" width="130" height="18" rx="4" class="seq-label-bg"/>
+              <text x="185" y="98" class="seq-label" text-anchor="middle">POST { url }</text>
+            </g>
+
+            <g>
+              <line x1="275" y1="140" x2="275" y2="155" stroke="var(--text-faint)" stroke-width="1" stroke-dasharray="3 3"/>
+              <text x="290" y="150" class="seq-label" style="fill: var(--text-faint);">fetch URL · SSRF guard</text>
+            </g>
+
+            <g>
+              <line x1="275" y1="190" x2="95" y2="190" class="seq-msg-return" marker-end="url(#seq-arrow-violet)"/>
+              <rect x="115" y="175" width="140" height="18" rx="4" class="seq-label-bg"/>
+              <text x="185" y="188" class="seq-label" text-anchor="middle">og:title, topics, platform</text>
+            </g>
+
+            <g>
+              <line x1="95" y1="225" x2="455" y2="225" class="seq-msg" marker-end="url(#seq-arrow)"/>
+              <rect x="195" y="210" width="200" height="18" rx="4" class="seq-label-bg"/>
+              <text x="295" y="223" class="seq-label" text-anchor="middle">POST /intelligence/signals { …, topics }</text>
+            </g>
+
+            <g>
+              <line x1="455" y1="265" x2="635" y2="265" class="seq-msg" marker-end="url(#seq-arrow)"/>
+              <rect x="480" y="250" width="130" height="18" rx="4" class="seq-label-bg"/>
+              <text x="545" y="263" class="seq-label" text-anchor="middle">enrich topics (cached)</text>
+            </g>
+            <g>
+              <line x1="635" y1="298" x2="455" y2="298" class="seq-msg-return" marker-end="url(#seq-arrow-violet)"/>
+              <rect x="478" y="283" width="130" height="18" rx="4" class="seq-label-bg"/>
+              <text x="543" y="296" class="seq-label" text-anchor="middle">[t1, t2, t3]</text>
+            </g>
+
+            <g>
+              <line x1="455" y1="335" x2="815" y2="335" class="seq-msg" marker-end="url(#seq-arrow)"/>
+              <rect x="540" y="320" width="200" height="18" rx="4" class="seq-label-bg"/>
+              <text x="640" y="333" class="seq-label" text-anchor="middle">MERGE User / Topic / Page / Signal</text>
+            </g>
+
+            <g>
+              <line x1="455" y1="375" x2="1000" y2="375" class="seq-msg" marker-end="url(#seq-arrow)"/>
+              <rect x="640" y="360" width="180" height="18" rx="4" class="seq-label-bg"/>
+              <text x="730" y="373" class="seq-label" text-anchor="middle">upsert vector to tenant collection</text>
+            </g>
+
+            <g>
+              <line x1="815" y1="420" x2="455" y2="420" class="seq-msg-return" marker-end="url(#seq-arrow-violet)"/>
+              <line x1="1000" y1="420" x2="455" y2="420" class="seq-msg-return" stroke-dasharray="6 5"/>
+              <rect x="540" y="405" width="190" height="18" rx="4" class="seq-label-bg"/>
+              <text x="635" y="418" class="seq-label" text-anchor="middle">commit signal · idempotent on id</text>
+            </g>
+
+            <g>
+              <line x1="455" y1="460" x2="95" y2="460" class="seq-msg-return" marker-end="url(#seq-arrow-violet)"/>
+              <rect x="195" y="445" width="200" height="18" rx="4" class="seq-label-bg"/>
+              <text x="295" y="458" class="seq-label" text-anchor="middle">{ signalId, trail }</text>
+            </g>
+
+            <!-- Live data dots traveling -->
+            <path id="cap-flow-1" d="M95,100 L275,100" fill="none" stroke="none"/>
+            <circle class="data-dot" r="3.5">
+              <animateMotion dur="4s" repeatCount="indefinite">
+                <mpath href="#cap-flow-1"/>
+              </animateMotion>
+            </circle>
+
+            <path id="cap-flow-2" d="M95,225 L455,225 L455,335 L815,335" fill="none" stroke="none"/>
+            <circle class="data-dot" r="3.5">
+              <animateMotion dur="4s" repeatCount="indefinite" begin="0.8s">
+                <mpath href="#cap-flow-2"/>
+              </animateMotion>
+            </circle>
+
+            <path id="cap-flow-3" d="M455,375 L1000,375" fill="none" stroke="none"/>
+            <circle class="data-dot" r="3.5" style="fill: var(--amber); filter: drop-shadow(0 0 6px var(--amber));">
+              <animateMotion dur="4s" repeatCount="indefinite" begin="1.6s">
+                <mpath href="#cap-flow-3"/>
+              </animateMotion>
+            </circle>
+          </svg>
+          <div class="legend">
+            <span class="item"><span class="swatch" style="background: var(--teal);"></span> Forward call</span>
+            <span class="item"><span class="swatch" style="background: var(--violet);"></span> Return / response</span>
+            <span class="item"><span class="swatch" style="background: var(--text-faint);"></span> Internal step</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── Knowledge graph viz ───────── -->
+    <section id="graph">
+      <div class="wrap">
+        <div class="reveal">
+          <div class="eyebrow">Knowledge graph</div>
+          <h2>A typed graph of your attention.</h2>
+          <p class="sub">
+            Nodes are <span style="color: var(--teal);">topics</span>,
+            <span style="color: var(--violet);">pages</span>,
+            <span style="color: var(--amber);">entities</span>, and
+            <span style="color: var(--rose);">you</span>. Edges are typed
+            (VIEWED, MENTIONS, HAS_INTENT, RELATED_TO) so traversal answers
+            real questions, not just similarity.
+          </p>
+        </div>
+
+        <div class="diagram reveal graph-viz">
+          <svg viewBox="0 0 1100 520" preserveAspectRatio="xMidYMid meet" aria-label="Knowledge graph visualization">
+            <defs>
+              <radialGradient id="user-glow" cx="0.5" cy="0.5" r="0.5">
+                <stop offset="0%" stop-color="var(--rose)" stop-opacity="0.5"/>
+                <stop offset="100%" stop-color="var(--rose)" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+
+            <!-- Edges (drawn first so circles overlay) -->
+            <g>
+              <!-- User → topics -->
+              <path d="M550,260 L380,180" class="graph-edge strong draw-stroke"/>
+              <path d="M550,260 L730,160" class="graph-edge strong draw-stroke" style="animation-delay: 0.2s"/>
+              <path d="M550,260 L820,290" class="graph-edge strong draw-stroke" style="animation-delay: 0.4s"/>
+              <path d="M550,260 L370,360" class="graph-edge strong draw-stroke" style="animation-delay: 0.6s"/>
+              <path d="M550,260 L260,260" class="graph-edge strong draw-stroke" style="animation-delay: 0.3s"/>
+
+              <!-- Topic → pages (some) -->
+              <path d="M380,180 L240,90" class="graph-edge draw-stroke" style="animation-delay: 0.5s"/>
+              <path d="M380,180 L180,170" class="graph-edge draw-stroke" style="animation-delay: 0.7s"/>
+              <path d="M730,160 L900,90" class="graph-edge draw-stroke" style="animation-delay: 0.8s"/>
+              <path d="M730,160 L960,180" class="graph-edge draw-stroke" style="animation-delay: 0.9s"/>
+              <path d="M820,290 L1000,330" class="graph-edge draw-stroke" style="animation-delay: 1.0s"/>
+              <path d="M370,360 L210,420" class="graph-edge draw-stroke" style="animation-delay: 1.1s"/>
+              <path d="M370,360 L280,460" class="graph-edge draw-stroke" style="animation-delay: 1.2s"/>
+
+              <!-- Cross-topic RELATED_TO -->
+              <path d="M380,180 L730,160" class="graph-edge draw-stroke" style="stroke-dasharray: 4 4; animation-delay: 1.3s"/>
+              <path d="M730,160 L820,290" class="graph-edge draw-stroke" style="stroke-dasharray: 4 4; animation-delay: 1.4s"/>
+              <path d="M370,360 L820,290" class="graph-edge draw-stroke" style="stroke-dasharray: 4 4; animation-delay: 1.5s"/>
+
+              <!-- Entities -->
+              <path d="M180,170 L120,230" class="graph-edge draw-stroke" style="animation-delay: 1.4s"/>
+              <path d="M960,180 L1040,240" class="graph-edge draw-stroke" style="animation-delay: 1.5s"/>
+            </g>
+
+            <!-- User (center) -->
+            <g class="graph-node">
+              <circle cx="550" cy="260" r="60" fill="url(#user-glow)" />
+              <circle cx="550" cy="260" r="32" fill="var(--rose)" stroke="rgba(251,113,133,0.4)" stroke-width="6" style="color: var(--rose);"/>
+              <text x="550" y="265" fill="var(--bg)" text-anchor="middle" font-size="14" font-weight="800">YOU</text>
+            </g>
+
+            <!-- Topics -->
+            <g class="graph-node" style="color: var(--teal);">
+              <circle cx="380" cy="180" r="26" fill="rgba(94,234,212,0.15)" stroke="var(--teal)" stroke-width="2"/>
+              <text x="380" y="184" fill="var(--teal)" text-anchor="middle">standing desks</text>
+            </g>
+            <g class="graph-node" style="color: var(--teal);">
+              <circle cx="730" cy="160" r="26" fill="rgba(94,234,212,0.15)" stroke="var(--teal)" stroke-width="2"/>
+              <text x="730" y="164" fill="var(--teal)" text-anchor="middle">ergonomic chairs</text>
+            </g>
+            <g class="graph-node" style="color: var(--teal);">
+              <circle cx="820" cy="290" r="22" fill="rgba(94,234,212,0.15)" stroke="var(--teal)" stroke-width="2"/>
+              <text x="820" y="294" fill="var(--teal)" text-anchor="middle">monitors</text>
+            </g>
+            <g class="graph-node" style="color: var(--teal);">
+              <circle cx="370" cy="360" r="26" fill="rgba(94,234,212,0.15)" stroke="var(--teal)" stroke-width="2"/>
+              <text x="370" y="364" fill="var(--teal)" text-anchor="middle">home office</text>
+            </g>
+            <g class="graph-node" style="color: var(--teal);">
+              <circle cx="260" cy="260" r="20" fill="rgba(94,234,212,0.1)" stroke="var(--teal)" stroke-width="1.5" stroke-dasharray="3 3"/>
+              <text x="260" y="264" fill="var(--teal)" text-anchor="middle" font-size="10">bamboo</text>
+            </g>
+
+            <!-- Pages (violet) -->
+            <g class="graph-node" style="color: var(--violet);">
+              <circle cx="240" cy="90" r="14" fill="rgba(167,139,250,0.15)" stroke="var(--violet)" stroke-width="1.5"/>
+              <text x="240" y="60" fill="var(--violet)" text-anchor="middle" font-size="10">youtube.com</text>
+            </g>
+            <g class="graph-node" style="color: var(--violet);">
+              <circle cx="180" cy="170" r="14" fill="rgba(167,139,250,0.15)" stroke="var(--violet)" stroke-width="1.5"/>
+              <text x="120" y="174" fill="var(--violet)" text-anchor="middle" font-size="10">reddit</text>
+            </g>
+            <g class="graph-node" style="color: var(--violet);">
+              <circle cx="900" cy="90" r="14" fill="rgba(167,139,250,0.15)" stroke="var(--violet)" stroke-width="1.5"/>
+              <text x="900" y="60" fill="var(--violet)" text-anchor="middle" font-size="10">reddit</text>
+            </g>
+            <g class="graph-node" style="color: var(--violet);">
+              <circle cx="960" cy="180" r="14" fill="rgba(167,139,250,0.15)" stroke="var(--violet)" stroke-width="1.5"/>
+              <text x="1020" y="184" fill="var(--violet)" text-anchor="middle" font-size="10">amazon</text>
+            </g>
+            <g class="graph-node" style="color: var(--violet);">
+              <circle cx="1000" cy="330" r="14" fill="rgba(167,139,250,0.15)" stroke="var(--violet)" stroke-width="1.5"/>
+              <text x="1040" y="334" fill="var(--violet)" text-anchor="middle" font-size="10">verge</text>
+            </g>
+            <g class="graph-node" style="color: var(--violet);">
+              <circle cx="210" cy="420" r="14" fill="rgba(167,139,250,0.15)" stroke="var(--violet)" stroke-width="1.5"/>
+              <text x="160" y="424" fill="var(--violet)" text-anchor="middle" font-size="10">blog</text>
+            </g>
+            <g class="graph-node" style="color: var(--violet);">
+              <circle cx="280" cy="460" r="14" fill="rgba(167,139,250,0.15)" stroke="var(--violet)" stroke-width="1.5"/>
+              <text x="280" y="488" fill="var(--violet)" text-anchor="middle" font-size="10">substack</text>
+            </g>
+
+            <!-- Entities (amber) -->
+            <g class="graph-node" style="color: var(--amber);">
+              <rect x="100" y="220" width="60" height="22" rx="11" fill="rgba(251,191,36,0.12)" stroke="var(--amber)" stroke-width="1.2"/>
+              <text x="130" y="236" fill="var(--amber)" text-anchor="middle" font-size="10">Uplift V2</text>
+            </g>
+            <g class="graph-node" style="color: var(--amber);">
+              <rect x="1010" y="230" width="80" height="22" rx="11" fill="rgba(251,191,36,0.12)" stroke="var(--amber)" stroke-width="1.2"/>
+              <text x="1050" y="246" fill="var(--amber)" text-anchor="middle" font-size="10">Branch Desk</text>
+            </g>
+          </svg>
+          <div class="legend">
+            <span class="item"><span class="swatch" style="background: var(--rose);"></span> :User</span>
+            <span class="item"><span class="swatch" style="background: var(--teal);"></span> :Topic</span>
+            <span class="item"><span class="swatch" style="background: var(--violet);"></span> :Page</span>
+            <span class="item"><span class="swatch" style="background: var(--amber);"></span> :Entity</span>
+            <span class="item"><span class="swatch" style="background: rgba(94,234,212,0.4);"></span> HAS_INTENT / VIEWED (solid)</span>
+            <span class="item"><span class="swatch" style="background: transparent; border: 1px dashed var(--text-faint);"></span> RELATED_TO (dashed)</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── Multi-tenant isolation ───────── -->
+    <section id="tenant">
+      <div class="wrap">
+        <div class="reveal">
+          <div class="eyebrow">Multi-tenant isolation</div>
+          <h2>One graph. Strict isolation by construction.</h2>
+          <p class="sub">
+            Every IaaS write composes the userId as <code>tenant_&lt;tid&gt;__&lt;extUid&gt;</code>.
+            Qdrant uses a separate collection per tenant. A cross-tenant query would
+            need code that explicitly reverses the composition &mdash; impossible by accident.
+          </p>
+        </div>
+
+        <div class="diagram reveal">
+          <svg viewBox="0 0 1100 440" preserveAspectRatio="xMidYMid meet" aria-label="Tenant isolation diagram">
+            <!-- Tenant A -->
+            <g>
+              <rect x="40" y="30" width="320" height="370" rx="14" fill="rgba(94,234,212,0.04)" stroke="var(--teal)" stroke-width="1.2" stroke-dasharray="6 6"/>
+              <text x="60" y="60" class="node-label" style="fill: var(--teal);">Tenant A &middot; Acme Notes</text>
+              <text x="60" y="80" class="node-sub" style="font-family: ui-monospace, monospace;">tid = clx9z2a01</text>
+
+              <rect x="60" y="100" width="280" height="64" class="node-bg" rx="8"/>
+              <text x="200" y="125" class="node-label" text-anchor="middle">composed userId</text>
+              <text x="200" y="148" class="node-sub" text-anchor="middle" style="font-family: ui-monospace, monospace; fill: var(--teal);">tenant_clx9z2a01__user_42</text>
+
+              <rect x="60" y="180" width="280" height="74" class="node-bg-violet" rx="8"/>
+              <text x="200" y="206" class="node-label" text-anchor="middle" style="fill: var(--violet);">Neo4j</text>
+              <text x="200" y="226" class="node-sub" text-anchor="middle">(:User {id: tenant_clx9z2a01__…})</text>
+              <text x="200" y="244" class="node-sub" text-anchor="middle">→ topics, pages, signals</text>
+
+              <rect x="60" y="270" width="280" height="74" class="node-bg-accent" rx="8"/>
+              <text x="200" y="296" class="node-label" text-anchor="middle" style="fill: var(--teal);">Qdrant collection</text>
+              <text x="200" y="316" class="node-sub" text-anchor="middle" style="font-family: ui-monospace, monospace;">tenant-clx9z2a01</text>
+              <text x="200" y="334" class="node-sub" text-anchor="middle">→ vectors (own namespace)</text>
+
+              <text x="60" y="378" class="node-sub" style="fill: var(--green);">GDPR delete: drop collection + delete-by-prefix.</text>
+            </g>
+
+            <!-- Tenant B -->
+            <g>
+              <rect x="390" y="30" width="320" height="370" rx="14" fill="rgba(167,139,250,0.04)" stroke="var(--violet)" stroke-width="1.2" stroke-dasharray="6 6"/>
+              <text x="410" y="60" class="node-label" style="fill: var(--violet);">Tenant B &middot; Beep Learning</text>
+              <text x="410" y="80" class="node-sub" style="font-family: ui-monospace, monospace;">tid = clxabc742</text>
+
+              <rect x="410" y="100" width="280" height="64" class="node-bg" rx="8"/>
+              <text x="550" y="125" class="node-label" text-anchor="middle">composed userId</text>
+              <text x="550" y="148" class="node-sub" text-anchor="middle" style="font-family: ui-monospace, monospace; fill: var(--violet);">tenant_clxabc742__user_42</text>
+
+              <rect x="410" y="180" width="280" height="74" class="node-bg-violet" rx="8"/>
+              <text x="550" y="206" class="node-label" text-anchor="middle" style="fill: var(--violet);">Neo4j</text>
+              <text x="550" y="226" class="node-sub" text-anchor="middle">(:User {id: tenant_clxabc742__…})</text>
+              <text x="550" y="244" class="node-sub" text-anchor="middle">→ topics, pages, signals</text>
+
+              <rect x="410" y="270" width="280" height="74" class="node-bg-accent" rx="8"/>
+              <text x="550" y="296" class="node-label" text-anchor="middle" style="fill: var(--teal);">Qdrant collection</text>
+              <text x="550" y="316" class="node-sub" text-anchor="middle" style="font-family: ui-monospace, monospace;">tenant-clxabc742</text>
+              <text x="550" y="334" class="node-sub" text-anchor="middle">→ vectors (own namespace)</text>
+
+              <text x="410" y="378" class="node-sub" style="fill: var(--green);">Same external user_42 &mdash; different composed id, no collision.</text>
+            </g>
+
+            <!-- Consumer (Recome's own tenant) -->
+            <g>
+              <rect x="740" y="30" width="320" height="370" rx="14" fill="rgba(251,191,36,0.04)" stroke="var(--amber)" stroke-width="1.2" stroke-dasharray="6 6"/>
+              <text x="760" y="60" class="node-label" style="fill: var(--amber);">Consumer &middot; recome.app</text>
+              <text x="760" y="80" class="node-sub" style="font-family: ui-monospace, monospace;">no tenant_ prefix</text>
+
+              <rect x="760" y="100" width="280" height="64" class="node-bg" rx="8"/>
+              <text x="900" y="125" class="node-label" text-anchor="middle">raw Prisma cuid</text>
+              <text x="900" y="148" class="node-sub" text-anchor="middle" style="font-family: ui-monospace, monospace; fill: var(--amber);">cm9k3x7a0001abcdef</text>
+
+              <rect x="760" y="180" width="280" height="74" class="node-bg-violet" rx="8"/>
+              <text x="900" y="206" class="node-label" text-anchor="middle" style="fill: var(--violet);">Neo4j</text>
+              <text x="900" y="226" class="node-sub" text-anchor="middle">(:User {id: cm9k3x7a0001…})</text>
+              <text x="900" y="244" class="node-sub" text-anchor="middle">→ topics, pages, signals</text>
+
+              <rect x="760" y="270" width="280" height="74" class="node-bg-accent" rx="8"/>
+              <text x="900" y="296" class="node-label" text-anchor="middle" style="fill: var(--teal);">Qdrant collection</text>
+              <text x="900" y="316" class="node-sub" text-anchor="middle" style="font-family: ui-monospace, monospace;">tenant-recome-app</text>
+              <text x="900" y="334" class="node-sub" text-anchor="middle">→ vectors (consumer namespace)</text>
+
+              <text x="760" y="378" class="node-sub" style="fill: var(--green);">Reserved tenant_ prefix prevents collision with cuids.</text>
+            </g>
+          </svg>
+          <div class="legend">
+            <span class="item">✓ Strict isolation by construction (regression-tested in <code>tenantUserId.test.ts</code>)</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── Tech stack ───────── -->
+    <section id="stack">
+      <div class="wrap">
+        <div class="reveal">
+          <div class="eyebrow">Tech stack</div>
+          <h2>Boring tech. Novel product.</h2>
+          <p class="sub">
+            Every layer is a load-bearing, well-supported choice. The novelty
+            lives in the data model and the chat tools, not in the build pipeline.
+          </p>
+        </div>
+
+        <div class="reveal">
+          <div class="stack-layer" style="--layer-color: var(--blue);">
+            <span class="layer-tag">Frontend</span>
+            <div class="layer-items">
+              <span class="chip">Next.js 16</span>
+              <span class="chip">React 19</span>
+              <span class="chip">TypeScript 5.9</span>
+              <span class="chip">Tailwind 4</span>
+              <span class="chip">PWA + share-target</span>
+              <span class="chip muted">RSC, App Router</span>
+            </div>
+          </div>
+          <div class="stack-layer" style="--layer-color: var(--teal);">
+            <span class="layer-tag">Backend</span>
+            <div class="layer-items">
+              <span class="chip">Node.js 20 LTS</span>
+              <span class="chip">Hono 4</span>
+              <span class="chip">Zod</span>
+              <span class="chip">pino</span>
+              <span class="chip">BullMQ (P1)</span>
+              <span class="chip muted">Edge-compatible</span>
+            </div>
+          </div>
+          <div class="stack-layer" style="--layer-color: var(--violet);">
+            <span class="layer-tag">Data</span>
+            <div class="layer-items">
+              <span class="chip">Postgres 16 / Neon</span>
+              <span class="chip">Prisma 6</span>
+              <span class="chip">Neo4j 5 / AuraDB</span>
+              <span class="chip">Qdrant 1.x</span>
+              <span class="chip">Redis 7 / Upstash</span>
+              <span class="chip">R2 (S3-compat)</span>
+            </div>
+          </div>
+          <div class="stack-layer" style="--layer-color: var(--amber);">
+            <span class="layer-tag">AI / LLM</span>
+            <div class="layer-items">
+              <span class="chip">Anthropic Sonnet 4.6 (chat)</span>
+              <span class="chip">OpenAI GPT-4o (fallback)</span>
+              <span class="chip">OpenAI text-embedding-3-small (1536d)</span>
+              <span class="chip">Native tool-calling</span>
+              <span class="chip muted">No LangChain</span>
+            </div>
+          </div>
+          <div class="stack-layer" style="--layer-color: var(--rose);">
+            <span class="layer-tag">Auth + Payments</span>
+            <div class="layer-items">
+              <span class="chip">JWT (consumer)</span>
+              <span class="chip">bcrypt-12</span>
+              <span class="chip">OAuth (Google / GitHub / Facebook)</span>
+              <span class="chip">API keys rk_(live|test)_xxx (IaaS)</span>
+              <span class="chip">Stripe + Meters</span>
+            </div>
+          </div>
+          <div class="stack-layer" style="--layer-color: var(--green);">
+            <span class="layer-tag">Infra</span>
+            <div class="layer-items">
+              <span class="chip">Vercel (web)</span>
+              <span class="chip">Fly.io (cloud API)</span>
+              <span class="chip">Cloudflare (DNS / CDN / WAF)</span>
+              <span class="chip">GitHub Actions (CI/CD)</span>
+              <span class="chip muted">Single-region for v1</span>
+            </div>
+          </div>
+          <div class="stack-layer" style="--layer-color: var(--blue);">
+            <span class="layer-tag">Observability</span>
+            <div class="layer-items">
+              <span class="chip">Axiom (logs)</span>
+              <span class="chip">Sentry (errors)</span>
+              <span class="chip">PostHog (analytics)</span>
+              <span class="chip">Better Stack (uptime)</span>
+              <span class="chip">Helicone (LLM ops &mdash; P2)</span>
+              <span class="chip">OpenTelemetry → Honeycomb (P2)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── IaaS API ───────── -->
+    <section id="api">
+      <div class="wrap">
+        <div class="reveal">
+          <div class="eyebrow">IaaS &middot; /v1</div>
+          <h2>The same backend, exposed as an API for other companies.</h2>
+          <p class="sub">
+            Self-serve onboarding, transparent pricing, no procurement.
+            Drop the snippet on the right into any product to add a personal
+            interest graph backed by Neo4j + Qdrant.
+          </p>
+        </div>
+
+        <div class="api-demo">
+          <div class="api-pane reveal">
+            <div class="head">
+              <span class="dot"></span>
+              <span class="method">POST</span>
+              <span>https://recome-api.fly.dev/v1/signals</span>
+            </div>
+            <pre><span class="c">// Authenticated with your API key + the end-user&rsquo;s id.</span>
+<span class="m">curl</span> -X POST https://recome-api.fly.dev/v1/signals \
+  -H <span class="s">"Authorization: Bearer rk_live_a3f8…"</span> \
+  -H <span class="s">"X-User-Id: user_42"</span> \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{
+    "signals": [{
+      "kind": "view",
+      "ts": 1747526400000,
+      "pageUrl": "https://youtube.com/watch?v=abc",
+      "pageTitle": "Standing Desk Roundup 2026",
+      "platform": "youtube",
+      "topics": [{ "name": "standing desks" }]
+    }]
+  }'</span>
+
+<span class="c">// → 200 OK</span>
+<span class="k">{</span>
+  <span class="k">"ok"</span>: <span class="n">true</span>,
+  <span class="k">"tenantId"</span>: <span class="s">"clx9z2a01"</span>,
+  <span class="k">"externalUserId"</span>: <span class="s">"user_42"</span>,
+  <span class="k">"count"</span>: <span class="n">1</span>,
+  <span class="k">"results"</span>: [{ <span class="k">"signalId"</span>: <span class="s">"…"</span> }]
+<span class="k">}</span></pre>
+          </div>
+
+          <div class="api-pane reveal" data-delay="1">
+            <div class="head">
+              <span class="dot"></span>
+              <span class="method">GET</span>
+              <span>/v1/users/user_42/trails</span>
+            </div>
+            <pre><span class="c">// Cross-platform research trails for one end-user.</span>
+<span class="m">curl</span> https://recome-api.fly.dev/v1/users/user_42/trails \
+  -H <span class="s">"Authorization: Bearer rk_live_a3f8…"</span> \
+  -H <span class="s">"X-User-Id: user_42"</span>
+
+<span class="c">// → 200 OK</span>
+<span class="k">{</span>
+  <span class="k">"tenantId"</span>: <span class="s">"clx9z2a01"</span>,
+  <span class="k">"externalUserId"</span>: <span class="s">"user_42"</span>,
+  <span class="k">"trails"</span>: [
+    <span class="k">{</span>
+      <span class="k">"topic"</span>: <span class="s">"standing desks"</span>,
+      <span class="k">"platforms"</span>: [<span class="s">"youtube"</span>, <span class="s">"reddit"</span>, <span class="s">"amazon"</span>],
+      <span class="k">"signalCount"</span>: <span class="n">12</span>,
+      <span class="k">"strength"</span>: <span class="n">0.74</span>,
+      <span class="k">"firstSeen"</span>: <span class="n">1746921600000</span>,
+      <span class="k">"lastSeen"</span>: <span class="n">1747526400000</span>
+    <span class="k">}</span>
+  ]
+<span class="k">}</span></pre>
+          </div>
+        </div>
+
+        <div class="grid grid-3" style="margin-top: 32px;">
+          <div class="card reveal">
+            <h3>Tenant isolation</h3>
+            <p>Per-tenant Qdrant collections + composed userIds in Neo4j. Cross-tenant leaks blocked by construction, regression-tested.</p>
+          </div>
+          <div class="card reveal" data-delay="1">
+            <h3>Quota + metering</h3>
+            <p>Per-month signal + query counters, 429 on overage with <code>resetsAt</code>. Stripe Meters reports daily for billing.</p>
+          </div>
+          <div class="card reveal" data-delay="2">
+            <h3>GDPR delete</h3>
+            <p><code>DELETE /v1/users/:id</code> drops everything: Neo4j namespace, Qdrant points, Postgres rows. Idempotent.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── Roadmap ───────── -->
+    <section id="roadmap">
+      <div class="wrap">
+        <div class="reveal">
+          <div class="eyebrow">Roadmap</div>
+          <h2>Four phases. One hypothesis per phase. Real kill criteria.</h2>
+          <p class="sub">
+            36 weeks from today to a productionized consumer + IaaS surface.
+            Each phase has a measurable KPI and a defined kill criterion
+            &mdash; not aspirational vision, executable steps.
+          </p>
+        </div>
+
+        <div class="roadmap">
+          <div class="phase reveal" style="--phase-color: var(--teal); --phase-delay: 0.1s;">
+            <span class="ptag">Phase 0 &middot; 6w</span>
+            <h4>Capture</h4>
+            <div class="when">May 17 → Jun 28</div>
+            <div class="hyp">A user can capture interesting attention from any device in <strong>&lt;5s with no install</strong>.</div>
+            <ul class="kpis">
+              <li>≥40% session→capture</li>
+              <li>p50 time-to-first-capture &lt;90s</li>
+              <li>≥10 captures / wk1 user</li>
+              <li>≥25% via PWA share-sheet by w6</li>
+            </ul>
+          </div>
+
+          <div class="phase reveal" data-delay="1" style="--phase-color: var(--violet); --phase-delay: 0.4s;">
+            <span class="ptag">Phase 1 &middot; 8w</span>
+            <h4>Memory</h4>
+            <div class="when">Jun 29 → Aug 23</div>
+            <div class="hyp">Users come back in week 2 because the trail surfaces things they <strong>forgot they cared about</strong>.</div>
+            <ul class="kpis">
+              <li>Week-2 retention ≥25%</li>
+              <li>Bulk-import adoption ≥30%</li>
+              <li>Digest open rate ≥35%</li>
+              <li>200 DAU</li>
+            </ul>
+          </div>
+
+          <div class="phase reveal" data-delay="2" style="--phase-color: var(--amber); --phase-delay: 0.7s;">
+            <span class="ptag">Phase 2 &middot; 10w</span>
+            <h4>Chat</h4>
+            <div class="when">Aug 24 → Nov 1</div>
+            <div class="hyp">Personal-memory chat <strong>beats Perplexity</strong> on personal questions in a live test (n=30).</div>
+            <ul class="kpis">
+              <li>Side-by-side preferred ≥60%</li>
+              <li>Chat session conv ≥50%</li>
+              <li>Chat→action conv ≥20%</li>
+              <li>p50 TTFT &lt;2.5s</li>
+            </ul>
+          </div>
+
+          <div class="phase reveal" data-delay="3" style="--phase-color: var(--rose); --phase-delay: 1.0s;">
+            <span class="ptag">Phase 3 &middot; 12w</span>
+            <h4>IaaS</h4>
+            <div class="when">Nov 2 → Feb 7</div>
+            <div class="hyp">≥10 independent developers <strong>integrate, ship, and pay</strong> within 12 weeks of launch.</div>
+            <ul class="kpis">
+              <li>≥30% activation rate</li>
+              <li>p50 signup→signal &lt;30 min</li>
+              <li>≥10 paying tenants</li>
+              <li>≥$2.5k MRR</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── Pricing ───────── -->
+    <section id="pricing">
+      <div class="wrap">
+        <div class="reveal">
+          <div class="eyebrow">Pricing &middot; IaaS</div>
+          <h2>Self-serve at every tier under enterprise.</h2>
+          <p class="sub">
+            Same intelligence stack, four price points. Gross-margin
+            target ≥80% across Free → Pro. Enterprise sized for
+            dedicated capacity.
+          </p>
+        </div>
+
+        <div class="tiers">
+          <div class="tier reveal">
+            <div class="name">Free</div>
+            <div class="price">$0<span>/mo</span></div>
+            <ul>
+              <li>1K signals / mo</li>
+              <li>10K queries / mo</li>
+              <li>Self-serve only</li>
+              <li>No SLA</li>
+              <li>Community support</li>
+            </ul>
+          </div>
+          <div class="tier featured reveal" data-delay="1">
+            <div class="name" style="color: var(--teal);">Starter</div>
+            <div class="price">$49<span>/mo</span></div>
+            <ul>
+              <li>100K signals / mo</li>
+              <li>1M queries / mo</li>
+              <li>Email support</li>
+              <li>Usage dashboard</li>
+              <li>Overage @ low rate</li>
+            </ul>
+          </div>
+          <div class="tier reveal" data-delay="2">
+            <div class="name">Pro</div>
+            <div class="price">$499<span>/mo</span></div>
+            <ul>
+              <li>1M signals / mo</li>
+              <li>10M queries / mo</li>
+              <li>Priority + 24h SLA</li>
+              <li>Webhooks (P3)</li>
+              <li>Custom retention</li>
+            </ul>
+          </div>
+          <div class="tier reveal" data-delay="3">
+            <div class="name">Enterprise</div>
+            <div class="price">Custom<span></span></div>
+            <ul>
+              <li>Unlimited signals</li>
+              <li>Dedicated cluster</li>
+              <li>SSO, DPA, 99.9% SLA</li>
+              <li>Volume discounts</li>
+              <li>Dedicated CSM</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="cost-grid">
+          <div class="cost-card reveal">
+            <h4>Cost per consumer / mo</h4>
+            <div class="summary">Typical Riya &mdash; 100 captures, 30 chat queries</div>
+            <div class="bar"><span class="name">LLM enrichment</span><span class="track"><span class="fill" style="width: 50%"></span></span><span class="val">$0.50</span></div>
+            <div class="bar"><span class="name">Anthropic chat</span><span class="track"><span class="fill" style="width: 18%; background: var(--violet);"></span></span><span class="val">$0.18</span></div>
+            <div class="bar"><span class="name">Neo4j share</span><span class="track"><span class="fill" style="width: 10%; background: var(--amber);"></span></span><span class="val">$0.10</span></div>
+            <div class="bar"><span class="name">Qdrant share</span><span class="track"><span class="fill" style="width: 5%; background: var(--rose);"></span></span><span class="val">$0.05</span></div>
+            <div class="bar"><span class="name">Infra share</span><span class="track"><span class="fill" style="width: 15%; background: var(--blue);"></span></span><span class="val">$0.15</span></div>
+            <div class="bar"><span class="name">OpenAI embeddings</span><span class="track"><span class="fill" style="width: 2%; background: var(--green);"></span></span><span class="val">$0.001</span></div>
+            <div class="totals"><span>Total</span><span>~$1.00</span></div>
+          </div>
+
+          <div class="cost-card reveal" data-delay="1">
+            <h4>Cost per Starter tenant / mo</h4>
+            <div class="summary">100K signals, 1M queries</div>
+            <div class="bar"><span class="name">Qdrant share</span><span class="track"><span class="fill" style="width: 50%"></span></span><span class="val">$2.50</span></div>
+            <div class="bar"><span class="name">Neo4j share</span><span class="track"><span class="fill" style="width: 20%; background: var(--violet);"></span></span><span class="val">$1.00</span></div>
+            <div class="bar"><span class="name">Fly bandwidth</span><span class="track"><span class="fill" style="width: 20%; background: var(--amber);"></span></span><span class="val">$1.00</span></div>
+            <div class="bar"><span class="name">Postgres share</span><span class="track"><span class="fill" style="width: 5%; background: var(--rose);"></span></span><span class="val">$0.10</span></div>
+            <div class="bar"><span class="name">OpenAI embeddings</span><span class="track"><span class="fill" style="width: 3%; background: var(--blue);"></span></span><span class="val">$0.06</span></div>
+            <div class="totals"><span>Total cost</span><span>~$4.66</span></div>
+            <div class="totals" style="margin-top:0; padding-top:0; border-top:0;"><span>Price</span><span>$49 → ~90% margin</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── vs Perplexity ───────── -->
+    <section id="vs">
+      <div class="wrap">
+        <div class="reveal">
+          <div class="eyebrow">Differentiation</div>
+          <h2>We do not compete with Perplexity. We complement it.</h2>
+          <p class="sub">
+            Perplexity searches the world. Recome searches your past attention.
+            Different category, different data, different value.
+          </p>
+        </div>
+
+        <table class="compare reveal">
+          <thead>
+            <tr>
+              <th>Question</th>
+              <th>Perplexity / ChatGPT</th>
+              <th class="col-recome">Recome</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>What is X?</td>
+              <td><span class="yes">✓</span> Excellent &mdash; world knowledge, fresh.</td>
+              <td><span class="no">✗</span> Wrong tool. We route to Perplexity and say so.</td>
+            </tr>
+            <tr>
+              <td>What was I researching last Tuesday?</td>
+              <td><span class="no">✗</span> No data. Cannot answer.</td>
+              <td><span class="yes">✓</span> Trail-windowed retrieval over signals.</td>
+            </tr>
+            <tr>
+              <td>I&rsquo;m about to buy this &mdash; does it conflict with anything I learned?</td>
+              <td><span class="no">✗</span> No record of what you saw.</td>
+              <td><span class="yes">✓</span> Trail intersection + LLM judgment over captures.</td>
+            </tr>
+            <tr>
+              <td>Summarize my [topic] research across all platforms last 3 weeks.</td>
+              <td><span class="no">✗</span> No cross-platform signal.</td>
+              <td><span class="yes">✓</span> Multi-source summarization, dwell-weighted.</td>
+            </tr>
+            <tr>
+              <td>Find the YouTube reviewer who said brand X has bad bearings.</td>
+              <td><span class="no">✗</span> Cannot retrieve from your history.</td>
+              <td><span class="yes">✓</span> Entity-disambig + fine-grained retrieval.</td>
+            </tr>
+            <tr>
+              <td>I&rsquo;ve been on the fence about [thing] &mdash; decide for me.</td>
+              <td><span class="no">✗</span> Generic answer; no context on what you considered.</td>
+              <td><span class="yes">✓</span> Preference modeling + opinion synthesis from your trail.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout reveal" style="margin-top: 32px;">
+          <em>The risk is real:</em> with weak capture, Recome is a worse Perplexity
+          in week 1. The product only feels magical in week 2&ndash;3 once the
+          graph is dense. That&rsquo;s why bulk-import on day 1 is the load-bearing
+          retention bet in Phase&nbsp;1, not Phase&nbsp;2.
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── Footer ───────── -->
+    <footer>
+      <div class="wrap">
+        <p>
+          Recome &middot; System Overview &middot; v2026-05-17 &middot;
+          Generated companion to <a href="INDEX.md">docs/architecture/</a> ADRs and plans
+        </p>
+        <p style="margin-top: 12px;">
+          Standalone HTML, no external dependencies. Open this file in any browser to demo.
+        </p>
+      </div>
+    </footer>
+
+    <!-- ─────────────────────────────────────────────────────────────── -->
+    <script>
+      // Scroll-triggered reveal animations.
+      (function () {
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            if (e.isIntersecting) {
+              e.target.classList.add('in');
+              io.unobserve(e.target);
+            }
+          });
+        }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+        document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+      })();
+
+      // Active section in top nav.
+      (function () {
+        var links = Array.from(document.querySelectorAll('nav.top a'));
+        var idToLink = {};
+        links.forEach(function (a) {
+          var id = a.getAttribute('href').slice(1);
+          idToLink[id] = a;
+        });
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            var id = e.target.id;
+            if (e.isIntersecting && idToLink[id]) {
+              links.forEach(function (l) { l.classList.remove('active'); });
+              idToLink[id].classList.add('active');
+            }
+          });
+        }, { threshold: 0.4 });
+        document.querySelectorAll('section[id]').forEach(function (s) { io.observe(s); });
+      })();
+    </script>
+  </body>
+</html>
