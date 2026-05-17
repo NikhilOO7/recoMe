@@ -5,6 +5,12 @@
 **Decider:** Founder + Principal Engineering
 **Supersedes (positioning, not infrastructure):** the Chrome extension as the headline product surface
 **Extends:** ADR-0001 (graph + vector stack), ADR-0002 (deployment)
+**Partially superseded by:**
+
+- §2.1 chat surface (`recome.app/ask`) → see [ADR-0012](0012-active-agents-and-personality-mirror.md) (chat replaced by active agents)
+- §2.2 differentiation argument → see [ADR-0013](0013-competitive-positioning.md) (canonical, with May 2026 competitor data)
+
+> **For positioning, prefer [ADR-0013](0013-competitive-positioning.md) and [0014 unique surfaces](0014-unique-product-surfaces.md).** This ADR remains the canonical record of the pivot DECISION (extension → web + IaaS) but the §2.2 head-to-head comparison is now in 0013 with sourced, dated competitor research.
 
 ---
 
