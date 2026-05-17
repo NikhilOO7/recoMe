@@ -330,143 +330,41 @@ topics surface first.
 
 ---
 
-## P2 — Chat (Aug 24 → Nov 1)
+## P2 — Chat (Aug 24 → Nov 1) — **SUPERSEDED BY ADR-0012**
 
-### F-301 — Replace AgentController keyword theatre with real LLM agent
+> **All features in this block (F-301 through F-307) are superseded** by
+> [ADR-0012](0012-active-agents-and-personality-mirror.md), which replaced
+> the chat surface with active background agents. The canonical Phase-2
+> deliverables are now the six agents (Recall / Concierge / Curator /
+> Decision / Watchlist / Synthesist) described in ADR-0012 §2.2, plus the
+> Mind Map (F-401) and other unique surfaces in
+> [0014 unique product surfaces](0014-unique-product-surfaces.md)
+> (F-401..F-408).
+>
+> **Specifically:**
+>
+> - F-301 (Replace AgentController keyword theatre) → real agent runtime
+>   shipped in `cloud/src/agents/` (see [0016 LLD §5](0016-lld.md#5-cloudsrcagents)).
+>   The chat surface itself is deferred; the Decision agent (F-316 in
+>   ADR-0012 §2.2 Tier 2) covers the "ask me about my own research"
+>   use case on-demand.
+> - F-302..F-305 (chat UI, tool library, conversation persistence,
+>   citations) → not built; obviated by agents-replace-chat.
+> - F-306 (side-by-side test vs Perplexity) → superseded by
+>   [AUDIT_PERPLEXITY_2026-05-17.md](../../AUDIT_PERPLEXITY_2026-05-17.md)
+>   methodology (sourced live research vs build-our-own-eval-harness).
+> - F-307 (chat-to-action) → covered by per-agent action surfaces in
+>   ADR-0012; no separate chat UX needed.
+>
+> **The dead F-301..F-307 spec bodies (~140 lines) were removed 2026-05-17
+> after the agents pivot.** Full spec preserved in git history at commit
+> immediately preceding `audit: surgical positioning fixes` (the pre-prune
+> tag). Phase 2 is now: six agents from ADR-0012 §2.2 + Mind Map (F-401)
+>
+> - the unique surfaces F-401..F-408 from 0014.
 
-**Story:** The cloud `/agent/*` endpoints actually talk to an LLM with
-tool access to the user's graph, not a hardcoded if/else.
-
-**Acceptance criteria:**
-
-- New `cloud/src/agent/v2/` module; old `AgentController` removed
-  (its routes return 410 Gone for one release cycle, then 404).
-- Uses Anthropic SDK with `claude-sonnet-4-6` and tool-use.
-- 5 canonical eval queries (see [0008](0008-workflows-and-personas.md)
-  §chat-eval-set) all return useful answers in <5s p95.
-- Telemetry: every tool call logged with latency, success, payload size.
-
-**Dependencies:** none new.
-**Effort:** L.
-**Risk:** Med — first real agent in production; needs careful prompt
-engineering and tool design.
-
-### F-302 — Chat UI with streaming
-
-**Story:** I can type a question and see the answer stream token by
-token, with a side panel showing which captures the answer drew from.
-
-**Acceptance criteria:**
-
-- `/ask` route renders mobile-first.
-- Server-sent events stream (or HTTP/2 streaming via fetch).
-- Time-to-first-token <800ms p95.
-- Source panel lists every captured item the agent referenced, with
-  links and platform chips.
-- Stop button cancels in-flight generation.
-- Markdown rendering for code blocks, lists, links.
-
-**Dependencies:** F-301.
-**Effort:** L.
-**Risk:** Med — streaming + abort wiring is finicky.
-
-### F-303 — Tool library for the chat agent
-
-**Story:** The agent has the right tools to answer personal-memory
-questions.
-
-**Tools to ship (acceptance criteria):**
-
-1. `search_graph(query, limit)` — semantic + keyword hybrid over user's
-   topics and pages.
-2. `get_trail(topic)` — full trail object.
-3. `get_intents(limit, window)` — top intents in a time window.
-4. `list_recent_captures(window, platform?)` — recent signals.
-5. `compare(a, b)` — side-by-side of two captured items.
-6. `summarize_topic(topic, window)` — LLM-summarized rollup.
-
-Each tool:
-
-- Documented with name, description, parameter schema, return schema.
-- Unit-tested with stubbed IntelligenceService.
-- Logged on invocation with latency.
-
-**Dependencies:** F-301.
-**Effort:** L (6 tools × S each + framework).
-**Risk:** Low individually; the design risk is fewer-bigger-tools vs
-many-small-tools — to be resolved in design review at start of P2.
-
-### F-304 — Conversation persistence
-
-**Story:** My chat history persists across sessions; I can revisit and
-search past conversations.
-
-**Acceptance criteria:**
-
-- New Postgres tables: `Conversation`, `Message`, `ToolInvocation`.
-- `/ask` lists past conversations in a sidebar; click to resume.
-- Search bar over conversation titles + content.
-- Delete conversation = hard delete + drop tool invocations.
-
-**Dependencies:** F-302.
-**Effort:** M.
-**Risk:** Low.
-
-### F-305 — Source citations + "explain why" panel
-
-**Story:** Every claim in a chat answer cites the captured items it
-drew from, so I trust it.
-
-**Acceptance criteria:**
-
-- Inline footnote markers like `[1]`, `[2]` rendered in markdown.
-- Side panel maps footnotes → captured items.
-- "Explain why" button on the answer opens a panel showing: graph path
-  from the answer back to the captures (the trail).
-
-**Dependencies:** F-302, F-303.
-**Effort:** M.
-**Risk:** Low.
-
-### F-306 — Side-by-side test instrumentation (Recome vs Perplexity)
-
-**Story:** I can run a live A/B test of personal-memory questions
-asked to both Recome and Perplexity, with users choosing which answer
-they prefer.
-
-**Acceptance criteria:**
-
-- New `/labs/compare` route, only accessible to users in the test
-  cohort.
-- 10 pre-set personal-memory questions; user can also enter their own.
-- For each question: Recome answer (streamed) and Perplexity answer
-  (via Perplexity API) shown side-by-side.
-- User picks preferred; choice + timestamp + question logged.
-- Aggregate dashboard for the founder shows preference share over time.
-
-**Dependencies:** F-302, F-303. Perplexity API key.
-**Effort:** M.
-**Risk:** Med — careful UX so the comparison is honest, not framed.
-
-### F-307 — Chat-to-action
-
-**Story:** At the end of a chat answer, I can take action — bookmark
-a recommendation, share a trail, or log a decision — so chat changes
-behavior, not just delivers text.
-
-**Acceptance criteria:**
-
-- After each agent turn, the agent may surface action buttons:
-  `[Bookmark]`, `[Share trail]`, `[Log decision]`.
-- `Bookmark` → adds a `boost` signal on the topic.
-- `Share trail` → generates a public read-only URL (`/share/:slug`).
-- `Log decision` → opens a small form; persists to `Decision` table;
-  agent can reference it next time ("you decided X 3 weeks ago").
-- Telemetry: `chat_action_taken` event with which action.
-
-**Dependencies:** F-302..F-306.
-**Effort:** M.
-**Risk:** Low.
+<!-- F-301..F-307 chat-feature bodies pruned 2026-05-17. See git history. -->
+<!-- The replacement reading order: ADR-0012 → 0014 → 0004 Phase 2. -->
 
 ---
 
