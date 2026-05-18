@@ -5,6 +5,8 @@ import { prisma } from '../db.js';
 import { getAgentEventStore } from './AgentEventStore.js';
 import { getGuardian } from './GuardianAgent.js';
 import { maybeAgentRegistry } from './AgentRegistry.js';
+import { getAgentRunner } from './AgentRunner.js';
+import type { AgentContext, AgentTrigger } from './types.js';
 import { logger } from '../observability/logger.js';
 
 // ── Consumer surface for active agents ──────────────────────────────────────
@@ -81,6 +83,97 @@ export function createAgentRoutes(): Hono<AuthVars> {
 
     await getGuardian().resume(userId, name);
     return c.json({ ok: true, agent: name, paused: false });
+  });
+
+  // ── POST /agents/:name/run — fire one pass for this user, on-demand.
+  // This is the surface that:
+  //   • a Fly scheduled command can hit on a cron (1×/day Curator)
+  //   • the Wave-3 Agents UI uses for the "run now" button
+  //   • the Decision agent uses by default (its native trigger mode)
+  // The agent's canRun() decides whether the trigger is valid for it.
+  app.post('/agents/:name/run', async (c) => {
+    const userId = c.get('userId');
+    const name = c.req.param('name');
+    const registry = maybeAgentRegistry();
+    const agent = registry?.byName(name);
+    if (!agent) return c.json({ error: 'unknown_agent' }, 404);
+
+    // Default trigger = the first one the agent declares it supports.
+    // Callers can override via ?trigger=… for flexibility (an external cron
+    // calls ?trigger=scheduled; a UI button calls ?trigger=on_demand).
+    const validTriggers: ReadonlyArray<AgentTrigger> = ['scheduled', 'event', 'on_demand'];
+    const requested = c.req.query('trigger') as AgentTrigger | undefined;
+    const trigger: AgentTrigger =
+      requested && validTriggers.includes(requested)
+        ? requested
+        : (agent.triggers[0] ?? 'on_demand');
+
+    const ctx: AgentContext = { userId, trigger, now: new Date() };
+    const status = await getAgentRunner().runOne(agent, ctx);
+    logger.info({ userId, agent: name, trigger, status }, 'agent run on demand');
+    return c.json({ ok: true, agent: name, trigger, status });
+  });
+
+  // ── GET /agents/:name/runs — recent AgentRun records (audit + UI).
+  app.get('/agents/:name/runs', async (c) => {
+    const userId = c.get('userId');
+    const name = c.req.param('name');
+    const limit = Math.min(parseInt(c.req.query('limit') ?? '20', 10) || 20, 100);
+    const registry = maybeAgentRegistry();
+    if (!registry?.byName(name)) return c.json({ error: 'unknown_agent' }, 404);
+
+    const runs = await prisma.agentRun.findMany({
+      where: { userId, agent: name },
+      orderBy: { startedAt: 'desc' },
+      take: limit,
+      select: {
+        id: true,
+        agent: true,
+        trigger: true,
+        status: true,
+        llmTokens: true,
+        costMicros: true,
+        startedAt: true,
+        finishedAt: true,
+        meta: true,
+      },
+    });
+    return c.json({ runs });
+  });
+
+  // ── GET /agents/budget — daily spend + per-agent breakdown for the UI.
+  // The Wave-3 management page calls this to render budget meters per ADR-0012 §4.
+  app.get('/agents/budget', async (c) => {
+    const userId = c.get('userId');
+    const now = Date.now();
+    const since = new Date(now - 24 * 60 * 60 * 1000);
+
+    const grouped = await prisma.agentRun.groupBy({
+      by: ['agent'],
+      where: { userId, startedAt: { gte: since } },
+      _sum: { costMicros: true, llmTokens: true },
+      _count: { _all: true },
+    });
+
+    // Default cap mirrors GuardianAgent.DEFAULT_DAILY_COST_CAP_MICROS — we
+    // expose it so the UI can render the meter at the same threshold the
+    // backend enforces. Keep these in lockstep with GuardianAgent constants.
+    const dailyCapMicros = 100_000; // $0.10
+
+    const perAgent = grouped.map((g) => ({
+      agent: g.agent,
+      runsLast24h: g._count._all,
+      spendMicrosLast24h: g._sum.costMicros ?? 0,
+      llmTokensLast24h: g._sum.llmTokens ?? 0,
+    }));
+    const totalSpendMicros = perAgent.reduce((s, g) => s + g.spendMicrosLast24h, 0);
+
+    return c.json({
+      since: since.toISOString(),
+      dailyCapMicros,
+      totalSpendMicros,
+      perAgent,
+    });
   });
 
   // ── GET /inbox — surfaced agent events for this user.

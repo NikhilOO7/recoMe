@@ -10,7 +10,7 @@ This file is read automatically by Claude Code at the start of every session.
 
 Core innovations:
 
-- **Mnemosyne** — a human-like memory system with context buckets, forgetting lifecycle, and pattern detection
+- **Smriti** — a human-like memory system with context buckets, forgetting lifecycle, and pattern detection
 - **Knowledge Graph** — semantic entity relationships that enable affinity propagation ("block crypto → auto-blocks BTC, NFT, Ethereum…")
 
 Full architecture → `ARCHITECTURE.html`
@@ -90,7 +90,7 @@ src/
   content/            ← Platform adapters (one per platform)
   popup/              ← React app for the dashboard
   intelligence/
-    memory/           ← Mnemosyne: MemoryService, PatternDetector, DecayManager, ContextDetector
+    memory/           ← Smriti: MemoryService, PatternDetector, DecayManager, ContextDetector
     graph/            ← KnowledgeGraph, AffinityCalculator
     recommendation/   ← RecommendationEngine (multi-factor scoring)
   data/               ← Repositories, IndexedDB schema, migrations, LRU cache
@@ -118,7 +118,7 @@ Load the extension in Chrome: `chrome://extensions` → Developer mode → Load 
 | Phase | Focus                                                             |
 | ----- | ----------------------------------------------------------------- |
 | 1     | Foundation: MV3 scaffold, build, message broker, IndexedDB schema |
-| 2     | Mnemosyne memory system                                           |
+| 2     | Smriti memory system                                              |
 | 3     | Knowledge graph + affinity calculator                             |
 | 4     | Recommendation engine + all 6 platform adapters                   |
 | 5     | React popup, onboarding, achievements, polish                     |

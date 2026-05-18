@@ -48,28 +48,18 @@ Three capture surfaces, ordered by build effort:
 
 **Two retrieval surfaces:**
 
-| Surface                     | What                                                                                                                                                       | Status                                                     |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| Web dashboard               | The trails, intents, related-topics views that already exist from the May 14 work                                                                          | **Shipped**                                                |
-| Web chat (`recome.app/ask`) | LLM-backed conversational interface with tool access to the user's graph. Answers questions like "what was I researching last Tuesday?" — not "what is X?" | **Foundation this ADR cycle; full chat UI is next sprint** |
-| Telegram bot                | Same chat backend, different transport. Lowest-friction conversational surface.                                                                            | **Deferred, v2**                                           |
+| Surface             | What                                                                                                                   | Status                                                                                |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Web dashboard       | The trails, intents, related-topics views that already exist from the May 14 work                                      | **Shipped**                                                                           |
+| Active agents inbox | Background-agent surfaced events (Recall et al.). On-demand Decision agent for "ask me about my own research" queries. | **Foundation shipped** — see [ADR-0012](0012-active-agents-and-personality-mirror.md) |
 
-### 2.2 Differentiation against Perplexity / ChatGPT
+> **Pruned 2026-05-17:** the original §2.1 had a third row for a streaming "Web chat (`recome.app/ask`)" surface. That direction was deprecated by [ADR-0012](0012-active-agents-and-personality-mirror.md). The chat product is replaced by active agents (six of them) plus the on-demand Decision agent; there is no separate streaming chat UI.
 
-We will not compete on world-knowledge search. We will compete on **personal memory and decision support**, and we will use the chat surface for queries no general-purpose LLM can answer:
+### 2.2 Differentiation — see ADR-0013
 
-- "What have I been researching lately?"
-- "I'm about to buy this — does it conflict with anything I learned earlier?"
-- "Summarize my [topic] research across all platforms from the last N weeks."
-- "Find the YouTube reviewer who said brand X has bad bearings."
-- "I've been on the fence about X for too long — decide for me, here's what you saw me consider."
-
-Perplexity literally cannot answer those — they have no data on the user. We do, once capture is working.
-
-The risk is real: with weak capture, we ARE a worse Perplexity in week one. The product only feels magical in week 2–3 when the graph is dense. Two consequences:
-
-1. **Bulk-import on day 1** is not a nice-to-have, it's load-bearing. The user must be able to import existing footprint (YouTube history dump, Amazon orders, Reddit saved, browser history) during onboarding. That is the difference between churn and retention.
-2. **Marketing message leads with memory features, not search features.** "Perplexity for what you've already looked at." Or sharper: "Your second brain remembers what you actually did, not what you wrote down."
+> **Pruned 2026-05-17.** The original §2.2 was a hand-waved differentiation paragraph against Perplexity/ChatGPT. Canonical positioning with dated, sourced competitive battle cards now lives in [ADR-0013 Competitive Positioning](0013-competitive-positioning.md). Refreshed again on 2026-05-17 after Perplexity Personal Computer + Anthropic Memory shifts ([AUDIT_PERPLEXITY_2026-05-17.md](../../AUDIT_PERPLEXITY_2026-05-17.md)).
+>
+> One-line summary: we don't compete on "what is X?" world-knowledge search. We compete on what no LLM provider has — the user's own cross-platform attention captured at the signal level — and we serve it through background agents (consumer) and an IaaS API (developer).
 
 ### 2.3 IaaS platform play
 

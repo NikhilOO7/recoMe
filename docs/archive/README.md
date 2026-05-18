@@ -60,7 +60,7 @@ not here.
 
 Early experimental docs from the first three weeks of the project — when
 the product was still being shaped. Includes the original Knowledge Graph
-sketch, the "Mnemosyne" naming era, product-design mood doc, and several
+sketch, the "Smriti" naming era, product-design mood doc, and several
 Claude Code prompt files.
 
 ### `2026-03-v1-spec/`

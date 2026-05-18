@@ -1,0 +1,1630 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Recome — your interest graph, working in the background</title>
+<meta name="description" content="Interactive prototype of recome.app — Inbox, Mind Map, Trails, Capture, Agents, Personality." />
+<style>
+  /* ──────────── reset & tokens ──────────── */
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  :root{
+    --bg:#f7f7f8;
+    --surface:#ffffff;
+    --surface-2:#fafafa;
+    --border:#e6e6ea;
+    --border-strong:#d4d4d8;
+    --ink:#0a0a0b;
+    --ink-2:#262629;
+    --muted:#6b6b73;
+    --muted-2:#9a9aa3;
+    --accent:#5b4cfb;
+    --accent-soft:#eeeaff;
+    --accent-ink:#2e22b8;
+    --ok:#0e9f6e;
+    --warn:#d97706;
+    --danger:#dc2626;
+    /* agent palette */
+    --recall:#f59e0b;       --recall-soft:#fff4dd;
+    --concierge:#8b5cf6;    --concierge-soft:#f1ecff;
+    --curator:#10b981;      --curator-soft:#dcf5ec;
+    --watchlist:#f43f5e;    --watchlist-soft:#ffe4e8;
+    --decision:#3b82f6;     --decision-soft:#e3edff;
+    --synthesist:#64748b;   --synthesist-soft:#eef1f6;
+    /* platform palette */
+    --p-yt:#ff0033;
+    --p-rd:#ff4500;
+    --p-az:#ff9900;
+    --p-sb:#ff6719;
+    --p-x:#0a0a0b;
+    --p-hn:#ff6600;
+    --p-arxiv:#b31b1b;
+    --p-verge:#ff195a;
+    --p-wf:#5a31f4;
+    --shadow-sm:0 1px 2px rgba(15,15,20,.04), 0 1px 1px rgba(15,15,20,.03);
+    --shadow:0 4px 12px rgba(15,15,20,.05), 0 1px 2px rgba(15,15,20,.03);
+    --shadow-lg:0 16px 48px rgba(15,15,20,.08), 0 4px 12px rgba(15,15,20,.04);
+    --radius:10px;
+    --radius-lg:14px;
+  }
+  html,body{height:100%}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",system-ui,sans-serif;
+    font-feature-settings:"cv02","cv03","cv04","cv11","ss01";
+    font-size:14px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;text-decoration:none}
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+  h1,h2,h3,h4{margin:0;font-weight:600;letter-spacing:-0.012em;color:var(--ink)}
+  h1{font-size:22px;letter-spacing:-0.02em}
+  h2{font-size:17px}
+  h3{font-size:14px}
+  p{margin:0}
+  code,kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}
+  kbd{padding:1px 6px;border:1px solid var(--border-strong);border-bottom-width:2px;border-radius:5px;background:#fff;color:var(--ink-2)}
+  hr{border:0;border-top:1px solid var(--border);margin:0}
+
+  /* ──────────── app shell ──────────── */
+  .app{display:grid;grid-template-columns:232px 1fr;min-height:100vh}
+  .sidebar{
+    background:#ffffff;
+    border-right:1px solid var(--border);
+    display:flex;flex-direction:column;
+    position:sticky;top:0;height:100vh;overflow:hidden;
+  }
+  .sb-brand{display:flex;align-items:center;gap:10px;padding:18px 18px 16px}
+  .sb-brand .logo{
+    width:28px;height:28px;border-radius:8px;
+    background:linear-gradient(135deg,#5b4cfb 0%,#8b5cf6 50%,#ec4899 100%);
+    display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px;letter-spacing:-.04em;
+    box-shadow:0 4px 14px rgba(91,76,251,.35),inset 0 1px 0 rgba(255,255,255,.3);
+  }
+  .sb-brand .name{font-weight:600;font-size:15px;letter-spacing:-.02em}
+  .sb-brand .name span{color:var(--muted);font-weight:500;font-size:11px;display:block;margin-top:-2px;letter-spacing:0}
+  .sb-quick{padding:0 12px 10px}
+  .sb-quick button{
+    width:100%;display:flex;align-items:center;gap:8px;
+    padding:8px 10px;border:1px solid var(--border);border-radius:8px;
+    background:#fff;color:var(--muted);font-size:13px;
+    box-shadow:var(--shadow-sm);
+  }
+  .sb-quick .ico{font-size:12px}
+  .sb-quick .kbd{margin-left:auto;display:flex;gap:2px}
+  .sb-nav{padding:6px 8px;flex:1;overflow:auto}
+  .sb-section{padding:10px 10px 4px;font-size:11px;font-weight:600;color:var(--muted-2);text-transform:uppercase;letter-spacing:.06em}
+  .nav-item{
+    display:flex;align-items:center;gap:10px;
+    padding:7px 10px;border-radius:7px;cursor:pointer;color:var(--ink-2);
+    font-size:13.5px;font-weight:500;
+  }
+  .nav-item:hover{background:var(--surface-2)}
+  .nav-item.active{background:var(--accent-soft);color:var(--accent-ink)}
+  .nav-item .icn{width:18px;display:inline-grid;place-items:center;color:var(--muted)}
+  .nav-item.active .icn{color:var(--accent-ink)}
+  .nav-item .badge{margin-left:auto;background:var(--ink);color:#fff;font-size:11px;font-weight:600;border-radius:999px;padding:1px 7px;line-height:16px}
+  .nav-item.active .badge{background:var(--accent);color:#fff}
+  .nav-item .dot{margin-left:auto;width:7px;height:7px;border-radius:50%;background:var(--ok)}
+  .sb-foot{padding:10px 12px;border-top:1px solid var(--border)}
+  .who{display:flex;align-items:center;gap:10px;padding:6px;border-radius:8px}
+  .who:hover{background:var(--surface-2)}
+  .avatar{
+    width:28px;height:28px;border-radius:50%;
+    background:linear-gradient(135deg,#fbbf24,#fb923c);color:#fff;
+    font-weight:600;font-size:12px;display:grid;place-items:center;
+  }
+  .who .meta{font-size:12.5px;line-height:1.25}
+  .who .meta b{font-weight:600;font-size:13px}
+  .who .meta div{color:var(--muted);font-size:11.5px}
+
+  /* ──────────── main ──────────── */
+  .main{display:flex;flex-direction:column;min-width:0}
+  .topbar{
+    height:54px;
+    border-bottom:1px solid var(--border);
+    background:rgba(255,255,255,.85);
+    backdrop-filter:saturate(180%) blur(8px);
+    display:flex;align-items:center;gap:14px;
+    padding:0 24px;position:sticky;top:0;z-index:10;
+  }
+  .crumbs{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:13px}
+  .crumbs b{color:var(--ink);font-weight:600}
+  .search{
+    margin-left:24px;flex:1;max-width:480px;
+    display:flex;align-items:center;gap:8px;
+    background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;
+    color:var(--muted);font-size:13px;
+  }
+  .search input{flex:1;background:transparent;border:0;outline:0;font:inherit;color:var(--ink)}
+  .search .kbd{display:flex;gap:2px}
+  .top-actions{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .icon-btn{
+    width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:#fff;
+    display:grid;place-items:center;color:var(--muted);position:relative;
+  }
+  .icon-btn:hover{color:var(--ink);border-color:var(--border-strong)}
+  .icon-btn .pulse{position:absolute;top:6px;right:7px;width:7px;height:7px;border-radius:50%;background:var(--danger);box-shadow:0 0 0 0 rgba(220,38,38,.7);animation:pulse 1.8s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(220,38,38,.55)}70%{box-shadow:0 0 0 8px rgba(220,38,38,0)}100%{box-shadow:0 0 0 0 rgba(220,38,38,0)}}
+  .btn{
+    display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:8px;
+    background:var(--ink);color:#fff;font-weight:500;font-size:13px;
+    box-shadow:0 1px 0 rgba(255,255,255,.1) inset, 0 1px 2px rgba(0,0,0,.15);
+  }
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--border);box-shadow:var(--shadow-sm)}
+  .btn.ghost:hover{border-color:var(--border-strong)}
+  .btn.sm{padding:4px 9px;font-size:12px;border-radius:6px}
+  .btn.primary{background:var(--accent)}
+
+  .content{padding:24px 28px;max-width:1240px;width:100%;margin:0 auto;flex:1}
+
+  /* ──────────── views ──────────── */
+  .view{display:none;animation:fade .25s ease}
+  .view.show{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  /* header block */
+  .page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
+  .page-head .sub{color:var(--muted);font-size:13.5px;margin-top:4px;max-width:640px}
+  .page-head .right{display:flex;align-items:center;gap:8px}
+
+  /* stat strip */
+  .stat-strip{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;
+  }
+  .stat{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;
+    box-shadow:var(--shadow-sm);
+  }
+  .stat .k{color:var(--muted);font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px}
+  .stat .v{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-top:6px}
+  .stat .d{color:var(--ok);font-size:12px;margin-top:2px;font-weight:500}
+  .stat .d.warn{color:var(--warn)}
+  .stat .d.flat{color:var(--muted)}
+
+  /* live ribbon */
+  .live{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:10px 14px;display:flex;align-items:center;gap:14px;margin-bottom:18px;
+    box-shadow:var(--shadow-sm);overflow:hidden;
+  }
+  .live .live-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 4px rgba(14,159,110,.15);flex-shrink:0}
+  .live .label{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;flex-shrink:0}
+  .live .feed{flex:1;display:flex;align-items:center;gap:18px;font-size:13px;color:var(--ink-2);overflow:hidden;white-space:nowrap;mask-image:linear-gradient(90deg,#000 88%,transparent)}
+  .live .feed span b{font-weight:600;color:var(--ink)}
+  .live .feed .agbadge{font-size:11px;font-weight:600;padding:1px 6px;border-radius:5px;margin-right:6px}
+
+  /* event cards */
+  .events{display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start}
+  .feed-col{display:flex;flex-direction:column;gap:12px}
+  .filter-row{display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap}
+  .chip{
+    display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;
+    padding:4px 9px;border-radius:999px;background:#fff;border:1px solid var(--border);color:var(--ink-2);cursor:pointer
+  }
+  .chip:hover{border-color:var(--border-strong)}
+  .chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .chip.dot::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+
+  .ev{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:16px 18px;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;gap:10px;
+    transition:box-shadow .15s, border-color .15s, transform .15s;
+  }
+  .ev:hover{box-shadow:var(--shadow);border-color:var(--border-strong)}
+  .ev-top{display:flex;align-items:center;gap:8px}
+  .agbadge{
+    display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;
+    padding:3px 8px;border-radius:6px;letter-spacing:.01em
+  }
+  .ag-recall{background:var(--recall-soft);color:#7a4f00}
+  .ag-concierge{background:var(--concierge-soft);color:#4c1d95}
+  .ag-curator{background:var(--curator-soft);color:#064e3b}
+  .ag-watchlist{background:var(--watchlist-soft);color:#9f1239}
+  .ag-decision{background:var(--decision-soft);color:#1e3a8a}
+  .ag-synthesist{background:var(--synthesist-soft);color:#1f2937}
+  .ev-time{margin-left:auto;color:var(--muted);font-size:12px}
+  .ev-title{font-size:15.5px;font-weight:600;letter-spacing:-.01em;line-height:1.35}
+  .ev-body{font-size:13.5px;color:var(--ink-2);line-height:1.55}
+  .ev-body .topic{background:#f1f1f4;padding:1px 6px;border-radius:5px;font-weight:500}
+  .ev-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+  .src{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;padding:3px 8px;border-radius:6px;background:var(--surface-2);border:1px solid var(--border);color:var(--ink-2)}
+  .src .pdot{width:8px;height:8px;border-radius:2px}
+  .ev-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .why{margin-left:auto;font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:4px}
+  .why:hover{color:var(--accent)}
+
+  /* right rail */
+  .rail{display:flex;flex-direction:column;gap:14px;position:sticky;top:78px}
+  .card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:16px;box-shadow:var(--shadow-sm)
+  }
+  .card h3{font-size:13px;letter-spacing:.01em;margin-bottom:10px;display:flex;align-items:center;gap:8px;color:var(--ink)}
+  .card h3 .tag{margin-left:auto;font-size:11px;color:var(--muted);font-weight:500}
+  .working-list{display:flex;flex-direction:column;gap:10px}
+  .working{display:flex;align-items:center;gap:10px;font-size:13px}
+  .working .ag-icon{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+  .working .what{flex:1;line-height:1.3}
+  .working .what small{color:var(--muted);font-size:11.5px;display:block}
+  .progress{height:4px;background:var(--surface-2);border-radius:99px;overflow:hidden;margin-top:8px}
+  .progress > div{height:100%;background:var(--accent);border-radius:99px}
+
+  .legend{display:flex;flex-direction:column;gap:8px;font-size:12.5px}
+  .legend .row{display:flex;align-items:center;gap:8px}
+  .legend .swatch{width:10px;height:10px;border-radius:3px}
+
+  /* ──────────── mind map ──────────── */
+  .mm-shell{display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start}
+  .mm-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);overflow:hidden}
+  .mm-toolbar{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);font-size:13px;color:var(--muted)}
+  .mm-toolbar .group{display:flex;gap:4px;background:var(--surface-2);border:1px solid var(--border);border-radius:7px;padding:2px}
+  .mm-toolbar .group button{padding:4px 9px;border-radius:5px;font-size:12px;color:var(--muted)}
+  .mm-toolbar .group button.on{background:#fff;color:var(--ink);box-shadow:var(--shadow-sm)}
+  .mm-canvas{height:560px;position:relative;background:
+    radial-gradient(circle at 60% 40%, rgba(91,76,251,.04), transparent 60%),
+    linear-gradient(180deg,#fbfbfd,#f7f7f8);}
+  .mm-canvas svg{width:100%;height:100%;display:block}
+  .mm-edge{stroke:#cdcdd4;stroke-width:1;opacity:.7}
+  .mm-edge.hot{stroke:#5b4cfb;stroke-width:1.5;opacity:.85}
+  .mm-node circle{stroke:#fff;stroke-width:2;transition:r .15s;cursor:pointer}
+  .mm-node text{font-size:11px;fill:var(--ink);font-weight:500;pointer-events:none;text-anchor:middle}
+  .mm-node:hover circle{filter:drop-shadow(0 4px 8px rgba(0,0,0,.12))}
+  .mm-node.active circle{stroke:var(--ink);stroke-width:3}
+
+  .mm-scrub{
+    border-top:1px solid var(--border);padding:12px 16px;
+    display:flex;align-items:center;gap:14px;background:#fff;
+  }
+  .mm-scrub input[type=range]{flex:1;accent-color:var(--accent)}
+  .mm-scrub .lbl{font-size:12px;color:var(--muted);font-weight:500}
+  .mm-scrub .now{font-size:13px;font-weight:600;color:var(--ink)}
+
+  .mm-side{display:flex;flex-direction:column;gap:14px;position:sticky;top:78px}
+  .cluster-list{display:flex;flex-direction:column;gap:8px}
+  .cluster{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border)}
+  .cluster .swatch{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+  .cluster .name{font-size:13px;font-weight:500;flex:1}
+  .cluster .n{font-size:12px;color:var(--muted)}
+
+  .focus-card .focus-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .focus-card .focus-head .sw{width:10px;height:10px;border-radius:3px}
+  .focus-card h2{font-size:16px}
+  .focus-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 12px}
+  .focus-stats .b{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px 10px}
+  .focus-stats .b small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+  .focus-stats .b b{font-weight:600;font-size:15px}
+  .signal-list{display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--ink-2)}
+  .signal-list .s{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px dashed var(--border)}
+  .signal-list .s:last-child{border-bottom:0}
+  .signal-list .s .when{color:var(--muted);font-size:11.5px;flex-shrink:0;width:54px}
+
+  /* ──────────── trails ──────────── */
+  .trail-list{display:flex;flex-direction:column;gap:10px}
+  .trail{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:16px 18px;box-shadow:var(--shadow-sm);
+    display:grid;grid-template-columns:1fr 180px 140px;gap:16px;align-items:center;
+  }
+  .trail:hover{border-color:var(--border-strong)}
+  .trail h3{font-size:15px;font-weight:600;margin-bottom:4px}
+  .trail .meta{color:var(--muted);font-size:12.5px}
+  .trail .meta b{color:var(--ink);font-weight:600}
+  .trail .sources{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+  .src-mini{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;background:var(--surface-2);border:1px solid var(--border);border-radius:5px;padding:2px 6px;color:var(--ink-2)}
+  .src-mini .pdot{width:6px;height:6px;border-radius:2px}
+  .trail .next{font-size:12.5px;color:var(--muted);text-align:right}
+  .trail .next b{display:block;color:var(--ink);font-weight:600;font-size:13px}
+  .bar{height:6px;background:var(--surface-2);border-radius:99px;overflow:hidden;margin-top:6px}
+  .bar > div{height:100%;background:linear-gradient(90deg,var(--accent),#a78bfa);border-radius:99px}
+  .pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 7px;border-radius:99px}
+  .pill.ok{background:#dcfce7;color:#065f46}
+  .pill.warn{background:#fef3c7;color:#92400e}
+  .pill.cool{background:#dbeafe;color:#1e3a8a}
+  .pill.purple{background:var(--accent-soft);color:var(--accent-ink)}
+
+  /* ──────────── capture ──────────── */
+  .capture-hero{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:36px;box-shadow:var(--shadow);text-align:center;margin-bottom:18px;
+    background-image:radial-gradient(circle at 50% 0%,rgba(91,76,251,.07),transparent 60%);
+  }
+  .capture-hero h2{font-size:22px;letter-spacing:-.02em;margin-bottom:6px}
+  .capture-hero p{color:var(--muted);font-size:13.5px;margin-bottom:18px}
+  .paste-box{
+    max-width:560px;margin:0 auto;display:flex;gap:8px;
+    background:#fff;border:1px solid var(--border-strong);border-radius:10px;padding:6px;
+    box-shadow:var(--shadow-sm);
+  }
+  .paste-box input{
+    flex:1;border:0;outline:0;font:inherit;font-size:14px;background:transparent;color:var(--ink);
+    padding:8px 12px;
+  }
+  .cap-sources{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .cap-source{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:14px 16px;box-shadow:var(--shadow-sm);
+  }
+  .cap-source .head{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .cap-source .head .ico{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;font-size:14px}
+  .cap-source h3{font-size:14px;font-weight:600}
+  .cap-source p{font-size:12.5px;color:var(--muted);line-height:1.5}
+  .cap-source .stat-line{margin-top:10px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+
+  .recent-cap{display:flex;flex-direction:column;gap:8px}
+  .cap-row{display:flex;align-items:center;gap:10px;padding:9px 12px;background:#fff;border:1px solid var(--border);border-radius:8px}
+  .cap-row .ico{width:26px;height:26px;border-radius:6px;display:grid;place-items:center;color:#fff;font-size:11px;font-weight:600;flex-shrink:0}
+  .cap-row .t{flex:1;font-size:13px;color:var(--ink-2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cap-row .t b{font-weight:600;color:var(--ink)}
+  .cap-row .when{font-size:11.5px;color:var(--muted);flex-shrink:0}
+
+  /* ──────────── agents grid ──────────── */
+  .agents-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .ag-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:18px;box-shadow:var(--shadow-sm);
+    display:flex;flex-direction:column;gap:12px;position:relative;
+  }
+  .ag-card .ag-head{display:flex;align-items:flex-start;gap:12px}
+  .ag-card .ag-glyph{
+    width:38px;height:38px;border-radius:10px;display:grid;place-items:center;font-weight:700;color:#fff;flex-shrink:0;
+    box-shadow:0 4px 12px rgba(0,0,0,.08);
+  }
+  .ag-card h3{font-size:15px;font-weight:600}
+  .ag-card .ag-sub{color:var(--muted);font-size:12.5px;line-height:1.5;margin-top:2px}
+  .ag-card .ag-status{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:var(--ok)}
+  .ag-card .ag-status.paused{color:var(--muted)}
+  .ag-card .ag-status .d{width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 0 3px rgba(14,159,110,.15)}
+  .ag-card .ag-status.paused .d{box-shadow:none}
+  .ag-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:12px}
+  .ag-metrics .m{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px}
+  .ag-metrics .m small{color:var(--muted);display:block;font-size:11px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
+  .ag-metrics .m b{font-weight:600;font-size:14px}
+  .ag-last{font-size:12.5px;color:var(--ink-2);background:var(--surface-2);border-left:3px solid var(--border-strong);padding:8px 12px;border-radius:6px;line-height:1.5}
+  .ag-last b{color:var(--ink);font-weight:600}
+
+  /* ──────────── personality ──────────── */
+  .pm-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .pm-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;box-shadow:var(--shadow-sm)}
+  .pm-card h3{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:14px}
+  .donut-wrap{display:flex;align-items:center;gap:24px}
+  .donut{width:180px;height:180px;flex-shrink:0;position:relative}
+  .donut svg{width:100%;height:100%;transform:rotate(-90deg)}
+  .donut .center{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+  .donut .center b{display:block;font-size:24px;font-weight:600;letter-spacing:-.02em}
+  .donut .center small{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .donut-legend{flex:1;display:flex;flex-direction:column;gap:8px}
+  .donut-legend .row{display:flex;align-items:center;gap:8px;font-size:13px}
+  .donut-legend .row .swatch{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+  .donut-legend .row .name{flex:1}
+  .donut-legend .row .pct{font-weight:600;font-feature-settings:"tnum"}
+  .donut-legend .row .delta{color:var(--muted);font-size:11.5px;width:48px;text-align:right;font-feature-settings:"tnum"}
+  .donut-legend .row .delta.up{color:var(--ok)}
+  .donut-legend .row .delta.down{color:var(--warn)}
+
+  .traj-bars{display:flex;align-items:flex-end;gap:8px;height:140px;padding:4px 0}
+  .traj-bars .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%}
+  .traj-bars .col .stack{flex:1;width:100%;background:var(--surface-2);border-radius:6px;display:flex;flex-direction:column-reverse;overflow:hidden}
+  .traj-bars .col .stack > span{display:block;width:100%}
+  .traj-bars .col .lbl{font-size:11px;color:var(--muted)}
+
+  .under-list{display:flex;flex-direction:column;gap:10px}
+  .under-row{display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px}
+  .under-row .icn{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;font-size:14px;color:#fff;flex-shrink:0}
+  .under-row .body{flex:1;font-size:13px;color:var(--ink-2);line-height:1.4}
+  .under-row .body b{color:var(--ink);font-weight:600;display:block;font-size:13.5px;margin-bottom:1px}
+  .under-row .btn.sm{flex-shrink:0}
+
+  .privacy-banner{
+    margin-top:16px;border:1px dashed var(--border-strong);border-radius:10px;padding:12px 14px;
+    display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--muted);background:var(--surface)
+  }
+  .privacy-banner b{color:var(--ink)}
+
+  /* misc */
+  .footer{padding:16px 28px;color:var(--muted);font-size:12px;text-align:center;border-top:1px solid var(--border);background:#fff;margin-top:20px}
+  .footer code{color:var(--ink-2)}
+  .empty{padding:80px 24px;text-align:center;color:var(--muted);font-size:14px}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+  /* responsive nicety */
+  @media (max-width:1080px){
+    .events{grid-template-columns:1fr}
+    .rail{position:static}
+    .mm-shell{grid-template-columns:1fr}
+    .mm-side{position:static}
+    .agents-grid{grid-template-columns:repeat(2,1fr)}
+    .cap-sources{grid-template-columns:repeat(2,1fr)}
+  }
+  @media (max-width:760px){
+    .app{grid-template-columns:1fr}
+    .sidebar{display:none}
+    .stat-strip{grid-template-columns:repeat(2,1fr)}
+    .agents-grid,.cap-sources,.pm-grid,.grid-2{grid-template-columns:1fr}
+    .trail{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ───────────── SIDEBAR ───────────── -->
+  <aside class="sidebar">
+    <div class="sb-brand">
+      <div class="logo">R</div>
+      <div class="name">Recome <span>your interest graph</span></div>
+    </div>
+
+    <div class="sb-quick">
+      <button>
+        <span class="ico">+</span>
+        Capture a link
+        <span class="kbd"><kbd>⌘</kbd><kbd>K</kbd></span>
+      </button>
+    </div>
+
+    <nav class="sb-nav">
+      <div class="sb-section">Surfaces</div>
+      <div class="nav-item active" data-view="inbox"><span class="icn">📥</span> Inbox <span class="badge">7</span></div>
+      <div class="nav-item" data-view="mindmap"><span class="icn">🕸</span> Mind Map</div>
+      <div class="nav-item" data-view="trails"><span class="icn">🛤</span> Trails <span class="badge">23</span></div>
+      <div class="nav-item" data-view="capture"><span class="icn">↧</span> Capture</div>
+      <div class="nav-item" data-view="personality"><span class="icn">🪞</span> Personality</div>
+
+      <div class="sb-section" style="margin-top:14px">Agents</div>
+      <div class="nav-item" data-view="agents"><span class="icn">⚙</span> All agents <span class="dot" title="6 running"></span></div>
+      <div class="nav-item" data-view="agents" data-filter="concierge"><span class="icn" style="color:var(--concierge)">●</span> Concierge</div>
+      <div class="nav-item" data-view="agents" data-filter="curator"><span class="icn" style="color:var(--curator)">●</span> Curator</div>
+      <div class="nav-item" data-view="agents" data-filter="recall"><span class="icn" style="color:var(--recall)">●</span> Recall</div>
+      <div class="nav-item" data-view="agents" data-filter="watchlist"><span class="icn" style="color:var(--watchlist)">●</span> Watchlist</div>
+      <div class="nav-item" data-view="agents" data-filter="decision"><span class="icn" style="color:var(--decision)">●</span> Decision</div>
+      <div class="nav-item" data-view="agents" data-filter="synthesist"><span class="icn" style="color:var(--synthesist)">●</span> Synthesist</div>
+
+      <div class="sb-section" style="margin-top:14px">Workspace</div>
+      <div class="nav-item"><span class="icn">⚙</span> Settings</div>
+      <div class="nav-item"><span class="icn">{ }</span> Developer API</div>
+      <div class="nav-item"><span class="icn">🗂</span> Audit log</div>
+    </nav>
+
+    <div class="sb-foot">
+      <div class="who">
+        <div class="avatar">NB</div>
+        <div class="meta">
+          <b>Nikhil B.</b>
+          <div>Plus · 1,847 signals</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ───────────── MAIN ───────────── -->
+  <main class="main">
+    <div class="topbar">
+      <div class="crumbs"><span>Recome</span> <span>›</span> <b id="crumb">Inbox</b></div>
+      <div class="search">
+        <span>⌕</span>
+        <input placeholder="Search your graph — topics, entities, captures…" />
+        <span class="kbd"><kbd>⌘</kbd><kbd>F</kbd></span>
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn" title="Notifications">🔔<span class="pulse"></span></button>
+        <button class="icon-btn" title="Quiet hours">🌙</button>
+        <button class="btn ghost sm">Export graph</button>
+        <button class="btn primary sm">+ Capture</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <!-- VIEW: INBOX                                                       -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <section class="view show" id="view-inbox">
+        <div class="page-head">
+          <div>
+            <h1>Things your agents brought you</h1>
+            <p class="sub">Six background agents work your interest graph. They surface — they never transact.
+              You decide what to act on.</p>
+          </div>
+          <div class="right">
+            <button class="btn ghost sm">Mark all read</button>
+            <button class="btn ghost sm">⌘ Filters</button>
+          </div>
+        </div>
+
+        <div class="stat-strip">
+          <div class="stat">
+            <div class="k">📥 Today's inbox</div>
+            <div class="v">7</div>
+            <div class="d">3 from Recall · 2 Concierge · 2 Curator</div>
+          </div>
+          <div class="stat">
+            <div class="k">🛤 Active trails</div>
+            <div class="v">23</div>
+            <div class="d">+2 this week</div>
+          </div>
+          <div class="stat">
+            <div class="k">🕸 Topics in graph</div>
+            <div class="v">127</div>
+            <div class="d flat">14 clusters · 1,847 signals</div>
+          </div>
+          <div class="stat">
+            <div class="k">⚡ Agent budget today</div>
+            <div class="v">$0.04 <span style="color:var(--muted);font-size:14px;font-weight:500">/ $0.10</span></div>
+            <div class="d">All agents within cap</div>
+          </div>
+        </div>
+
+        <div class="live">
+          <span class="live-dot"></span>
+          <span class="label">Working now</span>
+          <div class="feed">
+            <span><span class="agbadge ag-concierge">CONCIERGE</span> price-checking <b>Uplift V2 standing desk</b> across 5 retailers</span>
+            <span><span class="agbadge ag-curator">CURATOR</span> scanning RSS feeds — <b>27 sources</b></span>
+            <span><span class="agbadge ag-synthesist">SYNTHESIST</span> drafting <b>weekly digest</b> · ready Sunday</span>
+          </div>
+        </div>
+
+        <div class="events">
+          <div class="feed-col">
+            <div class="filter-row">
+              <button class="chip on">All · 7</button>
+              <button class="chip dot" style="color:var(--recall)">Recall · 3</button>
+              <button class="chip dot" style="color:var(--concierge)">Concierge · 2</button>
+              <button class="chip dot" style="color:var(--curator)">Curator · 2</button>
+              <button class="chip" style="margin-left:auto">Newest ▾</button>
+            </div>
+
+            <!-- Event 1: Concierge -->
+            <article class="ev">
+              <div class="ev-top">
+                <span class="agbadge ag-concierge">● CONCIERGE</span>
+                <span class="ev-time">just now · push notification sent</span>
+              </div>
+              <div class="ev-title">Wayfair dropped the Uplift V2 desk to $589 — $217 below your baseline.</div>
+              <div class="ev-body">
+                That's the model you've been comparing on <span class="topic">standing desks</span> for 23 days.
+                Three weeks ago a <b>Verge review you bookmarked</b> flagged its 36"-deep bearings as the weak point —
+                Wayfair's stock is the 42"-deep variant, which the review called <i>"the right one to buy."</i>
+              </div>
+              <div class="ev-meta">
+                <span class="src"><span class="pdot" style="background:var(--p-wf)"></span> wayfair.com</span>
+                <span class="src"><span class="pdot" style="background:var(--p-az)"></span> amazon.com · $806</span>
+                <span class="src"><span class="pdot" style="background:var(--p-verge)"></span> theverge.com · 21d ago</span>
+                <span>• grounded in <b>14 of your signals</b></span>
+              </div>
+              <div class="ev-actions">
+                <button class="btn sm">Open Wayfair listing →</button>
+                <button class="btn ghost sm">Read the Verge review</button>
+                <button class="btn ghost sm">Snooze 7 days</button>
+                <a class="why" href="#">Why am I seeing this? →</a>
+              </div>
+            </article>
+
+            <!-- Event 2: Recall -->
+            <article class="ev">
+              <div class="ev-top">
+                <span class="agbadge ag-recall">● RECALL</span>
+                <span class="ev-time">11 minutes ago</span>
+              </div>
+              <div class="ev-title">You bookmarked a Kleppmann post on Raft 24 days ago — never read it.</div>
+              <div class="ev-body">
+                Surfacing now because you opened <span class="topic">distributed systems</span> on YouTube
+                this morning (<i>"Jepsen tests etcd 3.6"</i>, 47-min watch). Same topic, dormant capture.
+              </div>
+              <div class="ev-meta">
+                <span class="src"><span class="pdot" style="background:#1d1d1d"></span> martin.kleppmann.com</span>
+                <span class="src"><span class="pdot" style="background:var(--p-yt)"></span> trigger: youtube.com</span>
+                <span>• Recall sent 1 of 2 weekly · quiet hours respected</span>
+              </div>
+              <div class="ev-actions">
+                <button class="btn sm">Open the post</button>
+                <button class="btn ghost sm">👍 Useful</button>
+                <button class="btn ghost sm">👎 Not relevant</button>
+                <a class="why" href="#">Why am I seeing this? →</a>
+              </div>
+            </article>
+
+            <!-- Event 3: Curator -->
+            <article class="ev">
+              <div class="ev-top">
+                <span class="agbadge ag-curator">● CURATOR</span>
+                <span class="ev-time">2 hours ago · daily digest</span>
+              </div>
+              <div class="ev-title">3 new posts on dormant interests you haven't engaged with in 3+ weeks.</div>
+              <div class="ev-body">
+                <b>Tyler Cowen</b> on climate adaptation (Substack, 12 min) — your dormant <span class="topic">climate policy</span> cluster.<br/>
+                <b>Anthropic</b> dropped a paper on agent memory architectures — your active <span class="topic">LLM ops</span> cluster.<br/>
+                <b>Salt Fat Acid Heat</b> author posted on knife sharpening — your dormant <span class="topic">kitchen craft</span> cluster.
+              </div>
+              <div class="ev-meta">
+                <span class="src"><span class="pdot" style="background:var(--p-sb)"></span> substack.com</span>
+                <span class="src"><span class="pdot" style="background:var(--p-arxiv)"></span> arxiv.org</span>
+                <span class="src"><span class="pdot" style="background:var(--p-rd)"></span> reddit.com</span>
+              </div>
+              <div class="ev-actions">
+                <button class="btn ghost sm">Open digest →</button>
+                <button class="btn ghost sm">Adjust topic weights</button>
+                <a class="why" href="#">Why am I seeing this? →</a>
+              </div>
+            </article>
+
+            <!-- Event 4: Recall -->
+            <article class="ev">
+              <div class="ev-top">
+                <span class="agbadge ag-recall">● RECALL</span>
+                <span class="ev-time">yesterday · 4:12 PM</span>
+              </div>
+              <div class="ev-title">Reminder: you compared 4 espresso machines in October. The Lelit Mara X is on sale.</div>
+              <div class="ev-body">
+                Dormant intent on <span class="topic">espresso setup</span> from 7 months ago — Lelit Mara X
+                appeared in 6 of your captures across YouTube and Reddit but the trail went cold.
+                It's now $1,449 (down from $1,799) at Whole Latte Love.
+              </div>
+              <div class="ev-meta">
+                <span class="src"><span class="pdot" style="background:#0f0f0f"></span> wholelattelove.com</span>
+                <span class="src"><span class="pdot" style="background:var(--p-yt)"></span> Lance Hedrick · 23min</span>
+                <span class="src"><span class="pdot" style="background:var(--p-rd)"></span> r/espresso · 47 captures</span>
+              </div>
+              <div class="ev-actions">
+                <button class="btn ghost sm">Resume trail</button>
+                <button class="btn ghost sm">Close intent</button>
+                <a class="why" href="#">Why am I seeing this? →</a>
+              </div>
+            </article>
+
+            <!-- Event 5: Concierge -->
+            <article class="ev">
+              <div class="ev-top">
+                <span class="agbadge ag-concierge">● CONCIERGE</span>
+                <span class="ev-time">yesterday · 9:02 AM</span>
+              </div>
+              <div class="ev-title">Found a 4th alternative matching your standing-desk criteria.</div>
+              <div class="ev-body">
+                The <b>Branch Duo</b> ($499 on Branch's site) matches every criterion you've revealed in past trails:
+                ≥42" deep, dual-motor, &lt;$700, ≥7-year warranty, US-shipped. It wasn't in your original comparison set.
+              </div>
+              <div class="ev-meta">
+                <span class="src"><span class="pdot" style="background:#16a34a"></span> branchfurniture.com</span>
+                <span>• criteria inferred from <b>9 prior captures</b></span>
+              </div>
+              <div class="ev-actions">
+                <button class="btn ghost sm">Add to comparison</button>
+                <button class="btn ghost sm">Not a fit</button>
+                <a class="why" href="#">Why am I seeing this? →</a>
+              </div>
+            </article>
+
+            <!-- Event 6: Recall -->
+            <article class="ev">
+              <div class="ev-top">
+                <span class="agbadge ag-recall">● RECALL</span>
+                <span class="ev-time">2 days ago</span>
+              </div>
+              <div class="ev-title">You saved a paper on PostgreSQL HOT updates 6 weeks ago — relevant to today's HN thread.</div>
+              <div class="ev-body">
+                HN front-page post on <i>"Why our writes got 4× slower after migrating to RDS 16"</i> matches
+                your dormant <span class="topic">postgres internals</span> capture from Apr 2.
+              </div>
+              <div class="ev-meta">
+                <span class="src"><span class="pdot" style="background:var(--p-hn)"></span> news.ycombinator.com</span>
+                <span class="src"><span class="pdot" style="background:#336791"></span> postgresql.org · paper</span>
+              </div>
+              <div class="ev-actions">
+                <button class="btn ghost sm">Open both →</button>
+                <a class="why" href="#">Why am I seeing this? →</a>
+              </div>
+            </article>
+
+            <!-- Event 7: Curator -->
+            <article class="ev">
+              <div class="ev-top">
+                <span class="agbadge ag-curator">● CURATOR</span>
+                <span class="ev-time">3 days ago</span>
+              </div>
+              <div class="ev-title">Martin Kleppmann just published — you've not touched distributed systems in 3 weeks.</div>
+              <div class="ev-body">
+                New post: <b>"Strong consistency in a partitioned cache layer."</b>
+                Anchored against your prior 11 captures on Kleppmann's work and adjacent topics.
+              </div>
+              <div class="ev-meta">
+                <span class="src"><span class="pdot" style="background:#1d1d1d"></span> martin.kleppmann.com</span>
+                <span>• 18-min read · matches dormant cluster</span>
+              </div>
+              <div class="ev-actions">
+                <button class="btn ghost sm">Read now</button>
+                <button class="btn ghost sm">Add to weekend list</button>
+                <a class="why" href="#">Why am I seeing this? →</a>
+              </div>
+            </article>
+          </div>
+
+          <!-- right rail -->
+          <aside class="rail">
+            <div class="card">
+              <h3>⚙️ Agents working now <span class="tag">live</span></h3>
+              <div class="working-list">
+                <div class="working">
+                  <div class="ag-icon" style="background:var(--concierge)">C</div>
+                  <div class="what">
+                    Concierge — pass 3/4 today
+                    <small>Price-checking 5 retailers · 4 of 5 done</small>
+                    <div class="progress"><div style="width:80%"></div></div>
+                  </div>
+                </div>
+                <div class="working">
+                  <div class="ag-icon" style="background:var(--curator)">C</div>
+                  <div class="what">
+                    Curator — daily pass
+                    <small>RSS · 27 sources · 12% scanned</small>
+                    <div class="progress"><div style="width:12%"></div></div>
+                  </div>
+                </div>
+                <div class="working">
+                  <div class="ag-icon" style="background:var(--synthesist)">S</div>
+                  <div class="what">
+                    Synthesist — weekly draft
+                    <small>Ready Sun 9:00 · 4 sections drafted</small>
+                    <div class="progress"><div style="width:60%"></div></div>
+                  </div>
+                </div>
+                <div class="working">
+                  <div class="ag-icon" style="background:var(--recall)">R</div>
+                  <div class="what">
+                    Recall — idle (event-triggered)
+                    <small>Cap: 2/wk · 1 sent this week</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>🛡 Today's safety envelope</h3>
+              <div style="font-size:12.5px;color:var(--ink-2);line-height:1.7">
+                <div>💰 LLM spend · <b>$0.04 / $0.10</b></div>
+                <div>🌙 Quiet hours · <b>22:00 – 08:00</b></div>
+                <div>📤 Pushes sent · <b>1 / 3 daily cap</b></div>
+                <div>🛒 Buy actions taken · <b>0</b> <span style="color:var(--muted)">(by design)</span></div>
+                <div>📊 Cross-tenant leaks · <b>0</b> <span style="color:var(--ok)">✓</span></div>
+              </div>
+              <hr style="margin:12px -16px"/>
+              <div style="font-size:11.5px;color:var(--muted);line-height:1.55">
+                Every agent output cites the captured signals it drew from.
+                <a href="#" style="color:var(--accent);font-weight:500">View audit log →</a>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>🪞 This week's mirror</h3>
+              <div style="font-size:12.5px;color:var(--ink-2);line-height:1.6">
+                <b>Career / craft</b> is up <span style="color:var(--ok);font-weight:600">+12%</span> WoW.<br/>
+                <b>Home life</b> is steady.<br/>
+                You haven't touched <b>fitness</b> in 6 weeks.
+              </div>
+              <button class="btn ghost sm" style="margin-top:10px;width:100%">Open Personality Mirror →</button>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <!-- VIEW: MIND MAP                                                    -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <section class="view" id="view-mindmap">
+        <div class="page-head">
+          <div>
+            <h1>Your mind map</h1>
+            <p class="sub">A live render of your own interest graph — topics sized by signals, edges by co-occurrence,
+              clusters by semantic community. Scrub time to watch it evolve.</p>
+          </div>
+          <div class="right">
+            <button class="btn ghost sm">Export PNG</button>
+            <button class="btn ghost sm">Export JSON</button>
+          </div>
+        </div>
+
+        <div class="stat-strip">
+          <div class="stat"><div class="k">Topics</div><div class="v">127</div><div class="d">+11 in 30d</div></div>
+          <div class="stat"><div class="k">Edges</div><div class="v">412</div><div class="d">+34 in 30d</div></div>
+          <div class="stat"><div class="k">Clusters</div><div class="v">14</div><div class="d flat">2 emerging</div></div>
+          <div class="stat"><div class="k">Signals</div><div class="v">1,847</div><div class="d">+92 last 7d</div></div>
+        </div>
+
+        <div class="mm-shell">
+          <div class="mm-card">
+            <div class="mm-toolbar">
+              <span>Layout</span>
+              <div class="group">
+                <button class="on">Force</button><button>Cluster</button><button>Radial</button>
+              </div>
+              <span style="margin-left:14px">Show</span>
+              <div class="group">
+                <button class="on">All</button><button>Active 30d</button><button>Dormant</button>
+              </div>
+              <span style="margin-left:auto;font-size:12px;color:var(--muted)">Click a node to inspect · drag to rearrange</span>
+            </div>
+            <div class="mm-canvas">
+              <svg viewBox="0 0 720 560" preserveAspectRatio="xMidYMid meet">
+                <!-- edges -->
+                <g>
+                  <line class="mm-edge hot" x1="180" y1="180" x2="260" y2="220"/>
+                  <line class="mm-edge hot" x1="260" y1="220" x2="340" y2="180"/>
+                  <line class="mm-edge" x1="260" y1="220" x2="220" y2="320"/>
+                  <line class="mm-edge" x1="220" y1="320" x2="320" y2="360"/>
+                  <line class="mm-edge hot" x1="340" y1="180" x2="430" y2="150"/>
+                  <line class="mm-edge" x1="430" y1="150" x2="520" y2="180"/>
+                  <line class="mm-edge" x1="520" y1="180" x2="600" y2="230"/>
+                  <line class="mm-edge hot" x1="520" y1="180" x2="540" y2="290"/>
+                  <line class="mm-edge" x1="540" y1="290" x2="620" y2="350"/>
+                  <line class="mm-edge" x1="540" y1="290" x2="450" y2="370"/>
+                  <line class="mm-edge" x1="450" y1="370" x2="350" y2="440"/>
+                  <line class="mm-edge" x1="350" y1="440" x2="230" y2="450"/>
+                  <line class="mm-edge" x1="230" y1="450" x2="160" y2="370"/>
+                  <line class="mm-edge hot" x1="160" y1="370" x2="220" y2="320"/>
+                  <line class="mm-edge" x1="450" y1="370" x2="540" y2="420"/>
+                  <line class="mm-edge" x1="540" y1="420" x2="620" y2="350"/>
+                  <line class="mm-edge" x1="180" y1="180" x2="100" y2="240"/>
+                  <line class="mm-edge" x1="100" y1="240" x2="160" y2="370"/>
+                  <line class="mm-edge" x1="340" y1="180" x2="260" y2="220"/>
+                </g>
+
+                <!-- nodes: cluster A — Distributed systems (blue) -->
+                <g class="mm-node" data-topic="distributed-systems">
+                  <circle cx="260" cy="220" r="26" fill="#3b82f6"/>
+                  <text x="260" y="223">Distributed systems</text>
+                </g>
+                <g class="mm-node">
+                  <circle cx="180" cy="180" r="14" fill="#3b82f6" fill-opacity=".75"/>
+                  <text x="180" y="155">Kleppmann</text>
+                </g>
+                <g class="mm-node">
+                  <circle cx="340" cy="180" r="16" fill="#3b82f6" fill-opacity=".75"/>
+                  <text x="340" y="155">Raft / Paxos</text>
+                </g>
+                <g class="mm-node">
+                  <circle cx="100" cy="240" r="11" fill="#3b82f6" fill-opacity=".65"/>
+                  <text x="100" y="265">Postgres internals</text>
+                </g>
+                <g class="mm-node">
+                  <circle cx="220" cy="320" r="13" fill="#3b82f6" fill-opacity=".7"/>
+                  <text x="220" y="345">Kafka / streams</text>
+                </g>
+                <g class="mm-node">
+                  <circle cx="160" cy="370" r="10" fill="#3b82f6" fill-opacity=".6"/>
+                  <text x="160" y="395">Jepsen</text>
+                </g>
+
+                <!-- cluster B — LLM / AI ops (purple) -->
+                <g class="mm-node">
+                  <circle cx="430" cy="150" r="20" fill="#8b5cf6"/>
+                  <text x="430" y="125">LLM ops</text>
+                </g>
+                <g class="mm-node">
+                  <circle cx="520" cy="180" r="14" fill="#8b5cf6" fill-opacity=".75"/>
+                  <text x="520" y="155">Anthropic Memory</text>
+                </g>
+                <g class="mm-node">
+                  <circle cx="600" cy="230" r="11" fill="#8b5cf6" fill-opacity=".65"/>
+                  <text x="610" y="225">Eval rubrics</text>
+                </g>
+                <g class="mm-node">
+                  <circle cx="320" cy="360" r="9" fill="#8b5cf6" fill-opacity=".55"/>
+                  <text x="320" y="385">Prompt caching</text>
+                </g>
+
+                <!-- cluster C — Home setup (green) -->
+                <g class="mm-node active" data-topic="standing-desks">
+                  <circle cx="540" cy="290" r="28" fill="#10b981"/>
+                  <text x="540" y="293" fill="#fff">Standing desks</text>
+                </g>
+                <g class="mm-node">
+                  <circle cx="620" cy="350" r="13" fill="#10b981" fill-opacity=".75"/>
+                  <text x="620" y="375">Monitors</text>
+                </g>
+                <g class="mm-node">
+                  <circle cx="450" cy="370" r="16" fill="#10b981" fill-opacity=".8"/>
+                  <text x="450" y="395">Espresso setup</text>
+                </g>
+                <g class="mm-node">
+                  <circle cx="540" cy="420" r="10" fill="#10b981" fill-opacity=".6"/>
+                  <text x="540" y="445">Knife sharpening</text>
+                </g>
+
+                <!-- cluster D — Reading / craft (amber) -->
+                <g class="mm-node">
+                  <circle cx="350" cy="440" r="16" fill="#f59e0b" fill-opacity=".85"/>
+                  <text x="350" y="465">Climate policy</text>
+                </g>
+                <g class="mm-node">
+                  <circle cx="230" cy="450" r="12" fill="#f59e0b" fill-opacity=".7"/>
+                  <text x="230" y="475">Carbon pricing</text>
+                </g>
+                <g class="mm-node">
+                  <circle cx="120" cy="450" r="9" fill="#f59e0b" fill-opacity=".55"/>
+                  <text x="120" y="475">Kahneman</text>
+                </g>
+                <g class="mm-node">
+                  <circle cx="60" cy="380" r="9" fill="#f59e0b" fill-opacity=".55"/>
+                  <text x="60" y="405">Essay craft</text>
+                </g>
+              </svg>
+            </div>
+            <div class="mm-scrub">
+              <span class="lbl">Time scrub</span>
+              <span class="lbl">90d ago</span>
+              <input type="range" min="0" max="100" value="100" />
+              <span class="lbl">today</span>
+              <span class="now">May 17 · 2026</span>
+            </div>
+          </div>
+
+          <aside class="mm-side">
+            <div class="card">
+              <h3>Clusters in your graph</h3>
+              <div class="cluster-list">
+                <div class="cluster"><span class="swatch" style="background:#3b82f6"></span><span class="name">Distributed systems</span><span class="n">6 nodes</span></div>
+                <div class="cluster"><span class="swatch" style="background:#8b5cf6"></span><span class="name">LLM ops</span><span class="n">4 nodes</span></div>
+                <div class="cluster"><span class="swatch" style="background:#10b981"></span><span class="name">Home setup</span><span class="n">4 nodes</span></div>
+                <div class="cluster"><span class="swatch" style="background:#f59e0b"></span><span class="name">Reading / craft</span><span class="n">4 nodes</span></div>
+                <div class="cluster" style="opacity:.6"><span class="swatch" style="background:#64748b"></span><span class="name">Fitness</span><span class="n">dormant 6w</span></div>
+              </div>
+            </div>
+
+            <div class="card focus-card">
+              <div class="focus-head">
+                <span class="sw" style="background:#10b981"></span>
+                <h2>Standing desks</h2>
+              </div>
+              <div style="font-size:12.5px;color:var(--muted)">Active intent · cluster: home setup</div>
+              <div class="focus-stats">
+                <div class="b"><small>Signals</small><b>14</b></div>
+                <div class="b"><small>Active days</small><b>23</b></div>
+                <div class="b"><small>Sources</small><b>5</b></div>
+                <div class="b"><small>Edges out</small><b>8</b></div>
+              </div>
+              <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Recent signals</div>
+              <div class="signal-list">
+                <div class="s"><span class="when">2h ago</span><span>Compared 4 models on amazon.com</span></div>
+                <div class="s"><span class="when">1d ago</span><span>Watched <i>"Uplift V2 — 1yr review"</i> on YouTube</span></div>
+                <div class="s"><span class="when">3d ago</span><span>Read <i>Verge desk roundup</i> · bookmarked</span></div>
+                <div class="s"><span class="when">5d ago</span><span>Saved 3 r/standing_desks threads</span></div>
+              </div>
+              <button class="btn ghost sm" style="width:100%;margin-top:10px">Open full trail →</button>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <!-- VIEW: TRAILS                                                      -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <section class="view" id="view-trails">
+        <div class="page-head">
+          <div>
+            <h1>Research trails</h1>
+            <p class="sub">Cross-platform research arcs we've stitched from your signals.
+              Each trail is an intent your agents are working on.</p>
+          </div>
+          <div class="right">
+            <button class="btn ghost sm">Filter ▾</button>
+            <button class="btn ghost sm">All time ▾</button>
+          </div>
+        </div>
+
+        <div class="filter-row" style="margin-bottom:12px">
+          <button class="chip on">Active · 23</button>
+          <button class="chip">Stalled · 5</button>
+          <button class="chip">Decided · 41</button>
+          <button class="chip" style="margin-left:auto">Sort: agent priority ▾</button>
+        </div>
+
+        <div class="trail-list">
+
+          <div class="trail">
+            <div>
+              <h3>Standing desk · purchase intent</h3>
+              <div class="meta"><b>14 signals</b> across 5 platforms · active <b>23 days</b> · last touch 2h ago</div>
+              <div class="sources" style="margin-top:8px">
+                <span class="src-mini"><span class="pdot" style="background:var(--p-yt)"></span> YouTube · 4</span>
+                <span class="src-mini"><span class="pdot" style="background:var(--p-rd)"></span> Reddit · 5</span>
+                <span class="src-mini"><span class="pdot" style="background:var(--p-az)"></span> Amazon · 3</span>
+                <span class="src-mini"><span class="pdot" style="background:var(--p-verge)"></span> Verge · 1</span>
+                <span class="src-mini"><span class="pdot" style="background:var(--p-wf)"></span> Wayfair · 1</span>
+              </div>
+              <div class="bar"><div style="width:78%"></div></div>
+            </div>
+            <div>
+              <span class="pill purple">🛒 Concierge active</span>
+              <div style="font-size:12px;color:var(--muted);margin-top:6px">Next pass · 3h</div>
+            </div>
+            <div class="next">
+              <b>$589</b>
+              <span>Wayfair · $217 below baseline</span>
+            </div>
+          </div>
+
+          <div class="trail">
+            <div>
+              <h3>Distributed systems · learning</h3>
+              <div class="meta"><b>27 signals</b> across 4 platforms · active <b>11 weeks</b> · last touch 11min ago</div>
+              <div class="sources" style="margin-top:8px">
+                <span class="src-mini"><span class="pdot" style="background:var(--p-yt)"></span> YouTube · 9</span>
+                <span class="src-mini"><span class="pdot" style="background:var(--p-arxiv)"></span> arXiv · 4</span>
+                <span class="src-mini"><span class="pdot" style="background:var(--p-hn)"></span> HN · 8</span>
+                <span class="src-mini"><span class="pdot" style="background:#1d1d1d"></span> Personal blogs · 6</span>
+              </div>
+              <div class="bar"><div style="width:54%"></div></div>
+            </div>
+            <div>
+              <span class="pill cool">📖 Curator + Recall</span>
+              <div style="font-size:12px;color:var(--muted);margin-top:6px">3 dormant captures</div>
+            </div>
+            <div class="next">
+              <b>Bridge ready</b>
+              <span>Curriculum mode available</span>
+            </div>
+          </div>
+
+          <div class="trail">
+            <div>
+              <h3>Espresso setup · stalled</h3>
+              <div class="meta"><b>47 signals</b> across 3 platforms · last touch <b>23 days ago</b> · started Oct 2025</div>
+              <div class="sources" style="margin-top:8px">
+                <span class="src-mini"><span class="pdot" style="background:var(--p-yt)"></span> YouTube · 22</span>
+                <span class="src-mini"><span class="pdot" style="background:var(--p-rd)"></span> Reddit · 19</span>
+                <span class="src-mini"><span class="pdot" style="background:#0f0f0f"></span> Whole Latte Love · 6</span>
+              </div>
+              <div class="bar"><div style="width:34%;background:linear-gradient(90deg,#f59e0b,#fb923c)"></div></div>
+            </div>
+            <div>
+              <span class="pill warn">⏸ Decision pending</span>
+              <div style="font-size:12px;color:var(--muted);margin-top:6px">Lelit Mara X $1,449 · drop</div>
+            </div>
+            <div class="next">
+              <b>Resume?</b>
+              <span>or close intent</span>
+            </div>
+          </div>
+
+          <div class="trail">
+            <div>
+              <h3>Climate adaptation policy · learning</h3>
+              <div class="meta"><b>18 signals</b> across 4 platforms · active <b>5 weeks</b> · last touch 2d ago</div>
+              <div class="sources" style="margin-top:8px">
+                <span class="src-mini"><span class="pdot" style="background:var(--p-sb)"></span> Substack · 7</span>
+                <span class="src-mini"><span class="pdot" style="background:#16a34a"></span> Nature · 3</span>
+                <span class="src-mini"><span class="pdot" style="background:var(--p-yt)"></span> YouTube · 4</span>
+                <span class="src-mini"><span class="pdot" style="background:var(--p-hn)"></span> HN · 4</span>
+              </div>
+              <div class="bar"><div style="width:48%"></div></div>
+            </div>
+            <div>
+              <span class="pill ok">✓ Curriculum live</span>
+              <div style="font-size:12px;color:var(--muted);margin-top:6px">Week 2 of 4</div>
+            </div>
+            <div class="next">
+              <b>3 new pieces</b>
+              <span>queued for this week</span>
+            </div>
+          </div>
+
+          <div class="trail">
+            <div>
+              <h3>Hiring a fractional designer · decision</h3>
+              <div class="meta"><b>9 signals</b> across 3 platforms · active <b>9 days</b></div>
+              <div class="sources" style="margin-top:8px">
+                <span class="src-mini"><span class="pdot" style="background:var(--p-x)"></span> X · 5</span>
+                <span class="src-mini"><span class="pdot" style="background:#0a66c2"></span> LinkedIn · 2</span>
+                <span class="src-mini"><span class="pdot" style="background:#5b4cfb"></span> Portfolios · 2</span>
+              </div>
+              <div class="bar"><div style="width:82%"></div></div>
+            </div>
+            <div>
+              <span class="pill purple">🧭 Decision agent</span>
+              <div style="font-size:12px;color:var(--muted);margin-top:6px">Ready when you ask</div>
+            </div>
+            <div class="next">
+              <b>3 finalists</b>
+              <span>summary on demand</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <!-- VIEW: CAPTURE                                                     -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <section class="view" id="view-capture">
+        <div class="page-head">
+          <div>
+            <h1>Capture</h1>
+            <p class="sub">Six independent sources feed one graph. No typing required —
+              what you actually engaged with is what we store.</p>
+          </div>
+          <div class="right">
+            <button class="btn ghost sm">Bulk import…</button>
+            <button class="btn ghost sm">Connect a source</button>
+          </div>
+        </div>
+
+        <div class="capture-hero">
+          <h2>Paste any link to remember it.</h2>
+          <p>YouTube, Reddit, Amazon, Substack, X, arXiv, almost any URL.
+            Works from your phone with the PWA share-sheet.</p>
+          <div class="paste-box">
+            <input placeholder="https://www.youtube.com/watch?v=…" value="" />
+            <button class="btn primary">Capture</button>
+          </div>
+          <div style="margin-top:12px;font-size:12px;color:var(--muted)">
+            or drop a URL anywhere on this page · or use the browser extension · or share to <b>Recome</b> from iOS / Android
+          </div>
+        </div>
+
+        <div class="cap-sources">
+          <div class="cap-source">
+            <div class="head">
+              <div class="ico" style="background:var(--accent-soft);color:var(--accent-ink)">🌐</div>
+              <h3>Browser extension</h3>
+              <span class="pill ok" style="margin-left:auto">Active</span>
+            </div>
+            <p>Passive capture as you browse — Chrome + Firefox. No interaction required.</p>
+            <div class="stat-line">▴ <b>1,243 signals</b> · last sync 14s ago</div>
+          </div>
+
+          <div class="cap-source">
+            <div class="head">
+              <div class="ico" style="background:#e3edff;color:#1e3a8a">📱</div>
+              <h3>PWA share-sheet</h3>
+              <span class="pill ok" style="margin-left:auto">Installed</span>
+            </div>
+            <p>Share to <b>Recome</b> from any iOS or Android app — Reddit, YouTube, Safari, Chrome, X.</p>
+            <div class="stat-line">▴ <b>312 signals</b> · iPhone 15 Pro</div>
+          </div>
+
+          <div class="cap-source">
+            <div class="head">
+              <div class="ico" style="background:#dcf5ec;color:#065f46">🔗</div>
+              <h3>URL paste</h3>
+              <span class="pill ok" style="margin-left:auto">Available</span>
+            </div>
+            <p>Paste a link in <code>recome.app/paste</code>. Works on any device with a browser.</p>
+            <div class="stat-line">▴ <b>87 signals</b> · last 2h ago</div>
+          </div>
+
+          <div class="cap-source">
+            <div class="head">
+              <div class="ico" style="background:#fff4dd;color:#7a4f00">✉</div>
+              <h3>Email forward</h3>
+              <span class="pill warn" style="margin-left:auto">Soon</span>
+            </div>
+            <p>Forward newsletters or tabs to <code>save@recome.app</code>. Subject becomes the title.</p>
+            <div class="stat-line">▴ in private beta</div>
+          </div>
+
+          <div class="cap-source">
+            <div class="head">
+              <div class="ico" style="background:#f1ecff;color:#4c1d95">📦</div>
+              <h3>Bulk import</h3>
+              <span class="pill warn" style="margin-left:auto">Soon</span>
+            </div>
+            <p>YouTube Takeout, Amazon orders, Reddit saved, Pocket — bootstrap your graph in minutes.</p>
+            <div class="stat-line">▴ closing the "empty week 1"</div>
+          </div>
+
+          <div class="cap-source">
+            <div class="head">
+              <div class="ico" style="background:var(--ink);color:#fff">{ }</div>
+              <h3>IaaS API</h3>
+              <span class="pill cool" style="margin-left:auto">Foundation shipped</span>
+            </div>
+            <p>Other developers send signals on behalf of their users via <code>POST /v1/signals</code>.</p>
+            <div class="stat-line">▴ developer docs <a href="#" style="color:var(--accent)">→</a></div>
+          </div>
+        </div>
+
+        <div style="margin:22px 0 10px">
+          <h2 style="font-size:15px">Recent captures</h2>
+        </div>
+        <div class="recent-cap">
+          <div class="cap-row">
+            <div class="ico" style="background:var(--p-yt)">YT</div>
+            <div class="t"><b>Uplift V2 standing desk · 1-year review</b> — youtube.com/@ergonomic-trends</div>
+            <div class="when">2m ago · extension</div>
+          </div>
+          <div class="cap-row">
+            <div class="ico" style="background:var(--p-rd)">RD</div>
+            <div class="t"><b>r/standing_desks — "Branch Duo vs Uplift after 6 months"</b></div>
+            <div class="when">14m ago · PWA share</div>
+          </div>
+          <div class="cap-row">
+            <div class="ico" style="background:var(--p-az)">AZ</div>
+            <div class="t"><b>Uplift V2 · 42" deep · bamboo</b> — amazon.com</div>
+            <div class="when">19m ago · extension</div>
+          </div>
+          <div class="cap-row">
+            <div class="ico" style="background:var(--p-sb)">SB</div>
+            <div class="t"><b>"Strong consistency in a partitioned cache layer"</b> — martin.kleppmann.com</div>
+            <div class="when">2h ago · extension</div>
+          </div>
+          <div class="cap-row">
+            <div class="ico" style="background:var(--p-hn)">HN</div>
+            <div class="t"><b>"Why our writes got 4× slower after migrating to RDS 16"</b> — news.ycombinator.com</div>
+            <div class="when">5h ago · extension</div>
+          </div>
+          <div class="cap-row">
+            <div class="ico" style="background:var(--p-arxiv)">aX</div>
+            <div class="t"><b>Anthropic — "Memory architectures for long-running agents" · 2026.05</b></div>
+            <div class="when">yesterday · paste</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <!-- VIEW: AGENTS                                                      -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <section class="view" id="view-agents">
+        <div class="page-head">
+          <div>
+            <h1>Your agents</h1>
+            <p class="sub">Six background workers on your interest graph. Each cites every signal it draws from.
+              None can buy, post, send, or delete on your behalf — by design.</p>
+          </div>
+          <div class="right">
+            <button class="btn ghost sm">⏸ Pause all</button>
+            <button class="btn ghost sm">Edit budgets</button>
+          </div>
+        </div>
+
+        <div class="agents-grid">
+
+          <div class="ag-card">
+            <div class="ag-head">
+              <div class="ag-glyph" style="background:var(--concierge)">C</div>
+              <div>
+                <h3>Concierge</h3>
+                <div class="ag-sub">Watches active purchase trails. Price-checks across retailers, surfaces alternatives
+                  matching your revealed criteria, drafts a decision on demand.</div>
+              </div>
+              <span class="ag-status"><span class="d"></span>Active</span>
+            </div>
+            <div class="ag-metrics">
+              <div class="m"><small>Runs today</small><b>3 / 4</b></div>
+              <div class="m"><small>Spend today</small><b>$0.018</b></div>
+              <div class="m"><small>Trails watched</small><b>3</b></div>
+            </div>
+            <div class="ag-last">
+              Last: <b>11m ago</b> — found Wayfair price drop on Uplift V2 desk ($589, –$217).
+              <br/>Next pass: in <b>3h</b>.
+            </div>
+          </div>
+
+          <div class="ag-card">
+            <div class="ag-head">
+              <div class="ag-glyph" style="background:var(--curator)">C</div>
+              <div>
+                <h3>Curator</h3>
+                <div class="ag-sub">Pulls new content from RSS, YouTube uploads, Reddit, Substack, arXiv matching
+                  dormant and active interests. Posts nothing on your behalf.</div>
+              </div>
+              <span class="ag-status"><span class="d"></span>Active</span>
+            </div>
+            <div class="ag-metrics">
+              <div class="m"><small>Sources</small><b>27</b></div>
+              <div class="m"><small>Spend today</small><b>$0.004</b></div>
+              <div class="m"><small>Surfaced 7d</small><b>14</b></div>
+            </div>
+            <div class="ag-last">
+              Last: <b>2h ago</b> — daily digest with 3 dormant-cluster matches.
+              <br/>Next pass: <b>tomorrow 6:00</b>.
+            </div>
+          </div>
+
+          <div class="ag-card">
+            <div class="ag-head">
+              <div class="ag-glyph" style="background:var(--recall)">R</div>
+              <div>
+                <h3>Recall</h3>
+                <div class="ag-sub">The most uniquely-Recome agent. Surfaces forgotten captures at the right
+                  moment of re-engagement. Strict 2-per-week notification cap.</div>
+              </div>
+              <span class="ag-status"><span class="d"></span>Event-triggered</span>
+            </div>
+            <div class="ag-metrics">
+              <div class="m"><small>Sent 7d</small><b>1 / 2</b></div>
+              <div class="m"><small>Spend today</small><b>$0.003</b></div>
+              <div class="m"><small>Helpful rate</small><b>87%</b></div>
+            </div>
+            <div class="ag-last">
+              Last: <b>11m ago</b> — surfaced Kleppmann Raft post after you opened a distributed-systems video.
+            </div>
+          </div>
+
+          <div class="ag-card">
+            <div class="ag-head">
+              <div class="ag-glyph" style="background:var(--watchlist)">W</div>
+              <div>
+                <h3>Watchlist</h3>
+                <div class="ag-sub">Explicit user-set watches on a topic, entity, or person. Notifies on graph changes —
+                  price, new mention, sentiment shift.</div>
+              </div>
+              <span class="ag-status paused"><span class="d"></span>2 active</span>
+            </div>
+            <div class="ag-metrics">
+              <div class="m"><small>Watches</small><b>2</b></div>
+              <div class="m"><small>Spend today</small><b>$0.001</b></div>
+              <div class="m"><small>Fires 7d</small><b>0</b></div>
+            </div>
+            <div class="ag-last">
+              Watching: <b>"Anthropic Claude 4.7"</b>, <b>"Lelit Mara X price"</b>.
+            </div>
+          </div>
+
+          <div class="ag-card">
+            <div class="ag-head">
+              <div class="ag-glyph" style="background:var(--decision)">D</div>
+              <div>
+                <h3>Decision</h3>
+                <div class="ag-sub">On-demand. Pulls full trail for one decision, summarises options,
+                  calls out conflicts in revealed criteria, cites every signal.</div>
+              </div>
+              <span class="ag-status paused"><span class="d"></span>On-demand</span>
+            </div>
+            <div class="ag-metrics">
+              <div class="m"><small>Runs 7d</small><b>2</b></div>
+              <div class="m"><small>Spend today</small><b>$0.000</b></div>
+              <div class="m"><small>Avg latency</small><b>4.1s</b></div>
+            </div>
+            <div class="ag-last">
+              Available for: <b>Standing desk</b>, <b>Designer hire</b>, <b>Espresso setup</b> (stalled).
+              <br/><button class="btn sm" style="margin-top:8px">Ask Decision →</button>
+            </div>
+          </div>
+
+          <div class="ag-card">
+            <div class="ag-head">
+              <div class="ag-glyph" style="background:var(--synthesist)">S</div>
+              <div>
+                <h3>Synthesist</h3>
+                <div class="ag-sub">Weekly long-form report: where you are on each active intent.
+                  Replaces the templated digest with an LLM-synthesized one.</div>
+              </div>
+              <span class="ag-status"><span class="d"></span>Drafting</span>
+            </div>
+            <div class="ag-metrics">
+              <div class="m"><small>Cadence</small><b>Weekly</b></div>
+              <div class="m"><small>Spend / wk</small><b>$0.024</b></div>
+              <div class="m"><small>Sections</small><b>4 / 7</b></div>
+            </div>
+            <div class="ag-last">
+              Next: <b>Sunday 9:00</b>. Includes Standing desk decision draft + Climate curriculum recap.
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <!-- VIEW: PERSONALITY                                                 -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <section class="view" id="view-personality">
+        <div class="page-head">
+          <div>
+            <h1>Personality mirror</h1>
+            <p class="sub">A descriptive view of where your attention actually went — not a personality test,
+              not a judgement. Mirror, not diagnosis.</p>
+          </div>
+          <div class="right">
+            <button class="btn ghost sm">Last 30 days ▾</button>
+            <button class="btn ghost sm">Wipe derived inferences</button>
+          </div>
+        </div>
+
+        <div class="pm-grid">
+
+          <div class="pm-card">
+            <h3>Composition · last 30 days</h3>
+            <div class="donut-wrap">
+              <div class="donut">
+                <svg viewBox="0 0 100 100">
+                  <!-- pie slices, conic via stroke-dasharray on circle r=40 → C=251.3 -->
+                  <!-- 38% career/craft, 22% home, 18% news/culture, 14% entertainment, 8% relationships -->
+                  <circle r="40" cx="50" cy="50" fill="none" stroke="#eef0f3" stroke-width="18"/>
+                  <circle r="40" cx="50" cy="50" fill="none" stroke="#3b82f6" stroke-width="18"
+                          stroke-dasharray="95.5 155.8" stroke-dashoffset="0"/>
+                  <circle r="40" cx="50" cy="50" fill="none" stroke="#10b981" stroke-width="18"
+                          stroke-dasharray="55.3 196.0" stroke-dashoffset="-95.5"/>
+                  <circle r="40" cx="50" cy="50" fill="none" stroke="#f59e0b" stroke-width="18"
+                          stroke-dasharray="45.2 206.1" stroke-dashoffset="-150.8"/>
+                  <circle r="40" cx="50" cy="50" fill="none" stroke="#8b5cf6" stroke-width="18"
+                          stroke-dasharray="35.2 216.1" stroke-dashoffset="-196.0"/>
+                  <circle r="40" cx="50" cy="50" fill="none" stroke="#f43f5e" stroke-width="18"
+                          stroke-dasharray="20.1 231.2" stroke-dashoffset="-231.2"/>
+                </svg>
+                <div class="center">
+                  <b>1,847</b>
+                  <small>signals</small>
+                </div>
+              </div>
+              <div class="donut-legend">
+                <div class="row"><span class="swatch" style="background:#3b82f6"></span><span class="name">Career / craft</span><span class="pct">38%</span><span class="delta up">+12%</span></div>
+                <div class="row"><span class="swatch" style="background:#10b981"></span><span class="name">Home life</span><span class="pct">22%</span><span class="delta">±0%</span></div>
+                <div class="row"><span class="swatch" style="background:#f59e0b"></span><span class="name">News + culture</span><span class="pct">18%</span><span class="delta up">+3%</span></div>
+                <div class="row"><span class="swatch" style="background:#8b5cf6"></span><span class="name">Entertainment</span><span class="pct">14%</span><span class="delta down">−8%</span></div>
+                <div class="row"><span class="swatch" style="background:#f43f5e"></span><span class="name">Relationships</span><span class="pct">8%</span><span class="delta">±0%</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pm-card">
+            <h3>Trajectory · last 8 weeks</h3>
+            <div class="traj-bars">
+              <div class="col"><div class="stack">
+                <span style="background:#3b82f6;height:22%"></span>
+                <span style="background:#10b981;height:28%"></span>
+                <span style="background:#f59e0b;height:14%"></span>
+                <span style="background:#8b5cf6;height:24%"></span>
+                <span style="background:#f43f5e;height:12%"></span>
+              </div><span class="lbl">W1</span></div>
+              <div class="col"><div class="stack">
+                <span style="background:#3b82f6;height:24%"></span>
+                <span style="background:#10b981;height:30%"></span>
+                <span style="background:#f59e0b;height:14%"></span>
+                <span style="background:#8b5cf6;height:22%"></span>
+                <span style="background:#f43f5e;height:10%"></span>
+              </div><span class="lbl">W2</span></div>
+              <div class="col"><div class="stack">
+                <span style="background:#3b82f6;height:28%"></span>
+                <span style="background:#10b981;height:26%"></span>
+                <span style="background:#f59e0b;height:15%"></span>
+                <span style="background:#8b5cf6;height:21%"></span>
+                <span style="background:#f43f5e;height:10%"></span>
+              </div><span class="lbl">W3</span></div>
+              <div class="col"><div class="stack">
+                <span style="background:#3b82f6;height:30%"></span>
+                <span style="background:#10b981;height:24%"></span>
+                <span style="background:#f59e0b;height:17%"></span>
+                <span style="background:#8b5cf6;height:20%"></span>
+                <span style="background:#f43f5e;height:9%"></span>
+              </div><span class="lbl">W4</span></div>
+              <div class="col"><div class="stack">
+                <span style="background:#3b82f6;height:33%"></span>
+                <span style="background:#10b981;height:22%"></span>
+                <span style="background:#f59e0b;height:17%"></span>
+                <span style="background:#8b5cf6;height:19%"></span>
+                <span style="background:#f43f5e;height:9%"></span>
+              </div><span class="lbl">W5</span></div>
+              <div class="col"><div class="stack">
+                <span style="background:#3b82f6;height:35%"></span>
+                <span style="background:#10b981;height:22%"></span>
+                <span style="background:#f59e0b;height:18%"></span>
+                <span style="background:#8b5cf6;height:17%"></span>
+                <span style="background:#f43f5e;height:8%"></span>
+              </div><span class="lbl">W6</span></div>
+              <div class="col"><div class="stack">
+                <span style="background:#3b82f6;height:37%"></span>
+                <span style="background:#10b981;height:22%"></span>
+                <span style="background:#f59e0b;height:18%"></span>
+                <span style="background:#8b5cf6;height:15%"></span>
+                <span style="background:#f43f5e;height:8%"></span>
+              </div><span class="lbl">W7</span></div>
+              <div class="col"><div class="stack">
+                <span style="background:#3b82f6;height:38%"></span>
+                <span style="background:#10b981;height:22%"></span>
+                <span style="background:#f59e0b;height:18%"></span>
+                <span style="background:#8b5cf6;height:14%"></span>
+                <span style="background:#f43f5e;height:8%"></span>
+              </div><span class="lbl">now</span></div>
+            </div>
+            <div style="margin-top:10px;font-size:12.5px;color:var(--ink-2);line-height:1.6">
+              <b>Career / craft</b> grew steadily — <span style="color:var(--ok);font-weight:600">+12% over 8 weeks</span>.
+              <b>Entertainment</b> declined — <span style="color:var(--warn);font-weight:600">−8%</span>.
+            </div>
+          </div>
+
+          <div class="pm-card" style="grid-column:span 2">
+            <h3>Underrepresented dimensions · descriptive, not prescriptive</h3>
+            <div class="under-list">
+              <div class="under-row">
+                <div class="icn" style="background:#f43f5e">🏃</div>
+                <div class="body">
+                  <b>Fitness / outdoor — 6 weeks dormant</b>
+                  Last signals were in late March. You can set this as an aspiration to have Curator surface
+                  content that matches; or ignore — your call.
+                </div>
+                <button class="btn ghost sm">Set as aspiration</button>
+                <button class="btn ghost sm">Ignore</button>
+              </div>
+              <div class="under-row">
+                <div class="icn" style="background:#10b981">🍳</div>
+                <div class="body">
+                  <b>Kitchen craft — 3 weeks dormant</b>
+                  A dormant cluster — last touch was a knife-sharpening Reddit thread.
+                </div>
+                <button class="btn ghost sm">Set as aspiration</button>
+                <button class="btn ghost sm">Ignore</button>
+              </div>
+              <div class="under-row">
+                <div class="icn" style="background:#8b5cf6">📚</div>
+                <div class="body">
+                  <b>Fiction / literature — 4 weeks dormant</b>
+                  No Goodreads or Substack lit signals since April.
+                </div>
+                <button class="btn ghost sm">Set as aspiration</button>
+                <button class="btn ghost sm">Ignore</button>
+              </div>
+            </div>
+
+            <div class="privacy-banner">
+              🔒 <b>Personality Mirror is opt-in and yours alone.</b>
+              Never visible to support, admin, or any IaaS tenant. One-click wipe removes every derived inference
+              while leaving your underlying graph intact. No psychometric labels — no Big Five, no MBTI, no "personality type."
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <div class="footer">
+      <code>recome.app/prototype</code> · interactive design preview · all data shown is illustrative ·
+      every surface here is a render of the same underlying interest graph
+    </div>
+  </main>
+</div>
+
+<script>
+  // tab switching
+  const items = document.querySelectorAll('.nav-item[data-view]');
+  const views = document.querySelectorAll('.view');
+  const crumb = document.getElementById('crumb');
+  const titleMap = {
+    inbox:'Inbox', mindmap:'Mind Map', trails:'Trails',
+    capture:'Capture', agents:'Agents', personality:'Personality'
+  };
+  items.forEach(el => {
+    el.addEventListener('click', () => {
+      const v = el.dataset.view;
+      items.forEach(i => i.classList.remove('active'));
+      el.classList.add('active');
+      views.forEach(s => s.classList.remove('show'));
+      const target = document.getElementById('view-' + v);
+      if (target) target.classList.add('show');
+      crumb.textContent = titleMap[v] || v;
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    });
+  });
+
+  // mind-map node selection
+  document.querySelectorAll('.mm-node').forEach(n => {
+    n.addEventListener('click', () => {
+      document.querySelectorAll('.mm-node').forEach(o => o.classList.remove('active'));
+      n.classList.add('active');
+    });
+  });
+
+  // simulated live ticker — small "alive" feel
+  const liveDot = document.querySelector('.live .live-dot');
+  if (liveDot) {
+    setInterval(() => {
+      liveDot.style.background = liveDot.style.background === 'rgb(245, 158, 11)' ? '#0e9f6e' : '#f59e0b';
+    }, 2400);
+  }
+
+  // chip toggles (inbox filters)
+  document.querySelectorAll('.filter-row').forEach(row => {
+    row.querySelectorAll('.chip').forEach(c => {
+      c.addEventListener('click', () => {
+        if (c.textContent.includes('Newest') || c.textContent.includes('Sort')) return;
+        row.querySelectorAll('.chip').forEach(o => {
+          if (!o.textContent.includes('Newest') && !o.textContent.includes('Sort')) o.classList.remove('on');
+        });
+        c.classList.add('on');
+      });
+    });
+  });
+</script>
+</body>
+</html>

@@ -12,7 +12,7 @@ You are helping build **RecoMe**, a browser extension that gives users control o
 
 RecoMe uses two advanced systems:
 
-1. **Mnemosyne Memory System**: Human-like memory with context buckets, forgetting lifecycle, and pattern detection
+1. **Smriti Memory System**: Human-like memory with context buckets, forgetting lifecycle, and pattern detection
 2. **Knowledge Graph**: Entity relationships that enable "block crypto → also blocks bitcoin, ethereum, NFT..."
 
 ### Tech Stack
@@ -45,7 +45,7 @@ RecoMe uses two advanced systems:
 │                    │                   │                                   │
 │         ┌──────────┴───────┐ ┌────────┴────────┐                          │
 │         │  Memory System   │ │ Knowledge Graph │                          │
-│         │   (Mnemosyne)    │ │                 │                          │
+│         │   (Smriti)    │ │                 │                          │
 │         │                  │ │  Entities       │                          │
 │         │  Context Buckets │ │  Relations      │                          │
 │         │  Memory Lanes    │ │  Affinity Calc  │                          │
@@ -116,7 +116,7 @@ src/
 ├── intelligence/              # AI/ML Layer
 │   ├── index.ts               # IntelligenceService coordinator
 │   │
-│   ├── memory/                # Mnemosyne Memory System
+│   ├── memory/                # Smriti Memory System
 │   │   ├── models/
 │   │   │   ├── index.ts       # Export all models
 │   │   │   ├── MemoryEntry.ts # Current state of a memory

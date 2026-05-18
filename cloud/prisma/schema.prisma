@@ -458,6 +458,31 @@ model AgentEvent {
   @@index([agent])
 }
 
+/// Personality Mirror (ADR-0012 §2.4 / 0014 F-407) — opt-in, per-user.
+///
+/// The row exists ONLY when the user has interacted with the surface.
+/// `optedInAt` is the truth — null means the user has not opted in.
+/// `wipe` clears optedInAt + aspirations (and is what powers the one-click
+/// "wipe derived inferences" button); it does NOT delete the underlying graph.
+///
+/// Visibility constraints — see ADR-0012 §2.4:
+///   - Never read by IaaS controllers (the `/v1` surface).
+///   - Never read by admin / support views.
+///   - The only path that reads this is the consumer Personality endpoint.
+model PersonalityMirrorState {
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  optedInAt   DateTime?
+  /// User aspirations: { "career_craft": 1.2, "fitness": 1.5 }. Optional;
+  /// Curator + Recall multiply scoring for matching dimensions when set.
+  aspirations Json?
+  /// Last time the user pressed "wipe". For audit + sanity-check that the
+  /// wipe button is reachable.
+  lastWipedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
 // ── Enums ────────────────────────────────────────────────────────────────────
 
 enum Role {

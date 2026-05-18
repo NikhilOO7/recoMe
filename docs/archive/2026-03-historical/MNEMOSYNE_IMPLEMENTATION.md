@@ -1,4 +1,4 @@
-# Mnemosyne Memory System - Implementation Guide
+# Smriti Memory System - Implementation Guide
 
 > Complete TypeScript implementation of RecoMe's human-like memory system.
 
@@ -1730,7 +1730,7 @@ async function handleFeedback(
 
 ## Summary
 
-The Mnemosyne implementation provides:
+The Smriti implementation provides:
 
 1. **MemoryStore** - IndexedDB persistence with optimized indexes
 2. **MemoryService** - High-level API for all memory operations

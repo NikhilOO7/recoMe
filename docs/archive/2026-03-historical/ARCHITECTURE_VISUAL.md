@@ -418,7 +418,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                         MNEMOSYNE MEMORY SYSTEM                             │
+│                         Smriti MEMORY SYSTEM                             │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  ┌───────────────────────────────────────────────────────────────────────┐ │
@@ -886,7 +886,7 @@
 
 ## Next Steps
 
-1. **Read**: [MEMORY_SYSTEM.md](MEMORY_SYSTEM.md) - Deep dive into Mnemosyne
+1. **Read**: [MEMORY_SYSTEM.md](MEMORY_SYSTEM.md) - Deep dive into Smriti
 2. **Read**: [KNOWLEDGE_GRAPH.md](KNOWLEDGE_GRAPH.md) - Graph implementation details
 3. **Read**: [PRODUCT_DESIGN_DELIGHT.md](PRODUCT_DESIGN_DELIGHT.md) - UI/UX design
 4. **Start**: Implementation using [CLAUDE_CODE_PROMPT.md](CLAUDE_CODE_PROMPT.md)

@@ -1,5 +1,7 @@
 import { AgentRegistry, setAgentRegistry } from './AgentRegistry.js';
 import { RecallAgent } from './recall/RecallAgent.js';
+import { ConciergeAgent } from './concierge/ConciergeAgent.js';
+import { CuratorAgent } from './curator/CuratorAgent.js';
 import { logger } from '../observability/logger.js';
 
 /**
@@ -17,6 +19,8 @@ import { logger } from '../observability/logger.js';
 export function bootAgents(): void {
   const registry = new AgentRegistry();
   registry.register(new RecallAgent());
+  registry.register(new ConciergeAgent());
+  registry.register(new CuratorAgent());
   setAgentRegistry(registry);
   logger.info({ count: registry.names().length, agents: registry.names() }, 'agents booted');
 }

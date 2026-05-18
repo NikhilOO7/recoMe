@@ -180,7 +180,7 @@ recome/
 │   │
 │   ├── intelligence/                 # AI/ML Layer
 │   │   ├── index.ts                  # IntelligenceService
-│   │   ├── memory/                   # Mnemosyne Memory System
+│   │   ├── memory/                   # Smriti Memory System
 │   │   ├── graph/                    # Knowledge Graph
 │   │   ├── extraction/               # Entity Extraction
 │   │   └── recommendation/           # Recommendation Engine
@@ -449,7 +449,7 @@ await indexedDB.deleteDatabase('recome_db');
 ## Next Steps
 
 1. **Read** [ARCHITECTURE.md](ARCHITECTURE.md) - Full system architecture
-2. **Read** [MEMORY_SYSTEM.md](MEMORY_SYSTEM.md) - Mnemosyne deep dive
+2. **Read** [MEMORY_SYSTEM.md](MEMORY_SYSTEM.md) - Smriti deep dive
 3. **Read** [KNOWLEDGE_GRAPH.md](KNOWLEDGE_GRAPH.md) - Entity relationships
 4. **Read** [CLAUDE_CODE_PROMPT.md](CLAUDE_CODE_PROMPT.md) - AI-assisted development
 

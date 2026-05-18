@@ -1,0 +1,1645 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Recome — your personal interest graph</title>
+<meta name="description" content="Interactive prototype of recome.app — the personal interest graph + a team of agents that work it for you." />
+<meta name="theme-color" content="#0a0a0a" />
+<style>
+  /* ─── Reset ──────────────────────────────────────────────────────── */
+  *,*::before,*::after { box-sizing: border-box; }
+  html,body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+    font-feature-settings: 'cv02','cv03','cv04','cv11','ss01';
+    color: #0a0a0a;
+    background: #f6f6f7;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+  a { color: inherit; text-decoration: none; }
+  h1,h2,h3,h4,h5 { margin: 0; font-weight: 600; letter-spacing: -0.015em; }
+
+  /* ─── Theme tokens ──────────────────────────────────────────────── */
+  :root {
+    --bg: #f6f6f7;
+    --surface: #ffffff;
+    --surface-2: #fafafa;
+    --border: #e7e7e9;
+    --border-strong: #d1d1d6;
+    --ink: #0a0a0a;
+    --ink-2: #3a3a40;
+    --muted: #76767e;
+    --muted-2: #a3a3ab;
+
+    --accent: #5b4cfb;
+    --accent-soft: #ece9ff;
+    --accent-ink: #2e21c2;
+
+    --recall: #f59e0b;
+    --recall-soft: #fef3c7;
+    --concierge: #8b5cf6;
+    --concierge-soft: #f3e8ff;
+    --curator: #10b981;
+    --curator-soft: #d1fae5;
+    --watchlist: #f43f5e;
+    --watchlist-soft: #ffe4e6;
+    --decision: #3b82f6;
+    --decision-soft: #dbeafe;
+    --synthesist: #64748b;
+    --synthesist-soft: #e2e8f0;
+
+    --youtube: #ff0000;
+    --reddit: #ff4500;
+    --amazon: #ff9900;
+    --substack: #ff6719;
+    --verge: #ff0066;
+    --hn: #ff6600;
+    --arxiv: #b31b1b;
+    --x: #0f1419;
+  }
+
+  /* ─── App shell ─────────────────────────────────────────────────── */
+  .app {
+    display: grid;
+    grid-template-columns: 232px 1fr;
+    min-height: 100vh;
+  }
+  .sidebar {
+    background: #fbfbfc;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 18px 14px;
+    position: sticky; top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    padding: 4px 8px 18px;
+  }
+  .brand-mark {
+    width: 28px; height: 28px;
+    border-radius: 7px;
+    background: linear-gradient(135deg, #5b4cfb 0%, #8b5cf6 100%);
+    box-shadow: 0 1px 0 rgba(255,255,255,.4) inset, 0 1px 2px rgba(91,76,251,.35);
+    display: grid; place-items: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: -.02em;
+  }
+  .brand-text { font-weight: 600; letter-spacing: -0.02em; font-size: 15px; }
+  .brand-text .dot { color: var(--accent); }
+
+  .side-section { margin-top: 8px; }
+  .side-label {
+    font-size: 11px; font-weight: 600; color: var(--muted-2);
+    letter-spacing: .04em; text-transform: uppercase;
+    padding: 8px 10px;
+  }
+  .nav-item {
+    width: 100%;
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 10px;
+    border-radius: 7px;
+    color: var(--ink-2);
+    font-size: 13.5px;
+    font-weight: 500;
+    transition: background .12s, color .12s;
+    position: relative;
+  }
+  .nav-item:hover { background: #f0f0f3; color: var(--ink); }
+  .nav-item.active {
+    background: #ffffff;
+    color: var(--ink);
+    box-shadow: 0 0 0 1px var(--border), 0 1px 2px rgba(0,0,0,.04);
+  }
+  .nav-item svg { width: 16px; height: 16px; flex: 0 0 16px; opacity: .75; }
+  .nav-item .badge {
+    margin-left: auto;
+    font-size: 10.5px; font-weight: 600;
+    background: var(--accent); color: #fff;
+    padding: 1px 6px; border-radius: 999px;
+    min-width: 18px; text-align: center;
+  }
+  .nav-item .badge.muted { background: #e7e7e9; color: var(--muted); }
+
+  .side-footer {
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .me {
+    display: flex; align-items: center; gap: 10px;
+    padding: 6px 8px;
+    border-radius: 7px;
+  }
+  .me:hover { background: #f0f0f3; }
+  .avatar {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #fbbf24, #f43f5e);
+    color: #fff; font-weight: 600; font-size: 11px;
+    display: grid; place-items: center;
+  }
+  .me-text { line-height: 1.1; }
+  .me-name { font-size: 13px; font-weight: 600; }
+  .me-meta { font-size: 11px; color: var(--muted); }
+
+  /* ─── Main area ─────────────────────────────────────────────────── */
+  .main { display: flex; flex-direction: column; min-width: 0; }
+  .topbar {
+    height: 52px;
+    border-bottom: 1px solid var(--border);
+    background: #fbfbfc;
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 24px;
+    position: sticky; top: 0; z-index: 5;
+  }
+  .crumbs { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+  .crumbs .here { color: var(--ink); font-weight: 600; }
+  .search {
+    margin-left: 18px;
+    flex: 1; max-width: 420px;
+    display: flex; align-items: center; gap: 8px;
+    background: #f0f0f3;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    padding: 6px 10px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .search:focus-within { background: #fff; border-color: var(--border-strong); color: var(--ink); }
+  .search input { border: none; outline: none; background: transparent; flex: 1; font: inherit; color: inherit; }
+  .search kbd {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px; color: var(--muted-2);
+    background: #fff; border: 1px solid var(--border);
+    border-radius: 4px; padding: 1px 5px;
+  }
+  .top-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .iconbtn {
+    width: 30px; height: 30px;
+    border-radius: 6px;
+    display: grid; place-items: center;
+    color: var(--muted);
+  }
+  .iconbtn:hover { background: #f0f0f3; color: var(--ink); }
+  .btn-primary {
+    background: var(--ink); color: #fff;
+    font-size: 12.5px; font-weight: 500;
+    padding: 6px 12px; border-radius: 7px;
+  }
+  .btn-primary:hover { background: #1f1f24; }
+
+  .content {
+    padding: 28px 32px 60px;
+    max-width: 1180px;
+    width: 100%;
+  }
+  .page-head { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 6px; }
+  .page-title { font-size: 22px; font-weight: 600; letter-spacing: -.02em; }
+  .page-sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .page-actions { display: flex; gap: 8px; }
+  .btn-secondary {
+    background: #fff; color: var(--ink-2);
+    font-size: 12.5px; font-weight: 500;
+    padding: 6px 11px; border-radius: 7px;
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { background: var(--surface-2); }
+
+  /* ─── Stat strip ────────────────────────────────────────────────── */
+  .stats {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin: 18px 0 24px;
+  }
+  .stat {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .stat-label { font-size: 11.5px; color: var(--muted); font-weight: 500; letter-spacing: .02em; }
+  .stat-value { font-size: 20px; font-weight: 600; letter-spacing: -.02em; margin-top: 2px; }
+  .stat-delta { font-size: 11.5px; margin-top: 2px; color: var(--curator); font-weight: 500; }
+  .stat-delta.flat { color: var(--muted); }
+
+  /* ─── Inbox: "agents working right now" strip ───────────────────── */
+  .live-strip {
+    background: linear-gradient(180deg, #fff 0%, #fafafa 100%);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 18px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .pulse {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--curator);
+    box-shadow: 0 0 0 0 rgba(16,185,129,.5);
+    animation: pulse 1.6s infinite;
+    flex: 0 0 8px;
+  }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(16,185,129,.5); }
+    70% { box-shadow: 0 0 0 8px rgba(16,185,129,0); }
+    100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+  }
+  .live-text { font-size: 13px; color: var(--ink-2); flex: 1; }
+  .live-text strong { color: var(--ink); font-weight: 600; }
+  .live-text .agent-name { color: var(--ink); font-weight: 600; }
+  .live-stat { font-size: 11.5px; color: var(--muted); }
+  .live-stat strong { color: var(--ink); font-weight: 600; }
+
+  /* ─── Inbox cards ───────────────────────────────────────────────── */
+  .inbox { display: flex; flex-direction: column; gap: 10px; }
+  .card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    padding: 16px 18px;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .card:hover { border-color: var(--border-strong); box-shadow: 0 1px 3px rgba(0,0,0,.03); }
+  .card-head {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 8px;
+    font-size: 12px;
+  }
+  .agent-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px; font-weight: 600; letter-spacing: .02em;
+  }
+  .agent-pill .swatch {
+    width: 6px; height: 6px; border-radius: 50%;
+  }
+  .agent-recall { background: var(--recall-soft); color: #8a5a08; }
+  .agent-recall .swatch { background: var(--recall); }
+  .agent-concierge { background: var(--concierge-soft); color: #5b21b6; }
+  .agent-concierge .swatch { background: var(--concierge); }
+  .agent-curator { background: var(--curator-soft); color: #047857; }
+  .agent-curator .swatch { background: var(--curator); }
+  .agent-watchlist { background: var(--watchlist-soft); color: #be123c; }
+  .agent-watchlist .swatch { background: var(--watchlist); }
+  .agent-decision { background: var(--decision-soft); color: #1d4ed8; }
+  .agent-decision .swatch { background: var(--decision); }
+  .agent-synthesist { background: var(--synthesist-soft); color: #334155; }
+  .agent-synthesist .swatch { background: var(--synthesist); }
+
+  .meta-dot { color: var(--muted-2); }
+  .meta { color: var(--muted); font-size: 12px; }
+  .card h3 {
+    font-size: 15.5px; font-weight: 600; letter-spacing: -.01em;
+    line-height: 1.35;
+    margin-bottom: 6px;
+  }
+  .card-body { font-size: 13.5px; color: var(--ink-2); line-height: 1.55; }
+  .card-body em { color: var(--ink); font-style: normal; font-weight: 500; background: #fff8e1; padding: 0 2px; border-radius: 3px; }
+
+  .sources { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .source {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 9px 3px 7px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 11.5px;
+    color: var(--ink-2);
+  }
+  .source .src-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .source .when { color: var(--muted-2); }
+
+  .actions { display: flex; gap: 6px; margin-top: 14px; align-items: center; }
+  .pill-btn {
+    font-size: 12px; font-weight: 500;
+    padding: 5px 11px; border-radius: 6px;
+    border: 1px solid var(--border);
+    background: #fff; color: var(--ink-2);
+  }
+  .pill-btn:hover { background: var(--surface-2); border-color: var(--border-strong); }
+  .pill-btn.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .pill-btn.primary:hover { background: #1f1f24; }
+  .why {
+    margin-left: auto;
+    font-size: 11.5px; color: var(--muted);
+    align-self: center;
+  }
+  .why:hover { color: var(--ink); text-decoration: underline; }
+
+  /* ─── View switching ────────────────────────────────────────────── */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ─── Mind Map ──────────────────────────────────────────────────── */
+  .mindmap-wrap {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    min-height: 560px;
+  }
+  .mindmap-canvas {
+    position: relative;
+    background:
+      radial-gradient(circle at 30% 40%, rgba(91,76,251,.04), transparent 50%),
+      radial-gradient(circle at 70% 70%, rgba(16,185,129,.04), transparent 50%),
+      #fcfcfd;
+  }
+  .mindmap-canvas svg { width: 100%; height: 100%; display: block; }
+  .mm-side {
+    border-left: 1px solid var(--border);
+    padding: 18px 18px;
+    background: #fafafa;
+  }
+  .mm-side h4 { font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 10px; }
+  .mm-side .focus-title { font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
+  .mm-side .focus-meta { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .mm-stat-row { display: flex; gap: 14px; margin: 12px 0 16px; }
+  .mm-stat .v { font-size: 16px; font-weight: 600; }
+  .mm-stat .l { font-size: 11px; color: var(--muted); }
+  .related {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-top: 4px;
+  }
+  .chip {
+    font-size: 11.5px;
+    padding: 3px 9px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--ink-2);
+  }
+  .chip:hover { border-color: var(--border-strong); }
+  .timeline-mini {
+    margin-top: 16px;
+    font-size: 12px; color: var(--ink-2);
+  }
+  .timeline-mini .row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 0;
+    border-top: 1px solid var(--border);
+  }
+  .timeline-mini .row:first-child { border-top: none; }
+  .timeline-mini .when { color: var(--muted-2); font-size: 11px; min-width: 64px; }
+
+  .mindmap-controls {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 18px;
+    background: #fff;
+    border-top: 1px solid var(--border);
+    grid-column: 1 / -1;
+  }
+  .scrub {
+    flex: 1;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 12px; color: var(--muted);
+  }
+  .scrub input[type=range] { flex: 1; accent-color: var(--accent); }
+  .legend { display: flex; gap: 14px; font-size: 11.5px; color: var(--muted); flex-wrap: wrap; }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .legend i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+  .node circle { cursor: pointer; transition: stroke-width .15s, filter .15s; }
+  .node:hover circle { stroke-width: 2.5; filter: brightness(.96); }
+  .node text { font-size: 11px; fill: var(--ink-2); pointer-events: none; font-weight: 500; }
+  .edge { stroke: #cfcfd6; stroke-opacity: .55; }
+
+  /* ─── Trails view ───────────────────────────────────────────────── */
+  .trails { display: flex; flex-direction: column; gap: 10px; }
+  .trail {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    padding: 16px 18px;
+    display: grid;
+    grid-template-columns: 1fr 200px;
+    gap: 8px 18px;
+    align-items: start;
+  }
+  .trail:hover { border-color: var(--border-strong); }
+  .trail-status {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 600;
+    color: var(--ink-2);
+    margin-bottom: 6px;
+  }
+  .trail-status .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--curator); }
+  .trail-status.stalled .dot { background: var(--watchlist); }
+  .trail-status.dormant .dot { background: var(--muted-2); }
+  .trail h3 { font-size: 15.5px; margin-bottom: 4px; }
+  .trail-meta { font-size: 12.5px; color: var(--muted); }
+  .trail-bar {
+    grid-column: 1 / 2;
+    margin-top: 10px;
+    display: flex; gap: 1px;
+    height: 6px; border-radius: 4px; overflow: hidden;
+  }
+  .trail-bar > div { height: 100%; }
+  .trail-next {
+    grid-column: 2 / 3; grid-row: 1 / span 3;
+    text-align: right;
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .trail-next .next-action {
+    color: var(--ink); font-weight: 500;
+    margin-top: 4px; display: block;
+  }
+  .trail-next .next-when { color: var(--accent); font-weight: 500; }
+
+  /* ─── Capture view ──────────────────────────────────────────────── */
+  .capture-hero {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px 28px 24px;
+    margin-bottom: 18px;
+  }
+  .capture-hero h2 { font-size: 19px; letter-spacing: -.015em; }
+  .capture-hero p { font-size: 13.5px; color: var(--muted); margin-top: 4px; margin-bottom: 0; }
+  .paste-box {
+    margin-top: 16px;
+    display: flex; gap: 8px;
+    align-items: center;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 4px 4px 4px 14px;
+  }
+  .paste-box input {
+    flex: 1; border: none; outline: none; background: transparent;
+    font: inherit; font-size: 14px; padding: 8px 0;
+    color: var(--ink);
+  }
+  .paste-box input::placeholder { color: var(--muted-2); }
+  .paste-box button { padding: 8px 16px; }
+
+  .sources-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    margin-top: 6px;
+  }
+  .source-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .source-card-head {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 600;
+  }
+  .source-card-head .status {
+    margin-left: auto;
+    font-size: 10.5px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--curator-soft); color: #047857;
+    font-weight: 600;
+  }
+  .source-card-head .status.soon { background: #fef3c7; color: #92400e; }
+  .source-card-head .status.off { background: #f3f4f6; color: #6b7280; }
+  .source-card p { font-size: 12px; color: var(--muted); margin-top: 6px; margin-bottom: 0; line-height: 1.5; }
+  .source-stat { font-size: 11.5px; color: var(--muted); margin-top: 10px; }
+  .source-stat strong { color: var(--ink); font-weight: 600; }
+
+  .recent-cap {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    margin-top: 18px;
+  }
+  .recent-cap-head { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; }
+  .recent-cap-head h3 { font-size: 13px; }
+  .recent-cap-head .meta { margin-left: auto; }
+  .cap-row {
+    display: grid; grid-template-columns: 110px 1fr 180px 90px;
+    gap: 14px; align-items: center;
+    padding: 11px 16px;
+    border-top: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .cap-row:first-of-type { border-top: none; }
+  .cap-row .title { font-weight: 500; color: var(--ink); }
+  .cap-row .sub { font-size: 11.5px; color: var(--muted); }
+  .cap-row .ent { font-size: 11.5px; color: var(--ink-2); }
+  .cap-row .when { font-size: 11.5px; color: var(--muted); text-align: right; }
+  .cap-platform {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11.5px; color: var(--ink-2);
+  }
+
+  /* ─── Agents view ───────────────────────────────────────────────── */
+  .agents-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+  }
+  .agent-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+  .agent-card-head {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 4px;
+  }
+  .agent-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: grid; place-items: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: -.02em;
+  }
+  .agent-card h3 { font-size: 16px; }
+  .agent-card .sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .toggle {
+    margin-left: auto;
+    width: 32px; height: 18px;
+    background: #d1fae5; border-radius: 999px;
+    position: relative; cursor: pointer;
+    border: 1px solid #a7f3d0;
+  }
+  .toggle::after {
+    content: ''; position: absolute;
+    top: 1px; left: 13px;
+    width: 14px; height: 14px;
+    background: #10b981; border-radius: 50%;
+    transition: left .15s;
+  }
+  .toggle.off { background: #f3f4f6; border-color: var(--border); }
+  .toggle.off::after { background: #9ca3af; left: 1px; }
+  .agent-desc { font-size: 13px; color: var(--ink-2); line-height: 1.55; margin: 10px 0 14px; }
+  .agent-stats {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    padding-top: 12px; border-top: 1px solid var(--border);
+  }
+  .agent-stats .l { font-size: 11px; color: var(--muted); }
+  .agent-stats .v { font-size: 13px; font-weight: 600; margin-top: 1px; }
+  .budget-bar {
+    margin-top: 12px;
+    background: #f0f0f3; border-radius: 4px; height: 4px; overflow: hidden;
+  }
+  .budget-bar > div { height: 100%; background: var(--accent); border-radius: 4px; }
+
+  /* ─── Attention / Mirror ────────────────────────────────────────── */
+  .mirror-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .panel {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 22px;
+  }
+  .panel h3 { font-size: 14px; margin-bottom: 4px; }
+  .panel .panel-sub { font-size: 12.5px; color: var(--muted); margin-bottom: 16px; }
+  .donut-wrap { display: flex; gap: 22px; align-items: center; }
+  .donut { width: 160px; height: 160px; flex: 0 0 160px; }
+  .legend-list { flex: 1; display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+  .legend-list .li { display: flex; align-items: center; gap: 9px; }
+  .legend-list .li i { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 10px; }
+  .legend-list .pct { margin-left: auto; font-weight: 600; color: var(--ink); }
+  .legend-list .name { color: var(--ink-2); }
+
+  .traj-row { display: flex; flex-direction: column; gap: 12px; }
+  .traj {
+    display: grid; grid-template-columns: 130px 1fr 60px 24px;
+    gap: 12px; align-items: center;
+  }
+  .traj .name { font-size: 13px; color: var(--ink-2); }
+  .traj-bar { height: 8px; background: #f0f0f3; border-radius: 4px; overflow: hidden; }
+  .traj-bar > div { height: 100%; }
+  .traj .delta { font-size: 12px; font-weight: 600; text-align: right; }
+  .traj .delta.up { color: var(--curator); }
+  .traj .delta.down { color: var(--watchlist); }
+  .traj .delta.flat { color: var(--muted); }
+  .traj .icn { color: var(--muted); font-size: 13px; }
+
+  .mirror-disclaim {
+    grid-column: 1 / -1;
+    background: #fff;
+    border: 1px dashed var(--border-strong);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 12.5px; color: var(--ink-2);
+    line-height: 1.55;
+  }
+  .mirror-disclaim strong { color: var(--ink); }
+
+  /* ─── Tiny helpers ──────────────────────────────────────────────── */
+  .row { display: flex; gap: 14px; align-items: center; }
+  .grow { flex: 1; }
+  .nowrap { white-space: nowrap; }
+  pre { margin: 0; }
+
+  /* ─── Responsive ────────────────────────────────────────────────── */
+  @media (max-width: 980px) {
+    .app { grid-template-columns: 64px 1fr; }
+    .brand-text, .side-label, .nav-item span:not(.badge), .me-text { display: none; }
+    .nav-item { justify-content: center; padding: 9px; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .mindmap-wrap { grid-template-columns: 1fr; }
+    .mm-side { border-left: none; border-top: 1px solid var(--border); }
+    .agents-grid, .mirror-grid, .sources-grid { grid-template-columns: 1fr; }
+    .cap-row { grid-template-columns: 80px 1fr 80px; }
+    .cap-row .ent { display: none; }
+    .trail { grid-template-columns: 1fr; }
+    .trail-next { grid-column: 1; grid-row: auto; text-align: left; margin-top: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ═══ Sidebar ═══════════════════════════════════════════════════ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">R</div>
+      <div class="brand-text">recome<span class="dot">.</span></div>
+    </div>
+
+    <div class="side-section">
+      <button class="nav-item active" data-view="inbox">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+        <span>Inbox</span>
+        <span class="badge">7</span>
+      </button>
+      <button class="nav-item" data-view="mind">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><path d="M9.7 9.7 6.5 7.5M14.3 9.7l3.2-2.2M9.7 14.3l-3.2 2.2M14.3 14.3l3.2 2.2"/></svg>
+        <span>Mind Map</span>
+      </button>
+      <button class="nav-item" data-view="trails">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12c2-4 5-6 9-6s7 2 9 6"/><path d="M3 18c2-2 4-3 6-3s3 1 3 2 0 2 2 2 4-1 7-3"/></svg>
+        <span>Trails</span>
+      </button>
+      <button class="nav-item" data-view="capture">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        <span>Capture</span>
+      </button>
+    </div>
+
+    <div class="side-section">
+      <div class="side-label">Agents</div>
+      <button class="nav-item" data-view="agents">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4M8 16h.01M16 16h.01"/></svg>
+        <span>All agents</span>
+        <span class="badge muted">6</span>
+      </button>
+      <button class="nav-item" data-view="mirror">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>
+        <span>Attention</span>
+      </button>
+    </div>
+
+    <div class="side-section">
+      <div class="side-label">Developer</div>
+      <button class="nav-item" data-view="iaas">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        <span>API keys</span>
+      </button>
+    </div>
+
+    <div class="side-footer">
+      <div class="me">
+        <div class="avatar">NB</div>
+        <div class="me-text">
+          <div class="me-name">Nikhil</div>
+          <div class="me-meta">Plus · 1,247 signals</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══ Main ══════════════════════════════════════════════════════ -->
+  <main class="main">
+    <header class="topbar">
+      <div class="crumbs"><span>recome.app</span> · <span class="here" id="crumb">Inbox</span></div>
+      <label class="search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input placeholder="Search your graph — topics, entities, pages..." />
+        <kbd>⌘K</kbd>
+      </label>
+      <div class="top-right">
+        <button class="iconbtn" title="Notifications">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        </button>
+        <button class="btn-primary">+ Capture</button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ═══ Inbox view ═══════════════════════════════════════════ -->
+      <section class="view active" data-view="inbox">
+        <div class="page-head">
+          <div>
+            <div class="page-title">Inbox</div>
+            <div class="page-sub">Things your agents brought you. Sorted by when they need you, not when they fired.</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn-secondary">Filter</button>
+            <button class="btn-secondary">Mark all read</button>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-label">Things surfaced this week</div>
+            <div class="stat-value">23</div>
+            <div class="stat-delta">↑ 6 vs last week</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Active research trails</div>
+            <div class="stat-value">7</div>
+            <div class="stat-delta flat">2 stalled · needs your call</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Signals captured (30d)</div>
+            <div class="stat-value">412</div>
+            <div class="stat-delta">↑ 38% vs last 30d</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Today's agent budget</div>
+            <div class="stat-value">$0.04<span style="font-size:13px;font-weight:500;color:var(--muted)"> / $0.10</span></div>
+            <div class="stat-delta flat">Within cap</div>
+          </div>
+        </div>
+
+        <div class="live-strip">
+          <div class="pulse"></div>
+          <div class="live-text">
+            <span class="agent-name">Concierge</span> is checking prices on <strong>3 standing desks</strong> across Amazon, Wayfair, and the manufacturer · <span class="agent-name">Curator</span> is scanning today's RSS for distributed-systems writing
+          </div>
+          <div class="live-stat"><strong>2</strong> agents running · last pass <strong>4m ago</strong></div>
+        </div>
+
+        <div class="inbox">
+
+          <!-- ── Recall card ── -->
+          <article class="card">
+            <div class="card-head">
+              <span class="agent-pill agent-recall"><span class="swatch"></span> Recall</span>
+              <span class="meta-dot">·</span>
+              <span class="meta">21 days ago you read this · surfacing now because you're on YouTube on the same topic</span>
+            </div>
+            <h3>You bookmarked a Verge review of the Uplift V2 that you never opened — and you're watching a desk video right now.</h3>
+            <div class="card-body">
+              The Verge (<em>"The Uplift V2 is great, but the bearings on the cheaper finish wobble after 8 months"</em>) sits in your captures from <strong>Apr 26</strong>. You're currently 11 minutes into <em>"Standing Desk Showdown 2026"</em> on YouTube — reviewing the same model.
+            </div>
+            <div class="sources">
+              <span class="source"><span class="src-dot" style="background:var(--verge)"></span>The Verge <span class="when">· bookmarked Apr 26</span></span>
+              <span class="source"><span class="src-dot" style="background:var(--youtube)"></span>YouTube <span class="when">· watching now</span></span>
+              <span class="source"><span class="src-dot" style="background:var(--reddit)"></span>r/StandingDesks <span class="when">· read May 2</span></span>
+            </div>
+            <div class="actions">
+              <button class="pill-btn primary">Open the Verge review</button>
+              <button class="pill-btn">Mark not useful</button>
+              <button class="pill-btn">Snooze</button>
+              <a class="why" href="#">Why am I seeing this?</a>
+            </div>
+          </article>
+
+          <!-- ── Concierge card ── -->
+          <article class="card">
+            <div class="card-head">
+              <span class="agent-pill agent-concierge"><span class="swatch"></span> Concierge</span>
+              <span class="meta-dot">·</span>
+              <span class="meta">Watching 3 standing desks since May 2 · price-checked 4× today</span>
+            </div>
+            <h3>Uplift V2 dropped $187 on Wayfair overnight. Two alternatives you also viewed match what you said mattered.</h3>
+            <div class="card-body">
+              From your "Standing desk" trail, you've shown 6 signals about <em>bamboo top</em> and 4 about <em>≤$700</em>. Two alternatives match: the <strong>Fully Jarvis</strong> (Reddit threads suggest better motor warranty) and the <strong>FlexiSpot E7</strong>. Both in stock; both below your apparent ceiling.
+            </div>
+            <div class="sources">
+              <span class="source"><span class="src-dot" style="background:var(--amazon)"></span>Amazon <span class="when">· $649 → $462</span></span>
+              <span class="source"><span class="src-dot" style="background:#5b21b6"></span>Wayfair <span class="when">· $599 → $412</span></span>
+              <span class="source"><span class="src-dot" style="background:var(--reddit)"></span>r/StandingDesks <span class="when">· 3 mentions</span></span>
+            </div>
+            <div class="actions">
+              <button class="pill-btn primary">Compare the 3 options</button>
+              <button class="pill-btn">Watch for $400 or under</button>
+              <button class="pill-btn">Dismiss</button>
+              <a class="why" href="#">Why this, not the others?</a>
+            </div>
+          </article>
+
+          <!-- ── Curator card ── -->
+          <article class="card">
+            <div class="card-head">
+              <span class="agent-pill agent-curator"><span class="swatch"></span> Curator</span>
+              <span class="meta-dot">·</span>
+              <span class="meta">Daily pass · 1,402 sources scanned in 2.1s</span>
+            </div>
+            <h3>Martin Kleppmann just published. You haven't engaged with distributed-systems content in 23 days.</h3>
+            <div class="card-body">
+              <em>"Local-first software in 2026: what we got wrong"</em> — 18-minute read on Kleppmann's Substack. You read his 2019 paper twice and bookmarked 4 of his talks. Two related landed today: a <strong>Jepsen post</strong> on Postgres logical replication, and an <strong>arXiv preprint</strong> on CRDTs you'd previously starred.
+            </div>
+            <div class="sources">
+              <span class="source"><span class="src-dot" style="background:var(--substack)"></span>Substack <span class="when">· published 6h ago</span></span>
+              <span class="source"><span class="src-dot" style="background:#222"></span>jepsen.io <span class="when">· today</span></span>
+              <span class="source"><span class="src-dot" style="background:var(--arxiv)"></span>arXiv <span class="when">· May 14</span></span>
+            </div>
+            <div class="actions">
+              <button class="pill-btn primary">Read all three</button>
+              <button class="pill-btn">Save for weekend</button>
+              <a class="why" href="#">Why these, not other posts today?</a>
+            </div>
+          </article>
+
+          <!-- ── Watchlist card ── -->
+          <article class="card">
+            <div class="card-head">
+              <span class="agent-pill agent-watchlist"><span class="swatch"></span> Watchlist</span>
+              <span class="meta-dot">·</span>
+              <span class="meta">You asked me to watch "Stripe Atlas pricing" · update available</span>
+            </div>
+            <h3>Stripe Atlas changed their pricing page this morning — added a $500/yr tier between free and the $2k one.</h3>
+            <div class="card-body">
+              You set this watch on <strong>Feb 14</strong> after reading 3 YC posts about incorporation. Page diff below; no notification on the previous 8 checks because nothing material changed.
+            </div>
+            <div class="sources">
+              <span class="source"><span class="src-dot" style="background:#635bff"></span>stripe.com/atlas <span class="when">· this morning</span></span>
+            </div>
+            <div class="actions">
+              <button class="pill-btn primary">See the diff</button>
+              <button class="pill-btn">Stop watching</button>
+            </div>
+          </article>
+
+          <!-- ── Decision card — stalled ── -->
+          <article class="card">
+            <div class="card-head">
+              <span class="agent-pill agent-decision"><span class="swatch"></span> Decision</span>
+              <span class="meta-dot">·</span>
+              <span class="meta">Trail active 23 days · 14 signals · no decision yet</span>
+            </div>
+            <h3>You've been comparing espresso machines for 3 weeks. Want me to draft a recommendation from what you've already read?</h3>
+            <div class="card-body">
+              Captured signals show you weighing the <em>Breville Bambino Plus</em> against the <em>Lelit Anna</em>, with budget cap implied at <em>~$700</em>. I can pull the 14 signals, summarize the trade-offs in your own words, and surface the contradictions in your revealed criteria.
+            </div>
+            <div class="sources">
+              <span class="source"><span class="src-dot" style="background:var(--youtube)"></span>YouTube <span class="when">· 7 videos</span></span>
+              <span class="source"><span class="src-dot" style="background:var(--reddit)"></span>r/espresso <span class="when">· 4 threads</span></span>
+              <span class="source"><span class="src-dot" style="background:var(--amazon)"></span>Amazon <span class="when">· 2 listings</span></span>
+              <span class="source"><span class="src-dot" style="background:var(--hn)"></span>Home Barista <span class="when">· 1 guide</span></span>
+            </div>
+            <div class="actions">
+              <button class="pill-btn primary">Draft the decision</button>
+              <button class="pill-btn">Show me the trail first</button>
+              <button class="pill-btn">Not deciding right now</button>
+            </div>
+          </article>
+
+          <!-- ── Synthesist card ── -->
+          <article class="card">
+            <div class="card-head">
+              <span class="agent-pill agent-synthesist"><span class="swatch"></span> Synthesist</span>
+              <span class="meta-dot">·</span>
+              <span class="meta">Weekly digest · ready for Sunday morning</span>
+            </div>
+            <h3>Your week, written up: 7 active intents, 2 you closed, 1 stalled.</h3>
+            <div class="card-body">
+              <strong>Closed:</strong> "Pick a CI provider" (you chose Buildkite — based on 3 Hacker News comments and a Vercel comparison). <strong>Stalled:</strong> "Plan a Kyoto trip" — no signals in 11 days. <strong>Newest:</strong> "Type theory study group" emerged from 4 captures this week.
+            </div>
+            <div class="actions">
+              <button class="pill-btn primary">Read the digest</button>
+              <button class="pill-btn">Email it to me Sunday 8am</button>
+            </div>
+          </article>
+
+        </div>
+      </section>
+
+      <!-- ═══ Mind Map view ═══════════════════════════════════════ -->
+      <section class="view" data-view="mind">
+        <div class="page-head">
+          <div>
+            <div class="page-title">Your Mind Map</div>
+            <div class="page-sub">Every topic you've touched in the past 90 days, sized by attention, clustered by what travels together.</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn-secondary">Export PNG</button>
+            <button class="btn-secondary">Export JSON</button>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><div class="stat-label">Topics</div><div class="stat-value">127</div><div class="stat-delta">↑ 14 this month</div></div>
+          <div class="stat"><div class="stat-label">Edges</div><div class="stat-value">412</div><div class="stat-delta">↑ 47 this month</div></div>
+          <div class="stat"><div class="stat-label">Clusters detected</div><div class="stat-value">5</div><div class="stat-delta flat">Stable</div></div>
+          <div class="stat"><div class="stat-label">Last recomputed</div><div class="stat-value" style="font-size:14px;padding-top:6px">2h ago</div><div class="stat-delta flat">Nightly + on-demand</div></div>
+        </div>
+
+        <div class="mindmap-wrap">
+          <div class="mindmap-canvas">
+            <svg id="mm-svg" viewBox="0 0 760 540" preserveAspectRatio="xMidYMid meet"></svg>
+          </div>
+          <aside class="mm-side">
+            <h4>Focus</h4>
+            <div class="focus-title" id="mm-name">Standing desks</div>
+            <div class="focus-meta" id="mm-meta">Home setup cluster · 14 signals · active 19 days</div>
+
+            <div class="mm-stat-row">
+              <div class="mm-stat"><div class="v">3</div><div class="l">Platforms</div></div>
+              <div class="mm-stat"><div class="v">14</div><div class="l">Signals</div></div>
+              <div class="mm-stat"><div class="v">5</div><div class="l">Related</div></div>
+            </div>
+
+            <h4>Related</h4>
+            <div class="related">
+              <span class="chip">Ergonomic chairs</span>
+              <span class="chip">Monitor arms</span>
+              <span class="chip">Bamboo finish</span>
+              <span class="chip">Home office layout</span>
+              <span class="chip">Cable management</span>
+            </div>
+
+            <h4 style="margin-top:18px">Recent signals</h4>
+            <div class="timeline-mini">
+              <div class="row"><div class="when">today</div><div>watched "Standing Desk Showdown 2026" · YouTube</div></div>
+              <div class="row"><div class="when">3d ago</div><div>r/StandingDesks · Uplift wobble thread</div></div>
+              <div class="row"><div class="when">8d ago</div><div>Amazon · compared Jarvis vs Uplift</div></div>
+              <div class="row"><div class="when">21d ago</div><div>Verge · "Uplift V2 review" (bookmarked, unread)</div></div>
+            </div>
+          </aside>
+
+          <div class="mindmap-controls">
+            <div class="scrub">
+              <span>Feb 17</span>
+              <input type="range" min="0" max="100" value="100" />
+              <span>Today</span>
+            </div>
+            <div class="legend">
+              <span><i style="background:#5b4cfb"></i>Career / craft</span>
+              <span><i style="background:#10b981"></i>Home life</span>
+              <span><i style="background:#f59e0b"></i>Reading</span>
+              <span><i style="background:#f43f5e"></i>Media diet</span>
+              <span><i style="background:#3b82f6"></i>Health</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ Trails view ═══════════════════════════════════════ -->
+      <section class="view" data-view="trails">
+        <div class="page-head">
+          <div>
+            <div class="page-title">Trails</div>
+            <div class="page-sub">Things you've been researching across platforms. One trail per intent. Click any to see the timeline.</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn-secondary">Active</button>
+            <button class="btn-secondary">All</button>
+          </div>
+        </div>
+
+        <div class="trails">
+
+          <div class="trail">
+            <div>
+              <div class="trail-status"><div class="dot"></div> Active · Concierge watching</div>
+              <h3>Standing desk for the home office</h3>
+              <div class="trail-meta">Started Apr 26 · 14 signals · 3 platforms · revealed budget ~$700, bamboo top, dual motor</div>
+              <div class="trail-bar">
+                <div style="flex:5;background:var(--youtube)"></div>
+                <div style="flex:4;background:var(--reddit)"></div>
+                <div style="flex:3;background:var(--amazon)"></div>
+                <div style="flex:1;background:var(--verge)"></div>
+                <div style="flex:1;background:#8b5cf6"></div>
+              </div>
+            </div>
+            <div class="trail-next">
+              Next agent action
+              <span class="next-action">Price-check at 14:00</span>
+              <span class="next-when">in 2h 14m</span>
+            </div>
+          </div>
+
+          <div class="trail">
+            <div>
+              <div class="trail-status stalled"><div class="dot"></div> Stalled · 23 days no decision</div>
+              <h3>Espresso machine under $700</h3>
+              <div class="trail-meta">Started Apr 24 · 14 signals · 4 platforms · Decision agent offered draft summary</div>
+              <div class="trail-bar">
+                <div style="flex:7;background:var(--youtube)"></div>
+                <div style="flex:4;background:var(--reddit)"></div>
+                <div style="flex:2;background:var(--amazon)"></div>
+                <div style="flex:1;background:var(--hn)"></div>
+              </div>
+            </div>
+            <div class="trail-next">
+              Suggestion
+              <span class="next-action">Draft decision now</span>
+              <span class="next-when">on-demand</span>
+            </div>
+          </div>
+
+          <div class="trail">
+            <div>
+              <div class="trail-status"><div class="dot"></div> Active · Curator watching for new posts</div>
+              <h3>Local-first software / CRDTs</h3>
+              <div class="trail-meta">Started Jan 12 · 41 signals · 6 platforms · 3 authors followed (Kleppmann, Voss, Bret Victor)</div>
+              <div class="trail-bar">
+                <div style="flex:6;background:var(--substack)"></div>
+                <div style="flex:4;background:var(--arxiv)"></div>
+                <div style="flex:3;background:var(--hn)"></div>
+                <div style="flex:2;background:var(--youtube)"></div>
+                <div style="flex:1;background:#222"></div>
+              </div>
+            </div>
+            <div class="trail-next">
+              Next agent action
+              <span class="next-action">Daily RSS pass</span>
+              <span class="next-when">tomorrow 7:00</span>
+            </div>
+          </div>
+
+          <div class="trail">
+            <div>
+              <div class="trail-status dormant"><div class="dot"></div> Dormant · 11 days quiet</div>
+              <h3>Kyoto trip · late autumn</h3>
+              <div class="trail-meta">Started Mar 02 · 27 signals · 5 platforms · last touched May 6</div>
+              <div class="trail-bar">
+                <div style="flex:5;background:var(--reddit)"></div>
+                <div style="flex:4;background:var(--youtube)"></div>
+                <div style="flex:3;background:var(--substack)"></div>
+                <div style="flex:2;background:#10b981"></div>
+                <div style="flex:1;background:#f43f5e"></div>
+              </div>
+            </div>
+            <div class="trail-next">
+              Decision agent prompt
+              <span class="next-action">Close or revive?</span>
+              <span class="next-when">your call</span>
+            </div>
+          </div>
+
+          <div class="trail">
+            <div>
+              <div class="trail-status"><div class="dot"></div> Active · Recall surfacing</div>
+              <h3>Type theory study group</h3>
+              <div class="trail-meta">New this week · 4 signals · 2 platforms · emerging cluster — not yet a full intent</div>
+              <div class="trail-bar">
+                <div style="flex:3;background:var(--hn)"></div>
+                <div style="flex:2;background:var(--youtube)"></div>
+                <div style="flex:1;background:var(--arxiv)"></div>
+              </div>
+            </div>
+            <div class="trail-next">
+              Watching
+              <span class="next-action">More signals to confirm</span>
+              <span class="next-when">passive</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ═══ Capture view ═══════════════════════════════════════ -->
+      <section class="view" data-view="capture">
+        <div class="page-head">
+          <div>
+            <div class="page-title">Capture</div>
+            <div class="page-sub">Six ways things get into your graph. Pick the one your moment fits.</div>
+          </div>
+        </div>
+
+        <div class="capture-hero">
+          <h2>Paste any link to remember it.</h2>
+          <p>YouTube · Reddit · Amazon · Substack · arXiv · The Verge · Hacker News · X · Wirecutter · anywhere else with a URL.</p>
+          <div class="paste-box">
+            <span style="color:var(--muted-2)">↳</span>
+            <input placeholder="https://www.youtube.com/watch?v=..." />
+            <button class="btn-primary">Remember this</button>
+          </div>
+        </div>
+
+        <div class="sources-grid">
+          <div class="source-card">
+            <div class="source-card-head">
+              <span style="color:var(--accent)">●</span> Browser extension
+              <span class="status">Active</span>
+            </div>
+            <p>Passive auto-capture as you browse — no clicks. Chrome, Firefox, Edge.</p>
+            <div class="source-stat"><strong>342</strong> signals this month · Chrome on MacBook</div>
+          </div>
+
+          <div class="source-card">
+            <div class="source-card-head">
+              <span style="color:var(--curator)">●</span> PWA share-sheet
+              <span class="status">Active</span>
+            </div>
+            <p>Mobile: share any page, video or tweet from iOS or Android. Lives on your home screen.</p>
+            <div class="source-stat"><strong>61</strong> signals · iPhone Safari + iOS Reddit</div>
+          </div>
+
+          <div class="source-card">
+            <div class="source-card-head">
+              <span style="color:var(--decision)">●</span> URL paste
+              <span class="status">Active</span>
+            </div>
+            <p>Paste a link into the box above. Works on any device with a browser, no install required.</p>
+            <div class="source-stat"><strong>9</strong> signals · used when sharing across devices</div>
+          </div>
+
+          <div class="source-card">
+            <div class="source-card-head">
+              <span style="color:var(--watchlist)">●</span> Email forward
+              <span class="status soon">Coming Aug</span>
+            </div>
+            <p>Forward a newsletter or thread to <strong>save@recome.app</strong>. Ingests automatically.</p>
+            <div class="source-stat">Waitlist · 311 users opted in</div>
+          </div>
+
+          <div class="source-card">
+            <div class="source-card-head">
+              <span style="color:var(--synthesist)">●</span> Bulk import
+              <span class="status soon">Coming Aug</span>
+            </div>
+            <p>YouTube Takeout, Amazon orders, Reddit saved, Pocket export — bootstrap your graph in minutes.</p>
+            <div class="source-stat">Will solve the "empty week one" cold-start problem</div>
+          </div>
+
+          <div class="source-card">
+            <div class="source-card-head">
+              <span style="color:var(--concierge)">●</span> Developer IaaS
+              <span class="status">Active</span>
+            </div>
+            <p>Other products send signals on behalf of their users via <strong>api.recome.app/v1</strong>.</p>
+            <div class="source-stat"><strong>4</strong> products connected · 12k signals/day</div>
+          </div>
+        </div>
+
+        <div class="recent-cap">
+          <div class="recent-cap-head">
+            <h3>Recent captures</h3>
+            <span class="meta">Last 24 hours · 18 signals · auto-deduped</span>
+          </div>
+          <div class="cap-row">
+            <div class="cap-platform"><span style="color:var(--youtube)">▶</span> YouTube</div>
+            <div>
+              <div class="title">Standing Desk Showdown 2026 — 5 desks, 90 days of testing</div>
+              <div class="sub">via Chrome extension · played 11min of 27min</div>
+            </div>
+            <div class="ent">→ Standing desks, Ergonomics</div>
+            <div class="when">11 min ago</div>
+          </div>
+          <div class="cap-row">
+            <div class="cap-platform"><span style="color:var(--substack)">✉</span> Substack</div>
+            <div>
+              <div class="title">Local-first software in 2026: what we got wrong</div>
+              <div class="sub">via PWA share-sheet · iPhone Safari</div>
+            </div>
+            <div class="ent">→ CRDTs, Local-first</div>
+            <div class="when">2h ago</div>
+          </div>
+          <div class="cap-row">
+            <div class="cap-platform"><span style="color:var(--reddit)">◉</span> Reddit</div>
+            <div>
+              <div class="title">r/espresso — "Is the Bambino Plus enough for 2 cups a day?"</div>
+              <div class="sub">via Chrome extension · 14 comments read</div>
+            </div>
+            <div class="ent">→ Breville Bambino, Espresso</div>
+            <div class="when">5h ago</div>
+          </div>
+          <div class="cap-row">
+            <div class="cap-platform"><span style="color:var(--amazon)">▭</span> Amazon</div>
+            <div>
+              <div class="title">Fully Jarvis Bamboo Standing Desk — product page</div>
+              <div class="sub">via Chrome extension · compared with Uplift V2</div>
+            </div>
+            <div class="ent">→ Standing desks</div>
+            <div class="when">yesterday</div>
+          </div>
+          <div class="cap-row">
+            <div class="cap-platform"><span style="color:var(--arxiv)">🜉</span> arXiv</div>
+            <div>
+              <div class="title">A formal verification of automerge-rs CRDTs</div>
+              <div class="sub">via developer IaaS · feed = "Papers I'll read" app</div>
+            </div>
+            <div class="ent">→ CRDTs, Verification</div>
+            <div class="when">yesterday</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ Agents view ═══════════════════════════════════════ -->
+      <section class="view" data-view="agents">
+        <div class="page-head">
+          <div>
+            <div class="page-title">Your agents</div>
+            <div class="page-sub">Six agents work your graph. You're always in charge. Toggle, pause, or set quiet hours per agent.</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn-secondary">Quiet hours · 22:00–08:00</button>
+            <button class="btn-secondary">Daily cap · $0.10</button>
+          </div>
+        </div>
+
+        <div class="agents-grid">
+
+          <div class="agent-card">
+            <div class="agent-card-head">
+              <div class="agent-icon" style="background:var(--concierge)">C</div>
+              <div><h3>Concierge</h3><div class="sub">Watches purchase trails · 4×/day</div></div>
+              <div class="toggle" title="Active"></div>
+            </div>
+            <div class="agent-desc">
+              Tracks prices and stock on items you're researching across Amazon, Wayfair, Walmart, and direct retailers. Surfaces cheaper alternatives that match the criteria you've shown me. <strong>Never clicks "buy".</strong>
+            </div>
+            <div class="agent-stats">
+              <div><div class="l">Trails watched</div><div class="v">3</div></div>
+              <div><div class="l">Surfaced today</div><div class="v">2</div></div>
+              <div><div class="l">Cost this month</div><div class="v">$0.22</div></div>
+            </div>
+            <div class="budget-bar"><div style="width:62%;background:var(--concierge)"></div></div>
+          </div>
+
+          <div class="agent-card">
+            <div class="agent-card-head">
+              <div class="agent-icon" style="background:var(--curator)">C</div>
+              <div><h3>Curator</h3><div class="sub">Pulls new content for your interests · daily</div></div>
+              <div class="toggle"></div>
+            </div>
+            <div class="agent-desc">
+              Scans RSS, YouTube uploads, Reddit, Substack, and arXiv against your dormant + active topics. Tells you when someone you care about publishes. Doesn't post anything anywhere.
+            </div>
+            <div class="agent-stats">
+              <div><div class="l">Sources scanned</div><div class="v">1,402</div></div>
+              <div><div class="l">Surfaced today</div><div class="v">3</div></div>
+              <div><div class="l">Cost this month</div><div class="v">$0.04</div></div>
+            </div>
+            <div class="budget-bar"><div style="width:18%;background:var(--curator)"></div></div>
+          </div>
+
+          <div class="agent-card">
+            <div class="agent-card-head">
+              <div class="agent-icon" style="background:var(--recall)">R</div>
+              <div><h3>Recall</h3><div class="sub">Surfaces forgotten captures · event-triggered</div></div>
+              <div class="toggle"></div>
+            </div>
+            <div class="agent-desc">
+              When you re-engage with a topic, I find what you'd already captured and forgotten. Strict limit: <strong>2 notifications per week per topic</strong>, no exceptions, no spam.
+            </div>
+            <div class="agent-stats">
+              <div><div class="l">Cache size</div><div class="v">1,247</div></div>
+              <div><div class="l">Surfaced today</div><div class="v">1</div></div>
+              <div><div class="l">Cost this month</div><div class="v">$0.03</div></div>
+            </div>
+            <div class="budget-bar"><div style="width:9%;background:var(--recall)"></div></div>
+          </div>
+
+          <div class="agent-card">
+            <div class="agent-card-head">
+              <div class="agent-icon" style="background:var(--watchlist)">W</div>
+              <div><h3>Watchlist</h3><div class="sub">Explicit watches you set · real-time</div></div>
+              <div class="toggle"></div>
+            </div>
+            <div class="agent-desc">
+              You tell me what to watch (a page, a topic, a person). I tell you when it changes meaningfully. Currently watching: Stripe Atlas pricing, Anthropic API pricing, Hacker News for "neo4j".
+            </div>
+            <div class="agent-stats">
+              <div><div class="l">Watches</div><div class="v">3</div></div>
+              <div><div class="l">Surfaced today</div><div class="v">1</div></div>
+              <div><div class="l">Cost this month</div><div class="v">$0.02</div></div>
+            </div>
+            <div class="budget-bar"><div style="width:6%;background:var(--watchlist)"></div></div>
+          </div>
+
+          <div class="agent-card">
+            <div class="agent-card-head">
+              <div class="agent-icon" style="background:var(--decision)">D</div>
+              <div><h3>Decision</h3><div class="sub">On-demand · synthesizes a trail into a call</div></div>
+              <div class="toggle"></div>
+            </div>
+            <div class="agent-desc">
+              When you ask, I pull every signal on a trail, summarize the trade-offs <em>in the words you used</em>, surface contradictions in your revealed criteria, and recommend — with full citation back to your captures.
+            </div>
+            <div class="agent-stats">
+              <div><div class="l">Decisions drafted</div><div class="v">3</div></div>
+              <div><div class="l">Last run</div><div class="v">May 14</div></div>
+              <div><div class="l">Cost this month</div><div class="v">$0.10</div></div>
+            </div>
+            <div class="budget-bar"><div style="width:30%;background:var(--decision)"></div></div>
+          </div>
+
+          <div class="agent-card">
+            <div class="agent-card-head">
+              <div class="agent-icon" style="background:var(--synthesist)">S</div>
+              <div><h3>Synthesist</h3><div class="sub">Weekly digest of where each intent stands</div></div>
+              <div class="toggle"></div>
+            </div>
+            <div class="agent-desc">
+              Sunday morning, you get a writeup of every active intent: what's moved, what's stalled, what closed. Not a list of links — a real summary written for you.
+            </div>
+            <div class="agent-stats">
+              <div><div class="l">Digests sent</div><div class="v">8</div></div>
+              <div><div class="l">Avg read time</div><div class="v">3m 12s</div></div>
+              <div><div class="l">Cost this month</div><div class="v">$0.08</div></div>
+            </div>
+            <div class="budget-bar"><div style="width:24%;background:var(--synthesist)"></div></div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ═══ Attention / Personality Mirror view ═══════════════ -->
+      <section class="view" data-view="mirror">
+        <div class="page-head">
+          <div>
+            <div class="page-title">Attention composition</div>
+            <div class="page-sub">A mirror of what you actually paid attention to — not a judgment, not a personality test. Describable from real signal.</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn-secondary">This week</button>
+            <button class="btn-secondary">30 days</button>
+            <button class="btn-secondary">90 days</button>
+          </div>
+        </div>
+
+        <div class="mirror-grid">
+
+          <div class="panel">
+            <h3>Where your attention went</h3>
+            <div class="panel-sub">Past 30 days · 412 signals across 5 clusters</div>
+            <div class="donut-wrap">
+              <svg class="donut" viewBox="0 0 42 42">
+                <circle cx="21" cy="21" r="15.91" fill="none" stroke="#f0f0f3" stroke-width="6"/>
+                <circle cx="21" cy="21" r="15.91" fill="none" stroke="#5b4cfb" stroke-width="6"
+                        stroke-dasharray="38 62" stroke-dashoffset="25" transform="rotate(-90 21 21)"/>
+                <circle cx="21" cy="21" r="15.91" fill="none" stroke="#10b981" stroke-width="6"
+                        stroke-dasharray="22 78" stroke-dashoffset="-13" transform="rotate(-90 21 21)"/>
+                <circle cx="21" cy="21" r="15.91" fill="none" stroke="#f59e0b" stroke-width="6"
+                        stroke-dasharray="18 82" stroke-dashoffset="-35" transform="rotate(-90 21 21)"/>
+                <circle cx="21" cy="21" r="15.91" fill="none" stroke="#f43f5e" stroke-width="6"
+                        stroke-dasharray="14 86" stroke-dashoffset="-53" transform="rotate(-90 21 21)"/>
+                <circle cx="21" cy="21" r="15.91" fill="none" stroke="#3b82f6" stroke-width="6"
+                        stroke-dasharray="8 92" stroke-dashoffset="-67" transform="rotate(-90 21 21)"/>
+                <text x="21" y="22" text-anchor="middle" font-size="5" font-weight="600" fill="#0a0a0a">412</text>
+                <text x="21" y="27" text-anchor="middle" font-size="2.5" fill="#76767e">signals</text>
+              </svg>
+              <div class="legend-list">
+                <div class="li"><i style="background:#5b4cfb"></i><span class="name">Career / craft</span><span class="pct">38%</span></div>
+                <div class="li"><i style="background:#10b981"></i><span class="name">Home life</span><span class="pct">22%</span></div>
+                <div class="li"><i style="background:#f59e0b"></i><span class="name">Reading + ideas</span><span class="pct">18%</span></div>
+                <div class="li"><i style="background:#f43f5e"></i><span class="name">Media + culture</span><span class="pct">14%</span></div>
+                <div class="li"><i style="background:#3b82f6"></i><span class="name">Health + fitness</span><span class="pct">8%</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3>Week-over-week trajectory</h3>
+            <div class="panel-sub">Where attention is growing or fading</div>
+            <div class="traj-row">
+              <div class="traj">
+                <span class="name">Career / craft</span>
+                <div class="traj-bar"><div style="width:72%;background:#5b4cfb"></div></div>
+                <span class="delta up">↑ 12%</span>
+                <span class="icn">↗</span>
+              </div>
+              <div class="traj">
+                <span class="name">Reading + ideas</span>
+                <div class="traj-bar"><div style="width:52%;background:#f59e0b"></div></div>
+                <span class="delta up">↑ 4%</span>
+                <span class="icn">↗</span>
+              </div>
+              <div class="traj">
+                <span class="name">Home life</span>
+                <div class="traj-bar"><div style="width:48%;background:#10b981"></div></div>
+                <span class="delta flat">~</span>
+                <span class="icn">→</span>
+              </div>
+              <div class="traj">
+                <span class="name">Media + culture</span>
+                <div class="traj-bar"><div style="width:30%;background:#f43f5e"></div></div>
+                <span class="delta down">↓ 9%</span>
+                <span class="icn">↘</span>
+              </div>
+              <div class="traj">
+                <span class="name">Health + fitness</span>
+                <div class="traj-bar"><div style="width:14%;background:#3b82f6"></div></div>
+                <span class="delta down">↓ 6%</span>
+                <span class="icn">↘</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3>Quiet dimensions</h3>
+            <div class="panel-sub">Things you used to care about that haven't shown up in a while</div>
+            <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--ink-2)">
+              <div class="row"><span style="color:var(--muted-2)">·</span> <span class="grow">Outdoor / hiking</span> <span class="nowrap meta">last signal · 6 weeks ago</span></div>
+              <div class="row"><span style="color:var(--muted-2)">·</span> <span class="grow">Photography craft</span> <span class="nowrap meta">last signal · 4 weeks ago</span></div>
+              <div class="row"><span style="color:var(--muted-2)">·</span> <span class="grow">Cooking / recipes</span> <span class="nowrap meta">last signal · 3 weeks ago</span></div>
+            </div>
+            <div style="margin-top:14px;font-size:12px;color:var(--muted);line-height:1.5">
+              No "you should" here — just where things stand. Set an aspiration on the right and Curator will weight content accordingly.
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3>Aspirations (optional)</h3>
+            <div class="panel-sub">Tell Curator what you'd like to lean into. We don't judge — we just weight surfacing.</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <label style="display:flex;align-items:center;gap:10px;font-size:13px">
+                <input type="checkbox" checked /> Lean into <strong>writing craft</strong> — Curator prioritizes essays, Recall demotes Netflix-style content
+              </label>
+              <label style="display:flex;align-items:center;gap:10px;font-size:13px">
+                <input type="checkbox" /> Lean into <strong>outdoor / hiking</strong>
+              </label>
+              <label style="display:flex;align-items:center;gap:10px;font-size:13px">
+                <input type="checkbox" /> Lean into <strong>cooking</strong>
+              </label>
+            </div>
+            <div style="margin-top:14px;display:flex;gap:8px">
+              <button class="pill-btn primary">Save</button>
+              <button class="pill-btn">Wipe all derived inferences</button>
+            </div>
+          </div>
+
+          <div class="mirror-disclaim">
+            <strong>How we built this view, in plain text:</strong> we counted signals per topic over 30 days, grouped topics into clusters by co-occurrence, and rendered the proportions. No psychometric labels. No Big Five. No "your personality type is X." Just attention composition. <strong>Opt-in, off by default, one-click wipe.</strong> Never visible to anyone but you — not to admins, not to IaaS callers, not in support views.
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ═══ IaaS / API view ═══════════════════════════════════ -->
+      <section class="view" data-view="iaas">
+        <div class="page-head">
+          <div>
+            <div class="page-title">Developer · API keys</div>
+            <div class="page-sub">The same backend that powers this app. Build interest-graph features into your own product.</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn-secondary">Docs</button>
+            <button class="btn-primary" style="font-size:12.5px">+ New key</button>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><div class="stat-label">Active keys</div><div class="stat-value">2</div><div class="stat-delta flat">1 live · 1 test</div></div>
+          <div class="stat"><div class="stat-label">Signals ingested (30d)</div><div class="stat-value">412k</div><div class="stat-delta">↑ 47% vs last 30d</div></div>
+          <div class="stat"><div class="stat-label">Queries served (30d)</div><div class="stat-value">2.8M</div><div class="stat-delta">↑ 22%</div></div>
+          <div class="stat"><div class="stat-label">Tier</div><div class="stat-value" style="font-size:16px;padding-top:5px">Pro · $499/mo</div><div class="stat-delta flat">68% of quota</div></div>
+        </div>
+
+        <div class="panel" style="margin-bottom:14px">
+          <h3>Quickstart · POST a signal</h3>
+          <div class="panel-sub">Tenant-scoped via API key. Per-user namespacing handled for you.</div>
+          <pre style="background:#0a0a0a;color:#e7e7e9;padding:16px;border-radius:8px;font-size:12.5px;line-height:1.55;overflow-x:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace"><span style="color:#a78bfa">curl</span> -X POST https://api.recome.app/v1/signals \
+  -H <span style="color:#34d399">"Authorization: Bearer rk_live_xxxxxxxxxxxxxxxx"</span> \
+  -H <span style="color:#34d399">"Content-Type: application/json"</span> \
+  -d <span style="color:#34d399">'{
+    "external_user_id": "alice@example.com",
+    "url": "https://www.youtube.com/watch?v=...",
+    "kind": "video_view",
+    "engagement": { "watched_seconds": 187 }
+  }'</span></pre>
+        </div>
+
+        <div class="panel">
+          <h3>What you get back</h3>
+          <div class="panel-sub">Entities extracted, topics inferred, trail attribution, your tenant's graph updated.</div>
+          <pre style="background:#fafafa;color:#0a0a0a;padding:16px;border-radius:8px;font-size:12.5px;line-height:1.55;border:1px solid var(--border);overflow-x:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace">{
+  <span style="color:#5b21b6">"signal_id"</span>: <span style="color:#047857">"sig_01HXY..."</span>,
+  <span style="color:#5b21b6">"entities"</span>: [<span style="color:#047857">"Breville Bambino Plus"</span>, <span style="color:#047857">"Espresso machines"</span>],
+  <span style="color:#5b21b6">"topics"</span>: [<span style="color:#047857">"home espresso"</span>, <span style="color:#047857">"kitchen appliances"</span>],
+  <span style="color:#5b21b6">"trail_id"</span>: <span style="color:#047857">"trl_espresso_under_700"</span>,
+  <span style="color:#5b21b6">"trail_confidence"</span>: 0.81
+}</pre>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  /* ─── View switching ──────────────────────────────────────────── */
+  const views = document.querySelectorAll('.view');
+  const navs = document.querySelectorAll('.nav-item[data-view]');
+  const crumb = document.getElementById('crumb');
+  const labels = {
+    inbox: 'Inbox',
+    mind: 'Mind Map',
+    trails: 'Trails',
+    capture: 'Capture',
+    agents: 'Agents',
+    mirror: 'Attention',
+    iaas: 'API keys'
+  };
+  navs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const v = btn.dataset.view;
+      navs.forEach(b => b.classList.toggle('active', b === btn));
+      views.forEach(view => view.classList.toggle('active', view.dataset.view === v));
+      crumb.textContent = labels[v] || v;
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      if (v === 'mind') renderMindMap();
+    });
+  });
+
+  /* ─── Mind map render (hand-positioned, deterministic) ────────── */
+  const NODES = [
+    // Career / craft (violet) — top-left
+    { id: 'distsys',    label: 'Distributed systems', x: 200, y: 130, r: 28, cluster: '#5b4cfb', signals: 41 },
+    { id: 'crdt',       label: 'CRDTs',               x: 130, y: 200, r: 18, cluster: '#5b4cfb', signals: 19 },
+    { id: 'localfirst', label: 'Local-first',         x: 230, y: 220, r: 22, cluster: '#5b4cfb', signals: 27 },
+    { id: 'postgres',   label: 'Postgres internals',  x: 110, y: 100, r: 14, cluster: '#5b4cfb', signals: 11 },
+    { id: 'rust',       label: 'Rust',                x: 270, y: 80,  r: 12, cluster: '#5b4cfb', signals: 9  },
+    { id: 'typetheory', label: 'Type theory',         x: 60,  y: 270, r: 9,  cluster: '#5b4cfb', signals: 4  },
+
+    // Home life (green) — right
+    { id: 'desk',     label: 'Standing desks',      x: 560, y: 200, r: 22, cluster: '#10b981', signals: 14, focus: true },
+    { id: 'chair',    label: 'Ergonomic chairs',    x: 640, y: 270, r: 14, cluster: '#10b981', signals: 8  },
+    { id: 'monarm',   label: 'Monitor arms',        x: 660, y: 170, r: 10, cluster: '#10b981', signals: 5  },
+    { id: 'espresso', label: 'Espresso machines',   x: 520, y: 320, r: 18, cluster: '#10b981', signals: 14 },
+    { id: 'kitchen',  label: 'Kitchen tools',       x: 600, y: 380, r: 11, cluster: '#10b981', signals: 6  },
+    { id: 'cable',    label: 'Cable management',    x: 680, y: 320, r: 8,  cluster: '#10b981', signals: 3  },
+
+    // Reading + ideas (amber) — bottom-left
+    { id: 'climate',  label: 'Climate policy',      x: 180, y: 400, r: 16, cluster: '#f59e0b', signals: 11 },
+    { id: 'kahneman', label: 'Cognitive bias',      x: 90,  y: 380, r: 12, cluster: '#f59e0b', signals: 7  },
+    { id: 'essays',   label: 'Long-form essays',    x: 240, y: 470, r: 14, cluster: '#f59e0b', signals: 9  },
+    { id: 'writing',  label: 'Writing craft',       x: 320, y: 410, r: 11, cluster: '#f59e0b', signals: 6  },
+
+    // Media + culture (rose) — bottom-right
+    { id: 'kyoto',    label: 'Kyoto trip',          x: 440, y: 440, r: 18, cluster: '#f43f5e', signals: 27 },
+    { id: 'film',     label: 'Film criticism',      x: 530, y: 460, r: 11, cluster: '#f43f5e', signals: 5  },
+    { id: 'podcasts', label: 'Podcasts',            x: 620, y: 450, r: 10, cluster: '#f43f5e', signals: 4  },
+
+    // Health (blue) — top-middle bridge
+    { id: 'sleep',    label: 'Sleep science',       x: 400, y: 80,  r: 12, cluster: '#3b82f6', signals: 7  },
+    { id: 'running',  label: 'Running form',        x: 470, y: 140, r: 9,  cluster: '#3b82f6', signals: 4  },
+    { id: 'nutrition',label: 'Protein intake',      x: 350, y: 160, r: 8,  cluster: '#3b82f6', signals: 3  },
+  ];
+  const EDGES = [
+    ['distsys','crdt'], ['distsys','localfirst'], ['crdt','localfirst'],
+    ['distsys','postgres'], ['distsys','rust'], ['localfirst','rust'],
+    ['crdt','typetheory'],
+    ['desk','chair'], ['desk','monarm'], ['desk','cable'],
+    ['espresso','kitchen'], ['chair','cable'],
+    ['climate','kahneman'], ['climate','essays'], ['essays','writing'],
+    ['kahneman','essays'],
+    ['kyoto','film'], ['kyoto','podcasts'],
+    ['sleep','running'], ['sleep','nutrition'],
+    // cross-cluster bridges
+    ['localfirst','writing'], ['essays','distsys'], ['desk','sleep'],
+    ['kyoto','essays'], ['writing','podcasts'],
+  ];
+
+  function renderMindMap() {
+    const svg = document.getElementById('mm-svg');
+    if (!svg || svg.dataset.rendered === '1') return;
+    svg.dataset.rendered = '1';
+
+    const byId = Object.fromEntries(NODES.map(n => [n.id, n]));
+    let html = '';
+    EDGES.forEach(([a, b]) => {
+      const A = byId[a], B = byId[b];
+      const sameCluster = A.cluster === B.cluster;
+      html += `<line class="edge" x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" stroke-width="${sameCluster ? 1.4 : 0.9}" stroke-dasharray="${sameCluster ? '' : '3 3'}"/>`;
+    });
+    NODES.forEach(n => {
+      const stroke = n.focus ? '#0a0a0a' : n.cluster;
+      const sw = n.focus ? 2.5 : 1.5;
+      html += `
+        <g class="node" data-id="${n.id}" data-name="${n.label}" data-signals="${n.signals}" data-cluster="${n.cluster}">
+          <circle cx="${n.x}" cy="${n.y}" r="${n.r}" fill="${n.cluster}22" stroke="${stroke}" stroke-width="${sw}"/>
+          <text x="${n.x}" y="${n.y + n.r + 12}" text-anchor="middle">${n.label}</text>
+        </g>`;
+    });
+    svg.innerHTML = html;
+
+    svg.querySelectorAll('.node').forEach(g => {
+      g.addEventListener('click', () => {
+        const name = g.dataset.name;
+        const signals = g.dataset.signals;
+        document.getElementById('mm-name').textContent = name;
+        document.getElementById('mm-meta').textContent = `${signals} signals · cluster ${g.dataset.cluster}`;
+        svg.querySelectorAll('.node circle').forEach(c => {
+          c.setAttribute('stroke', c.parentNode.dataset.cluster);
+          c.setAttribute('stroke-width', '1.5');
+        });
+        g.querySelector('circle').setAttribute('stroke', '#0a0a0a');
+        g.querySelector('circle').setAttribute('stroke-width', '2.5');
+      });
+    });
+  }
+</script>
+
+</body>
+</html>

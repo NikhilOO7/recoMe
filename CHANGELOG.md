@@ -5,7 +5,7 @@
 ### Added
 
 - Core recommendation engine with 5-factor scoring (direct block, pattern match, graph affinity, context fit, recency)
-- Memory system (Mnemosyne) with three-tier architecture (working set, mid-term cards, core facts)
+- Memory system (Smriti) with three-tier architecture (working set, mid-term cards, core facts)
 - Knowledge graph with entity relationships and affinity calculation
 - 8 platform adapters (YouTube, Amazon, Instagram, Twitter/X, Facebook, eBay, Walmart, Generic)
 - AI-powered agent chat with LLM support (Claude, GPT, Gemini) and regex fallback

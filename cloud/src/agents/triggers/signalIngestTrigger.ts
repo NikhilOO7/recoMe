@@ -1,6 +1,7 @@
 import { getAgentRegistry, maybeAgentRegistry } from '../AgentRegistry.js';
 import { getAgentRunner } from '../AgentRunner.js';
 import type { AgentContext } from '../types.js';
+import type { Platform } from '../../graph/types.js';
 import { logger } from '../../observability/logger.js';
 
 /**
@@ -22,6 +23,12 @@ export interface SignalTriggerPayload {
   topicNormalizedName: string;
   topicName: string;
   ts: number;
+  /** Origin platform — Concierge gates on commerce platforms; Recall is platform-agnostic. */
+  platform?: Platform;
+  /** Entity names extracted from the signal — primary input to Concierge tools. */
+  entityNames?: string[];
+  /** Optional original page URL — used by some agents for emission `actionUrl`. */
+  pageUrl?: string;
 }
 
 export async function fireSignalIngestTrigger(payload: SignalTriggerPayload): Promise<void> {
@@ -41,6 +48,9 @@ export async function fireSignalIngestTrigger(payload: SignalTriggerPayload): Pr
       topicNormalizedName: payload.topicNormalizedName,
       topicName: payload.topicName,
       ts: payload.ts,
+      platform: payload.platform,
+      entityNames: payload.entityNames,
+      pageUrl: payload.pageUrl,
     },
   };
 

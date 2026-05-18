@@ -5,6 +5,9 @@ import type { VectorClient } from '../vector/VectorClient.js';
 import type { EmbeddingClient } from '../vector/EmbeddingClient.js';
 import { SignalIngestion } from './SignalIngestion.js';
 import { ResearchTrailService } from './ResearchTrail.js';
+import { MindMapService } from './MindMap.js';
+import { PersonalityMirrorService } from './PersonalityMirror.js';
+import { AuditLogService } from './AuditLog.js';
 import { logger } from '../observability/logger.js';
 
 export interface IntelligenceServiceConfig {
@@ -26,6 +29,9 @@ export class IntelligenceService {
   readonly graph: GraphRepository;
   readonly ingestion: SignalIngestion;
   readonly trails: ResearchTrailService;
+  readonly mindMap: MindMapService;
+  readonly personality: PersonalityMirrorService;
+  readonly auditLog: AuditLogService;
 
   constructor(
     readonly neo4j: Neo4jClient,
@@ -36,6 +42,9 @@ export class IntelligenceService {
     this.graph = new GraphRepository(neo4j);
     this.ingestion = new SignalIngestion(this.graph, vectors, embedder);
     this.trails = new ResearchTrailService(this.graph, vectors, embedder);
+    this.mindMap = new MindMapService(this.graph);
+    this.personality = new PersonalityMirrorService(this.graph, this.mindMap);
+    this.auditLog = new AuditLogService(this.graph);
   }
 
   async start(): Promise<void> {

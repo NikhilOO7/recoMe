@@ -10,6 +10,38 @@ import type {
   UserNode,
 } from './types.js';
 
+export interface MindMapGraphNode {
+  id: string; // normalized topic name (acts as graph id)
+  name: string;
+  pageCount: number;
+  totalDwell: number;
+  lastSeen: number;
+  platforms: Platform[];
+}
+
+export interface MindMapGraphEdge {
+  source: string;
+  target: string;
+  /** Co-occurring page count (always ≥ 1). */
+  weight: number;
+}
+
+export interface MindMapGraphRows {
+  nodes: MindMapGraphNode[];
+  edges: MindMapGraphEdge[];
+}
+
+export interface CaptureHistoryRow {
+  pageUrl: string;
+  pageTitle: string | null;
+  platform: Platform | null;
+  firstAt: number;
+  lastAt: number;
+  weight: number;
+  kind: string;
+  topics: string[];
+}
+
 /**
  * Typed, intent-revealing access layer over Neo4j.
  *
@@ -304,6 +336,129 @@ export class GraphRepository {
     }, 'getCrossPlatformTopics');
   }
 
+  /**
+   * Mind Map projection (ADR-0014 §2.3 — F-401).
+   *
+   * Returns the raw nodes + edges for the user's interest graph in a time
+   * window. Clustering happens in TypeScript using graphology (see
+   * MindMapService) — kept out of Cypher because Neo4j Community Edition
+   * doesn't ship the GDS plugin, and clustering on a 100-node subgraph in
+   * TS is cheap.
+   *
+   * Nodes  = topics the user touched in window, sized by page count + dwell.
+   * Edges  = (t1, t2) pairs co-mentioned on at least one Page in window,
+   *          weighted by the number of co-occurring Pages.
+   */
+  async getMindMapGraph(
+    userId: string,
+    sinceMs: number,
+    opts: { nodeLimit?: number; edgeLimit?: number } = {},
+  ): Promise<MindMapGraphRows> {
+    const nodeLimit = Math.min(opts.nodeLimit ?? 200, 500);
+    const edgeLimit = Math.min(opts.edgeLimit ?? 800, 2000);
+    return this.neo4j.read(async (tx) => {
+      const nodeResult = await tx.run(
+        `
+        MATCH (u:User { id: $userId })-[v:VIEWED]->(p:Page)-[:MENTIONS]->(t:Topic)
+        WHERE coalesce(v.lastAt, v.firstAt, 0) >= $sinceMs
+        WITH t,
+             count(DISTINCT p)                  AS pageCount,
+             sum(coalesce(v.weight, 0))         AS totalDwell,
+             max(coalesce(v.lastAt, v.firstAt)) AS lastSeen,
+             collect(DISTINCT p.platform)       AS platforms
+        RETURN
+          t.normalizedName AS id,
+          t.name           AS name,
+          pageCount,
+          totalDwell,
+          lastSeen,
+          platforms
+        ORDER BY pageCount DESC, totalDwell DESC
+        LIMIT $nodeLimit
+        `,
+        { userId, sinceMs, nodeLimit },
+      );
+      const nodes = nodeResult.records.map((rec) => {
+        const platforms = ((rec.get('platforms') as Array<Platform | null>) ?? []).filter(
+          Boolean,
+        ) as Platform[];
+        return {
+          id: rec.get('id') as string,
+          name: rec.get('name') as string,
+          pageCount: Number(rec.get('pageCount') ?? 0),
+          totalDwell: Number(rec.get('totalDwell') ?? 0),
+          lastSeen: Number(rec.get('lastSeen') ?? 0),
+          platforms,
+        };
+      });
+
+      // Restrict edge query to the topics we already selected — keeps the
+      // edge query bounded even when the user has a long tail of weak topics.
+      const topicIds = nodes.map((n) => n.id);
+      if (topicIds.length < 2) return { nodes, edges: [] };
+
+      const edgeResult = await tx.run(
+        `
+        MATCH (u:User { id: $userId })-[v:VIEWED]->(p:Page)-[:MENTIONS]->(t1:Topic)
+        WHERE coalesce(v.lastAt, v.firstAt, 0) >= $sinceMs
+          AND t1.normalizedName IN $topicIds
+        MATCH (p)-[:MENTIONS]->(t2:Topic)
+        WHERE t2.normalizedName IN $topicIds
+          AND t1.normalizedName < t2.normalizedName
+        WITH t1, t2, count(DISTINCT p) AS coPages
+        WHERE coPages >= 1
+        RETURN
+          t1.normalizedName AS source,
+          t2.normalizedName AS target,
+          coPages           AS weight
+        ORDER BY coPages DESC
+        LIMIT $edgeLimit
+        `,
+        { userId, sinceMs, topicIds, edgeLimit },
+      );
+      const edges = edgeResult.records.map((rec) => ({
+        source: rec.get('source') as string,
+        target: rec.get('target') as string,
+        weight: Number(rec.get('weight') ?? 1),
+      }));
+
+      return { nodes, edges };
+    }, 'getMindMapGraph');
+  }
+
+  /**
+   * Raw signal rows for a user in a time range — used by the Personality
+   * Mirror trajectory rollup. Returns one row per Signal × Topic mention.
+   *
+   * Only fields the rollup needs are surfaced (no Page hops, no entity
+   * detail) to keep the row count + transport cost down for 8-week windows
+   * on heavy users.
+   */
+  async getTopicSignalCounts(
+    userId: string,
+    sinceMs: number,
+    untilMs: number,
+  ): Promise<Array<{ topicId: string; ts: number; weight: number }>> {
+    return this.neo4j.read(async (tx) => {
+      const result = await tx.run(
+        `
+        MATCH (sg:Signal { userId: $userId })
+        WHERE sg.ts >= $sinceMs AND sg.ts <= $untilMs
+        MATCH (sg)-[:MENTIONS]->(t:Topic)
+        RETURN t.normalizedName AS topicId,
+               sg.ts            AS ts,
+               coalesce(sg.weight, 1) AS weight
+        `,
+        { userId, sinceMs, untilMs },
+      );
+      return result.records.map((rec) => ({
+        topicId: rec.get('topicId') as string,
+        ts: Number(rec.get('ts') ?? 0),
+        weight: Number(rec.get('weight') ?? 1),
+      }));
+    }, 'getTopicSignalCounts');
+  }
+
   async getTopIntents(
     userId: string,
     limit = 10,
@@ -335,6 +490,57 @@ export class GraphRepository {
    * user's VIEWED / HAS_INTENT / BLOCKS / BOOSTS edges + Signal/Session
    * nodes are removed.
    */
+  /**
+   * Capture history for the Audit Log of You (F-408).
+   *
+   * Walks the user's VIEWED edges (the actual ingestion edge — Signal nodes
+   * don't carry topic metadata in v1) and returns one row per (user, page)
+   * with the topics that page mentions. Page-level granularity matches what
+   * the user perceives: "I looked at this thing" — they don't think in
+   * Signal nodes.
+   *
+   * Cursor is the timestamp of the oldest row in the previous page; rows are
+   * ordered by VIEWED.lastAt DESC.
+   */
+  async getCaptureHistory(
+    userId: string,
+    opts: { beforeMs?: number; limit?: number } = {},
+  ): Promise<CaptureHistoryRow[]> {
+    const limit = Math.min(Math.max(1, opts.limit ?? 50), 200);
+    const beforeMs = opts.beforeMs ?? Number.MAX_SAFE_INTEGER;
+    return this.neo4j.read(async (tx) => {
+      const result = await tx.run(
+        `
+        MATCH (u:User { id: $userId })-[v:VIEWED]->(p:Page)
+        WHERE coalesce(v.lastAt, v.firstAt, 0) < $beforeMs
+        OPTIONAL MATCH (p)-[:MENTIONS]->(t:Topic)
+        WITH u, v, p, collect(DISTINCT t.name) AS topics
+        RETURN p.url        AS pageUrl,
+               p.title      AS pageTitle,
+               p.platform   AS platform,
+               v.firstAt    AS firstAt,
+               v.lastAt     AS lastAt,
+               v.weight     AS weight,
+               v.kind       AS kind,
+               topics
+        ORDER BY coalesce(v.lastAt, v.firstAt) DESC
+        LIMIT $limit
+        `,
+        { userId, beforeMs, limit },
+      );
+      return result.records.map((rec) => ({
+        pageUrl: rec.get('pageUrl') as string,
+        pageTitle: (rec.get('pageTitle') as string | null) ?? null,
+        platform: (rec.get('platform') as Platform | null) ?? null,
+        firstAt: Number(rec.get('firstAt') ?? 0),
+        lastAt: Number(rec.get('lastAt') ?? 0),
+        weight: Number(rec.get('weight') ?? 0),
+        kind: (rec.get('kind') as string | null) ?? 'view',
+        topics: ((rec.get('topics') as Array<string | null>) ?? []).filter(Boolean) as string[],
+      }));
+    }, 'getCaptureHistory');
+  }
+
   async deleteUserData(userId: string): Promise<{ nodesDeleted: number; relsDeleted: number }> {
     return this.neo4j.write(async (tx) => {
       const r = await tx.run(

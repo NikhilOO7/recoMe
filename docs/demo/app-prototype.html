@@ -1,0 +1,1584 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Recome — interactive prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #fafaf9;
+    --panel: #ffffff;
+    --panel-2: #f5f5f4;
+    --border: #e7e5e4;
+    --border-strong: #d6d3d1;
+    --text: #1c1917;
+    --text-2: #57534e;
+    --text-3: #a8a29e;
+    --accent: #4f6b50;
+    --accent-strong: #3d5640;
+    --accent-tint: #eef2ec;
+    --recall: #6366f1;
+    --recall-tint: #eef2ff;
+    --concierge: #15803d;
+    --concierge-tint: #ecfdf5;
+    --curator: #b45309;
+    --curator-tint: #fffbeb;
+    --watchlist: #b91c1c;
+    --decision: #475569;
+    --synth: #7c3aed;
+    --shadow-sm: 0 1px 2px rgba(28, 25, 23, 0.04);
+    --shadow: 0 1px 2px rgba(28, 25, 23, 0.04), 0 4px 12px rgba(28, 25, 23, 0.05);
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  ::selection { background: var(--accent-tint); color: var(--accent-strong); }
+
+  /* Demo banner */
+  .demo-banner {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 8px 16px;
+    background: #1c1917;
+    color: #fafaf9;
+    font-size: 12px;
+    letter-spacing: 0.01em;
+  }
+  .demo-banner b { font-weight: 600; color: #fff; }
+  .demo-banner .dot {
+    width: 6px; height: 6px; border-radius: 50%; background: #84cc16;
+    box-shadow: 0 0 0 4px rgba(132, 204, 22, 0.18);
+  }
+
+  /* App shell */
+  .app {
+    display: grid;
+    grid-template-columns: 272px 1fr;
+    min-height: calc(100vh - 33px);
+  }
+
+  /* Sidebar */
+  .sidebar {
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 22px 16px 16px;
+    position: sticky;
+    top: 33px;
+    height: calc(100vh - 33px);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 8px 24px;
+  }
+  .brand-mark {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+    display: grid; place-items: center;
+    color: white; font-weight: 700; font-size: 14px;
+    letter-spacing: -0.02em;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.4) inset, 0 2px 6px rgba(63,86,64,0.2);
+  }
+  .brand-name {
+    font-weight: 600; font-size: 16px; letter-spacing: -0.02em;
+  }
+  .brand-name span { color: var(--text-3); font-weight: 400; }
+
+  .nav-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-3);
+    padding: 14px 10px 6px;
+  }
+  .nav {
+    display: flex; flex-direction: column; gap: 1px;
+  }
+  .nav-item {
+    display: flex; align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    border-radius: var(--radius-sm);
+    color: var(--text-2);
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    text-align: left;
+    width: 100%;
+    font-size: 13.5px;
+    font-family: inherit;
+    transition: background 80ms, color 80ms;
+  }
+  .nav-item:hover { background: var(--panel-2); color: var(--text); }
+  .nav-item.active {
+    background: var(--accent-tint);
+    color: var(--accent-strong);
+  }
+  .nav-item .icon { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.85; }
+  .nav-item.active .icon { opacity: 1; }
+  .nav-item .count {
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-3);
+    background: var(--panel-2);
+    padding: 1px 6px;
+    border-radius: 8px;
+    min-width: 18px;
+    text-align: center;
+  }
+  .nav-item.active .count { background: white; color: var(--accent-strong); }
+
+  .sidebar-foot {
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .capture-status {
+    padding: 10px;
+    background: var(--panel-2);
+    border-radius: var(--radius-sm);
+    margin-bottom: 12px;
+  }
+  .capture-status-title {
+    font-size: 11px; font-weight: 600; color: var(--text-2);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .capture-status-title .pulse {
+    width: 6px; height: 6px; border-radius: 50%; background: #84cc16;
+    box-shadow: 0 0 0 3px rgba(132, 204, 22, 0.2);
+    animation: pulse 2.4s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .capture-source {
+    display: flex; justify-content: space-between;
+    font-size: 12px; color: var(--text-2);
+    padding: 2px 0;
+  }
+  .capture-source .ok { color: #15803d; font-weight: 500; }
+  .capture-source .off { color: var(--text-3); }
+  .user-chip {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+  .user-chip:hover { background: var(--panel-2); }
+  .avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: linear-gradient(135deg, #c2410c, #ea580c);
+    display: grid; place-items: center;
+    color: white; font-weight: 600; font-size: 12px;
+  }
+  .user-chip .who { font-size: 13px; font-weight: 500; }
+  .user-chip .plan { font-size: 11px; color: var(--text-3); }
+
+  /* Main */
+  .main {
+    padding: 32px 48px 64px;
+    max-width: 1140px;
+    width: 100%;
+  }
+  .view { display: none; }
+  .view.active { display: block; animation: fadeIn 200ms ease; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  /* Page header */
+  .page-head { margin-bottom: 28px; }
+  .eyebrow {
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--accent); margin-bottom: 8px;
+  }
+  h1.page-title {
+    font-size: 28px; font-weight: 600; letter-spacing: -0.02em;
+    margin: 0 0 6px; line-height: 1.15;
+  }
+  .page-sub {
+    font-size: 15px; color: var(--text-2);
+    max-width: 720px;
+  }
+  .page-meta {
+    display: flex; gap: 16px; font-size: 12px; color: var(--text-3);
+    margin-top: 12px;
+  }
+  .page-meta span b { color: var(--text-2); font-weight: 500; }
+
+  /* Cards */
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+  }
+  .card-pad { padding: 20px 22px; }
+
+  /* Agent card (inbox) */
+  .agent-stream { display: flex; flex-direction: column; gap: 14px; }
+  .agent-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    box-shadow: var(--shadow-sm);
+    transition: border-color 120ms, box-shadow 120ms;
+  }
+  .agent-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow); }
+  .agent-head {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 10px;
+  }
+  .agent-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    padding: 3px 8px; border-radius: 20px;
+  }
+  .agent-badge .blob {
+    width: 6px; height: 6px; border-radius: 50%;
+  }
+  .badge-recall { color: var(--recall); background: var(--recall-tint); }
+  .badge-recall .blob { background: var(--recall); }
+  .badge-concierge { color: var(--concierge); background: var(--concierge-tint); }
+  .badge-concierge .blob { background: var(--concierge); }
+  .badge-curator { color: var(--curator); background: var(--curator-tint); }
+  .badge-curator .blob { background: var(--curator); }
+  .agent-ts { font-size: 12px; color: var(--text-3); }
+  .agent-title {
+    font-size: 16px; font-weight: 600; letter-spacing: -0.01em;
+    margin: 0 0 8px;
+  }
+  .agent-body { font-size: 14.5px; color: var(--text); line-height: 1.55; }
+  .agent-body em { font-style: normal; background: linear-gradient(0deg, #fef9c3 30%, transparent 30%); padding: 0 2px; }
+  .cites {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border);
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .cite {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--text-2);
+    background: var(--panel-2); border: 1px solid var(--border);
+    padding: 3px 8px; border-radius: 16px;
+  }
+  .cite .source { color: var(--text-3); }
+  .agent-actions {
+    margin-top: 14px;
+    display: flex; gap: 8px;
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: inherit; font-size: 13px; font-weight: 500;
+    padding: 6px 12px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--panel); color: var(--text);
+    cursor: pointer; transition: background 80ms, border-color 80ms;
+  }
+  .btn:hover { background: var(--panel-2); border-color: var(--border-strong); }
+  .btn-primary {
+    background: var(--text); color: white; border-color: var(--text);
+  }
+  .btn-primary:hover { background: #000; border-color: #000; }
+  .btn-accent {
+    background: var(--accent); color: white; border-color: var(--accent);
+  }
+  .btn-accent:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
+  .btn-ghost { background: transparent; border-color: transparent; color: var(--text-2); }
+  .btn-ghost:hover { background: var(--panel-2); }
+
+  /* Price compare mini-table */
+  .price-table {
+    margin-top: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+  .price-row {
+    display: grid; grid-template-columns: 1fr auto auto;
+    align-items: center; padding: 10px 14px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+  }
+  .price-row:last-child { border-bottom: none; }
+  .price-row .vendor { color: var(--text-2); font-weight: 500; }
+  .price-row .price { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .price-row.win { background: var(--concierge-tint); }
+  .price-row.win .price { color: var(--concierge); }
+  .price-row .flag {
+    font-size: 11px; color: var(--text-3); margin-left: 12px;
+  }
+
+  /* Footer note */
+  .stream-foot {
+    margin-top: 24px;
+    padding: 14px 18px;
+    background: var(--panel-2);
+    border-radius: var(--radius-sm);
+    font-size: 12.5px; color: var(--text-2);
+    display: flex; align-items: center; gap: 12px;
+    border: 1px solid var(--border);
+  }
+  .stream-foot .meter {
+    flex: 1;
+    height: 4px; background: var(--border); border-radius: 4px; overflow: hidden;
+  }
+  .stream-foot .meter > span {
+    display: block; height: 100%; background: var(--accent);
+    width: 70%;
+  }
+
+  /* MIND MAP */
+  .mindmap-grid {
+    display: grid; grid-template-columns: 1fr 240px; gap: 24px;
+    align-items: start;
+  }
+  .mind-stage {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    position: relative;
+  }
+  .mind-svg {
+    width: 100%; height: auto; display: block;
+    background:
+      radial-gradient(ellipse 60% 50% at 30% 35%, rgba(99, 102, 241, 0.04), transparent 70%),
+      radial-gradient(ellipse 50% 45% at 75% 30%, rgba(217, 119, 6, 0.05), transparent 70%),
+      radial-gradient(ellipse 45% 45% at 50% 60%, rgba(34, 197, 94, 0.04), transparent 70%),
+      radial-gradient(ellipse 50% 45% at 25% 80%, rgba(244, 63, 94, 0.04), transparent 70%),
+      radial-gradient(ellipse 45% 40% at 80% 80%, rgba(168, 85, 247, 0.04), transparent 70%);
+  }
+  .node { cursor: pointer; transition: transform 120ms; transform-origin: center; transform-box: fill-box; }
+  .node:hover { transform: scale(1.1); }
+  .node-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px; font-weight: 500;
+    fill: var(--text); pointer-events: none;
+  }
+  .node-label.big { font-size: 12.5px; font-weight: 600; }
+  .edge { stroke: #d6d3d1; stroke-width: 1; opacity: 0.55; fill: none; }
+  .edge.strong { stroke-width: 1.5; opacity: 0.75; }
+  .edge.cross { stroke-dasharray: 3 3; opacity: 0.4; }
+  .cluster-label {
+    font-family: 'Inter', sans-serif; font-weight: 600;
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
+    fill: var(--text-3);
+  }
+
+  .mind-controls {
+    padding: 14px 18px; border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 16px;
+    background: var(--panel-2);
+  }
+  .mind-controls label {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--text-3);
+    white-space: nowrap;
+  }
+  .scrub {
+    flex: 1; appearance: none; height: 4px; border-radius: 4px;
+    background: linear-gradient(to right, var(--border) 0%, var(--accent) 70%, var(--border) 70%);
+    outline: none;
+  }
+  .scrub::-webkit-slider-thumb {
+    appearance: none; width: 14px; height: 14px; border-radius: 50%;
+    background: white; border: 2px solid var(--accent);
+    cursor: grab; box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  }
+  .scrub-val {
+    font-size: 12px; color: var(--text-2);
+    font-variant-numeric: tabular-nums; min-width: 64px;
+    text-align: right;
+  }
+
+  .mind-side .legend, .mind-side .actions {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 16px;
+    margin-bottom: 14px;
+  }
+  .side-title {
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--text-3); margin-bottom: 10px;
+  }
+  .legend-row {
+    display: grid; grid-template-columns: 14px 1fr auto;
+    align-items: center; gap: 10px; padding: 5px 0;
+    font-size: 13px;
+  }
+  .legend-row .swatch {
+    width: 10px; height: 10px; border-radius: 3px;
+  }
+  .legend-row .name { color: var(--text); font-weight: 500; }
+  .legend-row .ct { color: var(--text-3); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+  /* TRAILS */
+  .trails-grid {
+    display: grid; grid-template-columns: 280px 1fr; gap: 24px;
+    align-items: start;
+  }
+  .trail-list {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 8px;
+  }
+  .trail-item {
+    padding: 10px 12px; border-radius: var(--radius-sm); cursor: pointer;
+    transition: background 80ms;
+  }
+  .trail-item:hover { background: var(--panel-2); }
+  .trail-item.sel { background: var(--accent-tint); }
+  .trail-item .t-title {
+    font-size: 13.5px; font-weight: 600; color: var(--text);
+    margin-bottom: 2px;
+  }
+  .trail-item .t-meta { font-size: 12px; color: var(--text-3); }
+  .trail-item .t-bar {
+    margin-top: 6px;
+    display: flex; gap: 2px;
+  }
+  .trail-item .t-bar span {
+    height: 4px; flex: 1; background: var(--border); border-radius: 2px;
+  }
+  .trail-item.sel .t-bar span.on { background: var(--accent); }
+  .trail-item .t-bar span.on { background: var(--text-3); }
+
+  .trail-detail {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px 28px;
+  }
+  .trail-summary {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+    padding: 18px; margin: 16px 0 24px;
+    background: var(--panel-2); border-radius: var(--radius-sm);
+  }
+  .summary-stat .l { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; }
+  .summary-stat .v { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; margin-top: 2px; }
+  .summary-stat .v small { font-size: 12px; font-weight: 500; color: var(--text-3); margin-left: 4px; }
+
+  .timeline {
+    position: relative; padding-left: 26px;
+  }
+  .timeline::before {
+    content: ''; position: absolute; left: 8px; top: 8px; bottom: 8px;
+    width: 1px; background: var(--border);
+  }
+  .tl-item {
+    position: relative; padding: 10px 0 18px;
+  }
+  .tl-item::before {
+    content: '';
+    position: absolute; left: -22px; top: 14px;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--panel); border: 2px solid var(--text-3);
+  }
+  .tl-item.you::before { border-color: var(--accent); background: var(--accent); }
+  .tl-date { font-size: 12px; color: var(--text-3); margin-bottom: 4px; }
+  .tl-head {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .tl-source {
+    font-size: 11px; font-weight: 600; padding: 2px 7px;
+    border-radius: 4px; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .src-yt { background: #fef2f2; color: #b91c1c; }
+  .src-amz { background: #fef3c7; color: #92400e; }
+  .src-rd { background: #ffedd5; color: #c2410c; }
+  .src-vg { background: #f3f4f6; color: #374151; }
+  .src-sb { background: #fce7f3; color: #be185d; }
+  .tl-title { font-weight: 500; }
+  .tl-snippet { font-size: 13px; color: var(--text-2); margin-top: 4px; }
+
+  .reveal {
+    margin-top: 24px; padding: 16px 18px;
+    background: var(--accent-tint);
+    border: 1px solid #d4ddd4;
+    border-radius: var(--radius-sm);
+  }
+  .reveal-title {
+    font-size: 12px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--accent-strong); margin-bottom: 8px;
+  }
+  .reveal-criteria {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;
+  }
+  .reveal-criteria span {
+    background: white; border: 1px solid #d4ddd4;
+    padding: 3px 9px; border-radius: 16px; font-size: 12.5px;
+    color: var(--accent-strong); font-weight: 500;
+  }
+  .reveal-intent {
+    font-size: 13px; color: var(--text-2);
+  }
+  .reveal-intent b { color: var(--text); }
+
+  /* PASTE */
+  .paste-grid {
+    display: grid; grid-template-columns: 1fr 360px; gap: 24px;
+    align-items: start;
+  }
+  .paste-input-wrap {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 28px;
+  }
+  .paste-input {
+    width: 100%; min-height: 64px;
+    border: none; outline: none; resize: none;
+    font-family: inherit; font-size: 16px; color: var(--text);
+    background: transparent; padding: 6px 0;
+  }
+  .paste-input::placeholder { color: var(--text-3); }
+  .paste-actions {
+    margin-top: 14px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .paste-hint { font-size: 12px; color: var(--text-3); }
+  .paste-hint kbd {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--panel-2); border: 1px solid var(--border);
+    padding: 1px 5px; border-radius: 4px; font-size: 11px;
+  }
+
+  .extract-card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px;
+  }
+  .extract-card .label {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--text-3); margin-bottom: 12px;
+  }
+  .extract-meta { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .extract-meta-row { display: grid; grid-template-columns: 80px 1fr; gap: 12px; font-size: 13px; }
+  .extract-meta-row .k { color: var(--text-3); }
+  .extract-meta-row .v { color: var(--text); font-weight: 500; }
+  .extract-topics { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .topic-chip {
+    background: var(--accent-tint); color: var(--accent-strong);
+    padding: 3px 9px; border-radius: 16px; font-size: 12px; font-weight: 500;
+  }
+  .extract-graph {
+    padding: 12px; background: var(--panel-2);
+    border-radius: var(--radius-sm); font-size: 12.5px;
+  }
+  .extract-graph b { color: var(--text); }
+  .extract-graph .trail-link { color: var(--accent-strong); font-weight: 500; text-decoration: none; border-bottom: 1px dashed var(--accent); }
+
+  .paste-sources {
+    margin-top: 28px;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+  }
+  .source-card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 14px 16px;
+    text-align: left;
+  }
+  .source-card .ico {
+    width: 28px; height: 28px; border-radius: 7px;
+    background: var(--panel-2); display: grid; place-items: center;
+    color: var(--text-2); margin-bottom: 8px;
+  }
+  .source-card .ttl { font-weight: 600; font-size: 13px; margin-bottom: 3px; }
+  .source-card .sub { font-size: 12px; color: var(--text-3); line-height: 1.45; }
+
+  /* PERSONALITY */
+  .pm-grid {
+    display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px;
+    align-items: start;
+  }
+  .pm-card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 22px 24px;
+  }
+  .pm-card-title {
+    font-size: 14px; font-weight: 600; margin: 0 0 16px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .pm-card-title .sub { font-size: 12px; color: var(--text-3); font-weight: 400; }
+  .pm-bar { display: grid; grid-template-columns: 140px 1fr 50px; gap: 12px; align-items: center; margin-bottom: 10px; font-size: 13px; }
+  .pm-bar .name { color: var(--text); font-weight: 500; }
+  .pm-bar .track { height: 8px; border-radius: 4px; background: var(--panel-2); overflow: hidden; }
+  .pm-bar .fill { height: 100%; border-radius: 4px; transition: width 800ms; }
+  .pm-bar .pct { font-variant-numeric: tabular-nums; color: var(--text-2); text-align: right; font-weight: 500; }
+
+  .trajectory-row {
+    display: grid; grid-template-columns: 1fr 80px 36px; gap: 10px;
+    align-items: center; padding: 9px 0;
+    border-bottom: 1px solid var(--border); font-size: 13px;
+  }
+  .trajectory-row:last-child { border: none; }
+  .trajectory-row .delta { font-variant-numeric: tabular-nums; font-weight: 500; text-align: right; }
+  .trajectory-row .up { color: var(--concierge); }
+  .trajectory-row .down { color: #b91c1c; }
+  .trajectory-row .flat { color: var(--text-3); }
+  .spark { width: 36px; height: 18px; }
+
+  .gap-chip {
+    display: inline-block; padding: 4px 10px; margin: 0 6px 6px 0;
+    border-radius: 16px; font-size: 12.5px;
+    background: var(--panel-2); color: var(--text-2);
+    border: 1px dashed var(--border-strong);
+  }
+  .aspiration {
+    margin-top: 16px; padding: 14px 16px;
+    background: var(--accent-tint); border-radius: var(--radius-sm);
+  }
+  .aspiration label {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--accent-strong);
+  }
+  .aspiration input {
+    width: 100%; margin-top: 6px;
+    background: white; border: 1px solid #d4ddd4;
+    padding: 8px 10px; border-radius: var(--radius-sm);
+    font-family: inherit; font-size: 13px; color: var(--text); outline: none;
+  }
+
+  .pm-trust {
+    margin-top: 16px; padding: 14px 16px;
+    background: #fff7ed; border: 1px solid #fed7aa;
+    border-radius: var(--radius-sm);
+    font-size: 12.5px; color: #9a3412; line-height: 1.55;
+  }
+  .pm-trust b { font-weight: 600; }
+
+  /* DEVELOPER / IAAS */
+  .dev-grid {
+    display: grid; grid-template-columns: 1fr 320px; gap: 24px;
+  }
+  .endpoint {
+    margin-bottom: 18px;
+  }
+  .endpoint-head {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 8px;
+  }
+  .method {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600;
+    padding: 2px 7px; border-radius: 4px;
+  }
+  .m-post { background: #ecfdf5; color: #15803d; }
+  .m-get { background: #eef2ff; color: #4338ca; }
+  .m-del { background: #fef2f2; color: #b91c1c; }
+  .endpoint-path { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); }
+  .endpoint-desc { font-size: 12.5px; color: var(--text-3); margin-left: auto; }
+  pre.code {
+    margin: 0;
+    background: #0f0f0e; color: #e7e5e4;
+    padding: 16px 18px; border-radius: var(--radius);
+    font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+    line-height: 1.6;
+    overflow-x: auto;
+  }
+  .code .k { color: #f0abfc; }
+  .code .s { color: #86efac; }
+  .code .n { color: #fcd34d; }
+  .code .c { color: #78716c; }
+  .code .url { color: #93c5fd; }
+
+  .api-key-card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px;
+    margin-bottom: 16px;
+  }
+  .api-key-card .label {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--text-3); margin-bottom: 8px;
+  }
+  .key-row {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--panel-2); padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+  }
+  .key-row .k { flex: 1; }
+  .usage {
+    margin-top: 14px;
+  }
+  .usage-bar {
+    height: 6px; background: var(--panel-2); border-radius: 4px; overflow: hidden;
+    margin: 8px 0 6px;
+  }
+  .usage-bar > div {
+    height: 100%; background: var(--accent); width: 14%;
+  }
+  .usage-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-3); }
+  .tier {
+    margin-top: 16px;
+    padding: 14px; border-radius: var(--radius-sm);
+    background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+    color: white;
+  }
+  .tier .l { font-size: 11px; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.06em; }
+  .tier .v { font-size: 18px; font-weight: 600; margin-top: 2px; }
+  .tier .desc { font-size: 12px; opacity: 0.9; margin-top: 4px; }
+
+  /* Tabs (used in dev view) */
+  .tabs {
+    display: flex; border-bottom: 1px solid var(--border);
+    margin-bottom: 16px; gap: 4px;
+  }
+  .tab {
+    padding: 8px 14px; font-size: 13px; font-weight: 500;
+    background: none; border: none; color: var(--text-2);
+    cursor: pointer; font-family: inherit;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .tab.active { color: var(--text); border-bottom-color: var(--text); }
+  .tab:hover { color: var(--text); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { position: relative; height: auto; }
+    .main { padding: 24px; }
+    .mindmap-grid, .trails-grid, .paste-grid, .pm-grid, .dev-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="demo-banner">
+  <span class="dot"></span>
+  <span><b>Interactive prototype</b> · Recome app — click sidebar items to explore each surface</span>
+</div>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">R</div>
+      <div class="brand-name">recome <span>·</span></div>
+    </div>
+
+    <div class="nav-label">For you</div>
+    <div class="nav">
+      <button class="nav-item active" data-view="inbox">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+        Inbox
+        <span class="count">3</span>
+      </button>
+      <button class="nav-item" data-view="mindmap">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/><path d="M7.5 7.5l3 3"/><path d="M16.5 7.5l-3 3"/><path d="M7.5 16.5l3-3"/><path d="M16.5 16.5l-3-3"/></svg>
+        Mind Map
+      </button>
+      <button class="nav-item" data-view="trails">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg>
+        Trails
+        <span class="count">7</span>
+      </button>
+      <button class="nav-item" data-view="personality">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 2v10l7 7"/></svg>
+        Personality
+      </button>
+    </div>
+
+    <div class="nav-label">Capture</div>
+    <div class="nav">
+      <button class="nav-item" data-view="paste">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+        Paste
+      </button>
+    </div>
+
+    <div class="nav-label">Build</div>
+    <div class="nav">
+      <button class="nav-item" data-view="developer">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        Developer API
+      </button>
+    </div>
+
+    <div class="sidebar-foot">
+      <div class="capture-status">
+        <div class="capture-status-title"><span class="pulse"></span> Capture live</div>
+        <div class="capture-source"><span>Extension (Chrome)</span><span class="ok">on</span></div>
+        <div class="capture-source"><span>PWA share-sheet</span><span class="ok">on</span></div>
+        <div class="capture-source"><span>Email forward</span><span class="off">—</span></div>
+        <div class="capture-source"><span>Bulk import</span><span class="off">—</span></div>
+      </div>
+      <div class="user-chip">
+        <div class="avatar">N</div>
+        <div>
+          <div class="who">Nikhil</div>
+          <div class="plan">Plus · $5/mo</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ===== INBOX ===== -->
+    <section class="view active" id="view-inbox">
+      <div class="page-head">
+        <div class="eyebrow">Inbox · Tuesday, May 19</div>
+        <h1 class="page-title">Your agents brought you 3 things</h1>
+        <p class="page-sub">Background workers ran overnight against your interest graph. They never act for you — they surface what's worth your attention and cite every signal.</p>
+        <div class="page-meta">
+          <span><b>Last run</b> · 06:00</span>
+          <span><b>Next run</b> · 12:00</span>
+          <span><b>Today's budget</b> · $0.07 of $0.10</span>
+        </div>
+      </div>
+
+      <div class="agent-stream">
+
+        <!-- RECALL -->
+        <div class="agent-card">
+          <div class="agent-head">
+            <span class="agent-badge badge-recall"><span class="blob"></span> Recall</span>
+            <span class="agent-ts">surfaced 3 min ago</span>
+          </div>
+          <h3 class="agent-title">You bookmarked this 21 days ago — and you're back on the same topic now.</h3>
+          <p class="agent-body">You're viewing an <em>Uplift V2 standing desk</em> page on Amazon right now. Three weeks ago you bookmarked a long-form Verge review of the same model that you haven't opened. The reviewer flagged the bearings in the high-position SKU — worth a glance before you click buy.</p>
+          <div class="cites">
+            <span class="cite"><span class="source">Trigger</span> · Amazon · 3 min ago</span>
+            <span class="cite"><span class="source">Recalled</span> · Verge bookmark · Apr 28</span>
+            <span class="cite"><span class="source">Trail</span> · Standing desk research</span>
+          </div>
+          <div class="agent-actions">
+            <button class="btn btn-primary">Open the review</button>
+            <button class="btn">Snooze 1 week</button>
+            <button class="btn btn-ghost">Not relevant</button>
+          </div>
+        </div>
+
+        <!-- CONCIERGE -->
+        <div class="agent-card">
+          <div class="agent-head">
+            <span class="agent-badge badge-concierge"><span class="blob"></span> Concierge</span>
+            <span class="agent-ts">price drop · 14 min ago</span>
+          </div>
+          <h3 class="agent-title">Uplift V2 — $200 cheaper on Wayfair, and they ship the revised SKU.</h3>
+          <p class="agent-body">You've been comparing the Uplift V2 across Amazon and Walmart for 23 days. Wayfair just dropped the price and — based on a YouTube review from Marques Brownlee on May 2 that you watched — they appear to ship the bearing-revision unit, not the original.</p>
+          <div class="price-table">
+            <div class="price-row"><span class="vendor">Amazon</span><span class="price">$849</span><span class="flag">orig. SKU</span></div>
+            <div class="price-row"><span class="vendor">Walmart</span><span class="price">$829</span><span class="flag">orig. SKU</span></div>
+            <div class="price-row win"><span class="vendor">Wayfair</span><span class="price">$649</span><span class="flag">revised SKU · ships free</span></div>
+          </div>
+          <div class="cites">
+            <span class="cite"><span class="source">Watched</span> · 23 days · 3 retailers</span>
+            <span class="cite"><span class="source">Confirmed by</span> · YouTube (MKBHD, May 2)</span>
+            <span class="cite"><span class="source">Trail</span> · Standing desk research</span>
+          </div>
+          <div class="agent-actions">
+            <button class="btn btn-accent">Compare in detail</button>
+            <button class="btn">Open Wayfair</button>
+            <button class="btn btn-ghost">Stop watching this</button>
+          </div>
+        </div>
+
+        <!-- CURATOR -->
+        <div class="agent-card">
+          <div class="agent-head">
+            <span class="agent-badge badge-curator"><span class="blob"></span> Curator</span>
+            <span class="agent-ts">new from someone you read · 06:02</span>
+          </div>
+          <h3 class="agent-title">Martin Kleppmann just published — you've been quiet on distributed systems for 3 weeks.</h3>
+          <p class="agent-body">A new post titled <em>"Local-First Software, 2026 Update"</em> went up on Kleppmann's site this morning. You've read 7 of his posts in the past year. You haven't engaged with the distributed-systems cluster in 21 days — Synthesist noticed this is your fastest-decaying cluster.</p>
+          <div class="cites">
+            <span class="cite"><span class="source">From</span> · martin.kleppmann.com</span>
+            <span class="cite"><span class="source">You've read</span> · 7 prior posts</span>
+            <span class="cite"><span class="source">Cluster</span> · Distributed systems · ↓ 21d</span>
+          </div>
+          <div class="agent-actions">
+            <button class="btn btn-primary">Read</button>
+            <button class="btn">Save for weekly digest</button>
+            <button class="btn btn-ghost">Mute this topic for 30d</button>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="stream-foot">
+        <span>Daily LLM spend</span>
+        <div class="meter"><span></span></div>
+        <span><b style="color:var(--text);font-weight:600">$0.07</b> / $0.10 cap</span>
+        <span style="margin-left:12px">·</span>
+        <span>Quiet hours 22:00 → 08:00 local</span>
+      </div>
+    </section>
+
+    <!-- ===== MIND MAP ===== -->
+    <section class="view" id="view-mindmap">
+      <div class="page-head">
+        <div class="eyebrow">Mind Map · F-401</div>
+        <h1 class="page-title">Your attention, mapped</h1>
+        <p class="page-sub">A live render of your own interest graph. Topics sized by signal volume. Edges show co-occurrence within sessions and across platforms. This is the surface no chat-memory product can ship — they store opaque text, not a graph.</p>
+        <div class="page-meta">
+          <span><b>Past 30 days</b></span>
+          <span><b>142 topics</b></span>
+          <span><b>28 clusters</b></span>
+          <span><b>518 edges</b></span>
+        </div>
+      </div>
+
+      <div class="mindmap-grid">
+        <div>
+          <div class="mind-stage">
+            <svg class="mind-svg" viewBox="0 0 800 560" xmlns="http://www.w3.org/2000/svg">
+              <!-- Cluster labels (faint) -->
+              <text x="180" y="32" class="cluster-label" text-anchor="middle">Home office</text>
+              <text x="620" y="32" class="cluster-label" text-anchor="middle">Distributed systems</text>
+              <text x="400" y="200" class="cluster-label" text-anchor="middle">AI &amp; agents</text>
+              <text x="180" y="540" class="cluster-label" text-anchor="middle">Cooking</text>
+              <text x="620" y="540" class="cluster-label" text-anchor="middle">Climate &amp; energy</text>
+
+              <!-- Edges: Home office cluster -->
+              <line class="edge strong" x1="220" y1="130" x2="130" y2="200"/>
+              <line class="edge strong" x1="220" y1="130" x2="280" y2="200"/>
+              <line class="edge" x1="220" y1="130" x2="90" y2="110"/>
+              <line class="edge" x1="220" y1="130" x2="180" y2="65"/>
+              <line class="edge" x1="130" y1="200" x2="90" y2="110"/>
+
+              <!-- Edges: Distributed systems -->
+              <line class="edge strong" x1="620" y1="115" x2="560" y2="200"/>
+              <line class="edge strong" x1="620" y1="115" x2="700" y2="180"/>
+              <line class="edge" x1="560" y1="200" x2="540" y2="80"/>
+              <line class="edge" x1="700" y1="180" x2="540" y2="80"/>
+              <line class="edge" x1="700" y1="180" x2="700" y2="75"/>
+              <line class="edge" x1="620" y1="115" x2="700" y2="75"/>
+
+              <!-- Edges: AI cluster -->
+              <line class="edge strong" x1="380" y1="290" x2="470" y2="240"/>
+              <line class="edge strong" x1="380" y1="290" x2="320" y2="250"/>
+              <line class="edge strong" x1="380" y1="290" x2="330" y2="350"/>
+              <line class="edge" x1="380" y1="290" x2="470" y2="345"/>
+              <line class="edge" x1="320" y1="250" x2="470" y2="240"/>
+              <line class="edge" x1="470" y1="345" x2="330" y2="350"/>
+
+              <!-- Edges: Cooking -->
+              <line class="edge strong" x1="170" y1="440" x2="100" y2="480"/>
+              <line class="edge strong" x1="170" y1="440" x2="250" y2="410"/>
+              <line class="edge" x1="170" y1="440" x2="230" y2="500"/>
+              <line class="edge" x1="100" y1="480" x2="90" y2="380"/>
+              <line class="edge" x1="250" y1="410" x2="90" y2="380"/>
+
+              <!-- Edges: Climate -->
+              <line class="edge strong" x1="620" y1="440" x2="690" y2="480"/>
+              <line class="edge strong" x1="620" y1="440" x2="540" y2="480"/>
+              <line class="edge" x1="540" y1="480" x2="700" y2="400"/>
+              <line class="edge" x1="620" y1="440" x2="560" y2="400"/>
+              <line class="edge" x1="700" y1="400" x2="560" y2="400"/>
+              <line class="edge" x1="690" y1="480" x2="560" y2="400"/>
+
+              <!-- Cross-cluster (dashed, faint) -->
+              <line class="edge cross" x1="620" y1="115" x2="380" y2="290"/>
+              <line class="edge cross" x1="220" y1="130" x2="380" y2="290"/>
+              <line class="edge cross" x1="620" y1="440" x2="380" y2="290"/>
+
+              <!-- Home office nodes -->
+              <g><circle class="node" cx="220" cy="130" r="28" fill="#dbeafe" stroke="#60a5fa" stroke-width="1.5"/>
+                 <text class="node-label big" x="220" y="134" text-anchor="middle">Standing desks</text></g>
+              <g><circle class="node" cx="130" cy="200" r="16" fill="#dbeafe" stroke="#60a5fa" stroke-width="1.5"/>
+                 <text class="node-label" x="130" y="203" text-anchor="middle">Monitors</text></g>
+              <g><circle class="node" cx="90" cy="110" r="18" fill="#dbeafe" stroke="#60a5fa" stroke-width="1.5"/>
+                 <text class="node-label" x="90" y="113" text-anchor="middle">Chairs</text></g>
+              <g><circle class="node" cx="280" cy="200" r="11" fill="#dbeafe" stroke="#60a5fa" stroke-width="1.5"/>
+                 <text class="node-label" x="280" y="225" text-anchor="middle">Cable mgmt</text></g>
+              <g><circle class="node" cx="180" cy="65" r="11" fill="#dbeafe" stroke="#60a5fa" stroke-width="1.5"/>
+                 <text class="node-label" x="180" y="50" text-anchor="middle">Lighting</text></g>
+
+              <!-- Distributed systems nodes -->
+              <g><circle class="node" cx="620" cy="115" r="24" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+                 <text class="node-label big" x="620" y="118" text-anchor="middle">Local-first</text></g>
+              <g><circle class="node" cx="560" cy="200" r="17" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+                 <text class="node-label" x="560" y="203" text-anchor="middle">CRDTs</text></g>
+              <g><circle class="node" cx="700" cy="180" r="16" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+                 <text class="node-label" x="700" y="183" text-anchor="middle">Kleppmann</text></g>
+              <g><circle class="node" cx="540" cy="80" r="13" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+                 <text class="node-label" x="540" y="83" text-anchor="middle">Postgres</text></g>
+              <g><circle class="node" cx="700" cy="75" r="11" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+                 <text class="node-label" x="700" y="55" text-anchor="middle">Event src</text></g>
+
+              <!-- AI cluster nodes -->
+              <g><circle class="node" cx="380" cy="290" r="26" fill="#dcfce7" stroke="#22c55e" stroke-width="1.5"/>
+                 <text class="node-label big" x="380" y="294" text-anchor="middle">Claude</text></g>
+              <g><circle class="node" cx="470" cy="240" r="18" fill="#dcfce7" stroke="#22c55e" stroke-width="1.5"/>
+                 <text class="node-label" x="470" y="243" text-anchor="middle">Agents</text></g>
+              <g><circle class="node" cx="320" cy="250" r="13" fill="#dcfce7" stroke="#22c55e" stroke-width="1.5"/>
+                 <text class="node-label" x="320" y="253" text-anchor="middle">MCP</text></g>
+              <g><circle class="node" cx="470" cy="345" r="11" fill="#dcfce7" stroke="#22c55e" stroke-width="1.5"/>
+                 <text class="node-label" x="470" y="370" text-anchor="middle">Evals</text></g>
+              <g><circle class="node" cx="330" cy="350" r="15" fill="#dcfce7" stroke="#22c55e" stroke-width="1.5"/>
+                 <text class="node-label" x="330" y="353" text-anchor="middle">Memory</text></g>
+
+              <!-- Cooking nodes -->
+              <g><circle class="node" cx="170" cy="440" r="20" fill="#ffe4e6" stroke="#fb7185" stroke-width="1.5"/>
+                 <text class="node-label big" x="170" y="443" text-anchor="middle">Sourdough</text></g>
+              <g><circle class="node" cx="100" cy="480" r="15" fill="#ffe4e6" stroke="#fb7185" stroke-width="1.5"/>
+                 <text class="node-label" x="100" y="483" text-anchor="middle">Cast iron</text></g>
+              <g><circle class="node" cx="230" cy="500" r="11" fill="#ffe4e6" stroke="#fb7185" stroke-width="1.5"/>
+                 <text class="node-label" x="230" y="523" text-anchor="middle">Miso</text></g>
+              <g><circle class="node" cx="90" cy="380" r="11" fill="#ffe4e6" stroke="#fb7185" stroke-width="1.5"/>
+                 <text class="node-label" x="90" y="365" text-anchor="middle">Knives</text></g>
+              <g><circle class="node" cx="250" cy="410" r="11" fill="#ffe4e6" stroke="#fb7185" stroke-width="1.5"/>
+                 <text class="node-label" x="250" y="385" text-anchor="middle">Pasta</text></g>
+
+              <!-- Climate nodes -->
+              <g><circle class="node" cx="620" cy="440" r="18" fill="#ede9fe" stroke="#a855f7" stroke-width="1.5"/>
+                 <text class="node-label big" x="620" y="443" text-anchor="middle">Carbon pricing</text></g>
+              <g><circle class="node" cx="690" cy="480" r="15" fill="#ede9fe" stroke="#a855f7" stroke-width="1.5"/>
+                 <text class="node-label" x="690" y="483" text-anchor="middle">Urban plan.</text></g>
+              <g><circle class="node" cx="540" cy="480" r="13" fill="#ede9fe" stroke="#a855f7" stroke-width="1.5"/>
+                 <text class="node-label" x="540" y="483" text-anchor="middle">Batteries</text></g>
+              <g><circle class="node" cx="700" cy="400" r="11" fill="#ede9fe" stroke="#a855f7" stroke-width="1.5"/>
+                 <text class="node-label" x="700" y="380" text-anchor="middle">EVs</text></g>
+              <g><circle class="node" cx="560" cy="400" r="11" fill="#ede9fe" stroke="#a855f7" stroke-width="1.5"/>
+                 <text class="node-label" x="560" y="380" text-anchor="middle">Heat pumps</text></g>
+            </svg>
+            <div class="mind-controls">
+              <label>Time window</label>
+              <input class="scrub" type="range" min="7" max="365" value="30" />
+              <span class="scrub-val">Past 30 days</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mind-side">
+          <div class="legend">
+            <div class="side-title">Clusters</div>
+            <div class="legend-row"><span class="swatch" style="background:#60a5fa"></span><span class="name">Home office</span><span class="ct">38 sig</span></div>
+            <div class="legend-row"><span class="swatch" style="background:#f59e0b"></span><span class="name">Distributed sys</span><span class="ct">24 sig</span></div>
+            <div class="legend-row"><span class="swatch" style="background:#22c55e"></span><span class="name">AI &amp; agents</span><span class="ct">61 sig</span></div>
+            <div class="legend-row"><span class="swatch" style="background:#fb7185"></span><span class="name">Cooking</span><span class="ct">19 sig</span></div>
+            <div class="legend-row"><span class="swatch" style="background:#a855f7"></span><span class="name">Climate &amp; energy</span><span class="ct">14 sig</span></div>
+          </div>
+          <div class="actions">
+            <div class="side-title">Export</div>
+            <button class="btn" style="width:100%;justify-content:center;margin-bottom:6px">Download PNG</button>
+            <button class="btn" style="width:100%;justify-content:center;margin-bottom:6px">Download SVG</button>
+            <button class="btn" style="width:100%;justify-content:center">Export JSON (your data)</button>
+          </div>
+          <div class="actions">
+            <div class="side-title">Why this exists</div>
+            <p style="font-size:12.5px;color:var(--text-2);margin:0;line-height:1.55">
+              Perplexity and Claude store memory as opaque text. Mem renders graphs of what you typed. We render the graph of what you actually <i>did</i> across platforms — no typing required.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== TRAILS ===== -->
+    <section class="view" id="view-trails">
+      <div class="page-head">
+        <div class="eyebrow">Trails</div>
+        <h1 class="page-title">Multi-signal research arcs</h1>
+        <p class="page-sub">Every active decision pulls signals from across the platforms you use into one timeline. Revealed criteria are inferred from what you spent time on, not from anything you typed.</p>
+      </div>
+
+      <div class="trails-grid">
+        <div class="trail-list">
+          <div class="trail-item sel">
+            <div class="t-title">Standing desk research</div>
+            <div class="t-meta">23d · 14 signals · 4 platforms</div>
+            <div class="t-bar">
+              <span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span></span>
+            </div>
+          </div>
+          <div class="trail-item">
+            <div class="t-title">Distributed systems re-read</div>
+            <div class="t-meta">12d · 8 signals · 3 platforms</div>
+            <div class="t-bar">
+              <span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+          <div class="trail-item">
+            <div class="t-title">Sourdough technique</div>
+            <div class="t-meta">45d · 21 signals · 5 platforms</div>
+            <div class="t-bar">
+              <span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span></span><span></span>
+            </div>
+          </div>
+          <div class="trail-item">
+            <div class="t-title">Carbon pricing primer</div>
+            <div class="t-meta">9d · 6 signals · 2 platforms</div>
+            <div class="t-bar">
+              <span class="on"></span><span class="on"></span><span class="on"></span><span></span><span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+          <div class="trail-item">
+            <div class="t-title">Local-first software</div>
+            <div class="t-meta">31d · 11 signals · 3 platforms</div>
+            <div class="t-bar">
+              <span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span></span><span></span><span></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="trail-detail">
+          <h2 style="margin:0;font-size:20px;letter-spacing:-0.02em">Standing desk research</h2>
+          <p style="margin:6px 0 0;color:var(--text-2);font-size:13.5px">Active since Apr 26 · last signal 3 min ago</p>
+
+          <div class="trail-summary">
+            <div class="summary-stat">
+              <div class="l">Inferred intent</div>
+              <div class="v">Buy <small>· 84% confidence</small></div>
+            </div>
+            <div class="summary-stat">
+              <div class="l">Active candidates</div>
+              <div class="v">3 <small>· 2 dismissed</small></div>
+            </div>
+            <div class="summary-stat">
+              <div class="l">Working agent</div>
+              <div class="v" style="display:flex;align-items:center;gap:6px;font-size:14px"><span style="width:8px;height:8px;border-radius:50%;background:var(--concierge)"></span> Concierge</div>
+            </div>
+          </div>
+
+          <div class="reveal">
+            <div class="reveal-title">Revealed criteria</div>
+            <div class="reveal-criteria">
+              <span>Stable at high positions</span>
+              <span>Good bearings</span>
+              <span>Under $900</span>
+              <span>Ships to NY</span>
+              <span>≥ 48" wide</span>
+            </div>
+            <div class="reveal-intent">Concierge is watching <b>3 retailers</b> and will surface price drops &gt; 10%. Recall will re-surface any prior signal that contradicts a candidate.</div>
+          </div>
+
+          <h3 style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-3);margin:24px 0 12px">Timeline</h3>
+          <div class="timeline">
+            <div class="tl-item you">
+              <div class="tl-date">May 19 · 3 min ago</div>
+              <div class="tl-head"><span class="tl-source src-amz">Amazon</span><span class="tl-title">Uplift V2 48" — viewed</span></div>
+              <div class="tl-snippet">Triggered Recall agent. Surfaced an unread Verge bookmark from Apr 28.</div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-date">May 18</div>
+              <div class="tl-head"><span class="tl-source src-yt">YouTube</span><span class="tl-title">"Standing desk regrets — 2 years in" (16 min)</span></div>
+              <div class="tl-snippet">Comment thread engaged. Top-rated comment: "bearings, bearings, bearings."</div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-date">May 12</div>
+              <div class="tl-head"><span class="tl-source src-amz">Amazon</span><span class="tl-title">Uplift V2 — second view</span></div>
+              <div class="tl-snippet">Stayed 7 min on the page. No purchase.</div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-date">May 7</div>
+              <div class="tl-head"><span class="tl-source src-sb">Substack</span><span class="tl-title">"Why I started buying furniture from Wayfair"</span></div>
+              <div class="tl-snippet">Read to end. Bookmarked. Mentioned bearing-revision SKUs.</div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-date">Apr 29</div>
+              <div class="tl-head"><span class="tl-source src-rd">Reddit</span><span class="tl-title">r/StandingDesks — "Uplift vs Fully, 2026?" (32 comments)</span></div>
+              <div class="tl-snippet">Two comments saved.</div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-date">Apr 28</div>
+              <div class="tl-head"><span class="tl-source src-vg">Verge</span><span class="tl-title">"Uplift V2 long-term review" — bookmarked, never opened</span></div>
+              <div class="tl-snippet">This is what Recall surfaced today.</div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-date">Apr 26</div>
+              <div class="tl-head"><span class="tl-source src-yt">YouTube</span><span class="tl-title">MKBHD — "Best Standing Desks 2026" (23 min)</span></div>
+              <div class="tl-snippet">First signal in this trail.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PASTE ===== -->
+    <section class="view" id="view-paste">
+      <div class="page-head">
+        <div class="eyebrow">Capture</div>
+        <h1 class="page-title">Paste anything</h1>
+        <p class="page-sub">A URL, a tweet, an article, a YouTube link. We extract entities, link them into your graph, and decide whether they extend an active trail or start a new one. Capture works from any device with a browser.</p>
+      </div>
+
+      <div class="paste-grid">
+        <div>
+          <div class="paste-input-wrap">
+            <textarea class="paste-input" placeholder="Paste a URL, a tweet, or an article…">https://martin.kleppmann.com/2026/05/local-first-software-2026-update.html</textarea>
+            <div class="paste-actions">
+              <span class="paste-hint">Press <kbd>⌘ Enter</kbd> to capture · or just paste anywhere on the page</span>
+              <button class="btn btn-accent">Capture</button>
+            </div>
+          </div>
+
+          <div class="paste-sources">
+            <div class="source-card">
+              <div class="ico">📱</div>
+              <div class="ttl">PWA share-sheet</div>
+              <div class="sub">Tap Share → recome on your phone. Anything, any app.</div>
+            </div>
+            <div class="source-card">
+              <div class="ico">🧩</div>
+              <div class="ttl">Browser extension</div>
+              <div class="sub">Passive capture in the background. For power users.</div>
+            </div>
+            <div class="source-card">
+              <div class="ico">📥</div>
+              <div class="ttl">Bulk import</div>
+              <div class="sub">YouTube Takeout, Amazon orders, Reddit saved. Bootstrap in minutes.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="extract-card">
+          <div class="label">Extracted · live preview</div>
+          <div class="extract-meta">
+            <div class="extract-meta-row"><span class="k">Title</span><span class="v">Local-First Software, 2026 Update</span></div>
+            <div class="extract-meta-row"><span class="k">Source</span><span class="v">martin.kleppmann.com</span></div>
+            <div class="extract-meta-row"><span class="k">Author</span><span class="v">Martin Kleppmann</span></div>
+            <div class="extract-meta-row"><span class="k">Type</span><span class="v">Long-form essay · ~18 min read</span></div>
+          </div>
+
+          <div class="label" style="margin-top:14px">Topics extracted</div>
+          <div class="extract-topics">
+            <span class="topic-chip">Local-first software</span>
+            <span class="topic-chip">CRDTs</span>
+            <span class="topic-chip">Distributed systems</span>
+            <span class="topic-chip">Postgres</span>
+          </div>
+
+          <div class="label">Graph connections</div>
+          <div class="extract-graph">
+            Links to <b>4 existing topics</b> · extends 1 active trail<br/>
+            <span style="display:inline-block;margin-top:6px">↳ <a class="trail-link" href="#">Distributed systems re-read</a></span><br/>
+            <span style="display:inline-block;margin-top:2px;color:var(--text-3)">↳ 7 of your prior signals share an author with this</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PERSONALITY ===== -->
+    <section class="view" id="view-personality">
+      <div class="page-head">
+        <div class="eyebrow">Personality Mirror · opt-in</div>
+        <h1 class="page-title">Your attention, this month</h1>
+        <p class="page-sub">A descriptive mirror of how you've actually spent your attention. <b>Not</b> a personality test, not Big Five, not a label. Observational, framed as something you can choose to act on — or ignore. One click wipes everything inferred.</p>
+      </div>
+
+      <div class="pm-grid">
+        <div class="pm-card">
+          <h3 class="pm-card-title">Composition <span class="sub">Past 30 days</span></h3>
+          <div class="pm-bar">
+            <span class="name">Career &amp; craft</span>
+            <div class="track"><div class="fill" style="width:78%;background:#4f6b50"></div></div>
+            <span class="pct">38%</span>
+          </div>
+          <div class="pm-bar">
+            <span class="name">Home life</span>
+            <div class="track"><div class="fill" style="width:45%;background:#60a5fa"></div></div>
+            <span class="pct">22%</span>
+          </div>
+          <div class="pm-bar">
+            <span class="name">News &amp; culture</span>
+            <div class="track"><div class="fill" style="width:37%;background:#f59e0b"></div></div>
+            <span class="pct">18%</span>
+          </div>
+          <div class="pm-bar">
+            <span class="name">Entertainment</span>
+            <div class="track"><div class="fill" style="width:29%;background:#a855f7"></div></div>
+            <span class="pct">14%</span>
+          </div>
+          <div class="pm-bar">
+            <span class="name">Relationships</span>
+            <div class="track"><div class="fill" style="width:17%;background:#fb7185"></div></div>
+            <span class="pct">8%</span>
+          </div>
+
+          <div class="aspiration">
+            <label>An aspiration (optional)</label>
+            <input type="text" placeholder="e.g. spend more attention on writing" />
+            <p style="font-size:12px;color:var(--accent-strong);margin:8px 0 0">If set, Curator will prioritise content matching this; Recall will demote what fights it. Always reversible.</p>
+          </div>
+        </div>
+
+        <div>
+          <div class="pm-card" style="margin-bottom:16px">
+            <h3 class="pm-card-title">Trajectory <span class="sub">vs prior 30d</span></h3>
+            <div class="trajectory-row">
+              <span>Career &amp; craft</span>
+              <span class="delta up">↑ 12%</span>
+              <svg class="spark" viewBox="0 0 36 18"><polyline fill="none" stroke="#15803d" stroke-width="1.6" points="0,14 6,12 12,11 18,9 24,7 30,5 36,3"/></svg>
+            </div>
+            <div class="trajectory-row">
+              <span>Home life</span>
+              <span class="delta up">↑ 4%</span>
+              <svg class="spark" viewBox="0 0 36 18"><polyline fill="none" stroke="#15803d" stroke-width="1.6" points="0,10 6,11 12,9 18,10 24,8 30,9 36,8"/></svg>
+            </div>
+            <div class="trajectory-row">
+              <span>News &amp; culture</span>
+              <span class="delta flat">→ flat</span>
+              <svg class="spark" viewBox="0 0 36 18"><polyline fill="none" stroke="#a8a29e" stroke-width="1.6" points="0,9 6,10 12,9 18,8 24,10 30,9 36,9"/></svg>
+            </div>
+            <div class="trajectory-row">
+              <span>Entertainment</span>
+              <span class="delta down">↓ 9%</span>
+              <svg class="spark" viewBox="0 0 36 18"><polyline fill="none" stroke="#b91c1c" stroke-width="1.6" points="0,4 6,5 12,7 18,8 24,10 30,12 36,14"/></svg>
+            </div>
+            <div class="trajectory-row">
+              <span>Relationships</span>
+              <span class="delta flat">→ flat</span>
+              <svg class="spark" viewBox="0 0 36 18"><polyline fill="none" stroke="#a8a29e" stroke-width="1.6" points="0,11 6,12 12,11 18,11 24,12 30,11 36,11"/></svg>
+            </div>
+          </div>
+
+          <div class="pm-card">
+            <h3 class="pm-card-title">You haven't engaged in 6+ weeks</h3>
+            <div>
+              <span class="gap-chip">Health &amp; fitness</span>
+              <span class="gap-chip">Outdoor</span>
+              <span class="gap-chip">Music</span>
+              <span class="gap-chip">Travel</span>
+            </div>
+            <p style="font-size:12.5px;color:var(--text-2);margin:12px 0 0">Surfaced because you've engaged with these in the past 12 months, not because of any norm. Tap a chip to mute it from this view.</p>
+          </div>
+
+          <div class="pm-trust">
+            <b>Your data, your call.</b> Personality Mirror is opt-in. Inferences are never used in our IaaS API or seen by anyone else. One click in Settings → Privacy wipes everything derived; your underlying signal graph stays intact.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== DEVELOPER / IAAS ===== -->
+    <section class="view" id="view-developer">
+      <div class="page-head">
+        <div class="eyebrow">Developer API · /v1</div>
+        <h1 class="page-title">The same graph, exposed as an API</h1>
+        <p class="page-sub">Other products can ship signals on behalf of their users and read back a personalised interest graph. Tenant-keyed, GDPR-deletable per user, usage-billed. This surface doesn't exist in any other product — Glean is enterprise-only, Perplexity has no IaaS, Pin AI is decentralised on-device.</p>
+      </div>
+
+      <div class="dev-grid">
+        <div>
+          <div class="tabs">
+            <button class="tab active" data-tab="ingest">Ingest a signal</button>
+            <button class="tab" data-tab="trails">Read a user's trails</button>
+            <button class="tab" data-tab="recommend">Recommend</button>
+            <button class="tab" data-tab="delete">GDPR delete</button>
+          </div>
+
+          <div class="tab-panel active" data-tab="ingest">
+            <div class="endpoint">
+              <div class="endpoint-head">
+                <span class="method m-post">POST</span>
+                <span class="endpoint-path">/v1/signals</span>
+                <span class="endpoint-desc">Record an engagement event for one of your users</span>
+              </div>
+              <pre class="code"><span class="c"># curl example</span>
+curl <span class="url">https://api.recome.app/v1/signals</span> \
+  -H <span class="s">"Authorization: Bearer rk_live_8f3a…5a3f"</span> \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{
+    "external_user_id": "u_482",
+    "url": "https://youtube.com/watch?v=abc",
+    "type": "view",
+    "duration_ms": 1620000,
+    "captured_at": "2026-05-19T06:14:22Z"
+  }'</span></pre>
+            </div>
+            <div class="endpoint">
+              <div class="endpoint-head">
+                <span class="method m-post">RESPONSE</span>
+                <span class="endpoint-path">201 Created</span>
+              </div>
+              <pre class="code">{
+  <span class="k">"signal_id"</span>: <span class="s">"sig_01HXY9F2"</span>,
+  <span class="k">"extracted"</span>: {
+    <span class="k">"title"</span>: <span class="s">"Distributed systems, 2026"</span>,
+    <span class="k">"author"</span>: <span class="s">"Martin Kleppmann"</span>,
+    <span class="k">"topics"</span>: [<span class="s">"local-first"</span>, <span class="s">"CRDTs"</span>, <span class="s">"distributed-systems"</span>]
+  },
+  <span class="k">"graph"</span>: {
+    <span class="k">"linked_topics"</span>: <span class="n">4</span>,
+    <span class="k">"extended_trail"</span>: <span class="s">"distributed-systems-reread"</span>
+  },
+  <span class="k">"tokens_used"</span>: <span class="n">214</span>
+}</pre>
+            </div>
+          </div>
+
+          <div class="tab-panel" data-tab="trails">
+            <div class="endpoint">
+              <div class="endpoint-head">
+                <span class="method m-get">GET</span>
+                <span class="endpoint-path">/v1/users/u_482/trails</span>
+                <span class="endpoint-desc">Active research arcs for one user</span>
+              </div>
+              <pre class="code">{
+  <span class="k">"trails"</span>: [
+    {
+      <span class="k">"id"</span>: <span class="s">"standing-desk-research"</span>,
+      <span class="k">"title"</span>: <span class="s">"Standing desk research"</span>,
+      <span class="k">"active_days"</span>: <span class="n">23</span>,
+      <span class="k">"signal_count"</span>: <span class="n">14</span>,
+      <span class="k">"inferred_intent"</span>: <span class="s">"purchase"</span>,
+      <span class="k">"confidence"</span>: <span class="n">0.84</span>,
+      <span class="k">"revealed_criteria"</span>: [
+        <span class="s">"stable_at_high_positions"</span>,
+        <span class="s">"good_bearings"</span>,
+        <span class="s">"under_$900"</span>
+      ],
+      <span class="k">"candidates"</span>: [
+        { <span class="k">"entity"</span>: <span class="s">"uplift-v2-48"</span>, <span class="k">"status"</span>: <span class="s">"active"</span> },
+        { <span class="k">"entity"</span>: <span class="s">"fully-jarvis"</span>,  <span class="k">"status"</span>: <span class="s">"dismissed"</span> }
+      ]
+    }
+  ]
+}</pre>
+            </div>
+          </div>
+
+          <div class="tab-panel" data-tab="recommend">
+            <div class="endpoint">
+              <div class="endpoint-head">
+                <span class="method m-post">POST</span>
+                <span class="endpoint-path">/v1/recommend</span>
+                <span class="endpoint-desc">Surface items based on a user's actual attention history</span>
+              </div>
+              <pre class="code">{
+  <span class="k">"items"</span>: [
+    {
+      <span class="k">"entity"</span>: <span class="s">"uplift-v2-48-revised"</span>,
+      <span class="k">"score"</span>: <span class="n">0.91</span>,
+      <span class="k">"reasoning"</span>: <span class="s">"matches revealed criteria; cheaper SKU; bearing-revision noted in YouTube signal sig_01HXY7A2"</span>,
+      <span class="k">"citations"</span>: [<span class="s">"sig_01HXY7A2"</span>, <span class="s">"sig_01HXY3M9"</span>]
+    }
+  ]
+}</pre>
+            </div>
+          </div>
+
+          <div class="tab-panel" data-tab="delete">
+            <div class="endpoint">
+              <div class="endpoint-head">
+                <span class="method m-del">DELETE</span>
+                <span class="endpoint-path">/v1/users/u_482</span>
+                <span class="endpoint-desc">GDPR-compliant hard delete — graph nodes + vector namespace</span>
+              </div>
+              <pre class="code">{
+  <span class="k">"deleted"</span>: {
+    <span class="k">"graph_nodes"</span>: <span class="n">1284</span>,
+    <span class="k">"vector_points"</span>: <span class="n">412</span>,
+    <span class="k">"signals"</span>: <span class="n">298</span>
+  },
+  <span class="k">"completed_at"</span>: <span class="s">"2026-05-19T11:08:31Z"</span>
+}</pre>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="api-key-card">
+            <div class="label">Your live key</div>
+            <div class="key-row">
+              <span class="k">rk_live_8f3a••••••••••5a3f</span>
+              <button class="btn btn-ghost" style="padding:4px 8px">Copy</button>
+              <button class="btn btn-ghost" style="padding:4px 8px">Rotate</button>
+            </div>
+            <div class="usage">
+              <div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--text-2)">
+                <span>Signals this month</span>
+                <span><b style="color:var(--text)">142,341</b> / 1,000,000</span>
+              </div>
+              <div class="usage-bar"><div></div></div>
+              <div class="usage-meta"><span>Resets Jun 1</span><span>14% of cap</span></div>
+            </div>
+            <div class="tier">
+              <div class="l">Plan</div>
+              <div class="v">Pro · $499/mo</div>
+              <div class="desc">1M signals · 10M queries · SLA 99.9% · embeddings at cost</div>
+            </div>
+          </div>
+
+          <div class="api-key-card">
+            <div class="label">Tenant isolation</div>
+            <p style="font-size:12.5px;color:var(--text-2);margin:0;line-height:1.6">
+              Every node you write is namespaced <code style="font-family:'JetBrains Mono',monospace;background:var(--panel-2);padding:1px 5px;border-radius:3px;font-size:11.5px">tenant_t8f3__&lt;your_user_id&gt;</code>. Cross-tenant queries return zero results by construction — not by a WHERE clause. No data ever crosses tenants.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  // Sidebar nav
+  const items = document.querySelectorAll('.nav-item');
+  const views = document.querySelectorAll('.view');
+  items.forEach(it => {
+    it.addEventListener('click', () => {
+      const target = it.dataset.view;
+      items.forEach(i => i.classList.remove('active'));
+      views.forEach(v => v.classList.remove('active'));
+      it.classList.add('active');
+      document.getElementById('view-' + target).classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+
+  // Time scrub label
+  const scrub = document.querySelector('.scrub');
+  const scrubVal = document.querySelector('.scrub-val');
+  if (scrub) {
+    scrub.addEventListener('input', e => {
+      const v = +e.target.value;
+      scrubVal.textContent = 'Past ' + v + ' days';
+    });
+  }
+
+  // Trail selection
+  const trailItems = document.querySelectorAll('.trail-item');
+  trailItems.forEach(t => t.addEventListener('click', () => {
+    trailItems.forEach(x => x.classList.remove('sel'));
+    t.classList.add('sel');
+  }));
+
+  // Dev tabs
+  const tabs = document.querySelectorAll('.tab');
+  const panels = document.querySelectorAll('.tab-panel');
+  tabs.forEach(tab => tab.addEventListener('click', () => {
+    const t = tab.dataset.tab;
+    tabs.forEach(x => x.classList.remove('active'));
+    panels.forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelector('.tab-panel[data-tab="' + t + '"]').classList.add('active');
+  }));
+</script>
+
+</body>
+</html>

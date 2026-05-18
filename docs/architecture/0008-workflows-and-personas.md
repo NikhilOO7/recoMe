@@ -169,39 +169,40 @@ Sees the trail page with everything she captured + related
    │  Re-engagement complete.
 ```
 
-### W-R-5: Chat for a decision (Phase 2)
+### W-R-5: Decision agent for a stalled purchase (Phase 2)
+
+> **Re-written 2026-05-17.** The original W-R-5 described a streaming chat surface; that surface was deprecated by [ADR-0012](0012-active-agents-and-personality-mirror.md) in favor of background + on-demand agents. The user-facing flow now uses the **Decision agent** (F-316 in ADR-0012 §2.2 Tier 2) — on-demand, invoked from the trail view, not a free-form chat window.
 
 ```
 Tuesday evening: about to buy a standing desk
-   │  Opens recome.app/ask on phone
+   │  Riya opens recome.app/dashboard, sees the "standing desks"
+   │  trail card at the top (Concierge agent already surfaced it
+   │  as a stalled-decision candidate — 19 days, no purchase signal)
    ▼
-Types: "I've been comparing standing desks. Help me decide."
+Clicks "Help me decide" on the trail card
    │
    ▼
-Agent (streaming):
-   │  "You've looked at 12 standing-desk items across YouTube,
-   │  Reddit, and Amazon over the last 19 days. The top
-   │  candidates by your attention time are:
-   │     1. Branch Standing Desk Pro (4 captures, 2 platforms)
-   │     2. Uplift V2 (3 captures, 3 platforms)
-   │     3. Fully Jarvis (2 captures, 2 platforms)
-   │
-   │  Two things you saw matter to you: bamboo top (mentioned
-   │  in 3 of your Reddit captures), and a sub-$700 budget
-   │  (you discarded 2 candidates above this).
-   │
-   │  [Side panel: 12 source links]
-   │
-   │  Want me to compare 1 and 2?"
+Decision agent runs (on-demand, ~3s):
+   │  • Pulls full trail: 12 captures across YouTube/Reddit/Amazon
+   │  • Identifies 3 candidate entities (Branch / Uplift / Fully)
+   │  • Extracts revealed criteria from prior signals:
+   │      - bamboo top (3 Reddit mentions)
+   │      - sub-$700 budget (2 candidates discarded above)
+   │  • Synthesizes a recommendation with full citation
    ▼
-"Yes"
-   │  Agent calls compare tool → returns side-by-side table.
-   │
+Decision card renders:
+   │  Top recommendation: Uplift V2
+   │  Why: matches both criteria; best dwell time across platforms
+   │  Source chips: 12 inline links to the original captures
+   │  Counter-evidence shown: 1 Reddit thread you read that
+   │      argued for Branch — link included
    ▼
 "Log decision: Uplift V2"
-   │  Decision logged. Next time she asks about standing desks,
-   │  the agent knows she chose.
+   │  Decision recorded as a `purchase` signal on the graph.
+   │  Concierge stops nudging on this intent.
 ```
+
+The original chat-window UX has gone. The Decision agent is invoked from the trail view; its output is a structured card with sources, not a streaming chat transcript. The same answer Riya wanted, with stronger provenance and no risk of free-form-prompt drift.
 
 ### W-R-6: 90 days in — habit formed
 
@@ -210,9 +211,11 @@ Recome is now the default place to "save for later" instead of
 bookmarks. Riya:
    • Pastes 4–8 URLs per day across browser + share-sheet
    • Opens weekly digest 80% of weeks
-   • Asks chat ~2× per week, mostly decision queries
-   • Pays for the $5/mo tier after first decision query worked
-     better than her own Google search
+   • Acts on a Recall surfacing ~1×/week (her forgotten Verge
+     review for a thing she's about to re-buy)
+   • Invokes Decision agent ~2× per month for stalled purchases
+   • Pays for the $5/mo tier after first Decision agent run came
+     back with a useful answer her own Google search couldn't
    • Tells a friend. (Word-of-mouth is the only growth channel
      that compounds.)
 ```
@@ -342,23 +345,21 @@ If she stops using us, the most likely reasons are:
 
 ---
 
-## 6. Chat eval set (used for F-301 acceptance)
+## 6. Agent eval set (replaces chat eval after ADR-0012)
 
-These five canonical queries are the bar Recome chat must clear
-before the side-by-side test (F-306). Each must return a useful
-answer in <5s p95 against a populated user graph.
+> **Re-written 2026-05-17.** The original §6 was the chat eval for F-301; chat surface was deprecated by [ADR-0012](0012-active-agents-and-personality-mirror.md). Recast as the agent eval — same query intents, different invocation surface (Decision agent + Recall surfaces, not free-form chat).
 
-| #   | Query                                                                                | Why it matters                                                  |
-| --- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
-| 1   | "What was I researching last Tuesday?"                                               | Tests time-window reasoning + reverse-chrono retrieval.         |
-| 2   | "I'm about to buy this URL — does it conflict with anything I learned?" (with a URL) | Tests trail intersection + LLM judgment over captured opinions. |
-| 3   | "Summarize my standing-desks research across all platforms in the last 3 weeks."     | Tests multi-source summarization + dwell weighting.             |
-| 4   | "Find the YouTube reviewer who said brand X has bad bearings."                       | Tests fine-grained retrieval + entity-disambiguation.           |
-| 5   | "I've been on the fence about [topic] for too long — decide for me."                 | Tests preference modeling + opinion synthesis.                  |
+These five canonical scenarios are the bar Phase-2 agents must clear before Decision + Recall ship beyond dogfood. Each scenario maps to a specific agent and produces a structured card (not a streaming response).
 
-Each query has 3 graders (founder + 2 dogfooders) scoring on a 1–5
-scale across: accuracy, faithfulness to captured sources, usefulness.
-Pass bar: median ≥4 across all three.
+| #   | Scenario                                                                             | Surface that handles it                                                                                       | Why it matters                                                |
+| --- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| 1   | "What was I researching last Tuesday?"                                               | Dashboard time-window filter (no agent — read directly via `GET /intelligence/trails?since=`)                 | Tests time-window reasoning + reverse-chrono retrieval        |
+| 2   | "I'm about to buy this URL — does it conflict with anything I learned?" (with a URL) | Concierge agent on paste of an Amazon/commerce URL — surfaces relevant counter-evidence from prior signals    | Tests trail intersection + cited counter-evidence             |
+| 3   | "Summarize my standing-desks research across all platforms in the last 3 weeks."     | Synthesist agent (on-demand or weekly digest)                                                                 | Tests multi-source summarization + dwell weighting            |
+| 4   | "Find the YouTube reviewer who said brand X has bad bearings."                       | Recall agent (event-triggered when user engages with brand X again) OR Decision agent search-mode (on-demand) | Tests fine-grained retrieval + entity-disambiguation          |
+| 5   | "I've been on the fence about [topic] for too long — decide for me."                 | Decision agent invoked from the trail view                                                                    | Tests preference modeling + opinion synthesis from full trail |
+
+Each scenario has 3 graders (founder + 2 dogfooders) scoring on a 1–5 scale across: accuracy, faithfulness to captured sources, usefulness. Pass bar: median ≥4 across all three. Per [ADR-0012 §5](0012-active-agents-and-personality-mirror.md#5-trust--safety-constraints-binding) every output must cite sources — un-cited answers automatically fail regardless of grader scores.
 
 ---
 

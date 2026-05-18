@@ -163,6 +163,66 @@ export default function DashboardPage() {
       {/* Quick links grid */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
         <Link
+          href="/inbox"
+          className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 hover:bg-white/[0.06] transition-colors relative"
+          style={{ borderLeftColor: '#5eead4', borderLeftWidth: 3 }}
+        >
+          <div className="text-xl mb-3">📥</div>
+          <h3 className="text-sm font-bold mb-1">Inbox</h3>
+          <p className="text-xs text-white/40">
+            Things your agents brought you — Recall, Concierge, Curator.
+          </p>
+        </Link>
+
+        <Link
+          href="/agents"
+          className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 hover:bg-white/[0.06] transition-colors relative"
+          style={{ borderLeftColor: '#7c3aed', borderLeftWidth: 3 }}
+        >
+          <div className="text-xl mb-3">⚙️</div>
+          <h3 className="text-sm font-bold mb-1">Agents</h3>
+          <p className="text-xs text-white/40">
+            Pause, resume, view runs and budgets across all six agents.
+          </p>
+        </Link>
+
+        <Link
+          href="/mind"
+          className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 hover:bg-white/[0.06] transition-colors relative"
+          style={{ borderLeftColor: '#a78bfa', borderLeftWidth: 3 }}
+        >
+          <div className="text-xl mb-3">🕸</div>
+          <h3 className="text-sm font-bold mb-1">Mind Map</h3>
+          <p className="text-xs text-white/40">
+            See your interest graph — topics, edges, clusters, time-windowed.
+          </p>
+        </Link>
+
+        <Link
+          href="/personality"
+          className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 hover:bg-white/[0.06] transition-colors relative"
+          style={{ borderLeftColor: '#fbbf24', borderLeftWidth: 3 }}
+        >
+          <div className="text-xl mb-3">🪞</div>
+          <h3 className="text-sm font-bold mb-1">Personality Mirror</h3>
+          <p className="text-xs text-white/40">
+            Composition + 8-week trajectory of what you actually pay attention to. Opt-in.
+          </p>
+        </Link>
+
+        <Link
+          href="/audit-log"
+          className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 hover:bg-white/[0.06] transition-colors relative"
+          style={{ borderLeftColor: '#fb7185', borderLeftWidth: 3 }}
+        >
+          <div className="text-xl mb-3">📜</div>
+          <h3 className="text-sm font-bold mb-1">Audit Log of You</h3>
+          <p className="text-xs text-white/40">
+            Every capture, every agent run, every event surfaced. Exportable. Deletable.
+          </p>
+        </Link>
+
+        <Link
           href="/privacy"
           className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 hover:bg-white/[0.06] transition-colors"
         >

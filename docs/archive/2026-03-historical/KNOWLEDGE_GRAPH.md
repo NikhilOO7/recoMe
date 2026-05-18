@@ -999,6 +999,6 @@ async function shouldHideContent(content: AnalyzedContent): Promise<boolean> {
 
 ## Next Steps
 
-1. **Read**: [MNEMOSYNE_IMPLEMENTATION.md](MNEMOSYNE_IMPLEMENTATION.md) - Memory system
+1. **Read**: [Smriti_IMPLEMENTATION.md](Smriti_IMPLEMENTATION.md) - Memory system
 2. **Read**: [ARCHITECTURE_VISUAL.md](ARCHITECTURE_VISUAL.md) - Full system diagrams
 3. **Implement**: Use [CLAUDE_CODE_PROMPT.md](CLAUDE_CODE_PROMPT.md) for development

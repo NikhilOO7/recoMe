@@ -1,4 +1,4 @@
-# Mnemosyne Memory System - Visual Guide
+# Smriti Memory System - Visual Guide
 
 > Visual documentation of RecoMe's human-like memory architecture.
 
@@ -23,7 +23,7 @@
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────┐
 │                                                                                     │
-│                           MNEMOSYNE MEMORY SYSTEM                                   │
+│                           Smriti MEMORY SYSTEM                                   │
 │                                                                                     │
 │   "Memory that works like yours - context-aware, pattern-forming, and forgetful"   │
 │                                                                                     │
@@ -750,7 +750,7 @@
 
 ## Summary
 
-The Mnemosyne memory system provides:
+The Smriti memory system provides:
 
 1. **Context-aware memory** - Different memories for different situations
 2. **Natural forgetting** - Unused memories fade over time
@@ -758,4 +758,4 @@ The Mnemosyne memory system provides:
 4. **Permanent preferences** - Explicit blocks never fade
 5. **General overlay** - blocked_forever applies everywhere
 
-**Next**: See [MNEMOSYNE_IMPLEMENTATION.md](MNEMOSYNE_IMPLEMENTATION.md) for code details.
+**Next**: See [Smriti_IMPLEMENTATION.md](Smriti_IMPLEMENTATION.md) for code details.

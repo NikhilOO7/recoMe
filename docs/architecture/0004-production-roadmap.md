@@ -33,18 +33,18 @@ update the spec, not this.
 
 ```
 NOW                P0 (6w)            P1 (8w)             P2 (10w)            P3 (12w)
-│                  Capture works      Memory feels        Chat that wins      IaaS lands
-│                  │                  magical             a comparison        first 10 paying
-│                  │                  │                   │                   tenants
+│                  Capture works      Memory feels        Agents work the     IaaS lands
+│                  │                  magical             graph for you       first 10 paying
+│                  │                  │                   (ADR-0012)          tenants + agents
 └──> 2026-05      └──> 2026-06       └──> 2026-08        └──> 2026-11        └──> 2027-02
 ```
 
-| Phase          | Window                       | Hypothesis                                                                                         | Surface tested                                   | Kill criterion                                                                                                                                                  |
-| -------------- | ---------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **P0** Capture | weeks 1–6 (May 17 → Jun 28)  | A user can capture interesting attention into Recome from any device in <5s with no install        | `/paste` web + PWA share-sheet                   | If <20% of cohort captures ≥10 items in week 1, the friction model is broken — go re-design before building chat.                                               |
-| **P1** Memory  | weeks 7–14 (Jun 29 → Aug 23) | Users come back in week 2 because the trail/dashboard surfaces things they forgot they cared about | Dashboard v2 + bulk import + weekly digest email | If week-2 retention <25% in the cohort that captured ≥10 items in P0, the graph isn't producing recall value — re-examine extraction & ranking before chat.     |
-| **P2** Chat    | weeks 15–24 (Aug 24 → Nov 1) | Personal-memory chat beats Perplexity for "what did I look at" queries in a side-by-side user test | `/ask` chat with streaming + tool-calling        | If >40% of test users prefer Perplexity on personal-memory questions after seeing both, the differentiator is too weak to monetize against — pivot to bundling. |
-| **P3** IaaS    | weeks 25–36 (Nov 2 → Feb 7)  | At least one independent developer signs up, ships an integration to prod, and pays                | Dev portal + API docs + first 10 customers       | If we don't have 10 paying tenants in 12 weeks of GTM, the API is too narrow or too expensive — review pricing and reposition.                                  |
+| Phase          | Window                       | Hypothesis                                                                                                                                | Surface tested                                                        | Kill criterion                                                                                                                                                                                                                                                                |
+| -------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **P0** Capture | weeks 1–6 (May 17 → Jun 28)  | A user can capture interesting attention into Recome from any device in <5s with no install                                               | `/paste` web + PWA share-sheet                                        | If <20% of cohort captures ≥10 items in week 1, the friction model is broken — go re-design before building chat.                                                                                                                                                             |
+| **P1** Memory  | weeks 7–14 (Jun 29 → Aug 23) | Users come back in week 2 because the trail/dashboard surfaces things they forgot they cared about                                        | Dashboard v2 + bulk import + weekly digest email                      | If week-2 retention <25% in the cohort that captured ≥10 items in P0, the graph isn't producing recall value — re-examine extraction & ranking before chat.                                                                                                                   |
+| **P2** Agents  | weeks 15–24 (Aug 24 → Nov 1) | Background agents working the user's interest graph deliver value Perplexity Memory + Comet structurally cannot (proactive, not reactive) | Concierge + Curator + Recall + Mind Map + Personality Mirror (opt-in) | If ≥70% of active users do not enable at least one agent OR per-user agent cost exceeds $1/mo OR Mind Map weekly opens <2/user, the proactive thesis isn't landing — re-examine ranking + onboarding before P3. See [ADR-0012](0012-active-agents-and-personality-mirror.md). |
+| **P3** IaaS    | weeks 25–36 (Nov 2 → Feb 7)  | At least one independent developer signs up, ships an integration to prod, and pays                                                       | Dev portal + API docs + first 10 customers                            | If we don't have 10 paying tenants in 12 weeks of GTM, the API is too narrow or too expensive — review pricing and reposition.                                                                                                                                                |
 
 Each phase ends with a **go/no-go review** against its KPIs. The review
 is a 90-minute meeting with one decision: continue, pivot, or shelve.
@@ -75,15 +75,17 @@ Hard numbers. Every cell is a leading indicator we can measure weekly.
 | Weekly digest open rate                           | ≥35%                | Email service  | The "we remembered for you" moment.     |
 | Daily active users                                | 200                 | Posthog        | Volume to power P2 user tests.          |
 
-### Phase 2 — Chat
+### Phase 2 — Agents v1 (replaces Chat; see ADR-0012)
 
-| KPI                                                         | Target                | Source               | Why                                                                                           |
-| ----------------------------------------------------------- | --------------------- | -------------------- | --------------------------------------------------------------------------------------------- |
-| Chat session conversion (visit → ≥1 question)               | ≥50%                  | Posthog              | If the empty-state is intimidating, redesign.                                                 |
-| Personal-memory query share                                 | ≥60% of all questions | LLM classification   | If users are mostly asking world-knowledge questions, we're losing the Perplexity comparison. |
-| Side-by-side test: Recome preferred                         | ≥60%                  | Live user test, n=30 | The hard one.                                                                                 |
-| Chat-to-action conversion (Q → bookmark / decision / share) | ≥20%                  | Server               | Chat that doesn't change behavior is theater.                                                 |
-| Median chat response time (p50)                             | <2.5s                 | Server metric        | LLM streaming time-to-first-token.                                                            |
+| KPI                                                        | Target         | Source                | Why                                                                                        |
+| ---------------------------------------------------------- | -------------- | --------------------- | ------------------------------------------------------------------------------------------ |
+| % active users with ≥1 agent enabled at end of phase       | ≥70%           | DB count              | If lower, agent value isn't landing in onboarding.                                         |
+| Concierge: price-drop alerts that lead to purchase tracked | ≥10% of alerts | Server (decision log) | The headline value prop for the most concrete agent.                                       |
+| Curator: weekly digest click-through                       | ≥40%           | Email + PWA push      | If lower, Curator picks are wrong; tune ranking.                                           |
+| Recall: surfaced reminders rated "useful"                  | ≥60% of shown  | In-product thumb vote | Recall is the most uniquely-us agent; quality matters more than volume.                    |
+| Mind Map view: weekly opens / active user                  | ≥2             | PostHog               | Reflection surface that converts users into evangelists.                                   |
+| Personality Mirror opt-in rate                             | ≥30% of MAU    | DB                    | Opt-in metric, not push metric. Anything <30% means the framing is intimidating; redesign. |
+| Agent cost per active user / month                         | <$1.00         | Provider bill / DAU   | Hard ceiling. Above this, GuardianAgent caps fire and ops budget conversation begins.      |
 
 ### Phase 3 — IaaS
 
@@ -127,19 +129,23 @@ every line. **Solo team for now** — owner = founder unless noted.
 | W13  | Decay & freshness tuning                                | F-209        | Founder | Old/dropped topics fade; recent ones surface first          |
 | W14  | Phase 1 review                                          | —            | Founder | All Phase 1 KPIs measured; go/no-go meeting                 |
 
-### Phase 2 — Chat (Aug 24 → Nov 1)
+### Phase 2 — Agents v1 (Aug 24 → Nov 1)
 
-| Week   | Milestone                                                                 | Features | Owner   | Exit criterion                                                                   |
-| ------ | ------------------------------------------------------------------------- | -------- | ------- | -------------------------------------------------------------------------------- |
-| W15–16 | Real LLM agent: replace keyword-theatre AgentController                   | F-301    | Founder | Streaming responses; tool-calls to graph; 5 canonical queries answered correctly |
-| W17    | Chat UI v1: message history, streaming, sources panel                     | F-302    | Founder | End-to-end chat works on mobile + desktop                                        |
-| W18    | Tool library: search graph, get trail, get intents, compare items, decide | F-303    | Founder | All 5 tools wired and used by agent                                              |
-| W19    | Chat persistence + conversation memory                                    | F-304    | Founder | Multi-turn coherence over 10 turns                                               |
-| W20    | Source citations + "explain why" panel                                    | F-305    | Founder | Every claim traces back to a signal                                              |
-| W21    | Side-by-side test instrumentation (Recome vs Perplexity)                  | F-306    | Founder | Test live, recruiting started                                                    |
-| W22    | Test live with 30 users; collect results                                  | —        | Founder | Side-by-side preference number landed                                            |
-| W23    | Chat-to-action: bookmark, share-trail, decision-log                       | F-307    | Founder | Each chat ends with at least one action surface                                  |
-| W24    | Phase 2 review                                                            | —        | Founder | All Phase 2 KPIs measured; go/no-go meeting                                      |
+Replaces the Phase-2 chat plan after ADR-0012. Old chat features
+(F-301..F-307) are deprecated; see [0007 feature catalog](0007-feature-catalog.md)
+for the new F-310..F-319 block.
+
+| Week   | Milestone                                                                                           | Features     | Owner   | Exit criterion                                                                                          |
+| ------ | --------------------------------------------------------------------------------------------------- | ------------ | ------- | ------------------------------------------------------------------------------------------------------- |
+| W15–16 | Agent runtime: BullMQ workers + `tools/registered/` registry + `GuardianAgent` cost-cap enforcement | F-310, F-315 | Founder | One end-to-end scheduled agent pass runs against a real user graph with a real LLM call and a hard cap. |
+| W17    | Concierge v1: `price_check` + `find_alternatives` tools + decision drafting                         | F-311        | Founder | 5 dogfooded purchase trails get 1 useful surfaced alternative or price change each.                     |
+| W18    | Curator v1: `rss_fetch` + `youtube_uploads_check` + `summarize_topic` tools + ranking               | F-312        | Founder | Daily Curator output has ≥1 click-through per dogfooder per day.                                        |
+| W19    | Recall v1: capture-triggered retrieval over 30-day forgotten window + 2/wk notification cap         | F-313        | Founder | Recall fires at least once per dogfooder per week with thumb-vote ≥60% useful.                          |
+| W20    | Agent dashboard cards (per-agent status + last-run + actions surfaced) + per-agent pause toggle     | F-314        | Founder | Each dogfooder can see what every agent did this week and pause any of them in one click.               |
+| W21    | Mind Map v1 (render user's graph as spatial map, time-scrub last 90 days, export PNG)               | F-318        | Founder | Mind Map renders in <1.5s for a user with 500+ topics; dogfooders open it ≥2×/week.                     |
+| W22    | Personality Mirror v1 (opt-in, composition + trajectory; mirror-not-judgment copy review)           | F-319        | Founder | Opt-in flow ships with explicit consent + wipe; LLM cost ≤$0.10/user/week.                              |
+| W23    | `/ask` route as thin invocation of Decision + Synthesist on demand (no streaming chat UI)           | F-316, F-317 | Founder | One-shot Q&A works; no chat UI.                                                                         |
+| W24    | Phase 2 review                                                                                      | —            | Founder | All Phase 2 KPIs (agent adoption, Mind Map opens, Personality opt-in, cost ceiling) measured.           |
 
 ### Phase 3 — IaaS (Nov 2 → Feb 7)
 

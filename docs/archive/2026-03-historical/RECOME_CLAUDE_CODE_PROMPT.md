@@ -14,7 +14,7 @@
 
 **Solution**: Intelligent recommendation filtering with:
 
-1. **Mnemosyne Memory** - Human-like memory with context, decay, and patterns
+1. **Smriti Memory** - Human-like memory with context, decay, and patterns
 2. **Knowledge Graph** - Entity relationships (crypto → bitcoin → ethereum)
 3. **Explainable AI** - User knows why content was hidden/shown
 
@@ -34,7 +34,7 @@ INTELLIGENCE LAYER:
 │  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    │
 │  │   Memory    │    │  Knowledge  │    │   Recom-    │    │
 │  │   System    │───▶│    Graph    │───▶│  mendation  │    │
-│  │ (Mnemosyne) │    │             │    │   Engine    │    │
+│  │ (Smriti) │    │             │    │   Engine    │    │
 │  └─────────────┘    └─────────────┘    └─────────────┘    │
 │        │                   │                   │           │
 │        └───────────────────┴───────────────────┘           │
@@ -158,7 +158,7 @@ src/
 
 ---
 
-## 🧠 Memory System (Mnemosyne)
+## 🧠 Memory System (Smriti)
 
 ### Context Buckets
 

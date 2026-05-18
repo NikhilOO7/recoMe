@@ -6,6 +6,7 @@ import type { VectorClient } from '../vector/VectorClient.js';
 import type { VectorPoint } from '../vector/types.js';
 import { logger } from '../observability/logger.js';
 import { fireSignalIngestTriggerSync } from '../agents/triggers/signalIngestTrigger.js';
+import { maybeIntelligence } from './IntelligenceService.js';
 
 export interface SignalInput {
   /** Client-generated; used for idempotency. */
@@ -153,6 +154,7 @@ export class SignalIngestion {
     // being booted is a normal state in tests and dev; the trigger no-ops.
     // One trigger per topic — Recall scopes by topic. Skipped silently if no
     // topics were extracted.
+    const entityNames = entities.map((e) => e.name);
     for (const t of dedupedTopics) {
       fireSignalIngestTriggerSync({
         userId: input.userId,
@@ -160,7 +162,19 @@ export class SignalIngestion {
         topicNormalizedName: t.normalizedName,
         topicName: t.name,
         ts,
+        platform: input.platform,
+        entityNames,
+        pageUrl: input.pageUrl,
       });
+    }
+
+    // Invalidate the user's mind-map cache so the next /intelligence/mindmap
+    // call reflects this signal. Cheap — process-local map deletion.
+    // Wrapped in a try so a missing mind-map service (tests) can't break ingest.
+    try {
+      maybeIntelligence()?.mindMap.invalidate(input.userId);
+    } catch {
+      /* noop */
     }
 
     return {
