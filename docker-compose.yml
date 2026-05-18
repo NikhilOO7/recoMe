@@ -1,0 +1,71 @@
+# docker-compose for local Recome development.
+#
+# Brings up the three data stores the cloud backend needs:
+#   - Postgres 16    (Prisma OLTP — users, agent runs, audit log)
+#   - Neo4j 5 CE     (the interest graph)
+#   - Qdrant         (per-user vector namespaces)
+#
+# Used by scripts/dev-local.sh. Each service has a healthcheck so the
+# orchestrator can wait for them before booting the cloud API.
+#
+# Volumes are NAMED so data persists across restarts. Run
+# `scripts/dev-local.sh --reset` to wipe them.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: recome-postgres
+    environment:
+      POSTGRES_USER: recome
+      POSTGRES_PASSWORD: recome
+      POSTGRES_DB: recome
+    ports:
+      - "5432:5432"
+    volumes:
+      - recome_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U recome -d recome"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  neo4j:
+    image: neo4j:5-community
+    container_name: recome-neo4j
+    environment:
+      NEO4J_AUTH: neo4j/recomeneo4jdev
+      # APOC + reasonable heap for local dev. No GDS — clustering runs in JS.
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_server_memory_heap_max__size: 1G
+    ports:
+      - "7474:7474"   # HTTP browser at http://localhost:7474
+      - "7687:7687"   # Bolt
+    volumes:
+      - recome_neo4j_data:/data
+      - recome_neo4j_logs:/logs
+    healthcheck:
+      # Neo4j takes ~10s to boot; cypher-shell exits 0 once it's ready.
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7474 > /dev/null"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: recome-qdrant
+    ports:
+      - "6333:6333"   # REST
+      - "6334:6334"   # gRPC
+    volumes:
+      - recome_qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD-SHELL", "exit 0"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  recome_pg_data:
+  recome_neo4j_data:
+  recome_neo4j_logs:
+  recome_qdrant_data:

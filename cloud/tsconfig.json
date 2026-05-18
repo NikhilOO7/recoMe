@@ -11,9 +11,8 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
 
-    "baseUrl": ".",
     "paths": {
-      "@cloud/*": ["src/*"]
+      "@cloud/*": ["./src/*"]
     },
 
     "outDir": "./dist",
