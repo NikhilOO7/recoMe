@@ -1,3 +1,4 @@
+import neo4j from 'neo4j-driver';
 import type { Neo4jClient } from './Neo4jClient.js';
 import type {
   EntityNode,
@@ -9,6 +10,15 @@ import type {
   TrailHop,
   UserNode,
 } from './types.js';
+
+/**
+ * Neo4j 5 / Aura strictly enforces INTEGER typing on LIMIT and size()
+ * comparisons. JS numbers go through Bolt as FLOAT, so anything that lands
+ * in an integer-only Cypher slot must be wrapped with neo4j.int(). Other
+ * numeric params (ts, weight, dwellMs) stay as plain JS numbers — they
+ * compare against FLOAT-stored properties and work fine that way.
+ */
+const i = (n: number) => neo4j.int(n);
 
 export interface MindMapGraphNode {
   id: string; // normalized topic name (acts as graph id)
@@ -319,7 +329,7 @@ export class GraphRepository {
         ORDER BY size(platforms) DESC, lastSeen DESC
         LIMIT $limit
         `,
-        { userId, minPlatforms, limit },
+        { userId, minPlatforms: i(minPlatforms), limit: i(limit) },
       );
       return result.records.map((rec) => {
         const platforms = (rec.get('platforms') as Platform[]).filter(Boolean);
@@ -376,7 +386,7 @@ export class GraphRepository {
         ORDER BY pageCount DESC, totalDwell DESC
         LIMIT $nodeLimit
         `,
-        { userId, sinceMs, nodeLimit },
+        { userId, sinceMs: i(sinceMs), nodeLimit: i(nodeLimit) },
       );
       const nodes = nodeResult.records.map((rec) => {
         const platforms = ((rec.get('platforms') as Array<Platform | null>) ?? []).filter(
@@ -414,7 +424,7 @@ export class GraphRepository {
         ORDER BY coPages DESC
         LIMIT $edgeLimit
         `,
-        { userId, sinceMs, topicIds, edgeLimit },
+        { userId, sinceMs: i(sinceMs), topicIds, edgeLimit: i(edgeLimit) },
       );
       const edges = edgeResult.records.map((rec) => ({
         source: rec.get('source') as string,
@@ -449,7 +459,7 @@ export class GraphRepository {
                sg.ts            AS ts,
                coalesce(sg.weight, 1) AS weight
         `,
-        { userId, sinceMs, untilMs },
+        { userId, sinceMs: i(sinceMs), untilMs: i(untilMs) },
       );
       return result.records.map((rec) => ({
         topicId: rec.get('topicId') as string,
@@ -472,7 +482,7 @@ export class GraphRepository {
         ORDER BY r.strength DESC, r.lastSeen DESC
         LIMIT $limit
         `,
-        { userId, limit },
+        { userId, limit: i(limit) },
       );
       return result.records.map((rec) => ({
         topicName: rec.get('topicName') as string,
@@ -526,7 +536,7 @@ export class GraphRepository {
         ORDER BY coalesce(v.lastAt, v.firstAt) DESC
         LIMIT $limit
         `,
-        { userId, beforeMs, limit },
+        { userId, beforeMs: i(beforeMs), limit: i(limit) },
       );
       return result.records.map((rec) => ({
         pageUrl: rec.get('pageUrl') as string,

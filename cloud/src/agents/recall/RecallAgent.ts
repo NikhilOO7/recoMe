@@ -1,3 +1,4 @@
+import neo4j from 'neo4j-driver';
 import { BaseAgent } from '../BaseAgent.js';
 import type { AgentContext, AgentResult, AgentEventSource } from '../types.js';
 import { getIntelligence } from '../../intelligence/IntelligenceService.js';
@@ -129,9 +130,9 @@ export class RecallAgent extends BaseAgent {
     cutoffMs: number,
     excludeSignalId: string,
   ): Promise<ForgottenSignal[]> {
-    const neo4j = getIntelligence().neo4j;
+    const client = getIntelligence().neo4j;
     try {
-      const result = await neo4j.run(
+      const result = await client.run(
         `
         MATCH (sg:Signal { userId: $userId })
         WHERE sg.id <> $excludeSignalId
@@ -148,7 +149,7 @@ export class RecallAgent extends BaseAgent {
         ORDER BY sg.ts DESC
         LIMIT 5
         `,
-        { userId, topicNormalized, cutoffMs, excludeSignalId },
+        { userId, topicNormalized, cutoffMs: neo4j.int(cutoffMs), excludeSignalId },
         'recall.queryForgotten',
       );
       return result.records.map((r): ForgottenSignal => {

@@ -30,18 +30,25 @@ export class MigrationRunner {
       const start = Date.now();
       logger.info({ id: file.id, name: file.name }, 'applying migration');
       const statements = this.splitStatements(await readFile(file.path, 'utf8'));
+
+      // Neo4j 5+ / AuraDB forbids mixing schema modifications (CREATE
+      // CONSTRAINT / INDEX) with data writes in a single transaction
+      // (GQL 25N01 "invalid combination of statement types"). Run the
+      // migration file's statements in one tx, then record the marker
+      // node in its own tx. If the marker write fails after a successful
+      // schema apply, the next run will see schema-already-exists (IF NOT
+      // EXISTS makes that a no-op) and retry the marker — idempotent.
       await this.neo4j.write(async (tx) => {
         for (const stmt of statements) {
           await tx.run(stmt);
         }
+      }, `migration_${file.id}`);
+      await this.neo4j.write(async (tx) => {
         await tx.run(
           'MERGE (m:Migration {id: $id}) SET m.name = $name, m.appliedAt = timestamp()',
-          {
-            id: file.id,
-            name: file.name,
-          },
+          { id: file.id, name: file.name },
         );
-      }, `migration_${file.id}`);
+      }, `migration_${file.id}_marker`);
       logger.info(
         { id: file.id, name: file.name, durationMs: Date.now() - start },
         'migration applied',
