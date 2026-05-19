@@ -6,10 +6,11 @@
 # tees both logs to the terminal. Ctrl+C tears everything down.
 #
 # Usage:
-#   scripts/dev-local.sh             # idempotent start
-#   scripts/dev-local.sh --reset     # wipe volumes first
-#   scripts/dev-local.sh --no-seed   # skip the seed step
-#   scripts/dev-local.sh --no-web    # cloud + DBs only (e.g. for backend dev)
+#   scripts/dev-local.sh                   # idempotent start (docker DBs)
+#   scripts/dev-local.sh --use-existing-env # use your cloud/.env as-is — no docker
+#   scripts/dev-local.sh --reset           # wipe docker volumes first
+#   scripts/dev-local.sh --no-seed         # skip the seed step
+#   scripts/dev-local.sh --no-web          # cloud only (backend-focused dev)
 #
 # What it does NOT do:
 #   - Touch your existing cloud/.env if it isn't ours (we refuse to clobber
@@ -22,13 +23,15 @@ set -euo pipefail
 RESET=0
 SEED=1
 RUN_WEB=1
+USE_EXISTING_ENV=0
 for arg in "$@"; do
   case "$arg" in
-    --reset)   RESET=1 ;;
-    --no-seed) SEED=0 ;;
-    --no-web)  RUN_WEB=0 ;;
+    --reset)            RESET=1 ;;
+    --no-seed)          SEED=0 ;;
+    --no-web)           RUN_WEB=0 ;;
+    --use-existing-env) USE_EXISTING_ENV=1 ;;
     -h|--help)
-      sed -n '2,18p' "$0" | sed 's/^# \{0,1\}//'
+      sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *) echo "unknown arg: $arg" >&2; exit 2 ;;
@@ -45,16 +48,19 @@ warn()  { printf '\033[1;33m!\033[0m %s\n' "$*"; }
 die()   { printf '\033[1;31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
 
 # ── Tool checks ───────────────────────────────────────────────────────────
-command -v docker >/dev/null || die "docker not found — install Docker Desktop"
-command -v node   >/dev/null || die "node not found — install Node 20+"
-command -v npm    >/dev/null || die "npm not found"
+command -v node >/dev/null || die "node not found — install Node 20+"
+command -v npm  >/dev/null || die "npm not found"
 
-if docker compose version >/dev/null 2>&1; then
-  DC="docker compose"
-elif command -v docker-compose >/dev/null 2>&1; then
-  DC="docker-compose"
-else
-  die "docker compose plugin not found"
+DC=""
+if [ "$USE_EXISTING_ENV" = "0" ]; then
+  command -v docker >/dev/null || die "docker not found — install Docker Desktop (or rerun with --use-existing-env)"
+  if docker compose version >/dev/null 2>&1; then
+    DC="docker compose"
+  elif command -v docker-compose >/dev/null 2>&1; then
+    DC="docker-compose"
+  else
+    die "docker compose plugin not found"
+  fi
 fi
 
 # ── env file management ───────────────────────────────────────────────────
@@ -64,11 +70,22 @@ fi
 ENV_MARKER="# RECOME_LOCAL_DEV_AUTO=1"
 LOCAL_ENV="cloud/.env"
 
-if [ -f "$LOCAL_ENV" ] && ! grep -q "$ENV_MARKER" "$LOCAL_ENV"; then
+if [ -f "$LOCAL_ENV" ] && ! grep -q "$ENV_MARKER" "$LOCAL_ENV" && [ "$USE_EXISTING_ENV" = "0" ]; then
   die "cloud/.env exists and isn't a managed local-dev file.
-    Move it aside (mv cloud/.env cloud/.env.bak) and re-run this script.
-    The script never clobbers a real prod config."
+    Two ways forward:
+      1. Use what's there as-is (cloud DBs, no docker):
+           ./scripts/dev-local.sh --use-existing-env
+      2. Or switch to full local docker (we won't touch your real .env):
+           mv cloud/.env cloud/.env.bak && ./scripts/dev-local.sh"
 fi
+
+if [ "$USE_EXISTING_ENV" = "1" ]; then
+  if [ ! -f "$LOCAL_ENV" ]; then
+    die "--use-existing-env but cloud/.env doesn't exist. Create one first
+    (cp cloud/.env.example cloud/.env, then fill it in)."
+  fi
+  ok "using existing $LOCAL_ENV (skipping write + docker)"
+else
 
 say "writing $LOCAL_ENV (local-dev config)"
 cat > "$LOCAL_ENV" <<EOF
@@ -122,6 +139,7 @@ if [ -z "${OPENAI_API_KEY:-}" ] && ! grep -E '^OPENAI_API_KEY=".+"' "$LOCAL_ENV"
   warn "Export OPENAI_API_KEY=sk-... and re-run, or edit cloud/.env."
   die  "set OPENAI_API_KEY then re-run"
 fi
+fi  # end of docker-mode env-write branch
 
 # ── Web env — points the Next.js app at the local cloud API ──────────────
 WEB_ENV="web/.env.local"
@@ -132,37 +150,41 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 EOF
 ok "wrote $WEB_ENV"
 
-# ── Reset volumes if asked ───────────────────────────────────────────────
-if [ "$RESET" = "1" ]; then
-  warn "--reset: nuking docker volumes (data will be lost)"
-  $DC down --volumes --remove-orphans || true
+if [ "$USE_EXISTING_ENV" = "0" ]; then
+  # ── Reset volumes if asked ─────────────────────────────────────────────
+  if [ "$RESET" = "1" ]; then
+    warn "--reset: nuking docker volumes (data will be lost)"
+    $DC down --volumes --remove-orphans || true
+  fi
+
+  # ── Bring up docker services ───────────────────────────────────────────
+  say "bringing up postgres / neo4j / qdrant"
+  $DC up -d
+  ok "containers running"
+
+  # Wait for healthy. docker compose v2 has --wait but it's not in v1; poll manually.
+  wait_healthy() {
+    local svc=$1 timeout=${2:-90} elapsed=0
+    while [ $elapsed -lt $timeout ]; do
+      status=$($DC ps --format json "$svc" 2>/dev/null | sed -n 's/.*"Health":"\([^"]*\)".*/\1/p' | head -1)
+      [ -z "$status" ] && status=$(docker inspect -f '{{.State.Health.Status}}' "recome-$svc" 2>/dev/null || echo unknown)
+      case "$status" in
+        healthy) ok "$svc is healthy"; return 0 ;;
+        unhealthy) die "$svc went unhealthy. Check: docker logs recome-$svc" ;;
+      esac
+      sleep 2
+      elapsed=$((elapsed + 2))
+      printf '  waiting for %s [%ds]\r' "$svc" "$elapsed"
+    done
+    echo
+    warn "$svc didn't go healthy in ${timeout}s — proceeding anyway"
+  }
+  wait_healthy postgres
+  wait_healthy neo4j 120
+  wait_healthy qdrant 30
+else
+  say "skipping docker — using cloud DBs from your existing cloud/.env"
 fi
-
-# ── Bring up docker services ─────────────────────────────────────────────
-say "bringing up postgres / neo4j / qdrant"
-$DC up -d
-ok "containers running"
-
-# Wait for healthy. docker compose v2 has --wait but it's not in v1; poll manually.
-wait_healthy() {
-  local svc=$1 timeout=${2:-90} elapsed=0
-  while [ $elapsed -lt $timeout ]; do
-    status=$($DC ps --format json "$svc" 2>/dev/null | sed -n 's/.*"Health":"\([^"]*\)".*/\1/p' | head -1)
-    [ -z "$status" ] && status=$(docker inspect -f '{{.State.Health.Status}}' "recome-$svc" 2>/dev/null || echo unknown)
-    case "$status" in
-      healthy) ok "$svc is healthy"; return 0 ;;
-      unhealthy) die "$svc went unhealthy. Check: docker logs recome-$svc" ;;
-    esac
-    sleep 2
-    elapsed=$((elapsed + 2))
-    printf '  waiting for %s [%ds]\r' "$svc" "$elapsed"
-  done
-  echo
-  warn "$svc didn't go healthy in ${timeout}s — proceeding anyway"
-}
-wait_healthy postgres
-wait_healthy neo4j 120
-wait_healthy qdrant 30
 
 # ── Prisma: generate client + push schema ────────────────────────────────
 say "syncing Prisma schema (db push) and regenerating client"
@@ -189,7 +211,9 @@ cleanup() {
   [ -n "${WEB_PID:-}" ] && kill "$WEB_PID" 2>/dev/null || true
   [ -n "${CLOUD_PID:-}" ] && kill "$CLOUD_PID" 2>/dev/null || true
   wait 2>/dev/null || true
-  warn "data stores (docker) left running — run '$DC down' to stop them"
+  if [ -n "$DC" ]; then
+    warn "data stores (docker) left running — run '$DC down' to stop them"
+  fi
   exit 0
 }
 trap cleanup INT TERM
