@@ -12,7 +12,9 @@ export function Footer() {
             <Link href="/" className="text-base font-bold tracking-tight">
               Reco<span className="text-[#5eead4]">Me</span>
             </Link>
-            <p className="text-[11px] text-white/25 mt-1">Your research, connected.</p>
+            <p className="text-[11px] text-white/25 mt-1">
+              Personal interest graph as infrastructure.
+            </p>
           </div>
 
           {/* Links */}
@@ -21,14 +23,17 @@ export function Footer() {
               <span className="text-[10px] font-bold uppercase tracking-wider text-white/20 mb-0.5">
                 Product
               </span>
+              <Link href="/mind" className="hover:text-white/60 transition-colors">
+                Mind Map
+              </Link>
+              <Link href="/agents" className="hover:text-white/60 transition-colors">
+                Active Agents
+              </Link>
               <Link href="/extension" className="hover:text-white/60 transition-colors">
                 Extension
               </Link>
-              <Link href="/agents" className="hover:text-white/60 transition-colors">
-                Agents
-              </Link>
               <Link href="/sdk" className="hover:text-white/60 transition-colors">
-                SDK
+                Developers · /v1
               </Link>
             </div>
             <div className="flex flex-col gap-1.5">
@@ -69,7 +74,7 @@ export function Footer() {
 
         <div className="mt-8 pt-6 border-t border-white/[0.05] text-[11px] text-white/20 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>&copy; {new Date().getFullYear()} RecoMe. All rights reserved.</span>
-          <span>Made with privacy in mind.</span>
+          <span>User-owned. GDPR-deletable. Never trained on cross-user.</span>
         </div>
       </div>
     </footer>

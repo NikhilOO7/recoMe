@@ -4,10 +4,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+// Three primary surfaces, ordered the way ADR-0013 frames the product:
+// consumer first (recome.app), then the dual-side IaaS, then agents.
+// Dots map to the typed-graph palette used across docs + landing.
 const NAV_ITEMS = [
-  { href: '/extension', label: 'Extension', dot: '#2356e8', active: true },
-  { href: '/sdk', label: 'SDK', dot: '#d97706', active: false },
-  { href: '/agents', label: 'Agents', dot: '#7c3aed', active: false },
+  { href: '/mind', label: 'Mind Map', dot: '#5eead4', active: true },
+  { href: '/agents', label: 'Agents', dot: '#fb7185', active: true },
+  { href: '/sdk', label: 'Developers', dot: '#fbbf24', active: false },
 ];
 
 export function Navbar() {
