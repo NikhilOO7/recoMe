@@ -1,7 +1,7 @@
 # 0011 — Cost, Scale & IaaS Go-To-Market
 
 **Status:** Living document
-**Last reviewed:** 2026-05-17
+**Last reviewed:** 2026-05-17 — cost ceilings (capture, retrieval, agent budget) and IaaS pricing tiers all still binding per [HLD §4](0015-hld.md#4-non-functional-requirements); GuardianAgent enforces the per-user $0.10/day cap as written. Public-launch dependencies (Stripe Meters, dev dashboard) tracked in [2026-05-30 development plan §12](../2026-05-30-development-plan.md#12-ws-8--iaas-public-launch)
 **Owner:** Founder / CTO + Founder / CEO
 
 Two concerns that frequently get confused: **what the system costs us

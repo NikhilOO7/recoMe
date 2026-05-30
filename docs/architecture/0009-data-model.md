@@ -1,7 +1,7 @@
 # 0009 — Data Model
 
 **Status:** Living document
-**Last reviewed:** 2026-05-17
+**Last reviewed:** 2026-05-17 — schema additions since (PersonalityMirrorState, AgentSubscription/Run/Event, PushSubscription planned) not yet reflected; see [2026-05-30 full-project audit §3](../audits/2026-05-30-full-project-audit.md)
 **Companion to:** [0001 graph+vector](0001-graph-vector-stack.md),
 [0006 system architecture](0006-system-architecture.md)
 

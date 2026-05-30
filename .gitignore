@@ -19,6 +19,9 @@ creds.txt
 creds.json
 .env.local
 .env.*.local
+# Personal notes — keep local, don't track
+recome_interview_prep.md
+docs/private/
 *.zip
 *.tar.gz
 *.tgz

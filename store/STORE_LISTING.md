@@ -1,106 +1,127 @@
-# Chrome Web Store Listing — RecoMe
+# Chrome Web Store Listing — RecoMe v2.0.0
+
+**Last verified:** 2026-05-30 against extension/src/manifest.json + docs/architecture/0014-unique-product-surfaces.md
 
 ## Extension Name
-RecoMe — Smart Feed Control
+
+RecoMe — Your Personal Interest Graph
 
 ## Short Description (132 chars max)
-Take control of your feeds. RecoMe learns what you like and hides what you don't — across YouTube, Amazon, Twitter, and more.
+
+Five background agents read your cross-platform research and bring you what you forgot, the deal you missed, the next thing to learn.
 
 ## Detailed Description
 
-**Your feed, your rules.**
+**Your browsing is research. RecoMe makes it work for you.**
 
-RecoMe is a privacy-first browser extension that puts you back in control of recommendation feeds across the web. It quietly learns your preferences and filters out content you don't want to see — no cloud accounts, no data collection, everything stays on your device.
+RecoMe watches how you research across 15 sites — YouTube videos, Reddit threads, Amazon product pages, Substack posts, course catalogs, job boards — and builds your personal interest graph in the cloud. Five background agents work that graph for you while you browse:
 
-**How it works:**
-- Browse normally on YouTube, Amazon, Twitter, Instagram, Facebook, eBay, or Walmart
-- A small overlay appears on each content card — tap to tell RecoMe what you think
-- Choose from: "More like this", "Less of this", "Block topic", or "Not right now"
-- RecoMe remembers your choices and starts filtering automatically
+- **Recall** surfaces the bookmark you forgot. You watched a Verge review three weeks ago — and you're back on Amazon looking at the same model. Recall reminds you.
+- **Concierge** watches commerce pages for you. Land on a standing-desk PDP and Concierge cross-checks prices on Walmart, finds the cheaper alternative, surfaces the review that flagged bearing issues.
+- **Curator** brings fresh content for topics you've been quiet on. Martin Kleppmann just published — you haven't touched distributed systems in three weeks.
+- **Decision** is your on-demand advisor. Click "Ask Decision" on any page and chat with an agent that pulls your prior research as citations.
+- **Curriculum** builds a four-week reading plan from "I want to learn X," bridged from what you already know.
 
-**Key features:**
+**On every supported page you also see:**
 
-🎯 **Smart Topic Blocking** — Block a topic once and RecoMe hides it everywhere. Block "crypto" and Bitcoin, NFT, and Ethereum content disappears too.
+- Per-card scoring badges on Amazon, YouTube, Reddit, eBay — ✓ Relevant, ⚠ Caution, × Filtered, or ~ Neutral. Hover any badge for the reasoning, grounded in your graph.
+- A right-edge sidebar with your top interests, agent status, and one-click "Ask the agents."
+- Proactive insight cards bottom-left when an agent has something for you.
 
-🧠 **Pattern Detection** — RecoMe notices when you keep dismissing the same kind of content and offers to block it permanently.
+**Built around four trust constraints (binding):**
 
-🔍 **Current Focus** — Set a research topic and RecoMe boosts relevant content while you're working on it.
+1. **No agent takes irreversible action.** Concierge recommends; you click Buy. Curator surfaces; you click Share. Every action stays user-driven.
+2. **Every agent cites its sources.** Inbox events link back to the captured signals they drew from.
+3. **One-click pause per agent.** Or per platform. Or globally. Your call.
+4. **You can see and delete everything.** The Audit Log of You shows every signal, every agent run, every decision the system surfaced. One-click export, one-click delete.
 
-⚡ **Context-Aware** — Different rules for work, shopping, learning, and entertainment. RecoMe adapts to what you're doing.
+**Hard daily cost cap of $0.10/user/month** (the Guardian agent enforces it). LLM model routing minimizes spend: Haiku for routing, Sonnet only for synthesis. Stripe-funded, never your API key.
 
-📊 **Full Transparency** — Every hide/boost decision comes with an explanation. Open the popup to see exactly why each piece of content was filtered.
+**Supported platforms (15):**
 
-🏆 **Achievements** — Unlock badges as you train your feeds. From "First Block" to "Feed Master" — 10 achievements to discover.
+YouTube · Amazon · Reddit · eBay · Walmart · X/Twitter · Facebook · Instagram · TikTok · LinkedIn · Indeed · Glassdoor · Udemy · Coursera · edX
 
-🔒 **100% Local & Private** — All data stored in your browser. No accounts, no servers, no tracking. Your preferences never leave your device.
+**Works in any Chromium browser:** Chrome, Brave, Edge, Arc, Vivaldi, Opera.
 
-**Optional AI Enhancement:**
-Bring your own API key (Claude, GPT, or Gemini) for smarter topic extraction. The key is stored locally and only used for content analysis — never shared with us.
-
-**Supported platforms:**
-YouTube • Amazon • Twitter/X • Instagram • Facebook • eBay • Walmart • Plus a generic adapter that works on most other sites
-
-**Works on any Chromium browser:** Chrome, Brave, Edge, Arc, Vivaldi, Opera
+**Sign in once at recome.app.** Your interest graph lives in your cloud account; the extension picks it up via secure JWT. Nothing third-party in your browser — no LLM keys, no analytics SDKs.
 
 ---
 
 ## Category
+
 Productivity
 
 ## Language
+
 English
 
 ## Tags / Keywords
-- feed control
-- recommendation filter
-- content blocker
-- youtube filter
-- amazon recommendations
-- privacy
+
+- interest graph
+- personal AI agents
+- cross-platform research
+- price comparison
+- shopping assistant
+- recall
+- knowledge management
 - productivity
 
+---
+
+## What's New in v2.0.0
+
+Complete rewrite. The previous version (v1.2.0) ran a local recommendation engine in your browser. v2.0.0 routes everything through a cloud graph backed by five real background agents, removes all third-party LLM API hosts from the extension's permissions, and adds the per-card scoring + Ask Decision chat surfaces. Sign-in via recome.app required.
 
 ---
 
 ## Store Assets Checklist
 
 ### Required
-- [ ] Icon 128×128 px (already have: `public/icons/icon128.png`)
+
+- [x] Icon 128×128 px — `public/icons/recome_logo_128.png`
 - [ ] At least 1 screenshot, 1280×800 or 640×400
-- [ ] Detailed description (above)
+- [x] Detailed description (above)
 
 ### Recommended
+
 - [ ] Promotional tile: 440×280 (small)
 - [ ] Promotional tile: 920×680 (large) — for featured placement
 - [ ] Marquee tile: 1400×560 — for top-of-store banners
-- [ ] 3–5 screenshots showing different features
+- [ ] 4–5 screenshots showing different surfaces
 
-### Screenshot Plan
+### Screenshot Plan (v2.0.0)
 
-**Screenshot 1: "Dashboard Overview"**
-- Show the popup open with stats, achievements, and active blocks visible
-- Caption: "See your feed stats at a glance — items hidden, active blocks, and patterns detected."
+**Screenshot 1: "Per-card scoring on Amazon"**
 
-**Screenshot 2: "Content Overlay in Action"**
-- Show a YouTube or Amazon page with the RecoMe overlay on a content card
-- Caption: "A small overlay on each card lets you instantly give feedback."
+- Amazon search results page with colored badges (✓ Relevant 0.89, ⚠ Caution 0.52, × Filtered) on visible cards, reasoning callout revealed on one card.
+- Caption: "Every card scored against your graph. Hover for the reasoning."
 
-**Screenshot 3: "Onboarding — Quick Blocks"**
-- Show the onboarding step with topic chips (Crypto, Gambling, Clickbait, etc.)
-- Caption: "Get started in seconds — pick topics to block right away."
+**Screenshot 2: "Right-sidebar — your graph at a glance"**
 
-**Screenshot 4: "Settings & Control"**
-- Show the settings panel with platform toggles and aggressiveness slider
-- Caption: "Fine-tune per platform. Toggle sites on/off, adjust aggressiveness."
+- Sidebar floating over any platform showing Interest Graph (top 5 topics with weight bars), Agents panel (5 agents with status), Ask the agents buttons.
+- Caption: "See your interest graph anywhere you browse."
 
-**Screenshot 5: "Knowledge Graph (DevTools)"**
-- Show the DevTools graph visualization with entity nodes and relations
-- Caption: "See how RecoMe connects topics — block one and related ones follow."
+**Screenshot 3: "Concierge insight card on a product page"**
+
+- Amazon PDP with the bottom-left Concierge insight card visible — "Walmart dropped this to $389, $200 below your baseline" with View / Dismiss CTAs.
+- Caption: "Concierge price-checks across retailers and finds your prior research."
+
+**Screenshot 4: "Ask Decision — multi-turn chat"**
+
+- Overlay chat panel open on a YouTube watch page with a two-turn conversation about a purchase decision.
+- Caption: "Ask Decision about what you're looking at. Multi-turn, cites your captured signals."
+
+**Screenshot 5: "Popup inbox — every agent emission"**
+
+- Extension popup open showing the inbox with 3 recent AgentEvents (Recall, Concierge, Curator) with Open / Dismiss / 👍 / 👎 buttons.
+- Caption: "Every agent emission in one inbox. Useful or not? Tell RecoMe."
 
 ### How to Take Screenshots
-1. Load the extension locally (`chrome://extensions` → Load unpacked → select `dist/`)
-2. Use a 1280×800 browser window (or resize to 640×400)
-3. Navigate to YouTube/Amazon with some content visible
-4. Open the popup and capture each state
-5. Use macOS Screenshot (Cmd+Shift+4) or Chrome DevTools device toolbar for exact dimensions
-6. For the popup, you can also use Chrome DevTools → inspect popup → set device dimensions
+
+1. Build: `npm run build` from repo root.
+2. Load: `chrome://extensions` → Developer mode → Load unpacked → select `dist/`.
+3. Sign in via popup → opens recome.app/login?return=extension&ext_id=...
+4. Capture a few sessions of YouTube + Amazon + Reddit so the graph has data (10 seconds dwell per page).
+5. Resize browser to 1280×800 (Chrome DevTools device toolbar).
+6. Capture using macOS Cmd+Shift+4 (with the spacebar for window-aware framing) or Chrome's built-in screenshot via DevTools (Cmd+Shift+P → "Capture full size screenshot").
+7. Replace any logo with the v2.0.0 brand if changed.

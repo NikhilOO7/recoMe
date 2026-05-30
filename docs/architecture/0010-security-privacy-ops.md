@@ -1,7 +1,7 @@
 # 0010 — Security, Privacy & Operations
 
 **Status:** Living document
-**Last reviewed:** 2026-05-17
+**Last reviewed:** 2026-05-17 — extension-rewrite-day (2026-05-30) resolved the four May-14 P0 security findings (deterministic encryption key, plaintext API-key fallback, stats race, unhandled `quick_block`) by deletion; see [2026-05-30 full-project audit §3 + §6](../audits/2026-05-30-full-project-audit.md)
 **On-call:** Founder (until first hire — see [0004](0004-production-roadmap.md) §5)
 **Status page:** status.recome.app (F-903)
 

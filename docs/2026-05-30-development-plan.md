@@ -67,13 +67,13 @@ Each item is a workstream-scoped task with an acceptance criterion. Move items t
 
 ### P1 — This week (docs alignment; ~1 day)
 
-| #    | Item                                                                       | Workstream                               | Acceptance                                                                                |
-| ---- | -------------------------------------------------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------- |
-| P1.1 | Rewrite `store/STORE_LISTING.md` for v2.0.0                                | [WS-2](#6-ws-2--docs--listing-alignment) | Listing references current 5-agent roster, no mention of ShopperAgent / ScoutAgent / BYOK |
-| P1.2 | Update ADR-0014 §1 status column                                           | [WS-2](#6-ws-2--docs--listing-alignment) | F-401/403/404/406/407 statuses match code reality                                         |
-| P1.3 | Update ADR-0004 roadmap dates + state                                      | [WS-2](#6-ws-2--docs--listing-alignment) | Phase 0 marked complete; Phase 2 dates reflect actual delivery                            |
-| P1.4 | Update ADR-0016 LLD §2 with MindMap / PersonalityMirror / AuditLog modules | [WS-2](#6-ws-2--docs--listing-alignment) | LLD module catalog lists all current `cloud/src/intelligence/*.ts`                        |
-| P1.5 | Decide `mobile/` fate (resurrect with plan OR graveyard)                   | [WS-9](#13-ws-9--mobile-decision)        | Either a 1-month mobile roadmap added here, or `mobile/` moved to `graveyard/`            |
+| #    | Item                                                                                                  | Workstream                                                       | Acceptance                                                                                |
+| ---- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| P1.1 | Rewrite `store/STORE_LISTING.md` for v2.0.0                                                           | [WS-2](#6-ws-2--docs--listing-alignment)                         | Listing references current 5-agent roster, no mention of ShopperAgent / ScoutAgent / BYOK |
+| P1.2 | Update ADR-0014 §1 status column                                                                      | [WS-2](#6-ws-2--docs--listing-alignment)                         | F-401/403/404/406/407 statuses match code reality                                         |
+| P1.3 | Update ADR-0004 roadmap dates + state                                                                 | [WS-2](#6-ws-2--docs--listing-alignment)                         | Phase 0 marked complete; Phase 2 dates reflect actual delivery                            |
+| P1.4 | Update ADR-0016 LLD §2 with MindMap / PersonalityMirror / AuditLog modules                            | [WS-2](#6-ws-2--docs--listing-alignment)                         | LLD module catalog lists all current `cloud/src/intelligence/*.ts`                        |
+| P1.5 | ~~Decide `mobile/` fate~~ → **Decided 2026-05-30: A+B hybrid (3-week mobile track added to roadmap)** | [WS-9](#13-ws-9--mobile-a-b-hybrid-pwa--native-share-extensions) | ✅ Done                                                                                   |
 
 ### P2 — Next sprint (cloud hardening + CI; ~3 days)
 
@@ -118,20 +118,20 @@ Each item is a workstream-scoped task with an acceptance criterion. Move items t
 
 Twelve workstreams, ordered by current priority:
 
-| WS                                         | Title                             | Owner              | Current P |
-| ------------------------------------------ | --------------------------------- | ------------------ | --------- |
-| [WS-1](#5-ws-1--security--hygiene)         | Security + Hygiene                | (founder)          | P0        |
-| [WS-2](#6-ws-2--docs--listing-alignment)   | Docs + Listing Alignment          | (founder)          | P1        |
-| [WS-3](#7-ws-3--cloud-correctness--ci)     | Cloud Correctness + CI            | (cloud)            | P2        |
-| [WS-4](#8-ws-4--concierge-price-vendor)    | Concierge Price Vendor (ADR-0017) | (founder, blocked) | P3        |
-| [WS-5](#9-ws-5--cardscorer-llm-polish)     | CardScorer LLM Polish             | (cloud)            | P3        |
-| [WS-6](#10-ws-6--decision-llm-streaming)   | Decision LLM Streaming            | (cloud + clients)  | P3        |
-| [WS-7](#11-ws-7--bullmq-scheduled-workers) | BullMQ Scheduled Workers          | (cloud)            | P3        |
-| [WS-8](#12-ws-8--iaas-public-launch)       | IaaS Public Launch                | (cloud + web)      | P4        |
-| [WS-9](#13-ws-9--mobile-decision)          | Mobile Decision                   | (founder)          | P1        |
-| [WS-10](#14-ws-10--notifications--digests) | Notifications + Digests           | (cloud + web)      | P4        |
-| [WS-11](#15-ws-11--synthesist-agent)       | Synthesist Agent                  | (cloud)            | P5        |
-| [WS-12](#16-ws-12--remaining-surfaces)     | Remaining Unique Surfaces         | (cloud + web)      | P5        |
+| WS                                                               | Title                                  | Owner              | Current P |
+| ---------------------------------------------------------------- | -------------------------------------- | ------------------ | --------- |
+| [WS-1](#5-ws-1--security--hygiene)                               | Security + Hygiene                     | (founder)          | P0        |
+| [WS-2](#6-ws-2--docs--listing-alignment)                         | Docs + Listing Alignment               | (founder)          | P1        |
+| [WS-3](#7-ws-3--cloud-correctness--ci)                           | Cloud Correctness + CI                 | (cloud)            | P2        |
+| [WS-4](#8-ws-4--concierge-price-vendor)                          | Concierge Price Vendor (ADR-0017)      | (founder, blocked) | P3        |
+| [WS-5](#9-ws-5--cardscorer-llm-polish)                           | CardScorer LLM Polish                  | (cloud)            | P3        |
+| [WS-6](#10-ws-6--decision-llm-streaming)                         | Decision LLM Streaming                 | (cloud + clients)  | P3        |
+| [WS-7](#11-ws-7--bullmq-scheduled-workers)                       | BullMQ Scheduled Workers               | (cloud)            | P3        |
+| [WS-8](#12-ws-8--iaas-public-launch)                             | IaaS Public Launch                     | (cloud + web)      | P4        |
+| [WS-9](#13-ws-9--mobile-a-b-hybrid-pwa--native-share-extensions) | Mobile (PWA + native share extensions) | (founder)          | P3        |
+| [WS-10](#14-ws-10--notifications--digests)                       | Notifications + Digests                | (cloud + web)      | P4        |
+| [WS-11](#15-ws-11--synthesist-agent)                             | Synthesist Agent                       | (cloud)            | P5        |
+| [WS-12](#16-ws-12--remaining-surfaces)                           | Remaining Unique Surfaces              | (cloud + web)      | P5        |
 
 ---
 
@@ -385,36 +385,66 @@ Twelve workstreams, ordered by current priority:
 
 ---
 
-## 13. WS-9 — Mobile Decision
+## 13. WS-9 — Mobile (A+B hybrid: PWA + native share extensions)
 
-**Why it matters:** Carrying scaffolding indefinitely is a tax on every status conversation, every audit, every decision about CI/lint scope. The right answer is a decision, not stasis.
+**Decision (2026-05-30):** A+B hybrid. Ship the PWA share-target first (Week 1, fastest reach), then native share extensions for iOS (Week 2) and Android (Week 3) so the capture surface is the same whether the user shares from Safari, the Reddit iOS app, the YouTube Android app, or any Chromium browser.
 
-**Done so far:** Expo + React Native + react-navigation init. Nothing functional.
+**Why both:** PWA share-target covers Chromium browsers + iOS Safari "Add to Home Screen" installs, but **iOS Safari does not register PWA share targets in the system share sheet**. The iOS share extension is the only way to capture from native iOS apps (the Reddit app, the YouTube app, etc.) — where the majority of mobile attention actually happens.
 
-**Two paths:**
+**Done so far:** Expo + React Native + react-navigation init under [mobile/](../mobile/). Nothing functional.
 
-**Path A: Resurrect (3-week plan):**
+**Next (3 weeks):**
 
-1. Week 1: PWA-first — make `recome.app` installable as a PWA with Web Share Target. Most "mobile RecoMe" value (capture from any app's share sheet) ships here without native code. Existing `web/` already runs in Next 16 with Tailwind 4; needs `manifest.webmanifest` + service worker.
-2. Week 2: iOS Share Extension (native Swift) — captures URL+title from share sheet, POSTs to `/intelligence/signals` via stored JWT. ~300 LOC Swift.
-3. Week 3: Android Share Target intent handler — Kotlin equivalent of week 2.
-4. **Native app comes later** if a real surface requires it. The PWA + share extensions cover 80% of mobile capture value.
+### Week 1: PWA + Web Share Target (~2 days)
 
-**Path B: Graveyard:**
+- New: [web/public/manifest.webmanifest](../web/public/manifest.webmanifest) with `share_target` declaration pointing at `/paste?title=…&text=…&url=…`
+- New: `web/src/app/sw.ts` (service worker) for installability + future push (see WS-10)
+- [web/src/app/paste/page.tsx](../web/src/app/paste/page.tsx) already hydrates from `?url=` — verify share-target round-trip lands signals
+- Test: install `recome.app` as a PWA on an Android Chrome device; share from any app; capture appears in `/inbox`
 
-- `mv mobile/ graveyard/2026-05-30-extension-rewrite/mobile/`
-- Delete `mobile/` from `tsconfig.json` includes, jest paths, package.json workspaces
-- Add note to `docs/architecture/0003-pivot-web-first-with-iaas.md` that mobile is deferred indefinitely
+### Week 2: iOS Share Extension (~5 days)
 
-**Recommendation:** Path A but with **Week 1 only as a commitment** — ship PWA + Share Target, then assess whether the native share extensions are worth the iOS/Android dev cost. PWA share-target is 2 days of work and covers iOS Safari + Android Chrome share menus.
+- Repurpose `mobile/` as the Expo host app
+- Add a native iOS share extension target (Swift) that:
+  1. Reads the shared URL + title from `NSExtensionContext`
+  2. Loads the stored JWT from a shared keychain group (`group.app.recome`)
+  3. POSTs to `cloud/intelligence/signals` with the same `Signal` schema the extension uses
+  4. Shows a one-second success toast, then dismisses
+- Auth bridge: the Expo host app receives the JWT via a custom URL scheme (`recome://auth?token=…&refresh=…`) from `recome.app/login?return=mobile-ios` — same callback pattern as the browser-extension flow
+- Build via EAS; first install via TestFlight
 
-**Dependencies:** Founder commitment.
+### Week 3: Android share intent handler (~3 days)
 
-**Files to touch (Path A Week 1):**
+- Kotlin equivalent of week 2 inside the Expo Android project
+- Reads `Intent.EXTRA_TEXT` / `EXTRA_STREAM` on `ACTION_SEND`
+- Same JWT-from-shared-store + POST to `/intelligence/signals` pattern
+- Auth bridge: `recome://auth?…` deeplink registered in `AndroidManifest.xml`
+- Build via EAS Build for Android; sideload APK + Play Store internal track
 
-- New: `web/public/manifest.webmanifest`
-- New: `web/src/app/sw.ts` (service worker)
-- [web/src/app/paste/page.tsx](../web/src/app/paste/page.tsx) — already handles `?url=` hydration; just needs share-target manifest entry pointing to it
+### Week 4 (buffer / Expo host app)
+
+- The Expo host app itself can stay minimal for now: sign-in screen, inbox stub, settings. Real screens come later if there's user demand.
+- Validate that the auth bridge survives token rotation (refresh flow)
+- Decision: TestFlight + Play Store internal release, or hold for public launch with the IaaS push
+
+**Dependencies:**
+
+- WS-10 (PWA push) shares the same service worker as Week 1 → coordinate
+- iOS share extension needs the Apple developer account active + provisioning profiles ($99/yr if not already)
+- Android share intent only needs Play Console ($25 one-time if shipping there; sideloadable APKs work without)
+
+**Acceptance per week:**
+
+- Week 1: PWA installable + share-target round-trip captures a signal end-to-end
+- Week 2: iOS share extension POSTs from the Reddit iOS app; signal lands in cloud
+- Week 3: Android share intent POSTs from the YouTube Android app; signal lands in cloud
+
+**Files to touch:**
+
+- New: `web/public/manifest.webmanifest`, `web/src/app/sw.ts`
+- [mobile/](../mobile/) — full repurpose: Expo host + iOS share extension target + Android Share Intent receiver
+- [extension/src/popup/App.tsx](../extension/src/popup/App.tsx) + popup callback already proven for the browser flow; native flow mirrors it via `recome://` scheme
+- [cloud/src/auth/AuthController.ts](../cloud/src/auth/AuthController.ts) — verify `/auth/login` accepts `?return=mobile-ios` / `?return=mobile-android` and emits to the right scheme
 
 ---
 
@@ -552,18 +582,18 @@ Carried forward from HLD §10 + flagged in audit. Each needs an ADR before the w
 
 Top 10 from audit, with mitigations:
 
-| #   | Risk                                            | Mitigation               | Owner   |
-| --- | ----------------------------------------------- | ------------------------ | ------- |
-| 1   | Docs lie about shipped surfaces                 | WS-2 P1.2–P1.4 this week | founder |
-| 2   | `dist.pem` in repo                              | WS-1 P0.1 today          | founder |
-| 3   | Watchlist in-memory loses data on restart       | WS-3 P2.2 next sprint    | cloud   |
-| 4   | CWS listing describes v1.2.0                    | WS-2 P1.1 this week      | founder |
-| 5   | 70 cloud TS errors hide future bugs             | WS-3 P2.1 next sprint    | cloud   |
-| 6   | Concierge silently no-ops in prod (stub vendor) | WS-4 P3.1 two weeks      | founder |
-| 7   | `mobile/` undecided                             | WS-9 P1.5 this week      | founder |
-| 8   | Extension manifest over-permissioned            | WS-1 P0.4 today          | founder |
-| 9   | Web `/admin` unaudited                          | Spot-read next sprint    | founder |
-| 10  | No CI green-bar                                 | WS-3 P2.4 next sprint    | cloud   |
+| #   | Risk                                                                                  | Mitigation               | Owner   |
+| --- | ------------------------------------------------------------------------------------- | ------------------------ | ------- |
+| 1   | Docs lie about shipped surfaces                                                       | WS-2 P1.2–P1.4 this week | founder |
+| 2   | `dist.pem` in repo                                                                    | WS-1 P0.1 today          | founder |
+| 3   | Watchlist in-memory loses data on restart                                             | WS-3 P2.2 next sprint    | cloud   |
+| 4   | CWS listing describes v1.2.0                                                          | WS-2 P1.1 this week      | founder |
+| 5   | 70 cloud TS errors hide future bugs                                                   | WS-3 P2.1 next sprint    | cloud   |
+| 6   | Concierge silently no-ops in prod (stub vendor)                                       | WS-4 P3.1 two weeks      | founder |
+| 7   | ~~`mobile/` undecided~~ → committed to PWA + iOS + Android share extensions (3 weeks) | WS-9 scheduled P3        | founder |
+| 8   | Extension manifest over-permissioned                                                  | WS-1 P0.4 today          | founder |
+| 9   | Web `/admin` unaudited                                                                | Spot-read next sprint    | founder |
+| 10  | No CI green-bar                                                                       | WS-3 P2.4 next sprint    | cloud   |
 
 ---
 

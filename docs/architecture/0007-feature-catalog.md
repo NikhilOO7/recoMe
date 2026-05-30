@@ -1,7 +1,7 @@
 # 0007 — Feature Catalog
 
 **Status:** Living document
-**Last reviewed:** 2026-05-17
+**Last reviewed:** 2026-05-17 — feature-level "shipped vs spec" labels are stale; see [2026-05-30 full-project audit §3-5](../audits/2026-05-30-full-project-audit.md) and [ADR-0014 §1](0014-unique-product-surfaces.md#1-the-seven-unique-surfaces) for current truth on F-4xx surfaces
 **Companion to:** [0004 roadmap](0004-production-roadmap.md),
 [0008 workflows](0008-workflows-and-personas.md)
 
