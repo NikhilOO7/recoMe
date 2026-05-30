@@ -14,6 +14,11 @@ coverage/
 *.sw?
 dist.crx
 dist.pem
+*.pem
+creds.txt
+creds.json
+.env.local
+.env.*.local
 *.zip
 *.tar.gz
 *.tgz

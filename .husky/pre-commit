@@ -1,1 +1,18 @@
+#!/usr/bin/env bash
+# Guard: refuse to commit secrets or build artifacts even if they were
+# explicitly `git add`-ed past .gitignore (it happens — see 2026-05-30 audit).
+# Augment this list as new categories of leakable file are discovered.
+
+# Only flag Added/Modified files. Deletions (D) of these patterns are
+# exactly what we want — that's how we untrack a leaked secret.
+forbidden=$(git diff --cached --name-only --diff-filter=AM | grep -E '(\.pem$|^creds(\.|$)|^dist\.crx$|^dist/|^coverage/|\.env$|\.env\.local$)' || true)
+if [ -n "$forbidden" ]; then
+  echo "✘ Refusing to commit secret / build files:"
+  echo "$forbidden" | sed 's/^/    /'
+  echo
+  echo "These match .gitignore but were staged anyway (probably via 'git add -f' or 'git add <file>')."
+  echo "Unstage with: git restore --staged <file>"
+  exit 1
+fi
+
 npx lint-staged
