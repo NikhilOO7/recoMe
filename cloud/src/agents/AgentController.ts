@@ -8,6 +8,7 @@ import { maybeAgentRegistry } from './AgentRegistry.js';
 import { getAgentRunner } from './AgentRunner.js';
 import type { AgentContext, AgentTrigger } from './types.js';
 import { logger } from '../observability/logger.js';
+import { listWatchlist, addWatchlistItem, removeWatchlistItem } from './concierge/Watchlist.js';
 
 // ── Consumer surface for active agents ──────────────────────────────────────
 // Mounted under /intelligence/agents + /intelligence/inbox by the
@@ -108,7 +109,19 @@ export function createAgentRoutes(): Hono<AuthVars> {
         ? requested
         : (agent.triggers[0] ?? 'on_demand');
 
-    const ctx: AgentContext = { userId, trigger, now: new Date() };
+    // Extension-driven workflows (Phase 3) pass an event payload as the JSON
+    // body so server-side agents can match the same shape as the synthetic
+    // signalIngestTrigger payload. canRun() validates the shape.
+    const body = (await c.req.json().catch(() => null)) as {
+      event?: Record<string, unknown>;
+    } | null;
+
+    const ctx: AgentContext = {
+      userId,
+      trigger,
+      now: new Date(),
+      ...(body?.event ? { event: body.event } : {}),
+    };
     const status = await getAgentRunner().runOne(agent, ctx);
     logger.info({ userId, agent: name, trigger, status }, 'agent run on demand');
     return c.json({ ok: true, agent: name, trigger, status });
@@ -174,6 +187,38 @@ export function createAgentRoutes(): Hono<AuthVars> {
       totalSpendMicros,
       perAgent,
     });
+  });
+
+  // ── Concierge Watchlist (Phase-4 surface for the agents page).
+  // Persistence is in-memory until ADR-0017 lands. Endpoints are stable.
+
+  const watchlistInputSchema = z.object({
+    label: z.string().min(1).max(200),
+    targetPriceUsd: z.number().positive().max(1_000_000).optional(),
+    retailers: z.array(z.string().min(1).max(60)).max(8).optional(),
+    pageUrl: z.string().url().optional(),
+  });
+
+  app.get('/agents/concierge/watchlist', async (c) => {
+    const userId = c.get('userId');
+    return c.json({ items: listWatchlist(userId) });
+  });
+
+  app.post('/agents/concierge/watchlist', async (c) => {
+    const userId = c.get('userId');
+    const body = watchlistInputSchema.safeParse(await c.req.json().catch(() => null));
+    if (!body.success) {
+      return c.json({ error: 'invalid_watchlist_item', details: body.error.flatten() }, 400);
+    }
+    const item = addWatchlistItem(userId, body.data);
+    return c.json({ item }, 201);
+  });
+
+  app.delete('/agents/concierge/watchlist/:id', async (c) => {
+    const userId = c.get('userId');
+    const id = c.req.param('id');
+    const removed = removeWatchlistItem(userId, id);
+    return removed ? c.json({ ok: true }) : c.json({ error: 'not_found' }, 404);
   });
 
   // ── GET /inbox — surfaced agent events for this user.

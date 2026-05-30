@@ -1,57 +1,94 @@
-// Re-export all types from the shared schema package for backward compatibility.
-// New code should import directly from '@schema' or '@schema/<module>'.
-export type {
-  ContextBucket,
-  Platform,
-  ContextState,
-  BrowsingContextState,
-  ShoppingContext,
-} from '@schema/context';
+// Types used across background, content, and popup.
+// Cloud-side shapes mirror cloud/src/intelligence/schemas.ts and
+// cloud/src/agents/types.ts — keep in sync when those change.
 
-export type {
-  MemoryType,
-  MemoryStatus,
-  FeedbackType,
-  MemoryEntry,
-  MemoryValue,
-  MemoryEvent,
-  MidTermCard,
-  MemoryPack,
-} from '@schema/memory';
+export type Platform =
+  | 'youtube'
+  | 'amazon'
+  | 'reddit'
+  | 'twitter'
+  | 'facebook'
+  | 'instagram'
+  | 'ebay'
+  | 'walmart'
+  | 'linkedin'
+  | 'tiktok'
+  | 'indeed'
+  | 'glassdoor'
+  | 'udemy'
+  | 'coursera'
+  | 'edx'
+  | 'generic'
+  | 'unknown';
 
-export type {
-  EntityType,
-  ContentEntityType,
-  RelationType,
-  GraphEntity,
-  GraphRelation,
-  AffinityResult,
-  AffinityPath,
-  PreferenceEdge,
-} from '@schema/graph';
+export type SignalKind =
+  | 'view'
+  | 'dwell'
+  | 'like'
+  | 'block'
+  | 'boost'
+  | 'purchase'
+  | 'comparison'
+  | 'search';
 
-export type {
-  ContentAction,
-  ContentMetadata,
-  ScoringFactor,
-  RecommendationResult,
-} from '@schema/content';
+// Mirrors entityKindEnum in cloud/src/intelligence/schemas.ts.
+export type EntityKind =
+  | 'product'
+  | 'brand'
+  | 'creator'
+  | 'category'
+  | 'media'
+  | 'place'
+  | 'person';
 
-export type { RecoMeStats } from '@schema/stats';
+export interface SignalTopic {
+  name: string;
+}
 
-// Also export the new commerce types for convenience
-export type {
-  CommerceEntityType,
-  UserProfile,
-  Product,
-  Brand,
-  Seller,
-  Offer,
-  CandidateEntity,
-} from '@schema/entities';
+export interface SignalEntity {
+  name: string;
+  kind: EntityKind;
+  platform?: Platform;
+}
 
-export type { DecisionType, PageContext, DecisionRecord } from '@schema/decisions';
+/** Mirrors SignalInput in cloud/src/intelligence/SignalIngestion.ts. */
+export interface Signal {
+  id: string;
+  kind: SignalKind;
+  ts: number;
+  weight?: number;
+  pageUrl?: string;
+  pageTitle?: string;
+  platform?: Platform;
+  topics?: SignalTopic[];
+  entities?: SignalEntity[];
+  sessionId?: string;
+  metadata?: Record<string, string | number | boolean>;
+}
 
-export type { IntentType, IntentEvent } from '@schema/intent';
+export type AgentEventKind =
+  | 'recall'
+  | 'deal_drop'
+  | 'new_alternative'
+  | 'fresh_content'
+  | 'decision_nudge'
+  | 'weekly_summary';
 
-export type { WatchlistItem } from '@schema/watchlist';
+export interface AgentEventSource {
+  kind: 'signal' | 'topic' | 'page' | 'entity';
+  id: string;
+  label?: string;
+  url?: string;
+}
+
+export interface AgentEvent {
+  id: string;
+  agent: string;
+  kind: AgentEventKind;
+  title: string;
+  body?: string;
+  actionUrl?: string;
+  sources: AgentEventSource[];
+  createdAt: number;
+  seenAt?: number;
+}

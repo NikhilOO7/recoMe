@@ -222,6 +222,87 @@ export function createIntelligenceRoutes(): Hono<AuthVars> {
     }
   });
 
+  /**
+   * POST /intelligence/score/cards — batch-score visible cards on a page.
+   *
+   * Phase-2 stub for the extension's in-page badge surface. Returns a verdict
+   * (relevant | caution | filtered | neutral) + reasoning string per card,
+   * grounded in the user's existing topic + entity affinities.
+   *
+   * Real algorithm lives in cloud/src/intelligence/CardScorer.ts (TODO);
+   * this stub gives the extension something honest to render while the
+   * Scorer is being built. It hits Neo4j for the user's top intents and
+   * scores each card by topic/brand overlap.
+   */
+  app.post('/score/cards', async (c) => {
+    const body = (await c.req.json().catch(() => null)) as {
+      pageUrl?: string;
+      platform?: string;
+      cards?: Array<{ id: string; title: string; brand?: string; url?: string }>;
+    } | null;
+    if (!body || !Array.isArray(body.cards) || body.cards.length === 0) {
+      return c.json({ error: 'invalid_cards' }, 400);
+    }
+    if (body.cards.length > 50) {
+      return c.json({ error: 'too_many_cards', max: 50 }, 400);
+    }
+
+    const userId = c.get('userId');
+    const intents = await getIntelligence()
+      .graph.getTopIntents(userId, 30)
+      .catch(() => [] as Array<{ topicName: string; strength: number }>);
+
+    const topicWeight = new Map<string, number>();
+    for (const i of intents) {
+      topicWeight.set(i.topicName.toLowerCase(), Math.min(1, Math.max(0, i.strength)));
+    }
+
+    const scores = body.cards.map((card) => {
+      const text = (card.title + ' ' + (card.brand ?? '')).toLowerCase();
+      // Sum the matched-topic weights — bounded at 1.0.
+      let matched = 0;
+      const matches: Array<{ topic: string; w: number }> = [];
+      for (const [topic, w] of topicWeight) {
+        if (topic.length < 3) continue;
+        if (text.includes(topic)) {
+          matched += w;
+          matches.push({ topic, w });
+        }
+      }
+      const score = Math.min(1, matched);
+
+      let verdict: 'relevant' | 'caution' | 'filtered' | 'neutral';
+      if (score >= 0.7) verdict = 'relevant';
+      else if (score >= 0.4) verdict = 'neutral';
+      else if (score > 0) verdict = 'caution';
+      else verdict = 'neutral';
+
+      // Heuristic filter: flag "miracle cure" / unverified clickbait outright.
+      const FLAG_WORDS = /miracle|guaranteed cure|forbidden|secret formula|big pharma/i;
+      if (FLAG_WORDS.test(card.title)) verdict = 'filtered';
+
+      const topMatches = matches.sort((a, b) => b.w - a.w).slice(0, 3);
+      let reason = '';
+      if (verdict === 'filtered') {
+        reason = 'Unverified claims detected. Hidden by GuardianAgent.';
+      } else if (topMatches.length === 0) {
+        reason = 'No signal from your graph yet — neutral.';
+      } else if (verdict === 'relevant') {
+        reason = `Strong match: you've been researching ${topMatches
+          .map((m) => m.topic)
+          .join(', ')} across multiple platforms.`;
+      } else if (verdict === 'caution') {
+        reason = `Conflicting signals in your research history for ${topMatches[0]!.topic}.`;
+      } else {
+        reason = `Limited evidence in your specific context for ${topMatches[0]!.topic}.`;
+      }
+
+      return { id: card.id, score: Number(score.toFixed(2)), verdict, reason };
+    });
+
+    return c.json({ scores });
+  });
+
   /** DELETE /intelligence/me — GDPR delete for this user. */
   app.delete('/me', async (c) => {
     const userId = c.get('userId');

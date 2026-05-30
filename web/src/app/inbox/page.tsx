@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { authFetch, getToken } from '@/lib/auth';
+import { AppShell } from '@/components/AppShell';
 
 // ── Types mirror cloud/src/agents/types.ts + AgentEventStore.listForUser shape ─
 type AgentEventKind =
@@ -34,86 +35,54 @@ interface AgentEvent {
   createdAt: string;
 }
 
-// ── Agent visual identity. Matches the prototype palette (ADR-0012 §2.2). ────
-const AGENT_THEME: Record<string, { color: string; soft: string; ring: string; label: string }> = {
-  recall: {
-    color: '#f59e0b',
-    soft: 'rgba(245, 158, 11, 0.12)',
-    ring: 'rgba(245, 158, 11, 0.35)',
-    label: 'Recall',
-  },
-  concierge: {
-    color: '#a78bfa',
-    soft: 'rgba(167, 139, 250, 0.14)',
-    ring: 'rgba(167, 139, 250, 0.35)',
-    label: 'Concierge',
-  },
-  curator: {
-    color: '#34d399',
-    soft: 'rgba(52, 211, 153, 0.12)',
-    ring: 'rgba(52, 211, 153, 0.35)',
-    label: 'Curator',
-  },
-  watchlist: {
-    color: '#fb7185',
-    soft: 'rgba(251, 113, 133, 0.12)',
-    ring: 'rgba(251, 113, 133, 0.35)',
-    label: 'Watchlist',
-  },
-  decision: {
-    color: '#60a5fa',
-    soft: 'rgba(96, 165, 250, 0.14)',
-    ring: 'rgba(96, 165, 250, 0.35)',
-    label: 'Decision',
-  },
-  synthesist: {
-    color: '#94a3b8',
-    soft: 'rgba(148, 163, 184, 0.14)',
-    ring: 'rgba(148, 163, 184, 0.35)',
-    label: 'Synthesist',
-  },
+// Agent identity. Each entry references CSS tokens so the same code
+// drives both themes — colors come from globals.css (light + dark).
+const AGENTS: Record<string, { color: string; soft: string; label: string }> = {
+  recall: { color: 'var(--recall)', soft: 'var(--recall-soft)', label: 'Recall' },
+  concierge: { color: 'var(--concierge)', soft: 'var(--concierge-soft)', label: 'Concierge' },
+  curator: { color: 'var(--curator)', soft: 'var(--curator-soft)', label: 'Curator' },
+  watchlist: { color: 'var(--watchlist)', soft: 'var(--watchlist-soft)', label: 'Watchlist' },
+  decision: { color: 'var(--decision)', soft: 'var(--decision-soft)', label: 'Decision' },
+  synthesist: { color: 'var(--synthesist)', soft: 'var(--synthesist-soft)', label: 'Synthesist' },
 };
 
-const DEFAULT_THEME = {
-  color: '#5eead4',
-  soft: 'rgba(94, 234, 212, 0.14)',
-  ring: 'rgba(94, 234, 212, 0.35)',
-  label: 'Agent',
-};
-
-function themeFor(agent: string) {
-  return AGENT_THEME[agent.toLowerCase()] ?? { ...DEFAULT_THEME, label: agent };
+function agentTheme(agent: string) {
+  return (
+    AGENTS[agent.toLowerCase()] ?? {
+      color: 'var(--accent)',
+      soft: 'var(--accent-soft)',
+      label: agent,
+    }
+  );
 }
 
-// ── Platform inference from URL — keeps source chips legible. ────────────────
-const PLATFORM_RULES: { host: RegExp; name: string; dot: string }[] = [
-  { host: /(^|\.)youtube\.com$|(^|\.)youtu\.be$/, name: 'YouTube', dot: '#ff0033' },
-  { host: /(^|\.)reddit\.com$/, name: 'Reddit', dot: '#ff4500' },
-  { host: /(^|\.)amazon\./, name: 'Amazon', dot: '#ff9900' },
-  { host: /(^|\.)walmart\.com$/, name: 'Walmart', dot: '#0a66c2' },
-  { host: /(^|\.)ebay\./, name: 'eBay', dot: '#e53238' },
-  { host: /(^|\.)substack\.com$|\.substack\./, name: 'Substack', dot: '#ff6719' },
-  { host: /(^|\.)theverge\.com$/, name: 'The Verge', dot: '#ff195a' },
-  { host: /(^|\.)news\.ycombinator\.com$/, name: 'Hacker News', dot: '#ff6600' },
-  { host: /(^|\.)arxiv\.org$/, name: 'arXiv', dot: '#b31b1b' },
-  { host: /(^|\.)x\.com$|(^|\.)twitter\.com$/, name: 'X', dot: '#ffffff' },
-  { host: /(^|\.)wayfair\.com$/, name: 'Wayfair', dot: '#5a31f4' },
-  { host: /(^|\.)martin\.kleppmann\.com$/, name: 'Kleppmann', dot: '#9ca3af' },
+// Platform inference. Identity colors (theme-independent) per
+// globals.css :root block; the chip background uses var(--surface-3)
+// so contrast holds in both themes.
+const PLATFORM_RULES: { host: RegExp; name: string; color: string }[] = [
+  { host: /(^|\.)youtube\.com$|(^|\.)youtu\.be$/, name: 'YouTube', color: 'var(--youtube)' },
+  { host: /(^|\.)reddit\.com$/, name: 'Reddit', color: 'var(--reddit)' },
+  { host: /(^|\.)amazon\./, name: 'Amazon', color: 'var(--amazon)' },
+  { host: /(^|\.)substack\.com$|\.substack\./, name: 'Substack', color: 'var(--substack)' },
+  { host: /(^|\.)theverge\.com$/, name: 'The Verge', color: 'var(--verge)' },
+  { host: /(^|\.)news\.ycombinator\.com$/, name: 'Hacker News', color: 'var(--hn)' },
+  { host: /(^|\.)arxiv\.org$/, name: 'arXiv', color: 'var(--arxiv)' },
+  { host: /(^|\.)x\.com$|(^|\.)twitter\.com$/, name: 'X', color: 'var(--x)' },
+  { host: /(^|\.)wayfair\.com$/, name: 'Wayfair', color: 'var(--wayfair)' },
 ];
 
-function inferPlatform(url?: string): { name: string; dot: string } | null {
+function inferPlatform(url?: string): { name: string; color: string } | null {
   if (!url) return null;
   try {
     const host = new URL(url).hostname;
     const hit = PLATFORM_RULES.find((r) => r.host.test(host));
-    if (hit) return { name: hit.name, dot: hit.dot };
-    return { name: host.replace(/^www\./, ''), dot: '#5eead4' };
+    if (hit) return { name: hit.name, color: hit.color };
+    return { name: host.replace(/^www\./, ''), color: 'var(--muted)' };
   } catch {
     return null;
   }
 }
 
-// ── Relative-time formatter. Stays small + deterministic; no Intl runtime hit. ─
 function relativeTime(iso: string, now = Date.now()): string {
   const t = new Date(iso).getTime();
   if (Number.isNaN(t)) return '';
@@ -125,7 +94,6 @@ function relativeTime(iso: string, now = Date.now()): string {
   return new Date(iso).toLocaleDateString();
 }
 
-// ── Filter keys: 'all' + each agent name lowercased. Derived from events. ───
 type FilterKey = 'all' | string;
 
 export default function InboxPage() {
@@ -133,13 +101,11 @@ export default function InboxPage() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterKey>('all');
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  // Optimistic flags so feedback / mark-seen feel instant without a refetch.
   const [optimisticSeen, setOptimisticSeen] = useState<Record<string, true>>({});
   const [optimisticFeedback, setOptimisticFeedback] = useState<
     Record<string, 'useful' | 'not_useful'>
   >({});
 
-  // Load once on mount + redirect to /login if no token (matches dashboard).
   useEffect(() => {
     const token = getToken();
     if (!token) {
@@ -164,7 +130,6 @@ export default function InboxPage() {
       });
   }, []);
 
-  // Filter chips reflect the agents that actually produced events for this user.
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: 0 };
     (events ?? []).forEach((e) => {
@@ -180,6 +145,17 @@ export default function InboxPage() {
     if (filter === 'all') return events;
     return events.filter((e) => e.agent.toLowerCase() === filter);
   }, [events, filter]);
+
+  // Live-strip copy. Derived from which agents have produced events
+  // recently — falls back to a static "warming up" message if empty.
+  // Real backend signal will replace this in P2 (per ADR-0012 §2.5).
+  const liveAgents = useMemo(() => {
+    if (!events) return [];
+    const recent = events.slice(0, 6);
+    const set = new Set<string>();
+    recent.forEach((e) => set.add(e.agent));
+    return Array.from(set).slice(0, 2);
+  }, [events]);
 
   const markSeen = useCallback((id: string) => {
     setOptimisticSeen((prev) => (prev[id] ? prev : { ...prev, [id]: true }));
@@ -197,35 +173,45 @@ export default function InboxPage() {
     }).catch((err: Error) => console.warn('feedback failed:', err.message));
   }, []);
 
+  const total30d = events?.length ?? 0;
+  const activeTrails = new Set(
+    (events ?? []).flatMap((e) => e.sources.filter((s) => s.kind === 'topic').map((s) => s.id)),
+  ).size;
+
   return (
-    <div className="max-w-5xl mx-auto px-6 pt-24 pb-16">
-      {/* Header */}
-      <header className="mb-8">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-white/40 mb-3">
-          <span className="w-2 h-2 rounded-full bg-[#5eead4]" />
-          Inbox · agent surface
-        </div>
-        <h1 className="text-3xl sm:text-4xl font-black tracking-[-1.5px] mb-2">
-          Things your agents brought you
-        </h1>
-        <p className="text-sm text-white/50 max-w-xl leading-relaxed">
-          Six background agents work your interest graph. They surface — they never transact. You
-          decide what to act on.
-        </p>
-      </header>
+    <AppShell
+      title="Inbox"
+      subtitle="Things your agents brought you. Sorted by when they need you, not when they fired."
+      actions={
+        <button
+          type="button"
+          className="text-[12.5px] font-semibold px-3 py-1.5 rounded-md hover:opacity-80 transition-opacity"
+          style={{
+            background: 'var(--surface-2)',
+            border: '1px solid var(--border)',
+            color: 'var(--ink-2)',
+          }}
+        >
+          Mark all read
+        </button>
+      }
+      preface={<LiveStrip liveAgents={liveAgents} />}
+    >
+      {/* Stat strip — demo recome-app.html lines 756-777 */}
+      <StatStrip total={total30d} trails={activeTrails} />
 
       {/* Filter chips */}
-      <div className="flex items-center gap-2 flex-wrap mb-6">
+      <div className="flex items-center gap-2 flex-wrap mb-5 mt-6">
         <FilterChip
           on={filter === 'all'}
           onClick={() => setFilter('all')}
           label="All"
           count={counts.all}
         />
-        {Object.keys(AGENT_THEME).map((key) => {
+        {Object.keys(AGENTS).map((key) => {
           const n = counts[key] ?? 0;
           if (n === 0) return null;
-          const t = AGENT_THEME[key];
+          const t = AGENTS[key];
           return (
             <FilterChip
               key={key}
@@ -237,12 +223,11 @@ export default function InboxPage() {
             />
           );
         })}
-        <div className="ml-auto text-xs text-white/30">
+        <div className="ml-auto text-[11.5px]" style={{ color: 'var(--muted-2)' }}>
           {events === null ? 'Loading…' : `${visible.length} of ${events.length}`}
         </div>
       </div>
 
-      {/* States */}
       {events === null && (
         <div className="space-y-3">
           <Skeleton />
@@ -254,11 +239,19 @@ export default function InboxPage() {
       {events !== null && events.length === 0 && <EmptyState error={error} />}
 
       {events !== null && events.length > 0 && visible.length === 0 && (
-        <div className="bg-white/3 border border-white/8 rounded-2xl p-8 text-center text-sm text-white/50">
-          No <strong className="text-white/80">{filter}</strong> events yet. Try{' '}
+        <div
+          className="rounded-2xl p-8 text-center text-sm"
+          style={{
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            color: 'var(--muted)',
+          }}
+        >
+          No <strong style={{ color: 'var(--ink)' }}>{filter}</strong> events yet. Try{' '}
           <button
             onClick={() => setFilter('all')}
-            className="text-[#5eead4] hover:underline cursor-pointer"
+            className="hover:underline cursor-pointer"
+            style={{ color: 'var(--accent)' }}
           >
             all agents
           </button>
@@ -266,10 +259,9 @@ export default function InboxPage() {
         </div>
       )}
 
-      {/* Event list */}
       <div className="flex flex-col gap-3">
         {visible.map((evt) => {
-          const t = themeFor(evt.agent);
+          const t = agentTheme(evt.agent);
           const isExpanded = !!expanded[evt.id];
           const isSeen = !!evt.seenAt || !!optimisticSeen[evt.id];
           const fb = optimisticFeedback[evt.id] ?? evt.feedback;
@@ -277,114 +269,143 @@ export default function InboxPage() {
           return (
             <article
               key={evt.id}
-              className="group bg-white/3 border border-white/8 rounded-2xl p-5 hover:bg-white/4 hover:border-white/14 transition-colors"
-              style={{ borderLeftColor: t.color, borderLeftWidth: 3 }}
+              className="rounded-2xl p-5 transition-colors"
+              style={{
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderLeft: `3px solid ${t.color}`,
+              }}
               onMouseEnter={() => !isSeen && markSeen(evt.id)}
             >
               {/* Card header */}
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
                 <span
                   className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider px-2 py-1 rounded-md"
                   style={{
                     background: t.soft,
                     color: t.color,
-                    boxShadow: `inset 0 0 0 1px ${t.ring}`,
                   }}
                 >
                   <span className="w-1.5 h-1.5 rounded-full" style={{ background: t.color }} />
                   {t.label}
                 </span>
-                <span className="text-[11px] text-white/30 uppercase tracking-widest">
-                  {evt.kind.replace(/_/g, ' ')}
+                <span
+                  className="text-[11px] uppercase tracking-widest"
+                  style={{ color: 'var(--muted-2)' }}
+                >
+                  · {evt.kind.replace(/_/g, ' ')}
                 </span>
                 {!isSeen && (
-                  <span className="text-[10px] font-semibold uppercase tracking-widest text-[#5eead4] bg-[#5eead4]/10 px-1.5 py-0.5 rounded">
+                  <span
+                    className="text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded"
+                    style={{
+                      background: 'var(--accent-soft)',
+                      color: 'var(--accent)',
+                    }}
+                  >
                     new
                   </span>
                 )}
-                <span className="ml-auto text-xs text-white/35">{relativeTime(evt.createdAt)}</span>
+                <span className="ml-auto text-[12px]" style={{ color: 'var(--muted-2)' }}>
+                  {relativeTime(evt.createdAt)}
+                </span>
               </div>
 
-              {/* Title + body */}
-              <h2 className="text-base sm:text-[17px] font-bold leading-snug mb-1.5 tracking-[-0.01em]">
+              <h2
+                className="text-[17px] font-semibold leading-snug mb-1.5"
+                style={{ color: 'var(--ink)', letterSpacing: '-0.01em' }}
+              >
                 {evt.title}
               </h2>
               {evt.body && (
-                <p className="text-sm text-white/65 leading-relaxed mb-3 whitespace-pre-wrap">
+                <p
+                  className="text-[14px] leading-relaxed mb-3 whitespace-pre-wrap"
+                  style={{ color: 'var(--ink-2)' }}
+                >
                   {evt.body}
                 </p>
               )}
 
-              {/* Sources */}
               {evt.sources && evt.sources.length > 0 && (
                 <div className="flex items-center gap-2 flex-wrap mb-3">
                   {evt.sources.slice(0, 4).map((s, i) => (
                     <SourceChip key={`${s.id}-${i}`} source={s} />
                   ))}
                   {evt.sources.length > 4 && (
-                    <span className="text-[11px] text-white/30">
+                    <span className="text-[11px]" style={{ color: 'var(--muted-2)' }}>
                       +{evt.sources.length - 4} more
                     </span>
                   )}
                 </div>
               )}
 
-              {/* Actions */}
               <div className="flex items-center gap-2 flex-wrap pt-1">
                 {evt.actionUrl && (
                   <a
                     href={evt.actionUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs font-semibold bg-white text-(--ink) px-3 py-1.5 rounded-md hover:bg-white/90 transition-colors"
+                    className="inline-flex items-center gap-1 text-[12.5px] font-semibold px-3 py-1.5 rounded-md hover:opacity-90 transition-opacity"
+                    style={{
+                      background: 'var(--accent)',
+                      color: 'var(--on-accent)',
+                    }}
                   >
                     Open
                     <span aria-hidden>→</span>
                   </a>
                 )}
-                <FeedbackButton
+                <PillButton
                   active={fb === 'useful'}
                   disabled={!!fb}
                   onClick={() => !fb && sendFeedback(evt.id, 'useful')}
                   ariaLabel="Mark useful"
                 >
-                  👍 Useful
-                </FeedbackButton>
-                <FeedbackButton
+                  Useful
+                </PillButton>
+                <PillButton
                   active={fb === 'not_useful'}
                   disabled={!!fb}
                   onClick={() => !fb && sendFeedback(evt.id, 'not_useful')}
                   ariaLabel="Mark not useful"
                 >
-                  👎 Not relevant
-                </FeedbackButton>
+                  Not relevant
+                </PillButton>
                 <button
                   onClick={() => setExpanded((p) => ({ ...p, [evt.id]: !p[evt.id] }))}
-                  className="ml-auto text-xs text-white/40 hover:text-[#5eead4] transition-colors cursor-pointer"
+                  className="ml-auto text-[12px] hover:underline transition-colors cursor-pointer"
+                  style={{ color: 'var(--muted)' }}
                 >
                   {isExpanded ? 'Hide reasoning' : 'Why am I seeing this?'}
-                  <span aria-hidden> {isExpanded ? '↑' : '↓'}</span>
                 </button>
               </div>
 
-              {/* Reasoning drawer */}
               {isExpanded && (
-                <div className="mt-4 pt-4 border-t border-white/6 text-xs text-white/55 leading-relaxed">
-                  <div className="font-semibold text-white/70 mb-2">
+                <div
+                  className="mt-4 pt-4 text-[12.5px] leading-relaxed"
+                  style={{ borderTop: '1px solid var(--border)', color: 'var(--ink-2)' }}
+                >
+                  <div className="font-semibold mb-2" style={{ color: 'var(--ink)' }}>
                     Grounded in {evt.sources.length} signal
                     {evt.sources.length === 1 ? '' : 's'} from your graph
                   </div>
                   <ul className="space-y-1.5">
                     {evt.sources.map((s, i) => (
                       <li key={`${s.id}-detail-${i}`} className="flex items-start gap-2">
-                        <span className="text-white/30 shrink-0 w-14 capitalize">{s.kind}</span>
-                        <span className="text-white/65 break-all">
+                        <span
+                          className="shrink-0 w-14 capitalize"
+                          style={{ color: 'var(--muted-2)' }}
+                        >
+                          {s.kind}
+                        </span>
+                        <span className="break-all">
                           {s.url ? (
                             <a
                               href={s.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="hover:text-[#5eead4] underline decoration-white/20 underline-offset-2"
+                              className="hover:underline"
+                              style={{ color: 'var(--accent)' }}
                             >
                               {s.label ?? s.url}
                             </a>
@@ -395,9 +416,13 @@ export default function InboxPage() {
                       </li>
                     ))}
                   </ul>
-                  <p className="mt-3 text-[11px] text-white/35">
+                  <p className="mt-3 text-[11px]" style={{ color: 'var(--muted-2)' }}>
                     Every agent emission cites the captured signals it drew from (ADR-0012 §5).{' '}
-                    <Link href="/privacy" className="text-[#5eead4] hover:underline">
+                    <Link
+                      href="/audit-log"
+                      className="hover:underline"
+                      style={{ color: 'var(--accent)' }}
+                    >
                       Audit log →
                     </Link>
                   </p>
@@ -407,21 +432,88 @@ export default function InboxPage() {
           );
         })}
       </div>
-
-      {/* Footer link */}
-      <div className="mt-10 text-center">
-        <Link
-          href="/dashboard"
-          className="text-xs text-white/30 hover:text-white/60 transition-colors"
-        >
-          ← Back to dashboard
-        </Link>
-      </div>
-    </div>
+    </AppShell>
   );
 }
 
 // ── Subcomponents ───────────────────────────────────────────────────────────
+
+function LiveStrip({ liveAgents }: { liveAgents: string[] }) {
+  if (liveAgents.length === 0) return null;
+  return (
+    <div
+      className="flex items-center gap-3 rounded-xl px-4 py-3"
+      style={{
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+      }}
+    >
+      <span
+        className="w-2 h-2 rounded-full pulse-dot shrink-0"
+        style={{ background: 'var(--success)' }}
+      />
+      <div className="flex-1 min-w-0 text-[13px] leading-snug" style={{ color: 'var(--ink-2)' }}>
+        {liveAgents.map((a, i) => (
+          <span key={a}>
+            {i > 0 && <span style={{ color: 'var(--muted-2)' }}> · </span>}
+            <span style={{ color: 'var(--ink)', fontWeight: 600 }}>{a}</span>{' '}
+            <span style={{ color: 'var(--muted)' }}>working your graph</span>
+          </span>
+        ))}
+      </div>
+      <span className="text-[12px] shrink-0" style={{ color: 'var(--muted-2)' }}>
+        within today&rsquo;s budget
+      </span>
+    </div>
+  );
+}
+
+function StatStrip({ total, trails }: { total: number; trails: number }) {
+  const stats = [
+    {
+      label: 'Surfaced this week',
+      value: total.toString(),
+      delta: total > 0 ? `${total} in inbox` : 'awaiting first signal',
+    },
+    {
+      label: 'Active research trails',
+      value: trails.toString(),
+      delta: trails > 2 ? `${trails} live` : 'building',
+    },
+    { label: 'Signals captured (30d)', value: '—', delta: 'wired to /intelligence/stats next' },
+    { label: "Today's agent budget", value: '$0.00', delta: 'of $0.10 cap' },
+  ];
+  return (
+    <div
+      className="grid gap-3 mt-4"
+      style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}
+    >
+      {stats.map((s) => (
+        <div
+          key={s.label}
+          className="rounded-xl p-4"
+          style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+        >
+          <div
+            className="text-[11px] uppercase tracking-[0.06em]"
+            style={{ color: 'var(--muted-2)' }}
+          >
+            {s.label}
+          </div>
+          <div
+            className="text-[22px] font-bold mt-1"
+            style={{ color: 'var(--ink)', letterSpacing: '-0.02em' }}
+          >
+            {s.value}
+          </div>
+          <div className="text-[11.5px] mt-0.5" style={{ color: 'var(--muted)' }}>
+            {s.delta}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function FilterChip({
   on,
@@ -439,16 +531,18 @@ function FilterChip({
   return (
     <button
       onClick={onClick}
-      className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors cursor-pointer ${
-        on
-          ? 'bg-white text-(--ink) border-white'
-          : 'bg-white/4 border-white/10 text-white/65 hover:bg-white/8 hover:text-white'
-      }`}
+      className="inline-flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded-full transition-colors cursor-pointer"
+      style={{
+        background: on ? 'var(--accent)' : 'var(--surface)',
+        color: on ? 'var(--on-accent)' : 'var(--ink-2)',
+        border: `1px solid ${on ? 'var(--accent)' : 'var(--border)'}`,
+      }}
     >
       {color && <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />}
       {label}
       <span
-        className={`text-[10px] font-bold tabular-nums ${on ? 'text-(--ink)/50' : 'text-white/35'}`}
+        className="text-[10px] font-bold tabular-nums"
+        style={{ color: on ? 'var(--on-accent)' : 'var(--muted-2)', opacity: on ? 0.7 : 1 }}
       >
         {count}
       </span>
@@ -460,11 +554,20 @@ function SourceChip({ source }: { source: AgentEventSource }) {
   const platform = inferPlatform(source.url);
   const label = source.label ?? platform?.name ?? source.kind;
   const content = (
-    <span className="inline-flex items-center gap-1.5 text-[11px] bg-white/4 border border-white/8 rounded-md px-2 py-1 text-white/70">
+    <span
+      className="inline-flex items-center gap-1.5 text-[11px] rounded-md px-2 py-1"
+      style={{
+        background: 'var(--surface-3)',
+        border: '1px solid var(--border)',
+        color: 'var(--ink-2)',
+      }}
+    >
       {platform ? (
-        <span className="w-2 h-2 rounded-sm" style={{ background: platform.dot }} />
+        <span className="w-2 h-2 rounded-sm" style={{ background: platform.color }} />
       ) : (
-        <span className="text-white/40 text-[10px] uppercase tracking-wider">{source.kind}</span>
+        <span className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--muted-2)' }}>
+          {source.kind}
+        </span>
       )}
       <span className="truncate max-w-50">{label}</span>
     </span>
@@ -475,7 +578,7 @@ function SourceChip({ source }: { source: AgentEventSource }) {
         href={source.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="hover:bg-white/7 hover:border-white/16 rounded-md transition-colors"
+        className="hover:opacity-80 rounded-md transition-opacity"
       >
         {content}
       </a>
@@ -484,7 +587,7 @@ function SourceChip({ source }: { source: AgentEventSource }) {
   return content;
 }
 
-function FeedbackButton({
+function PillButton({
   active,
   disabled,
   onClick,
@@ -502,13 +605,13 @@ function FeedbackButton({
       aria-label={ariaLabel}
       disabled={disabled}
       onClick={onClick}
-      className={`text-xs font-medium px-2.5 py-1.5 rounded-md border transition-colors ${
-        active
-          ? 'bg-[#5eead4]/15 border-[#5eead4]/35 text-[#5eead4]'
-          : disabled
-            ? 'border-white/6 text-white/25 cursor-not-allowed'
-            : 'bg-white/3 border-white/8 text-white/55 hover:bg-white/7 hover:text-white cursor-pointer'
-      }`}
+      className="text-[12px] font-medium px-2.5 py-1.5 rounded-md transition-colors"
+      style={{
+        background: active ? 'var(--accent-soft)' : 'var(--surface-2)',
+        color: active ? 'var(--accent)' : disabled ? 'var(--muted-2)' : 'var(--ink-2)',
+        border: `1px solid ${active ? 'var(--accent-border)' : 'var(--border)'}`,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+      }}
     >
       {children}
     </button>
@@ -517,27 +620,35 @@ function FeedbackButton({
 
 function Skeleton() {
   return (
-    <div className="bg-white/2 border border-white/6 rounded-2xl p-5 animate-pulse">
+    <div
+      className="rounded-2xl p-5 animate-pulse"
+      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+    >
       <div className="flex items-center gap-2 mb-3">
-        <div className="h-5 w-20 bg-white/6 rounded-md" />
-        <div className="h-3 w-16 bg-white/4 rounded-md" />
-        <div className="ml-auto h-3 w-12 bg-white/4 rounded-md" />
+        <div className="h-5 w-20 rounded-md" style={{ background: 'var(--surface-3)' }} />
+        <div className="h-3 w-16 rounded-md" style={{ background: 'var(--surface-3)' }} />
+        <div className="ml-auto h-3 w-12 rounded-md" style={{ background: 'var(--surface-3)' }} />
       </div>
-      <div className="h-5 w-2/3 bg-white/6 rounded mb-2" />
-      <div className="h-3 w-full bg-white/4 rounded mb-1.5" />
-      <div className="h-3 w-3/4 bg-white/4 rounded" />
+      <div className="h-5 w-2/3 rounded mb-2" style={{ background: 'var(--surface-3)' }} />
+      <div className="h-3 w-full rounded mb-1.5" style={{ background: 'var(--surface-3)' }} />
+      <div className="h-3 w-3/4 rounded" style={{ background: 'var(--surface-3)' }} />
     </div>
   );
 }
 
 function EmptyState({ error }: { error: string | null }) {
   return (
-    <div className="bg-white/3 border border-white/8 rounded-2xl p-10 text-center">
-      <div className="text-3xl mb-3">📥</div>
-      <h2 className="text-base font-bold mb-2">
+    <div
+      className="rounded-2xl p-10 text-center"
+      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+    >
+      <h2 className="text-base font-semibold mb-2" style={{ color: 'var(--ink)' }}>
         {error ? 'Inbox unavailable' : 'Your agents are warming up'}
       </h2>
-      <p className="text-sm text-white/50 max-w-md mx-auto leading-relaxed mb-4">
+      <p
+        className="text-sm max-w-md mx-auto leading-relaxed mb-4"
+        style={{ color: 'var(--muted)' }}
+      >
         {error ??
           'Recall surfaces forgotten captures when you re-engage a dormant topic — it fires automatically as you browse. Concierge and Curator come online with the next release.'}
       </p>
@@ -545,13 +656,15 @@ function EmptyState({ error }: { error: string | null }) {
         <div className="flex gap-3 justify-center flex-wrap">
           <Link
             href="/paste"
-            className="text-xs font-semibold bg-white text-(--ink) px-4 py-2 rounded-lg hover:bg-white/90 transition-colors"
+            className="text-xs font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
+            style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
             Capture a link →
           </Link>
           <Link
             href="/dashboard"
-            className="text-xs font-medium text-white/60 hover:text-white px-4 py-2 transition-colors"
+            className="text-xs font-medium px-4 py-2 hover:opacity-80 transition-opacity"
+            style={{ color: 'var(--muted)' }}
           >
             Back to dashboard
           </Link>

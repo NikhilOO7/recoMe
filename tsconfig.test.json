@@ -6,5 +6,5 @@
     "isolatedModules": false,
     "types": ["chrome", "jest", "node"]
   },
-  "include": ["extension/src/**/*", "brain/src/**/*", "agent/src/**/*", "packages/**/*"]
+  "include": ["extension/src/**/*", "packages/**/*"]
 }

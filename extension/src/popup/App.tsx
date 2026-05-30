@@ -1,289 +1,317 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Dashboard } from './components/Dashboard';
-import { SettingsPanel } from './components/SettingsPanel';
-import { AgentChat } from './components/AgentChat';
-import { Onboarding, type SeedPreferences } from './components/Onboarding';
-import { useConnectionStatus, type ConnectionStatus } from './hooks/useConnectionStatus';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  loadPanelState,
-  completeOnboarding,
-  persistActiveTab,
-  type PanelTab,
-  type PanelMode,
-} from '../shared/PanelState';
-import {
-  getAuthState,
-  openLogin,
-  openSignup,
-  openSettings as openWebSettings,
-  type AuthState,
-} from '../shared/AuthManager';
-import { WEB_APP_URL } from '../shared/constants';
+  sendMessage,
+  type GetInboxPayload,
+  type MarkSeenPayload,
+  type InboxFeedbackPayload,
+  type SetSettingsPayload,
+} from '../shared/messages';
+import { getWebAppUrl } from '../shared/constants';
+import type { AgentEvent } from '../shared/types';
 import '../styles/popup.css';
 
-type Theme = 'light' | 'dark';
-
-function applyTheme(theme: Theme) {
-  document.documentElement.setAttribute('data-theme', theme);
+interface AuthState {
+  loggedIn: boolean;
+  user?: { id: string; email?: string };
 }
 
+interface Settings {
+  enabled: boolean;
+}
+
+const KIND_META: Record<string, { label: string; accent: string; icon: string }> = {
+  recall: { label: 'Recall', accent: '#5eead4', icon: '↻' },
+  deal_drop: { label: 'Concierge', accent: '#10b981', icon: '$' },
+  new_alternative: { label: 'Concierge', accent: '#10b981', icon: '⇄' },
+  fresh_content: { label: 'Curator', accent: '#8b5cf6', icon: '★' },
+  decision_nudge: { label: 'Decision', accent: '#2356e8', icon: '?' },
+  weekly_summary: { label: 'Synthesist', accent: '#5eead4', icon: '∑' },
+};
+
 export function App() {
-  const [activeTab, setActiveTab] = useState<PanelTab>('dashboard');
-  const [panelMode, setPanelMode] = useState<PanelMode>('loading');
-  const [theme, setTheme] = useState<Theme>('dark');
-  const [authState, setAuthState] = useState<AuthState | null>(null);
-  const connectionStatus = useConnectionStatus();
+  const [auth, setAuth] = useState<AuthState | null>(null);
+  const [settings, setSettings] = useState<Settings | null>(null);
+  const [events, setEvents] = useState<AgentEvent[] | null>(null);
+  const [webUrl, setWebUrl] = useState('https://recome.app');
+  const [loading, setLoading] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'unseen'>('unseen');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [authRes, settingsRes, inboxRes, url] = await Promise.all([
+        sendMessage<undefined, AuthState>('GET_AUTH_STATE'),
+        sendMessage<undefined, Settings>('GET_SETTINGS'),
+        sendMessage<GetInboxPayload, { events: AgentEvent[] }>('GET_INBOX', { limit: 30 }),
+        getWebAppUrl(),
+      ]);
+      if (authRes.success) setAuth(authRes.data!);
+      if (settingsRes.success) setSettings(settingsRes.data!);
+      if (inboxRes.success) setEvents(inboxRes.data?.events ?? []);
+      setWebUrl(url);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    // Load theme
-    chrome.storage.local
-      .get('recome_theme')
-      .then((r) => {
-        const saved = r['recome_theme'] as Theme | undefined;
-        if (saved) {
-          setTheme(saved);
-          applyTheme(saved);
-        } else {
-          applyTheme('dark');
-        }
-      })
-      .catch(() => applyTheme('dark'));
-
-    // Load panel state
-    loadPanelState().then((snapshot) => {
-      setPanelMode(snapshot.mode);
-      setActiveTab(snapshot.activeTab);
-    });
-
-    // Load auth state
-    getAuthState().then(setAuthState);
-
-    // Listen for auth changes (callback.html stores tokens)
-    const listener = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
-      if (area === 'local' && changes['recome_cloud_access_token']) {
-        getAuthState().then(setAuthState);
+    void load();
+    const onChange = (
+      changes: Record<string, chrome.storage.StorageChange>,
+      area: string,
+    ): void => {
+      if (area === 'local' && (changes['recome_access_token'] || changes['recome_inbox_cache'])) {
+        void load();
       }
     };
-    chrome.storage.onChanged.addListener(listener);
-    return () => chrome.storage.onChanged.removeListener(listener);
+    chrome.storage.onChanged.addListener(onChange);
+    const onMsg = (m: unknown): void => {
+      const msg = m as { type?: string };
+      if (msg?.type === 'INBOX_UPDATED') void load();
+    };
+    chrome.runtime.onMessage.addListener(onMsg);
+    return () => {
+      chrome.storage.onChanged.removeListener(onChange);
+      chrome.runtime.onMessage.removeListener(onMsg);
+    };
+  }, [load]);
+
+  const openLogin = useCallback(
+    () => chrome.tabs.create({ url: `${webUrl}/login?from=extension` }),
+    [webUrl],
+  );
+  const openWeb = useCallback(
+    (path = '') => chrome.tabs.create({ url: `${webUrl}${path}` }),
+    [webUrl],
+  );
+  const logout = useCallback(async () => {
+    await sendMessage('LOGOUT');
+    setAuth({ loggedIn: false });
+    setEvents([]);
   }, []);
+  const toggleEnabled = useCallback(async () => {
+    if (!settings) return;
+    const next = !settings.enabled;
+    setSettings({ enabled: next });
+    await sendMessage<SetSettingsPayload, Settings>('SET_SETTINGS', {
+      settings: { enabled: next },
+    });
+  }, [settings]);
 
-  const toggleTheme = useCallback(() => {
-    const next: Theme = theme === 'light' ? 'dark' : 'light';
-    setTheme(next);
-    applyTheme(next);
-    chrome.storage.local.set({ recome_theme: next }).catch(() => undefined);
-  }, [theme]);
+  const visible = useMemo(() => {
+    if (!events) return [];
+    return filter === 'unseen' ? events.filter((e) => !e.seenAt) : events;
+  }, [events, filter]);
 
-  const handleTabChange = useCallback((tab: PanelTab) => {
-    setActiveTab(tab);
-    persistActiveTab(tab);
-  }, []);
-
-  async function handleOnboardingComplete(
-    quickBlocks: string[],
-    quickLikes: string[],
-    seedPrefs?: SeedPreferences,
-  ) {
-    for (const topic of quickBlocks) {
-      await chrome.runtime
-        .sendMessage({ type: 'BLOCK_TOPIC', payload: { topic } })
-        .catch(() => undefined);
-    }
-    for (const topic of quickLikes) {
-      await chrome.runtime
-        .sendMessage({ type: 'LIKE_TOPIC', payload: { topic } })
-        .catch(() => undefined);
-    }
-    if (seedPrefs) {
-      await chrome.storage.local
-        .set({
-          recome_seed_prefs: seedPrefs,
-          recome_seed_prefs_at: new Date().toISOString(),
-        })
-        .catch(() => undefined);
-    }
-    await completeOnboarding();
-    setPanelMode('dashboard_default');
-  }
-
-  // Still loading
-  if (panelMode === 'loading') return null;
-
-  // First-time: show compact auth screen that redirects to web app
-  if (panelMode === 'onboarding_required') {
+  if (!auth || !settings) {
     return (
-      <div
-        className="app"
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          textAlign: 'center',
-          gap: 12,
-          padding: '40px 20px',
-          minHeight: 400,
-        }}
-      >
-        <img
-          src={chrome.runtime.getURL('icons/recome_logo_128.png')}
-          alt="RecoMe"
-          style={{ width: 64, height: 64, borderRadius: 16 }}
-        />
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Welcome to RecoMe</h2>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, maxWidth: 260 }}>
-          Your research, connected across YouTube, Reddit, and Amazon.
-        </p>
-        <button className="popup-btn-primary" onClick={openSignup}>
-          Create Account
-        </button>
-        <button
-          className="popup-btn-secondary"
-          onClick={async () => {
-            await handleOnboardingComplete([], []);
-          }}
-        >
-          Skip — use with defaults
-        </button>
-        <button className="popup-btn-link" onClick={openLogin}>
-          Already have an account? Log in
-        </button>
-      </div>
+      <>
+        <Header status="Loading" />
+        <div className="empty-state">
+          <div className="empty-body">Connecting to your graph…</div>
+        </div>
+      </>
     );
   }
 
-  // Replay from Settings
-  if (panelMode === 'onboarding_replay') {
+  if (!auth.loggedIn) {
     return (
-      <div className="app">
-        <Onboarding onComplete={handleOnboardingComplete} isReplay={true} />
-      </div>
+      <>
+        <Header status="Signed out" />
+        <div className="empty-state">
+          <div className="empty-title">Sign in to RecoMe</div>
+          <div className="empty-body">
+            Your interest graph lives in the cloud. Sign in once on the web app and the extension
+            picks up your session.
+          </div>
+          <button className="btn btn-primary btn-block" onClick={openLogin}>
+            Open recome.app to sign in
+          </button>
+        </div>
+        <Footer webUrl={webUrl} onOpen={() => openWeb('')} />
+      </>
     );
   }
-
-  // ── Main compact popup ────────────────────────────────────────────────────
 
   return (
-    <div className="app">
-      {/* Header */}
-      <header className="app-header">
-        <div className="app-header-row">
-          <a
-            className="app-logo"
-            href={WEB_APP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            title="Open RecoMe web app"
-          >
-            <img className="logo-icon" src="icons/recome_logo_48.png" alt="RecoMe" />
-            <span className="logo-text">RecoMe</span>
-          </a>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {authState?.authenticated && authState.profile && (
-              <span
-                style={{
-                  fontSize: 10,
-                  color: 'var(--text-muted)',
-                  maxWidth: 100,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {authState.profile.displayName || authState.profile.email}
-              </span>
-            )}
+    <>
+      <Header status="Active" />
+
+      <section className="panel panel-row-stack">
+        <div className="panel-row">
+          <span>Capture</span>
+          <div className="row-right">
+            <span className="muted">{settings.enabled ? 'on' : 'off'}</span>
+            <div
+              className={`toggle ${settings.enabled ? 'on' : ''}`}
+              onClick={toggleEnabled}
+              role="switch"
+              aria-checked={settings.enabled}
+            />
+          </div>
+        </div>
+        <div className="panel-row">
+          <span>Signed in</span>
+          <span className="muted">{auth.user?.email ?? auth.user?.id ?? 'logged in'}</span>
+        </div>
+      </section>
+
+      <section className="inbox-section">
+        <div className="inbox-header">
+          <div className="inbox-title">Inbox</div>
+          <div className="tab-group">
             <button
-              className="theme-toggle"
-              onClick={toggleTheme}
-              title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+              className={`tab ${filter === 'unseen' ? 'active' : ''}`}
+              onClick={() => setFilter('unseen')}
             >
-              {theme === 'light' ? '🌙' : '☀️'}
+              Unseen
+            </button>
+            <button
+              className={`tab ${filter === 'all' ? 'active' : ''}`}
+              onClick={() => setFilter('all')}
+            >
+              All
             </button>
           </div>
         </div>
-        {!authState?.authenticated && (
-          <div style={{ display: 'flex', gap: 6, padding: '6px 0' }}>
-            <button className="popup-btn-mini-primary" onClick={openSignup}>
-              Sign up
-            </button>
-            <button className="popup-btn-mini-secondary" onClick={openLogin}>
-              Log in
-            </button>
+
+        {loading && events === null && <div className="inbox-loading">Loading…</div>}
+        {!loading && visible.length === 0 && (
+          <div className="inbox-empty">
+            {filter === 'unseen' ? 'No new events. Check back later.' : 'No events yet.'}
           </div>
         )}
-      </header>
+        {visible.map((e) => (
+          <InboxRow
+            key={e.id}
+            event={e}
+            onSeen={async () => {
+              await sendMessage<MarkSeenPayload, void>('MARK_SEEN', { eventId: e.id });
+              void load();
+            }}
+            onFeedback={async (feedback) => {
+              await sendMessage<InboxFeedbackPayload, void>('INBOX_FEEDBACK', {
+                eventId: e.id,
+                feedback,
+              });
+              await sendMessage<MarkSeenPayload, void>('MARK_SEEN', { eventId: e.id });
+              void load();
+            }}
+            onOpen={() => {
+              const url = e.actionUrl ?? `${webUrl}/inbox`;
+              chrome.tabs.create({ url });
+              void sendMessage<MarkSeenPayload, void>('MARK_SEEN', { eventId: e.id });
+            }}
+          />
+        ))}
+      </section>
 
-      {/* Nav tabs */}
-      <nav className="app-nav" role="tablist" aria-label="Main navigation">
-        <button
-          role="tab"
-          aria-selected={activeTab === 'dashboard'}
-          className={`nav-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
-          onClick={() => handleTabChange('dashboard')}
-        >
-          Dashboard
-        </button>
-        <button
-          role="tab"
-          aria-selected={activeTab === 'agent'}
-          className={`nav-btn ${activeTab === 'agent' ? 'active' : ''}`}
-          onClick={() => handleTabChange('agent')}
-        >
-          Agent
-        </button>
-        <button
-          role="tab"
-          aria-selected={activeTab === 'settings'}
-          className={`nav-btn ${activeTab === 'settings' ? 'active' : ''}`}
-          onClick={() => handleTabChange('settings')}
-        >
-          Settings
-        </button>
-      </nav>
-
-      {connectionStatus !== 'connected' && <ConnectionBanner status={connectionStatus} />}
-
-      {/* Tab content */}
-      <div className="app-body">
-        {activeTab === 'dashboard' && <Dashboard />}
-        {activeTab === 'agent' && (
-          <AgentChat onNavigateToSettings={() => handleTabChange('settings')} />
-        )}
-        {activeTab === 'settings' && (
-          <SettingsPanel onReplayOnboarding={() => setPanelMode('onboarding_replay')} />
-        )}
-      </div>
-
-      {/* Web app links bar at bottom */}
-      <div className="popup-web-links">
-        <button
-          className="popup-web-link"
-          onClick={() => chrome.tabs.create({ url: `${WEB_APP_URL}/extension` })}
-        >
-          Full Dashboard
-        </button>
-        <span className="popup-web-divider" />
-        <button className="popup-web-link" onClick={openWebSettings}>
-          Advanced Settings
-        </button>
-        <span className="popup-web-divider" />
-        <button className="popup-web-link" onClick={() => chrome.tabs.create({ url: WEB_APP_URL })}>
-          recome-web.vercel.app
-        </button>
-      </div>
-    </div>
+      <Footer webUrl={webUrl} onOpen={() => openWeb('/inbox')} onLogout={logout} />
+    </>
   );
 }
 
-function ConnectionBanner({ status }: { status: ConnectionStatus }) {
-  if (status === 'connected') return null;
+function Header({ status }: { status: string }) {
   return (
-    <div className="connection-banner">
-      {status === 'offline'
-        ? 'Extension offline. Reload the page.'
-        : 'Connection degraded — some features limited.'}
-    </div>
+    <header className="popup-header">
+      <div className="brand">
+        <span className="brand-dot" />
+        <span className="brand-name">
+          Reco<span>Me</span>
+        </span>
+      </div>
+      <span className="header-status">● {status}</span>
+    </header>
   );
+}
+
+function Footer({
+  webUrl,
+  onOpen,
+  onLogout,
+}: {
+  webUrl: string;
+  onOpen: () => void;
+  onLogout?: () => void;
+}) {
+  return (
+    <footer className="popup-footer">
+      <span>v2.0.0</span>
+      <span>
+        <a href={webUrl} onClick={(e) => (e.preventDefault(), onOpen())}>
+          Open recome.app
+        </a>
+        {onLogout && (
+          <>
+            {' · '}
+            <a href="#logout" onClick={(e) => (e.preventDefault(), onLogout())}>
+              Sign out
+            </a>
+          </>
+        )}
+      </span>
+    </footer>
+  );
+}
+
+function InboxRow({
+  event,
+  onSeen,
+  onFeedback,
+  onOpen,
+}: {
+  event: AgentEvent;
+  onSeen: () => void;
+  onFeedback: (f: 'useful' | 'not_useful') => void;
+  onOpen: () => void;
+}) {
+  const meta = KIND_META[event.kind] ?? { label: event.agent, accent: '#5eead4', icon: '●' };
+  return (
+    <article className={`inbox-row ${event.seenAt ? 'seen' : ''}`}>
+      <div
+        className="inbox-icon"
+        style={{
+          background: meta.accent + '22',
+          color: meta.accent,
+          border: '1px solid ' + meta.accent + '44',
+        }}
+      >
+        {meta.icon}
+      </div>
+      <div className="inbox-body">
+        <div className="inbox-meta" style={{ color: meta.accent }}>
+          {meta.label} · {timeAgo(event.createdAt)}
+        </div>
+        <div className="inbox-title-row">{event.title}</div>
+        {event.body && <div className="inbox-text">{event.body}</div>}
+        <div className="inbox-actions">
+          <button className="inline-btn primary" onClick={onOpen}>
+            Open
+          </button>
+          <button className="inline-btn" onClick={onSeen} title="Dismiss">
+            ✕
+          </button>
+          <span className="inbox-spacer" />
+          <button className="inline-btn ghost" onClick={() => onFeedback('useful')} title="Useful">
+            👍
+          </button>
+          <button
+            className="inline-btn ghost"
+            onClick={() => onFeedback('not_useful')}
+            title="Not useful"
+          >
+            👎
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function timeAgo(ts: number): string {
+  const diff = Date.now() - ts;
+  if (diff < 60_000) return 'just now';
+  if (diff < 3_600_000) return `${Math.round(diff / 60_000)}m ago`;
+  if (diff < 86_400_000) return `${Math.round(diff / 3_600_000)}h ago`;
+  return `${Math.round(diff / 86_400_000)}d ago`;
 }

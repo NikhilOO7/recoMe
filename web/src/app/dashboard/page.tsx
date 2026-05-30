@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { authFetch, getToken, clearTokens } from '@/lib/auth';
+import { AppShell } from '@/components/AppShell';
 
 interface UserProfile {
   id: string;
@@ -105,234 +106,240 @@ export default function DashboardPage() {
       });
   }, []);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center pt-14">
-        <div className="text-white/50">Loading...</div>
-      </div>
-    );
-  }
+  return (
+    <AppShell
+      title="Trails"
+      subtitle={
+        profile
+          ? `${profile.email} · ${profile.tier} plan`
+          : 'Your active research trails across captured platforms.'
+      }
+    >
+      {loading && (
+        <div className="text-sm" style={{ color: 'var(--muted)' }}>
+          Loading…
+        </div>
+      )}
 
-  if (error || !profile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center pt-14">
-        <div className="text-center">
-          <p className="text-white/50 mb-2">Could not load your profile.</p>
-          <p className="text-xs text-white/30 mb-4">{error}</p>
+      {(error || !profile) && !loading && (
+        <div
+          className="rounded-2xl p-8 text-center"
+          style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+        >
+          <p className="text-sm mb-2" style={{ color: 'var(--ink-2)' }}>
+            Could not load your profile.
+          </p>
+          <p className="text-xs mb-4" style={{ color: 'var(--muted-2)' }}>
+            {error}
+          </p>
           <div className="flex gap-3 justify-center">
             <button
               onClick={() => {
                 clearTokens();
                 window.location.href = '/login';
               }}
-              className="text-[#5eead4] font-medium hover:underline text-sm cursor-pointer"
+              className="font-medium hover:underline text-sm cursor-pointer"
+              style={{ color: 'var(--accent)' }}
             >
               Sign in again
             </button>
             <button
               onClick={() => window.location.reload()}
-              className="text-white/40 hover:text-white/60 text-sm cursor-pointer"
+              className="text-sm cursor-pointer hover:opacity-80"
+              style={{ color: 'var(--muted)' }}
             >
               Retry
             </button>
           </div>
         </div>
-      </div>
-    );
-  }
+      )}
 
-  return (
-    <div className="max-w-4xl mx-auto px-6 pt-24 pb-16">
-      {/* Profile header */}
-      <div className="flex items-center gap-4 mb-10">
-        {profile.avatarUrl ? (
-          <img src={profile.avatarUrl} alt="" className="w-12 h-12 rounded-full" />
-        ) : (
-          <div className="w-12 h-12 rounded-full bg-[#2356e8]/20 flex items-center justify-center text-lg font-bold text-[#93b4fd]">
-            {(profile.displayName || profile.email)[0]?.toUpperCase()}
+      {profile && !loading && (
+        <>
+          {/* Quick links grid */}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            <DashCard
+              href="/inbox"
+              border="var(--accent)"
+              title="Inbox"
+              desc="Things your agents brought you — Recall, Concierge, Curator."
+            />
+            <DashCard
+              href="/agents"
+              border="var(--watchlist)"
+              title="Agents"
+              desc="Pause, resume, view runs and budgets across all six agents."
+            />
+            <DashCard
+              href="/mind"
+              border="var(--concierge)"
+              title="Mind Map"
+              desc="See your interest graph — topics, edges, clusters, time-windowed."
+            />
+            <DashCard
+              href="/personality"
+              border="var(--decision)"
+              title="Attention Mirror"
+              desc="Composition + 8-week trajectory of what you actually pay attention to. Opt-in."
+            />
+            <DashCard
+              href="/audit-log"
+              border="var(--recall)"
+              title="Audit Log"
+              desc="Every capture, every agent run, every event surfaced. Exportable. Deletable."
+            />
+            <DashCard
+              href="/paste"
+              border="var(--curator)"
+              title="Capture"
+              desc="Paste a URL. The graph remembers."
+            />
           </div>
-        )}
-        <div>
-          <h1 className="text-xl font-bold">{profile.displayName || 'RecoMe User'}</h1>
-          <p className="text-sm text-white/40">
-            {profile.email} &middot; {profile.tier} plan
-          </p>
-        </div>
-      </div>
 
-      {/* Quick links grid */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
-        <Link
-          href="/inbox"
-          className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 hover:bg-white/[0.06] transition-colors relative"
-          style={{ borderLeftColor: '#5eead4', borderLeftWidth: 3 }}
-        >
-          <div className="text-xl mb-3">📥</div>
-          <h3 className="text-sm font-bold mb-1">Inbox</h3>
-          <p className="text-xs text-white/40">
-            Things your agents brought you — Recall, Concierge, Curator.
-          </p>
-        </Link>
-
-        <Link
-          href="/agents"
-          className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 hover:bg-white/[0.06] transition-colors relative"
-          style={{ borderLeftColor: '#7c3aed', borderLeftWidth: 3 }}
-        >
-          <div className="text-xl mb-3">⚙️</div>
-          <h3 className="text-sm font-bold mb-1">Agents</h3>
-          <p className="text-xs text-white/40">
-            Pause, resume, view runs and budgets across all six agents.
-          </p>
-        </Link>
-
-        <Link
-          href="/mind"
-          className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 hover:bg-white/[0.06] transition-colors relative"
-          style={{ borderLeftColor: '#a78bfa', borderLeftWidth: 3 }}
-        >
-          <div className="text-xl mb-3">🕸</div>
-          <h3 className="text-sm font-bold mb-1">Mind Map</h3>
-          <p className="text-xs text-white/40">
-            See your interest graph — topics, edges, clusters, time-windowed.
-          </p>
-        </Link>
-
-        <Link
-          href="/personality"
-          className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 hover:bg-white/[0.06] transition-colors relative"
-          style={{ borderLeftColor: '#fbbf24', borderLeftWidth: 3 }}
-        >
-          <div className="text-xl mb-3">🪞</div>
-          <h3 className="text-sm font-bold mb-1">Personality Mirror</h3>
-          <p className="text-xs text-white/40">
-            Composition + 8-week trajectory of what you actually pay attention to. Opt-in.
-          </p>
-        </Link>
-
-        <Link
-          href="/audit-log"
-          className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 hover:bg-white/[0.06] transition-colors relative"
-          style={{ borderLeftColor: '#fb7185', borderLeftWidth: 3 }}
-        >
-          <div className="text-xl mb-3">📜</div>
-          <h3 className="text-sm font-bold mb-1">Audit Log of You</h3>
-          <p className="text-xs text-white/40">
-            Every capture, every agent run, every event surfaced. Exportable. Deletable.
-          </p>
-        </Link>
-
-        <Link
-          href="/privacy"
-          className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 hover:bg-white/[0.06] transition-colors"
-        >
-          <div className="text-xl mb-3">🔒</div>
-          <h3 className="text-sm font-bold mb-1">Privacy Report</h3>
-          <p className="text-xs text-white/40">See what data is stored and where it goes.</p>
-        </Link>
-
-        <Link
-          href="/settings"
-          className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 hover:bg-white/[0.06] transition-colors"
-        >
-          <div className="text-xl mb-3">⚙️</div>
-          <h3 className="text-sm font-bold mb-1">Settings</h3>
-          <p className="text-xs text-white/40">Platform toggles, AI provider, preferences.</p>
-        </Link>
-
-        <Link
-          href="/extension"
-          className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 hover:bg-white/[0.06] transition-colors"
-        >
-          <div className="text-xl mb-3">🧩</div>
-          <h3 className="text-sm font-bold mb-1">Extension</h3>
-          <p className="text-xs text-white/40">Install or update the browser extension.</p>
-        </Link>
-      </div>
-
-      {/* Research trails — live data from /intelligence/trails */}
-      <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-8">
-        <h2 className="text-lg font-bold mb-2">Your Research Trails</h2>
-        <p className="text-sm text-white/40 mb-6">
-          Topics you&apos;ve touched on multiple platforms — captured by the extension as you browse
-          YouTube, Reddit, Amazon and others.
-        </p>
-
-        {trails === null && !trailsError && (
-          <div className="text-xs text-white/30">Loading trails…</div>
-        )}
-
-        {trailsError && (
-          <div className="text-xs text-white/40 bg-white/[0.02] border border-white/[0.06] rounded-lg p-4">
-            {trailsError}
-          </div>
-        )}
-
-        {trails && trails.length === 0 && !trailsError && (
-          <div className="text-xs text-white/40 bg-white/[0.02] border border-white/[0.06] rounded-lg p-4">
-            No cross-platform trails yet. Browse the same topic on 2+ supported platforms and it
-            will appear here. Make sure cloud sync is enabled in the extension settings.
-          </div>
-        )}
-
-        {trails && trails.length > 0 && (
-          <div className="flex flex-col gap-4">
-            {trails.map((trail) => (
-              <div
-                key={trail.topicNormalizedName}
-                className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-5"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-bold">{trail.topicDisplayName}</h3>
-                  <div className="text-[10px] text-white/30 uppercase tracking-widest">
-                    {trail.platformsTouched.length} platforms · {trail.hops.length} hops
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 flex-wrap text-xs text-white/60">
-                  {trail.hops.slice(0, 6).map((hop, i) => (
-                    <span key={`${hop.pageUrl}-${i}`} className="flex items-center gap-2">
-                      <span className="bg-white/[0.04] border border-white/[0.08] rounded-md px-2 py-1">
-                        <span className="mr-1">{PLATFORM_EMOJI[hop.platform] ?? '🌐'}</span>
-                        {hop.platform}
-                      </span>
-                      {i < Math.min(trail.hops.length - 1, 5) && (
-                        <span className="text-white/20">→</span>
-                      )}
-                    </span>
-                  ))}
-                  {trail.hops.length > 6 && (
-                    <span className="text-white/30">+{trail.hops.length - 6} more</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="flex gap-3 flex-wrap mt-6">
-          <a
-            href="https://chromewebstore.google.com/detail/recome/fgpjboodmfnjbpdmbapjjjbfkflhbkcf"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs bg-white/[0.06] border border-white/[0.08] rounded-lg px-4 py-2 text-[#5eead4] hover:bg-white/[0.1] transition-colors"
+          {/* Research trails — live data from /intelligence/trails */}
+          <div
+            className="rounded-2xl p-7"
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
           >
-            Get the Extension
-          </a>
-        </div>
-      </div>
+            <h2 className="text-lg font-semibold mb-1" style={{ color: 'var(--ink)' }}>
+              Your research trails
+            </h2>
+            <p className="text-sm mb-5" style={{ color: 'var(--muted)' }}>
+              Topics you&apos;ve touched on multiple platforms — captured as you browse YouTube,
+              Reddit, Amazon and others.
+            </p>
 
-      {/* Logout */}
-      <div className="mt-10 text-center">
-        <button
-          onClick={() => {
-            clearTokens();
-            window.location.href = '/';
-          }}
-          className="text-xs text-white/30 hover:text-white/50 transition-colors cursor-pointer"
-        >
-          Sign out
-        </button>
-      </div>
-    </div>
+            {trails === null && !trailsError && (
+              <div className="text-xs" style={{ color: 'var(--muted-2)' }}>
+                Loading trails…
+              </div>
+            )}
+
+            {trailsError && (
+              <div
+                className="text-xs rounded-lg p-4"
+                style={{
+                  background: 'var(--surface-2)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--muted)',
+                }}
+              >
+                {trailsError}
+              </div>
+            )}
+
+            {trails && trails.length === 0 && !trailsError && (
+              <div
+                className="text-xs rounded-lg p-4"
+                style={{
+                  background: 'var(--surface-2)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--muted)',
+                }}
+              >
+                No cross-platform trails yet. Browse the same topic on 2+ supported platforms and it
+                will appear here. Make sure cloud sync is enabled in the extension settings.
+              </div>
+            )}
+
+            {trails && trails.length > 0 && (
+              <div className="flex flex-col gap-3">
+                {trails.map((trail) => (
+                  <div
+                    key={trail.topicNormalizedName}
+                    className="rounded-xl p-5"
+                    style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+                        {trail.topicDisplayName}
+                      </h3>
+                      <div
+                        className="text-[10px] uppercase tracking-widest"
+                        style={{ color: 'var(--muted-2)' }}
+                      >
+                        {trail.platformsTouched.length} platforms · {trail.hops.length} hops
+                      </div>
+                    </div>
+                    <div
+                      className="flex items-center gap-2 flex-wrap text-xs"
+                      style={{ color: 'var(--ink-2)' }}
+                    >
+                      {trail.hops.slice(0, 6).map((hop, i) => (
+                        <span key={`${hop.pageUrl}-${i}`} className="flex items-center gap-2">
+                          <span
+                            className="rounded-md px-2 py-1"
+                            style={{
+                              background: 'var(--surface-3)',
+                              border: '1px solid var(--border)',
+                            }}
+                          >
+                            <span className="mr-1">{PLATFORM_EMOJI[hop.platform] ?? '🌐'}</span>
+                            {hop.platform}
+                          </span>
+                          {i < Math.min(trail.hops.length - 1, 5) && (
+                            <span style={{ color: 'var(--muted-2)' }}>→</span>
+                          )}
+                        </span>
+                      ))}
+                      {trail.hops.length > 6 && (
+                        <span style={{ color: 'var(--muted-2)' }}>
+                          +{trail.hops.length - 6} more
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Logout */}
+          <div className="mt-8 text-center">
+            <button
+              onClick={() => {
+                clearTokens();
+                window.location.href = '/';
+              }}
+              className="text-xs hover:opacity-80 transition-opacity cursor-pointer"
+              style={{ color: 'var(--muted-2)' }}
+            >
+              Sign out
+            </button>
+          </div>
+        </>
+      )}
+    </AppShell>
+  );
+}
+
+function DashCard({
+  href,
+  border,
+  title,
+  desc,
+}: {
+  href: string;
+  border: string;
+  title: string;
+  desc: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="rounded-2xl p-5 transition-colors hover:opacity-90"
+      style={{
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderLeft: `3px solid ${border}`,
+      }}
+    >
+      <h3 className="text-[13.5px] font-semibold mb-1" style={{ color: 'var(--ink)' }}>
+        {title}
+      </h3>
+      <p className="text-[12px] leading-relaxed" style={{ color: 'var(--muted)' }}>
+        {desc}
+      </p>
+    </Link>
   );
 }

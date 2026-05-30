@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import { authFetch, getToken } from '@/lib/auth';
+import { AppShell } from '@/components/AppShell';
 
 // ── Backend shapes ──────────────────────────────────────────────────────────
 interface AgentState {
@@ -278,20 +278,10 @@ export default function AgentsPage() {
   );
 
   return (
-    <div className="max-w-6xl mx-auto px-6 pt-24 pb-16">
-      {/* Header */}
-      <header className="mb-8">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-white/40 mb-3">
-          <span className="w-2 h-2 rounded-full bg-[#7c3aed]" />
-          Agents · ADR-0012
-        </div>
-        <h1 className="text-3xl sm:text-4xl font-black tracking-[-1.5px] mb-2">Your agents</h1>
-        <p className="text-sm text-white/50 max-w-2xl leading-relaxed">
-          Six background workers on your interest graph. Each cites every signal it draws from. None
-          can buy, post, send, or delete on your behalf — by design.
-        </p>
-      </header>
-
+    <AppShell
+      title="Agents"
+      subtitle="Six background workers on your graph. They cite every signal. None can transact for you."
+    >
       {/* Stat strip */}
       <div className="grid sm:grid-cols-3 gap-3 mb-8">
         <StatCard
@@ -307,7 +297,14 @@ export default function AgentsPage() {
       </div>
 
       {error && (
-        <div className="bg-white/2 border border-white/6 rounded-lg p-4 text-xs text-white/55 mb-6">
+        <div
+          className="rounded-lg p-4 text-xs mb-6"
+          style={{
+            background: 'var(--surface-2)',
+            border: '1px solid var(--border)',
+            color: 'var(--muted)',
+          }}
+        >
           {error}
         </div>
       )}
@@ -337,31 +334,32 @@ export default function AgentsPage() {
       </div>
 
       {/* Trust posture */}
-      <div className="mt-8 bg-white/3 border border-white/6 rounded-2xl p-6">
-        <h2 className="text-sm font-bold mb-3 flex items-center gap-2">
-          <span>🛡</span> Trust + safety envelope
+      <div
+        className="mt-8 rounded-2xl p-6"
+        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+      >
+        <h2
+          className="text-[11px] font-bold uppercase tracking-[0.18em] mb-3"
+          style={{ color: 'var(--muted-2)' }}
+        >
+          Trust + safety envelope (binding)
         </h2>
-        <ul className="text-xs text-white/60 space-y-1.5 leading-relaxed">
+        <ul
+          className="text-[13px] space-y-1.5 leading-relaxed pl-5 list-disc"
+          style={{ color: 'var(--ink-2)' }}
+        >
+          <li>No agent takes irreversible action — buy / post / send / delete stay user-driven</li>
+          <li>Every emission cites the captured signals it drew from</li>
+          <li>One-click pause per agent, persisted across sessions</li>
+          <li>Quiet hours respected for all push (default 22:00 – 08:00 local)</li>
           <li>
-            ✓ No agent takes irreversible action — buy / post / send / delete stay user-driven
+            Daily cost ceiling per user — currently capped at{' '}
+            <b style={{ color: 'var(--ink)' }}>{formatUsd(budget?.dailyCapMicros ?? 100_000)}</b>
           </li>
-          <li>✓ Every emission cites the captured signals it drew from</li>
-          <li>✓ One-click pause per agent, persisted across sessions</li>
-          <li>✓ Quiet hours respected for all push (default 22:00 – 08:00 local)</li>
-          <li>
-            ✓ Daily cost ceiling per user — currently capped at{' '}
-            <b>{formatUsd(budget?.dailyCapMicros ?? 100_000)}</b>
-          </li>
-          <li>✓ Personality Mirror is opt-in and one-click-wipeable</li>
+          <li>Attention Mirror is opt-in and one-click-wipeable</li>
         </ul>
       </div>
-
-      <div className="mt-10 text-center">
-        <Link href="/inbox" className="text-xs text-white/30 hover:text-white/60 transition-colors">
-          ← Back to inbox
-        </Link>
-      </div>
-    </div>
+    </AppShell>
   );
 }
 
@@ -369,29 +367,51 @@ export default function AgentsPage() {
 
 function StatCard({ k, v, d }: { k: string; v: string; d: string }) {
   return (
-    <div className="bg-white/3 border border-white/6 rounded-xl p-4">
-      <div className="text-[11px] uppercase tracking-widest text-white/40 font-semibold mb-2">
+    <div
+      className="rounded-xl p-4"
+      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+    >
+      <div
+        className="text-[11px] uppercase tracking-widest font-semibold mb-2"
+        style={{ color: 'var(--muted-2)' }}
+      >
         {k}
       </div>
-      <div className="text-2xl font-black tracking-tight">{v}</div>
-      <div className="text-[11px] text-white/40 mt-1">{d}</div>
+      <div className="text-2xl font-black tracking-tight" style={{ color: 'var(--ink)' }}>
+        {v}
+      </div>
+      <div className="text-[11px] mt-1" style={{ color: 'var(--muted)' }}>
+        {d}
+      </div>
     </div>
   );
 }
 
 function BudgetMeter({ spendMicros, capMicros }: { spendMicros: number; capMicros: number }) {
   const pct = capMicros > 0 ? Math.min(100, (spendMicros / capMicros) * 100) : 0;
-  const color = pct < 60 ? '#34d399' : pct < 90 ? '#fbbf24' : '#fb7185';
+  // Threshold colors are theme-independent (success → warn → danger semantic).
+  const color = pct < 60 ? 'var(--success)' : pct < 90 ? 'var(--warn)' : 'var(--danger)';
   return (
-    <div className="bg-white/3 border border-white/6 rounded-xl p-4">
-      <div className="text-[11px] uppercase tracking-widest text-white/40 font-semibold mb-2">
+    <div
+      className="rounded-xl p-4"
+      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+    >
+      <div
+        className="text-[11px] uppercase tracking-widest font-semibold mb-2"
+        style={{ color: 'var(--muted-2)' }}
+      >
         Spend · last 24h
       </div>
-      <div className="text-2xl font-black tracking-tight">
+      <div className="text-2xl font-black tracking-tight" style={{ color: 'var(--ink)' }}>
         {formatUsd(spendMicros)}{' '}
-        <span className="text-sm text-white/40 font-medium">/ {formatUsd(capMicros)}</span>
+        <span className="text-sm font-medium" style={{ color: 'var(--muted-2)' }}>
+          / {formatUsd(capMicros)}
+        </span>
       </div>
-      <div className="h-1.5 bg-white/6 rounded-full mt-3 overflow-hidden">
+      <div
+        className="h-1.5 rounded-full mt-3 overflow-hidden"
+        style={{ background: 'var(--surface-3)' }}
+      >
         <div className="h-full transition-all" style={{ width: `${pct}%`, background: color }} />
       </div>
     </div>
@@ -426,30 +446,40 @@ function AgentCard({
 
   return (
     <div
-      className={`bg-white/3 border border-white/8 rounded-2xl p-5 transition-all ${
-        meta.comingSoon ? 'opacity-60' : 'hover:bg-white/4 hover:border-white/14'
-      }`}
-      style={{ borderLeftColor: meta.color, borderLeftWidth: 3 }}
+      className="rounded-2xl p-5 transition-all"
+      style={{
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderLeft: `3px solid ${meta.color}`,
+        opacity: meta.comingSoon ? 0.65 : 1,
+      }}
     >
       {/* Head */}
       <div className="flex items-start gap-3 mb-3">
         <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-base text-white"
+          className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-base"
           style={{
             background: `linear-gradient(135deg, ${meta.color}, ${meta.color}cc)`,
             boxShadow: `0 4px 12px ${meta.color}40`,
+            color: '#ffffff',
           }}
         >
           {meta.glyph}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-base font-bold">{meta.displayName}</h3>
-          <p className="text-xs text-white/45 mt-0.5">{meta.tagline}</p>
+          <h3 className="text-base font-semibold" style={{ color: 'var(--ink)' }}>
+            {meta.displayName}
+          </h3>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--muted-2)' }}>
+            {meta.tagline}
+          </p>
         </div>
         <StatusPill meta={meta} state={state} />
       </div>
 
-      <p className="text-[13px] text-white/55 leading-relaxed mb-4">{meta.description}</p>
+      <p className="text-[13px] leading-relaxed mb-4" style={{ color: 'var(--ink-2)' }}>
+        {meta.description}
+      </p>
 
       {/* Metrics row */}
       {isShipped && (
@@ -466,27 +496,38 @@ function AgentCard({
       {/* Last activity */}
       {isShipped && state && (state.lastRunAt || state.lastEmittedAt) && (
         <div
-          className="text-[12px] text-white/55 leading-relaxed mb-4 p-3 rounded-lg"
-          style={{ background: meta.soft, borderLeft: `2px solid ${meta.color}` }}
+          className="text-[12px] leading-relaxed mb-4 p-3 rounded-lg"
+          style={{
+            background: meta.soft,
+            borderLeft: `2px solid ${meta.color}`,
+            color: 'var(--ink-2)',
+          }}
         >
           {state.lastEmittedAt ? (
             <>
               Last surfaced an event{' '}
-              <b className="text-white">{relativeTime(state.lastEmittedAt)}</b>.
+              <b style={{ color: 'var(--ink)' }}>{relativeTime(state.lastEmittedAt)}</b>.
             </>
           ) : (
             <>
-              Last run <b className="text-white">{relativeTime(state.lastRunAt)}</b> — no event
-              emitted (skipped, capped, or no match).
+              Last run <b style={{ color: 'var(--ink)' }}>{relativeTime(state.lastRunAt)}</b> — no
+              event emitted (skipped, capped, or no match).
             </>
           )}
         </div>
       )}
 
       {meta.comingSoon && (
-        <div className="text-xs bg-white/2 border border-white/6 rounded-lg p-3 mb-4 text-white/45">
-          Ships in Phase 3 (per <code className="text-white/60">ADR-0012 §2.2</code>). Wiring will
-          appear here once registered.
+        <div
+          className="text-xs rounded-lg p-3 mb-4"
+          style={{
+            background: 'var(--surface-2)',
+            border: '1px solid var(--border)',
+            color: 'var(--muted)',
+          }}
+        >
+          Ships in Phase 3 (per <code style={{ color: 'var(--ink-2)' }}>ADR-0012 §2.2</code>).
+          Wiring will appear here once registered.
         </div>
       )}
 
@@ -497,24 +538,27 @@ function AgentCard({
             <button
               disabled={running}
               onClick={onRunNow}
-              className="text-xs font-semibold bg-white text-(--ink) px-3 py-1.5 rounded-md hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="text-xs font-semibold px-3 py-1.5 rounded-md hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
             >
               {running ? 'Running…' : 'Run now'}
             </button>
             <button
               disabled={pausing}
               onClick={onTogglePause}
-              className={`text-xs font-medium px-3 py-1.5 rounded-md border transition-colors disabled:opacity-50 cursor-pointer ${
-                isPaused
-                  ? 'bg-white/4 border-white/10 text-white/70 hover:bg-white/7'
-                  : 'bg-transparent border-white/10 text-white/55 hover:text-white hover:border-white/20'
-              }`}
+              className="text-xs font-medium px-3 py-1.5 rounded-md transition-colors disabled:opacity-50 cursor-pointer hover:opacity-90"
+              style={{
+                background: isPaused ? 'var(--surface-2)' : 'transparent',
+                border: '1px solid var(--border)',
+                color: isPaused ? 'var(--ink-2)' : 'var(--muted)',
+              }}
             >
               {pausing ? '…' : isPaused ? '▶ Resume' : '⏸ Pause'}
             </button>
             <button
               onClick={onToggleExpand}
-              className="ml-auto text-xs text-white/40 hover:text-[#5eead4] transition-colors cursor-pointer"
+              className="ml-auto text-xs transition-colors cursor-pointer hover:underline"
+              style={{ color: 'var(--muted)' }}
             >
               {expanded ? 'Hide history ↑' : 'View run history ↓'}
             </button>
@@ -524,15 +568,26 @@ function AgentCard({
 
       {/* Run history drawer */}
       {expanded && (
-        <div className="mt-4 pt-4 border-t border-white/6">
-          <div className="text-[11px] uppercase tracking-widest text-white/40 font-semibold mb-3">
+        <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
+          <div
+            className="text-[11px] uppercase tracking-widest font-semibold mb-3"
+            style={{ color: 'var(--muted-2)' }}
+          >
             Recent runs
           </div>
-          {runs === null && <div className="text-xs text-white/30">Loading…</div>}
+          {runs === null && (
+            <div className="text-xs" style={{ color: 'var(--muted-2)' }}>
+              Loading…
+            </div>
+          )}
           {runs && runs.length === 0 && (
-            <div className="text-xs text-white/40">
+            <div className="text-xs" style={{ color: 'var(--muted)' }}>
               No runs yet — try{' '}
-              <button onClick={onRunNow} className="text-[#5eead4] hover:underline cursor-pointer">
+              <button
+                onClick={onRunNow}
+                className="hover:underline cursor-pointer"
+                style={{ color: 'var(--accent)' }}
+              >
                 Run now
               </button>
               .
@@ -549,20 +604,27 @@ function AgentCard({
                 return (
                   <li
                     key={r.id}
-                    className="flex items-start gap-3 text-xs py-1.5 border-b border-white/4 last:border-b-0"
+                    className="flex items-start gap-3 text-xs py-1.5"
+                    style={{ borderBottom: '1px solid var(--border)' }}
                   >
-                    <span className="text-white/35 w-14 shrink-0">{relativeTime(r.startedAt)}</span>
+                    <span className="w-14 shrink-0" style={{ color: 'var(--muted-2)' }}>
+                      {relativeTime(r.startedAt)}
+                    </span>
                     <span
                       className="text-[10px] font-bold uppercase tracking-widest shrink-0 w-16"
                       style={{ color: s.color }}
                     >
                       {s.label}
                     </span>
-                    <span className="text-white/35 shrink-0 w-16">{r.trigger}</span>
-                    <span className="text-white/55 flex-1 wrap-break-word">
+                    <span className="shrink-0 w-16" style={{ color: 'var(--muted-2)' }}>
+                      {r.trigger}
+                    </span>
+                    <span className="flex-1 wrap-break-word" style={{ color: 'var(--ink-2)' }}>
                       {reason ?? '—'}
                       {r.costMicros > 0 && (
-                        <span className="text-white/35 ml-2">· {formatUsd(r.costMicros)}</span>
+                        <span className="ml-2" style={{ color: 'var(--muted-2)' }}>
+                          · {formatUsd(r.costMicros)}
+                        </span>
                       )}
                     </span>
                   </li>
@@ -577,30 +639,61 @@ function AgentCard({
 }
 
 function StatusPill({ meta, state }: { meta: AgentMeta; state: AgentState | null }) {
+  // Off / Soon use neutral surface tokens so they read in both themes.
+  // Paused / Active use the semantic warn/success colors with a soft
+  // background derived from the same hue.
   if (meta.comingSoon) {
     return (
-      <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md bg-white/4 border border-white/8 text-white/40 shrink-0">
+      <span
+        className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md shrink-0"
+        style={{
+          background: 'var(--surface-2)',
+          border: '1px solid var(--border)',
+          color: 'var(--muted-2)',
+        }}
+      >
         Soon
       </span>
     );
   }
   if (!state) {
     return (
-      <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md bg-white/4 border border-white/8 text-white/45 shrink-0">
+      <span
+        className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md shrink-0"
+        style={{
+          background: 'var(--surface-2)',
+          border: '1px solid var(--border)',
+          color: 'var(--muted-2)',
+        }}
+      >
         Off
       </span>
     );
   }
   if (state.paused) {
     return (
-      <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md bg-[#fbbf24]/14 border border-[#fbbf24]/30 text-[#fbbf24] shrink-0">
+      <span
+        className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md shrink-0"
+        style={{
+          background: 'rgba(245, 158, 11, 0.14)',
+          border: '1px solid rgba(245, 158, 11, 0.3)',
+          color: 'var(--warn)',
+        }}
+      >
         Paused
       </span>
     );
   }
   return (
-    <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md bg-[#34d399]/14 border border-[#34d399]/30 text-[#34d399] shrink-0 inline-flex items-center gap-1.5">
-      <span className="w-1.5 h-1.5 rounded-full bg-[#34d399]" />
+    <span
+      className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md shrink-0 inline-flex items-center gap-1.5"
+      style={{
+        background: 'rgba(16, 185, 129, 0.12)',
+        border: '1px solid rgba(16, 185, 129, 0.3)',
+        color: 'var(--success)',
+      }}
+    >
+      <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--success)' }} />
       Active
     </span>
   );
@@ -608,11 +701,19 @@ function StatusPill({ meta, state }: { meta: AgentMeta; state: AgentState | null
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-white/2 border border-white/6 rounded-lg p-2">
-      <div className="text-[10px] uppercase tracking-widest text-white/35 font-semibold mb-1">
+    <div
+      className="rounded-lg p-2"
+      style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
+    >
+      <div
+        className="text-[10px] uppercase tracking-widest font-semibold mb-1"
+        style={{ color: 'var(--muted-2)' }}
+      >
         {label}
       </div>
-      <div className="text-xs font-bold text-white/85 truncate">{value}</div>
+      <div className="text-xs font-bold truncate" style={{ color: 'var(--ink)' }}>
+        {value}
+      </div>
     </div>
   );
 }

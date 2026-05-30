@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
-import { Navbar } from '@/components/Navbar';
-import { Footer } from '@/components/Footer';
+import { ThemeProvider, THEME_INIT_SCRIPT } from '@/components/ThemeProvider';
+import { LayoutSwitcher } from '@/components/LayoutSwitcher';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -36,9 +36,15 @@ export const metadata: Metadata = {
   },
 };
 
-// Next 16 splits viewport/theme from metadata. Keep them here, not above.
+// Next 16 splits viewport/theme from metadata.
+// The themeColor matches the dark default — ThemeProvider's inline
+// script swaps data-theme on <html> before paint, so the browser
+// chrome color and the body bg agree from the first frame.
 export const viewport: Viewport = {
-  themeColor: '#0a0a0a',
+  themeColor: [
+    { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' },
+    { media: '(prefers-color-scheme: light)', color: '#f6f6f7' },
+  ],
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
@@ -50,11 +56,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      data-theme="dark"
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
+      <head>
+        {/* No-flash: set data-theme from localStorage BEFORE first paint.
+            Prevents a dark→light flash for users who picked light. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col">
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <ThemeProvider>
+          <LayoutSwitcher>{children}</LayoutSwitcher>
+        </ThemeProvider>
       </body>
     </html>
   );

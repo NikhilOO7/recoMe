@@ -1,64 +1,159 @@
 @import 'tailwindcss';
 
 /* ──────────────────────────────────────────────────────────────────
-   Recome design tokens — aligned with docs/architecture/recome-overview.html
-   Background is pure dark; teal is the primary accent. The secondary
-   hues map 1:1 to the typed-graph color coding used across our docs:
-     teal   → topics (and the consumer surface)
-     violet → pages / graph writes
-     amber  → entities / IaaS surface
-     rose   → :you / agents
-     blue   → infra layer
-   Keep these in lockstep with the overview deck so the site, the deck,
-   and the diagrams all read as one product.
-   ────────────────────────────────────────────────────────────────── */
-:root {
-  --background: #0a0a0a;
-  --foreground: #ffffff;
+   Recome — dual-palette design tokens.
 
-  /* Surface elevations */
-  --ink: #0a0a0a;
-  --ink2: #111111;
-  --ink3: #161616;
+   Two themes ship side-by-side:
+     • dark + teal  → matches docs/architecture/recome-overview.html
+       and the marketing landing brand
+     • light + purple → matches docs/demo/recome-app.html (in-app)
+
+   The active palette is selected by `data-theme="light"` or
+   `data-theme="dark"` on <html>, set by ThemeProvider (with a no-flash
+   inline script in layout.tsx). `:root` is the dark default so the
+   server-rendered HTML matches the brand even without JS.
+
+   Use the SEMANTIC tokens in components (`var(--surface)`,
+   `var(--ink)`, `var(--accent)`) — not the raw palette names.
+   Switching themes means swapping the semantic mapping, not the
+   component code.
+
+   Agent palette + platform palette are shared across themes (with a
+   light-mode soft-tint pair when needed). They are typed-graph colors
+   per ADR-0012 §2.2 / ADR-0013, so they identify the agent regardless
+   of the theme around them.
+   ────────────────────────────────────────────────────────────────── */
+
+:root,
+[data-theme='dark'] {
+  /* Surfaces */
+  --bg: #0a0a0a;
+  --surface: #111111;
+  --surface-2: #161616;
+  --surface-3: #1c1c1c;
 
   /* Lines */
-  --line: rgba(255, 255, 255, 0.08);
-  --line-strong: rgba(255, 255, 255, 0.16);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
 
   /* Text */
-  --text: rgba(255, 255, 255, 0.92);
-  --text-dim: rgba(255, 255, 255, 0.62);
-  --text-faint: rgba(255, 255, 255, 0.36);
-  --muted: rgba(255, 255, 255, 0.55);
+  --ink: rgba(255, 255, 255, 0.92);
+  --ink-2: rgba(255, 255, 255, 0.78);
+  --muted: rgba(255, 255, 255, 0.62);
+  --muted-2: rgba(255, 255, 255, 0.36);
+  --on-accent: #0a0a0a; /* text laid on top of an accent fill */
 
-  /* Accents */
-  --teal: #5eead4;
-  --teal-dim: #14b8a6;
-  --violet: #a78bfa;
-  --amber: #fbbf24;
-  --rose: #fb7185;
-  --blue: #60a5fa;
-  --green: #4ade80;
+  /* Brand accent (dark theme = teal-led, matches overview deck) */
+  --accent: #5eead4;
+  --accent-ink: #14b8a6;
+  --accent-soft: rgba(94, 234, 212, 0.12);
+  --accent-border: rgba(94, 234, 212, 0.28);
 
-  /* Semantic aliases */
-  --accent: var(--teal);
-  --consumer: var(--teal);
-  --iaas: var(--amber);
-  --agents: var(--rose);
-  --graph: var(--violet);
-  --infra: var(--blue);
+  /* Legacy alias kept so old `bg-[var(--ink)]` callers don't crash
+     mid-migration — points at the new background. Remove once all
+     hardcoded references are gone. */
+  color-scheme: dark;
+}
+
+[data-theme='light'] {
+  /* Surfaces — mirrors demo recome-app.html */
+  --bg: #f6f6f7;
+  --surface: #ffffff;
+  --surface-2: #fafafa;
+  --surface-3: #f0f0f3;
+
+  /* Lines */
+  --border: #e7e7e9;
+  --border-strong: #d1d1d6;
+
+  /* Text */
+  --ink: #0a0a0a;
+  --ink-2: #3a3a40;
+  --muted: #76767e;
+  --muted-2: #a3a3ab;
+  --on-accent: #ffffff;
+
+  /* Brand accent (light theme = purple-led, matches demo) */
+  --accent: #5b4cfb;
+  --accent-ink: #2e21c2;
+  --accent-soft: #ece9ff;
+  --accent-border: rgba(91, 76, 251, 0.25);
+
+  color-scheme: light;
+}
+
+/* ─── Agent palette (shared across themes) ───────────────────────
+   Each agent has a hard color + a "soft" tint for backgrounds. The
+   soft variants per theme are different so contrast holds. */
+:root,
+[data-theme='dark'] {
+  --recall: #f59e0b;
+  --recall-soft: rgba(245, 158, 11, 0.14);
+  --concierge: #a78bfa;
+  --concierge-soft: rgba(167, 139, 250, 0.14);
+  --curator: #34d399;
+  --curator-soft: rgba(52, 211, 153, 0.14);
+  --watchlist: #fb7185;
+  --watchlist-soft: rgba(251, 113, 133, 0.14);
+  --decision: #60a5fa;
+  --decision-soft: rgba(96, 165, 250, 0.14);
+  --synthesist: #94a3b8;
+  --synthesist-soft: rgba(148, 163, 184, 0.14);
+}
+
+[data-theme='light'] {
+  --recall: #d97706;
+  --recall-soft: #fef3c7;
+  --concierge: #7c3aed;
+  --concierge-soft: #f3e8ff;
+  --curator: #059669;
+  --curator-soft: #d1fae5;
+  --watchlist: #e11d48;
+  --watchlist-soft: #ffe4e6;
+  --decision: #2563eb;
+  --decision-soft: #dbeafe;
+  --synthesist: #475569;
+  --synthesist-soft: #e2e8f0;
+}
+
+/* ─── Platform palette (shared, theme-independent) ───────────────
+   Used for the source-attribution chips on inbox cards and the
+   force-graph node colors. Identity colors, not theme tokens. */
+:root {
+  --youtube: #ff0000;
+  --reddit: #ff4500;
+  --amazon: #ff9900;
+  --substack: #ff6719;
+  --verge: #ff0066;
+  --hn: #ff6600;
+  --arxiv: #b31b1b;
+  --x: #0f1419;
+  --wayfair: #5b21b6;
+  --github: #6e7681;
+}
+
+/* ─── Status palette (shared) ────────────────────────────────── */
+:root {
+  --success: #10b981;
+  --warn: #f59e0b;
+  --danger: #ef4444;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--bg);
+  --color-foreground: var(--ink);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
+/* ─── Base ─────────────────────────────────────────────────── */
+html,
 body {
-  background: var(--ink);
-  color: var(--text);
+  background: var(--bg);
+  color: var(--ink);
+}
+
+body {
   font-family:
     var(--font-sans),
     'Segoe UI',
@@ -66,9 +161,24 @@ body {
     -apple-system,
     sans-serif;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Marketing-only ambient glows. The dark theme keeps the radial
+   gradient halos from the overview deck; the light theme uses a
+   subtle off-white wash so the gradients don't muddy the page. */
+[data-theme='dark'] body {
   background-image:
     radial-gradient(900px 600px at 15% -10%, rgba(94, 234, 212, 0.06), transparent 60%),
     radial-gradient(700px 500px at 95% 5%, rgba(167, 139, 250, 0.05), transparent 60%);
+  background-attachment: fixed;
+}
+[data-theme='light'] body {
+  background-image: radial-gradient(
+    1200px 600px at 50% -20%,
+    rgba(91, 76, 251, 0.05),
+    transparent 60%
+  );
   background-attachment: fixed;
 }
 
@@ -80,16 +190,19 @@ body {
   opacity: 0.18;
   pointer-events: none;
 }
+[data-theme='light'] .glow {
+  opacity: 0.08;
+}
 
-/* Gradient text — teal-led to match the deck */
+/* Gradient text — accent-led so it adapts per theme */
 .grad {
-  background: linear-gradient(100deg, #ffffff 20%, var(--teal) 80%);
+  background: linear-gradient(100deg, var(--ink) 20%, var(--accent) 80%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Soft pulse for "live" dots */
+/* Live "pulse" dot used on agent strips and badges */
 @keyframes pulse {
   0%,
   100% {
@@ -103,4 +216,22 @@ body {
 }
 .pulse-dot {
   animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Smooth theme switch ─────────────────────────────────── */
+/* Animate the surface + ink crossfade so the toggle feels intentional,
+   not jarring. Keep transitions off for borders so layout doesn't
+   shimmer during navigation. */
+html.theme-ready body,
+html.theme-ready * {
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  html.theme-ready body,
+  html.theme-ready * {
+    transition: none;
+  }
 }

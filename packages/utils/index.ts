@@ -1,9 +1,11 @@
-import { v4 as uuidv4 } from 'uuid';
-
 // ── IDs ───────────────────────────────────────────────────────────────────────
 
+/**
+ * Generate a UUID v4. Uses crypto.randomUUID() — available in Node 19+, all
+ * modern browsers, and chrome.* extension service workers. No external deps.
+ */
 export function generateId(): string {
-  return uuidv4();
+  return crypto.randomUUID();
 }
 
 export function now(): number {

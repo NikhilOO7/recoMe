@@ -37,17 +37,6 @@ module.exports = {
       '@background': path.resolve(__dirname, 'extension/src/background'),
       '@content': path.resolve(__dirname, 'extension/src/content'),
       '@popup': path.resolve(__dirname, 'extension/src/popup'),
-      '@devtools': path.resolve(__dirname, 'extension/src/devtools'),
-
-      // Brain
-      '@brain': path.resolve(__dirname, 'brain/src'),
-      '@intelligence': path.resolve(__dirname, 'brain/src'),
-
-      // Agent
-      '@agent': path.resolve(__dirname, 'agent/src'),
-
-      // Data (now inside brain/src/storage)
-      '@data': path.resolve(__dirname, 'brain/src/storage'),
     },
   },
 

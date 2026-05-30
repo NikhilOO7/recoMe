@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { authFetch, getToken } from '@/lib/auth';
+import { AppShell } from '@/components/AppShell';
 
 // ── Backend shapes — mirror cloud/src/intelligence/PersonalityMirror.ts ────
 interface CompositionEntry {
@@ -143,52 +144,64 @@ export default function PersonalityPage() {
   );
 
   return (
-    <div className="max-w-4xl mx-auto px-6 pt-24 pb-16">
-      <header className="mb-6">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-white/40 mb-3">
-          <span className="w-2 h-2 rounded-full bg-[#5eead4]" />
-          Personality Mirror · F-407 · opt-in
-        </div>
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h1 className="text-3xl sm:text-4xl font-black tracking-[-1.5px] mb-2">
-              What you&apos;ve actually paid attention to.
-            </h1>
-            <p className="text-sm text-white/50 max-w-2xl leading-relaxed">
-              Descriptive only — no Big Five, no MBTI, no personality test. Mirror, not judgement.
-            </p>
-          </div>
-          {data?.enabled && (
-            <button
-              onClick={() => setConfirmWipe(true)}
-              className="text-xs font-medium px-3 py-1.5 rounded-md border border-rose-400/30 text-rose-300/85 hover:border-rose-400/55 hover:text-rose-200 transition-colors cursor-pointer"
-            >
-              Wipe derived inferences
-            </button>
-          )}
-        </div>
-      </header>
-
+    <AppShell
+      title="Attention Mirror"
+      subtitle="What you've actually paid attention to. Mirror, not judgement."
+      actions={
+        data?.enabled ? (
+          <button
+            onClick={() => setConfirmWipe(true)}
+            className="text-xs font-medium px-3 py-1.5 rounded-md transition-colors cursor-pointer hover:opacity-80"
+            style={{
+              background: 'transparent',
+              border: '1px solid rgba(251, 113, 133, 0.35)',
+              color: 'var(--watchlist)',
+            }}
+          >
+            Wipe inferences
+          </button>
+        ) : undefined
+      }
+    >
       {error && (
-        <div className="bg-white/2 border border-white/6 rounded-lg p-4 text-xs text-white/60 mb-6">
+        <div
+          className="rounded-lg p-4 text-xs mb-6"
+          style={{
+            background: 'var(--surface-2)',
+            border: '1px solid var(--border)',
+            color: 'var(--muted)',
+          }}
+        >
           {error}
         </div>
       )}
 
       {data === null && !error && (
-        <div className="bg-white/3 border border-white/8 rounded-2xl p-10 text-center text-sm text-white/40">
+        <div
+          className="rounded-2xl p-10 text-center text-sm"
+          style={{
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            color: 'var(--muted)',
+          }}
+        >
           Loading…
         </div>
       )}
 
       {/* Opt-in CTA */}
       {data && !data.enabled && (
-        <div className="bg-white/3 border border-white/8 rounded-2xl p-10 text-center">
-          <div className="text-3xl mb-3">🪞</div>
-          <h2 className="text-xl font-bold mb-3 tracking-tight">
+        <div
+          className="rounded-2xl p-10 text-center"
+          style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+        >
+          <h2 className="text-xl font-semibold mb-3 tracking-tight" style={{ color: 'var(--ink)' }}>
             See what your attention actually looks like.
           </h2>
-          <p className="text-sm text-white/55 max-w-md mx-auto leading-relaxed mb-6">
+          <p
+            className="text-sm max-w-md mx-auto leading-relaxed mb-6"
+            style={{ color: 'var(--ink-2)' }}
+          >
             Composition (last 30 days), 8-week trajectory, and dimensions you used to engage with
             but haven&apos;t lately. Single button to wipe everything later — your graph stays
             either way.
@@ -196,9 +209,10 @@ export default function PersonalityPage() {
           <button
             onClick={enable}
             disabled={busy === 'enable'}
-            className="text-sm font-semibold bg-[#5eead4] text-(--ink) px-5 py-2.5 rounded-lg hover:bg-[#5eead4]/90 transition-colors disabled:opacity-50 cursor-pointer"
+            className="text-sm font-semibold px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer"
+            style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
           >
-            {busy === 'enable' ? 'Opting in…' : 'Opt in to Personality Mirror'}
+            {busy === 'enable' ? 'Opting in…' : 'Opt in to Attention Mirror'}
           </button>
           <PrivacyFooter />
         </div>
@@ -216,7 +230,7 @@ export default function PersonalityPage() {
             busy={busy === 'aspiration'}
           />
 
-          <div className="mt-6 flex items-center gap-3 text-xs text-white/35">
+          <div className="mt-6 flex items-center gap-3 text-xs" style={{ color: 'var(--muted-2)' }}>
             <span>
               Opted in {data.optedInAt ? new Date(data.optedInAt).toLocaleDateString() : '—'}
             </span>
@@ -224,7 +238,8 @@ export default function PersonalityPage() {
             <button
               onClick={disable}
               disabled={busy === 'disable'}
-              className="hover:text-white/70 transition-colors cursor-pointer"
+              className="hover:opacity-80 transition-opacity cursor-pointer"
+              style={{ color: 'var(--muted)' }}
             >
               {busy === 'disable' ? 'Disabling…' : 'Soft-disable (history preserved)'}
             </button>
@@ -236,30 +251,40 @@ export default function PersonalityPage() {
       {/* Wipe confirmation modal */}
       {confirmWipe && (
         <div
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm grid place-items-center z-50 p-6"
+          className="fixed inset-0 backdrop-blur-sm grid place-items-center z-50 p-6"
+          style={{ background: 'rgba(0, 0, 0, 0.6)' }}
           onClick={() => setConfirmWipe(false)}
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-[var(--ink2)] border border-white/8 rounded-2xl p-6 max-w-md w-full"
+            className="rounded-2xl p-6 max-w-md w-full"
+            style={{
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              boxShadow: '0 24px 80px -32px rgba(0, 0, 0, 0.5)',
+            }}
           >
-            <h3 className="text-base font-bold mb-2">Wipe derived inferences?</h3>
-            <p className="text-sm text-white/55 leading-relaxed mb-5">
+            <h3 className="text-base font-semibold mb-2" style={{ color: 'var(--ink)' }}>
+              Wipe derived inferences?
+            </h3>
+            <p className="text-sm leading-relaxed mb-5" style={{ color: 'var(--ink-2)' }}>
               This removes your opt-in, aspirations, and every personality view we&apos;ve computed.{' '}
-              <strong className="text-white/80">Your interest graph stays intact</strong>— Mind Map,
-              Inbox, and Trails are unaffected.
+              <strong style={{ color: 'var(--ink)' }}>Your interest graph stays intact</strong> —
+              Mind Map, Inbox, and Trails are unaffected.
             </p>
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => setConfirmWipe(false)}
-                className="text-xs font-medium text-white/60 hover:text-white px-3 py-2 cursor-pointer"
+                className="text-xs font-medium px-3 py-2 cursor-pointer hover:opacity-80"
+                style={{ color: 'var(--muted)' }}
               >
                 Cancel
               </button>
               <button
                 onClick={wipe}
                 disabled={busy === 'wipe'}
-                className="text-xs font-semibold bg-rose-400/85 text-(--ink) px-4 py-2 rounded-md hover:bg-rose-400 transition-colors disabled:opacity-50 cursor-pointer"
+                className="text-xs font-semibold px-4 py-2 rounded-md hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer"
+                style={{ background: 'var(--watchlist)', color: 'var(--on-accent)' }}
               >
                 {busy === 'wipe' ? 'Wiping…' : 'Wipe everything'}
               </button>
@@ -267,16 +292,7 @@ export default function PersonalityPage() {
           </div>
         </div>
       )}
-
-      <div className="mt-10 text-center">
-        <Link
-          href="/dashboard"
-          className="text-xs text-white/30 hover:text-white/60 transition-colors"
-        >
-          ← Back to dashboard
-        </Link>
-      </div>
-    </div>
+    </AppShell>
   );
 }
 
@@ -310,25 +326,31 @@ function CompositionDonut({
   const empty = !composition || composition.totalWeight === 0;
 
   return (
-    <section className="bg-white/3 border border-white/8 rounded-2xl p-6 mb-4">
-      <div className="text-[11px] uppercase tracking-widest text-white/40 font-semibold mb-5">
+    <section
+      className="rounded-2xl p-6 mb-4"
+      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+    >
+      <div
+        className="text-[11px] uppercase tracking-widest font-semibold mb-5"
+        style={{ color: 'var(--muted-2)' }}
+      >
         Composition · last 30 days
       </div>
       {empty ? (
-        <p className="text-sm text-white/50 leading-relaxed">
+        <p className="text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
           No signals in the last 30 days yet — capture a few links to see your composition.
         </p>
       ) : (
         <div className="flex flex-col sm:flex-row items-center gap-8">
           <div className="relative w-44 h-44 shrink-0">
             <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-              {/* track */}
+              {/* Track — uses --surface-3 so contrast holds in both themes */}
               <circle
                 cx="50"
                 cy="50"
                 r="42"
                 fill="none"
-                stroke="rgba(255,255,255,0.06)"
+                stroke="var(--surface-3)"
                 strokeWidth="18"
               />
               {arcs.map((a) => (
@@ -347,8 +369,15 @@ function CompositionDonut({
             </svg>
             <div className="absolute inset-0 grid place-items-center text-center">
               <div>
-                <div className="text-2xl font-black tabular-nums">{composition!.totalWeight}</div>
-                <div className="text-[10px] uppercase tracking-widest text-white/45">signals</div>
+                <div className="text-2xl font-black tabular-nums" style={{ color: 'var(--ink)' }}>
+                  {composition!.totalWeight}
+                </div>
+                <div
+                  className="text-[10px] uppercase tracking-widest"
+                  style={{ color: 'var(--muted-2)' }}
+                >
+                  signals
+                </div>
               </div>
             </div>
           </div>
@@ -359,13 +388,19 @@ function CompositionDonut({
                   className="w-2.5 h-2.5 rounded shrink-0"
                   style={{ background: colorFor(s.clusterId) }}
                 />
-                <span className="text-white/85 flex-1 truncate" title={s.topicName}>
+                <span
+                  className="flex-1 truncate"
+                  title={s.topicName}
+                  style={{ color: 'var(--ink)' }}
+                >
                   {s.topicName}
                 </span>
-                <span className="text-white/85 font-bold tabular-nums">
+                <span className="font-bold tabular-nums" style={{ color: 'var(--ink)' }}>
                   {(s.share * 100).toFixed(1)}%
                 </span>
-                <span className="text-white/35 tabular-nums w-12 text-right">{s.weight}</span>
+                <span className="tabular-nums w-12 text-right" style={{ color: 'var(--muted-2)' }}>
+                  {s.weight}
+                </span>
               </div>
             ))}
           </div>
@@ -397,12 +432,18 @@ function TrajectoryChart({
   const empty = perWeek.every((p) => p.total === 0);
 
   return (
-    <section className="bg-white/3 border border-white/8 rounded-2xl p-6 mb-4">
-      <div className="text-[11px] uppercase tracking-widest text-white/40 font-semibold mb-5">
+    <section
+      className="rounded-2xl p-6 mb-4"
+      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+    >
+      <div
+        className="text-[11px] uppercase tracking-widest font-semibold mb-5"
+        style={{ color: 'var(--muted-2)' }}
+      >
         Trajectory · last 8 weeks
       </div>
       {empty ? (
-        <p className="text-sm text-white/50 leading-relaxed">
+        <p className="text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
           Not enough signal yet for trajectory — needs at least a couple of weeks of captures.
         </p>
       ) : (
@@ -413,8 +454,8 @@ function TrajectoryChart({
               return (
                 <div key={i} className="flex-1 flex flex-col items-center gap-1">
                   <div
-                    className="w-full bg-white/5 rounded-md overflow-hidden flex flex-col-reverse"
-                    style={{ height: `${heightPct}%` }}
+                    className="w-full rounded-md overflow-hidden flex flex-col-reverse"
+                    style={{ height: `${heightPct}%`, background: 'var(--surface-3)' }}
                   >
                     {wk.slices
                       .filter((s) => s.weight > 0)
@@ -433,15 +474,23 @@ function TrajectoryChart({
             })}
           </div>
           <div className="flex gap-2 mt-2">
-            {perWeek.map((wk, i) => (
-              <div key={i} className="flex-1 text-center text-[10px] text-white/35 tabular-nums">
+            {perWeek.map((_, i) => (
+              <div
+                key={i}
+                className="flex-1 text-center text-[10px] tabular-nums"
+                style={{ color: 'var(--muted-2)' }}
+              >
                 {i === perWeek.length - 1 ? 'now' : `W${i + 1}`}
               </div>
             ))}
           </div>
           <div className="mt-4 flex flex-wrap gap-3 text-[11px]">
             {trajectory.byCluster.slice(0, 5).map((c) => (
-              <span key={c.clusterId} className="inline-flex items-center gap-1.5 text-white/55">
+              <span
+                key={c.clusterId}
+                className="inline-flex items-center gap-1.5"
+                style={{ color: 'var(--ink-2)' }}
+              >
                 <span
                   className="w-2 h-2 rounded-sm"
                   style={{ background: colorFor(c.clusterId) }}
@@ -471,11 +520,17 @@ function UnderrepresentedList({
 }) {
   if (entries.length === 0) {
     return (
-      <section className="bg-white/3 border border-white/8 rounded-2xl p-6 mb-4">
-        <div className="text-[11px] uppercase tracking-widest text-white/40 font-semibold mb-3">
+      <section
+        className="rounded-2xl p-6 mb-4"
+        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+      >
+        <div
+          className="text-[11px] uppercase tracking-widest font-semibold mb-3"
+          style={{ color: 'var(--muted-2)' }}
+        >
           Underrepresented dimensions · descriptive, not prescriptive
         </div>
-        <p className="text-sm text-white/55 leading-relaxed">
+        <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-2)' }}>
           Nothing dormant right now — your active dimensions all have recent activity.
         </p>
       </section>
@@ -483,11 +538,17 @@ function UnderrepresentedList({
   }
 
   return (
-    <section className="bg-white/3 border border-white/8 rounded-2xl p-6 mb-4">
-      <div className="text-[11px] uppercase tracking-widest text-white/40 font-semibold mb-3">
+    <section
+      className="rounded-2xl p-6 mb-4"
+      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+    >
+      <div
+        className="text-[11px] uppercase tracking-widest font-semibold mb-3"
+        style={{ color: 'var(--muted-2)' }}
+      >
         Underrepresented dimensions · descriptive, not prescriptive
       </div>
-      <p className="text-xs text-white/45 leading-relaxed mb-4">
+      <p className="text-xs leading-relaxed mb-4" style={{ color: 'var(--muted)' }}>
         Things you used to engage with but haven&apos;t lately. Set one as an aspiration and Curator
         + Recall will weight toward it — or ignore. Your call.
       </p>
@@ -498,26 +559,38 @@ function UnderrepresentedList({
           return (
             <div
               key={e.clusterId}
-              className="flex items-center gap-3 bg-white/2 border border-white/6 rounded-xl p-3"
+              className="flex items-center gap-3 rounded-xl p-3"
+              style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
             >
               <span
                 className="w-2.5 h-2.5 rounded shrink-0"
                 style={{ background: colorFor(e.clusterId) }}
               />
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold text-white/85 truncate">{e.topicName}</div>
-                <div className="text-xs text-white/45">
+                <div className="text-sm font-semibold truncate" style={{ color: 'var(--ink)' }}>
+                  {e.topicName}
+                </div>
+                <div className="text-xs" style={{ color: 'var(--muted-2)' }}>
                   Dormant {e.daysDormant}d · past weight {e.pastWeight.toFixed(0)}
                 </div>
               </div>
               <button
                 onClick={() => onToggle(e.clusterId)}
                 disabled={busy}
-                className={`text-xs font-medium px-3 py-1.5 rounded-md border transition-colors cursor-pointer disabled:opacity-50 ${
+                className="text-xs font-medium px-3 py-1.5 rounded-md transition-colors cursor-pointer disabled:opacity-50 hover:opacity-90"
+                style={
                   isAspiration
-                    ? 'bg-[#5eead4]/15 border-[#5eead4]/35 text-[#5eead4]'
-                    : 'bg-white/3 border-white/8 text-white/55 hover:bg-white/8 hover:text-white'
-                }`}
+                    ? {
+                        background: 'var(--accent-soft)',
+                        border: '1px solid var(--accent-border)',
+                        color: 'var(--accent)',
+                      }
+                    : {
+                        background: 'var(--surface)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--ink-2)',
+                      }
+                }
               >
                 {isAspiration ? '✓ Aspiration' : 'Set as aspiration'}
               </button>
@@ -531,11 +604,11 @@ function UnderrepresentedList({
 
 function PrivacyFooter() {
   return (
-    <div className="mt-6 text-[11px] text-white/35 leading-relaxed">
-      Personality Mirror is opt-in. Never visible to admins, support, or any IaaS tenant. One-click
+    <div className="mt-6 text-[11px] leading-relaxed" style={{ color: 'var(--muted-2)' }}>
+      Attention Mirror is opt-in. Never visible to admins, support, or any IaaS tenant. One-click
       wipe removes every derived inference while your underlying graph stays intact. No psychometric
       labels — no Big Five, no MBTI, no &quot;personality type.&quot; (
-      <Link href="/privacy" className="text-[#5eead4] hover:underline">
+      <Link href="/audit-log" className="hover:underline" style={{ color: 'var(--accent)' }}>
         Audit log →
       </Link>
       )

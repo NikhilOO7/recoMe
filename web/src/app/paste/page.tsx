@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { authFetch } from '@/lib/auth';
+import { AppShell } from '@/components/AppShell';
 
 // ── /paste — the consumer pivot's first surface (ADR-0003 §2.1) ─────────────
 // Paste any URL → server extracts metadata → ingest signal → show the trail
@@ -149,107 +150,173 @@ export default function PastePage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-6 pt-20 pb-16">
-      <h1 className="text-3xl font-bold">Paste any URL</h1>
-      <p className="mt-2 text-sm text-white/50">
-        YouTube video, Reddit thread, Amazon product, Substack post, X tweet — we&apos;ll remember
-        it and show you what else you&apos;ve looked at on the same topic.
-      </p>
+    <AppShell
+      title="Capture"
+      subtitle="YouTube, Reddit, Amazon, Substack, X — paste a URL and the graph remembers."
+    >
+      <div className="max-w-2xl">
+        <form onSubmit={onSubmit} className="flex flex-col gap-3">
+          <input
+            type="url"
+            inputMode="url"
+            autoComplete="url"
+            spellCheck={false}
+            required
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="https://www.youtube.com/watch?v=…"
+            className="w-full rounded-xl px-4 py-3 text-base outline-none"
+            style={{
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              color: 'var(--ink)',
+            }}
+          />
+          <input
+            type="text"
+            value={topicOverride}
+            onChange={(e) => setTopicOverride(e.target.value)}
+            placeholder="Optional: what are you researching? (e.g. standing desks)"
+            className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+            style={{
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              color: 'var(--ink)',
+            }}
+          />
+          <button
+            type="submit"
+            disabled={busy || !url.trim()}
+            className="rounded-xl px-4 py-3 text-sm font-semibold disabled:opacity-40 hover:opacity-90 transition-opacity"
+            style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
+          >
+            {busy ? 'Capturing…' : 'Capture'}
+          </button>
+        </form>
 
-      <form onSubmit={onSubmit} className="mt-8 flex flex-col gap-3">
-        <input
-          type="url"
-          inputMode="url"
-          autoComplete="url"
-          spellCheck={false}
-          required
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://www.youtube.com/watch?v=…"
-          className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-base outline-none focus:border-white/30"
-        />
-        <input
-          type="text"
-          value={topicOverride}
-          onChange={(e) => setTopicOverride(e.target.value)}
-          placeholder="Optional: what are you researching? (e.g. standing desks)"
-          className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm outline-none focus:border-white/30"
-        />
-        <button
-          type="submit"
-          disabled={busy || !url.trim()}
-          className="rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black disabled:opacity-40"
-        >
-          {busy ? 'Capturing…' : 'Capture'}
-        </button>
-      </form>
-
-      {err && (
-        <div className="mt-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-          {err}
-        </div>
-      )}
-
-      {extracted && (
-        <section className="mt-10 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
-          <div className="text-[10px] uppercase tracking-widest text-white/40">Captured</div>
-          <div className="mt-1 text-base font-semibold">{extracted.title ?? extracted.url}</div>
-          {extracted.description && (
-            <div className="mt-1 line-clamp-3 text-sm text-white/60">{extracted.description}</div>
-          )}
-          <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-white/60">
-            <span className="rounded-full bg-white/[0.06] px-2 py-1">{extracted.platform}</span>
-            {extracted.topics.slice(0, 6).map((t) => (
-              <span key={t} className="rounded-full bg-white/[0.06] px-2 py-1">
-                {t}
-              </span>
-            ))}
+        {err && (
+          <div
+            className="mt-6 rounded-xl px-4 py-3 text-sm"
+            style={{
+              background: 'rgba(239, 68, 68, 0.08)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: 'var(--danger)',
+            }}
+          >
+            {err}
           </div>
-        </section>
-      )}
+        )}
 
-      {trail && (
-        <section className="mt-6 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
-          <div className="text-[10px] uppercase tracking-widest text-white/40">Your trail</div>
-          <div className="mt-1 text-base font-semibold">{trail.topic}</div>
-          <div className="mt-2 grid grid-cols-3 gap-3 text-center text-xs text-white/60">
-            <Stat label="Signals" value={trail.signalCount} />
-            <Stat label="Platforms" value={trail.platforms.length} />
-            <Stat label="Strength" value={Math.round(trail.strength * 100) + '%'} />
-          </div>
-          <div className="mt-3 text-xs text-white/40">
-            {trail.platforms.join(' · ')} • {timeAgo(trail.firstSeen)} → {timeAgo(trail.lastSeen)}
-          </div>
-
-          {related.length > 0 && (
-            <div className="mt-4 border-t border-white/[0.06] pt-3">
-              <div className="text-[10px] uppercase tracking-widest text-white/40">Related</div>
-              <ul className="mt-2 flex flex-wrap gap-2 text-xs text-white/70">
-                {related.map((r) => (
-                  <li key={r.topic} className="rounded-full bg-white/[0.06] px-2.5 py-1">
-                    {r.topic}
-                  </li>
-                ))}
-              </ul>
+        {extracted && (
+          <section
+            className="mt-8 rounded-2xl p-5"
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+          >
+            <div
+              className="text-[10px] uppercase tracking-widest"
+              style={{ color: 'var(--muted-2)' }}
+            >
+              Captured
             </div>
-          )}
-        </section>
-      )}
+            <div className="mt-1 text-base font-semibold" style={{ color: 'var(--ink)' }}>
+              {extracted.title ?? extracted.url}
+            </div>
+            {extracted.description && (
+              <div className="mt-1 line-clamp-3 text-sm" style={{ color: 'var(--ink-2)' }}>
+                {extracted.description}
+              </div>
+            )}
+            <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
+              <Chip>{extracted.platform}</Chip>
+              {extracted.topics.slice(0, 6).map((t) => (
+                <Chip key={t}>{t}</Chip>
+              ))}
+            </div>
+          </section>
+        )}
 
-      {extracted && !trail && !err && (
-        <p className="mt-6 text-sm text-white/40">
-          First time you&apos;ve looked at this topic. Capture a few more — the trail fills in fast.
-        </p>
-      )}
-    </div>
+        {trail && (
+          <section
+            className="mt-6 rounded-2xl p-5"
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+          >
+            <div
+              className="text-[10px] uppercase tracking-widest"
+              style={{ color: 'var(--muted-2)' }}
+            >
+              Your trail
+            </div>
+            <div className="mt-1 text-base font-semibold" style={{ color: 'var(--ink)' }}>
+              {trail.topic}
+            </div>
+            <div className="mt-3 grid grid-cols-3 gap-3 text-center text-xs">
+              <Stat label="Signals" value={trail.signalCount} />
+              <Stat label="Platforms" value={trail.platforms.length} />
+              <Stat label="Strength" value={Math.round(trail.strength * 100) + '%'} />
+            </div>
+            <div className="mt-3 text-xs" style={{ color: 'var(--muted-2)' }}>
+              {trail.platforms.join(' · ')} • {timeAgo(trail.firstSeen)} → {timeAgo(trail.lastSeen)}
+            </div>
+
+            {related.length > 0 && (
+              <div className="mt-4 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
+                <div
+                  className="text-[10px] uppercase tracking-widest"
+                  style={{ color: 'var(--muted-2)' }}
+                >
+                  Related
+                </div>
+                <ul className="mt-2 flex flex-wrap gap-2 text-xs">
+                  {related.map((r) => (
+                    <Chip key={r.topic}>{r.topic}</Chip>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </section>
+        )}
+
+        {extracted && !trail && !err && (
+          <p className="mt-6 text-sm" style={{ color: 'var(--muted-2)' }}>
+            First time you&apos;ve looked at this topic. Capture a few more — the trail fills in
+            fast.
+          </p>
+        )}
+      </div>
+    </AppShell>
+  );
+}
+
+function Chip({ children }: { children: React.ReactNode }) {
+  return (
+    <span
+      className="rounded-full px-2 py-1"
+      style={{
+        background: 'var(--surface-3)',
+        border: '1px solid var(--border)',
+        color: 'var(--ink-2)',
+      }}
+    >
+      {children}
+    </span>
   );
 }
 
 function Stat({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="rounded-lg bg-white/[0.04] py-2">
-      <div className="text-lg font-black">{value}</div>
-      <div className="mt-0.5 text-[10px] uppercase tracking-widest text-white/40">{label}</div>
+    <div
+      className="rounded-lg py-2"
+      style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
+    >
+      <div className="text-lg font-black" style={{ color: 'var(--ink)' }}>
+        {value}
+      </div>
+      <div
+        className="mt-0.5 text-[10px] uppercase tracking-widest"
+        style={{ color: 'var(--muted-2)' }}
+      >
+        {label}
+      </div>
     </div>
   );
 }

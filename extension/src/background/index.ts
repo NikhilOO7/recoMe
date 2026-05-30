@@ -1,196 +1,89 @@
 import 'webextension-polyfill';
-import { registerAlarms, handleAlarm } from './alarms';
 import { handleMessage } from './messageHandler';
-import { registerEventListeners } from './eventListeners';
-import { getIntelligenceService } from '@intelligence/index';
+import { registerSignalUploader, handleAlarm as handleSignalAlarm } from './SignalUploader';
+import { registerInboxPoller, handleAlarm as handleInboxAlarm } from './InboxPoller';
+import { getWebAppUrl, STORAGE_KEYS, DEFAULT_SETTINGS } from '@shared/constants';
+import type { RecoMeMessage, MessageResponse } from '@shared/messages';
 import { createLogger } from '@shared/Logger';
-import type { RecoMeMessage } from '@shared/messages';
-import { safeStorageSyncGet, safeStorageSyncSet } from '@shared/storageSync';
-import { initCloudServices } from './cloudServices';
-import { migrateKeysIfNeeded } from '@shared/KeyVault';
 
 const log = createLogger('Background');
 
-// ── Storage Schema Versioning ────────────────────────────────────────────────
-// Tracks the version of chrome.storage.local / chrome.storage.sync flags.
-// IDB versioning is handled separately via DB_VERSION in constants.ts.
-const STORAGE_SCHEMA_VERSION = 2;
-
-/**
- * Run storage migrations when the extension updates and the schema version
- * has changed. Each migration is idempotent and runs exactly once.
- */
-async function migrateStorageSchema(): Promise<void> {
-  try {
-    const result = await chrome.storage.local.get('recome_storage_version');
-    const currentVersion = (result.recome_storage_version as number) ?? 0;
-
-    if (currentVersion >= STORAGE_SCHEMA_VERSION) return;
-
-    log.info(`Storage migration: v${currentVersion} → v${STORAGE_SCHEMA_VERSION}`);
-
-    // Migration v0/v1 → v2: Ensure instagram is in platform settings
-    if (currentVersion < 2) {
-      const syncData = await safeStorageSyncGet('recome_settings');
-      const settings = syncData.recome_settings as Record<string, unknown> | undefined;
-      if (settings?.platforms) {
-        const platforms = settings.platforms as Record<string, boolean>;
-        if (platforms.instagram === undefined) {
-          platforms.instagram = true;
-          await safeStorageSyncSet({ recome_settings: settings });
-          log.info('Migration v2: added instagram to platform settings');
-        }
-      }
-    }
-
-    // Stamp the new version
-    await chrome.storage.local.set({
-      recome_storage_version: STORAGE_SCHEMA_VERSION,
-      recome_last_migration: new Date().toISOString(),
-    });
-
-    log.info('Storage migration complete');
-  } catch (err) {
-    log.error('Storage migration failed', err);
-  }
-}
-
-// ── Service Worker Lifecycle ──────────────────────────────────────────────────
+// ── Lifecycle ────────────────────────────────────────────────────────────────
 
 chrome.runtime.onInstalled.addListener(async (details) => {
-  log.info(`Extension installed: reason=${details.reason}`);
+  log.info(`installed: reason=${details.reason}`);
 
-  // Initialize intelligence service (seeds graph etc.)
-  try {
-    await getIntelligenceService().initialize();
-    log.info('Intelligence service initialized on install');
-  } catch (err) {
-    log.error('Failed to initialize intelligence service', err);
-  }
-
-  // Register periodic alarms
-  await registerAlarms();
-
-  // Set default settings on fresh install
   if (details.reason === 'install') {
-    await safeStorageSyncSet({
-      recome_settings: {
-        enabled: true,
-        aggressiveness: 0.5,
-        train_platform_algo: false,
-        platforms: {
-          youtube: true,
-          amazon: true,
-          twitter: true,
-          facebook: true,
-          instagram: true,
-          ebay: true,
-          walmart: true,
-          linkedin: true,
-        },
-      },
-    });
-    // Version stamp for storage migration support
-    await chrome.storage.local.set({
-      recome_storage_version: STORAGE_SCHEMA_VERSION,
-      recome_installed_at: new Date().toISOString(),
-    });
-    log.info('Default settings written');
+    await chrome.storage.local.set({ [STORAGE_KEYS.settings]: DEFAULT_SETTINGS });
   }
 
-  // Storage migration on update
+  // On update from v1.x → v2.x, wipe legacy keys. Login is required after upgrade.
   if (details.reason === 'update') {
-    await migrateStorageSchema();
+    await chrome.storage.local.remove([
+      'recome_api_keys_encrypted',
+      'recome_encryption_salt',
+      'recome_brain_state',
+      'recome_stats',
+      'recome_storage_version',
+      'recome_cloud_access_token',
+      'recome_first_action_done',
+    ]);
   }
 
-  // Migrate plaintext API keys to encrypted storage
-  await migrateKeysIfNeeded();
-
-  // Initialize cloud sync services
-  await initCloudServices();
+  await registerSignalUploader();
+  await registerInboxPoller();
 });
 
 chrome.runtime.onStartup.addListener(async () => {
-  log.info('Browser started — reinitializing');
-  try {
-    // Reset init state in case IDB connections were terminated during SW sleep
-    getIntelligenceService().resetInitState();
-    await getIntelligenceService().initialize();
-    // Re-register alarms (they may have been cleared)
-    await registerAlarms();
-    // Initialize cloud sync services
-    await initCloudServices();
-  } catch (err) {
-    log.error('Startup init failed', err);
-  }
+  log.info('startup');
+  await registerSignalUploader();
+  await registerInboxPoller();
 });
 
-// ── Message Routing ───────────────────────────────────────────────────────────
+// ── Message routing ──────────────────────────────────────────────────────────
 
-chrome.runtime.onMessage.addListener((message: RecoMeMessage, sender, sendResponse) => {
-  return handleMessage(message, sender, sendResponse);
+chrome.runtime.onMessage.addListener(
+  (message: RecoMeMessage, sender, sendResponse: (r: MessageResponse) => void) =>
+    handleMessage(message, sender, sendResponse),
+);
+
+// ── Alarms ───────────────────────────────────────────────────────────────────
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  handleSignalAlarm(alarm.name);
+  handleInboxAlarm(alarm.name);
 });
 
-// ── Alarm Handling ────────────────────────────────────────────────────────────
-
-chrome.alarms.onAlarm.addListener(handleAlarm);
-
-// ── EventBus Listeners ───────────────────────────────────────────────────────
-
-registerEventListeners();
-
-// ── Monitoring (QA Tool) ─────────────────────────────────────────────────────
-
-import { registerMonitoring } from './monitoring/MonitoringCollector';
-registerMonitoring();
-
-// ── Keyboard Shortcuts ──────────────────────────────────────────────────────
+// ── Keyboard shortcuts ───────────────────────────────────────────────────────
 
 chrome.commands.onCommand.addListener(async (command) => {
-  log.info(`Command received: ${command}`);
-
-  if (command === 'quick_block') {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tab?.id) {
-      chrome.tabs.sendMessage(tab.id, { type: 'RECOME_QUICK_BLOCK' });
-    }
-  }
-
   if (command === 'toggle_overlay') {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tab?.id) {
-      chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_OVERLAY' }).catch(() => undefined);
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab?.id) {
+        await chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_OVERLAY' });
+      }
+    } catch (e) {
+      log.warn('toggle_overlay failed', e);
     }
+    return;
   }
 
   if (command === 'toggle_extension') {
-    const result = await chrome.storage.local.get('recome_enabled');
-    const newState = result.recome_enabled === false ? true : false;
-    await chrome.storage.local.set({ recome_enabled: newState });
-
-    if (newState) {
-      chrome.action.setBadgeText({ text: '' });
-    } else {
-      chrome.action.setBadgeText({ text: 'OFF' });
-      chrome.action.setBadgeBackgroundColor({ color: '#888888' });
-    }
-    log.info(`Extension toggled: enabled=${newState}`);
+    const r = await chrome.storage.local.get(STORAGE_KEYS.settings);
+    const cur = (r[STORAGE_KEYS.settings] as { enabled?: boolean }) ?? DEFAULT_SETTINGS;
+    const next = { ...cur, enabled: !cur.enabled };
+    await chrome.storage.local.set({ [STORAGE_KEYS.settings]: next });
+    await chrome.action.setBadgeText({ text: next.enabled ? '' : 'OFF' });
+    await chrome.action.setBadgeBackgroundColor({ color: '#888888' });
   }
 });
 
-// ── Action button click (no popup — toggle overlay or open web app) ──────────
+// ── Action button — open web app or popup ───────────────────────────────────
 
-chrome.action.onClicked.addListener(async (tab) => {
-  if (!tab?.id) return;
-
-  try {
-    // Try to toggle the overlay on the current tab
-    await chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_OVERLAY' });
-  } catch {
-    // Content script not injected (unsupported page) — open web app
-    const { WEB_APP_URL } = await import('@shared/constants');
-    chrome.tabs.create({ url: WEB_APP_URL });
-  }
+chrome.action.onClicked.addListener(async () => {
+  const url = await getWebAppUrl();
+  await chrome.tabs.create({ url });
 });
 
-log.info('Background service worker registered');
+log.info('background service worker registered');

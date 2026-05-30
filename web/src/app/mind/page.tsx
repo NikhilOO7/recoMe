@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { authFetch, getToken } from '@/lib/auth';
+import { AppShell } from '@/components/AppShell';
+import { useTheme } from '@/components/ThemeProvider';
 
 // react-force-graph-2d ships a canvas+d3-force implementation. SSR off — it
 // touches `window` on import. Dynamic import keeps the bundle off the server.
@@ -89,6 +91,12 @@ export default function MindPage() {
   const [windowSel, setWindowSel] = useState('90d');
   const [focused, setFocused] = useState<string | null>(null);
   const [size, setSize] = useState(FALLBACK_SIZE);
+  // Canvas labels + link tint are theme-dependent — pick at render-time
+  // so a theme switch repaints with correct contrast.
+  const { theme } = useTheme();
+  const labelColor = theme === 'dark' ? 'rgba(255,255,255,0.78)' : 'rgba(10,10,10,0.78)';
+  const labelFocusedColor = theme === 'dark' ? '#ffffff' : '#0a0a0a';
+  const linkColor = theme === 'dark' ? 'rgba(255,255,255,0.10)' : 'rgba(10,10,10,0.10)';
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   // The force-graph ref — typed `any` because the lib's types don't export the imperative shape cleanly.
@@ -183,41 +191,31 @@ export default function MindPage() {
   }, []);
 
   return (
-    <div className="max-w-6xl mx-auto px-6 pt-24 pb-16">
-      <header className="mb-6">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-white/40 mb-3">
-          <span className="w-2 h-2 rounded-full bg-[#5eead4]" />
-          Mind Map · F-401
-        </div>
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h1 className="text-3xl sm:text-4xl font-black tracking-[-1.5px] mb-2">
-              Your mind map
-            </h1>
-            <p className="text-sm text-white/50 max-w-2xl leading-relaxed">
-              A live render of your own interest graph — topics sized by signal count, edges by
-              co-occurrence, clusters by semantic community. No other product shows you yours.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] uppercase tracking-widest text-white/35 mr-1">Window</span>
-            {WINDOW_OPTIONS.map((opt) => (
+    <AppShell
+      title="Mind Map"
+      subtitle="Topics sized by signal count, edges by co-occurrence, clusters by semantic community."
+      actions={
+        <div className="hidden md:flex items-center gap-1">
+          {WINDOW_OPTIONS.map((opt) => {
+            const on = windowSel === opt.value;
+            return (
               <button
                 key={opt.value}
                 onClick={() => setWindowSel(opt.value)}
-                className={`text-xs font-semibold px-3 py-1.5 rounded-md border transition-colors cursor-pointer ${
-                  windowSel === opt.value
-                    ? 'bg-white text-(--ink) border-white'
-                    : 'bg-white/4 border-white/8 text-white/60 hover:bg-white/8 hover:text-white'
-                }`}
+                className="text-[11.5px] font-semibold px-2.5 py-1.5 rounded-md transition-colors cursor-pointer"
+                style={{
+                  background: on ? 'var(--accent)' : 'var(--surface)',
+                  color: on ? 'var(--on-accent)' : 'var(--ink-2)',
+                  border: `1px solid ${on ? 'var(--accent)' : 'var(--border)'}`,
+                }}
               >
                 {opt.label}
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
-      </header>
-
+      }
+    >
       {/* Stat strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         <Stat k="Topics" v={data ? data.nodes.length : null} />
@@ -230,7 +228,14 @@ export default function MindPage() {
       </div>
 
       {error && (
-        <div className="bg-white/2 border border-white/6 rounded-lg p-4 text-xs text-white/60 mb-6">
+        <div
+          className="rounded-lg p-4 text-xs mb-6"
+          style={{
+            background: 'var(--surface-2)',
+            border: '1px solid var(--border)',
+            color: 'var(--muted)',
+          }}
+        >
           {error}
         </div>
       )}
@@ -239,19 +244,29 @@ export default function MindPage() {
       <div className="grid lg:grid-cols-[1fr_300px] gap-4">
         <div
           ref={containerRef}
-          className="bg-white/3 border border-white/8 rounded-2xl overflow-hidden relative"
-          style={{ height: '560px' }}
+          className="rounded-2xl overflow-hidden relative"
+          style={{
+            height: '560px',
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+          }}
         >
           {data === null && !error && (
-            <div className="absolute inset-0 grid place-items-center text-white/40 text-sm">
+            <div
+              className="absolute inset-0 grid place-items-center text-sm"
+              style={{ color: 'var(--muted-2)' }}
+            >
               Loading your graph…
             </div>
           )}
           {data && data.nodes.length === 0 && (
-            <div className="absolute inset-0 grid place-items-center text-center px-8 text-white/55 text-sm leading-relaxed">
+            <div
+              className="absolute inset-0 grid place-items-center text-center px-8 text-sm leading-relaxed"
+              style={{ color: 'var(--ink-2)' }}
+            >
               No topics in your graph yet for this window.
               <br />
-              <Link href="/paste" className="text-[#5eead4] hover:underline">
+              <Link href="/paste" className="hover:underline" style={{ color: 'var(--accent)' }}>
                 Capture a link →
               </Link>
             </div>
@@ -267,7 +282,7 @@ export default function MindPage() {
               nodeLabel={(n) => `${(n as ForceNode).name} (${(n as ForceNode).weight} signals)`}
               nodeVal={(n) => Math.max(2, Math.sqrt((n as ForceNode).weight) * 1.6)}
               nodeColor={(n) => colorForCluster((n as ForceNode).cluster)}
-              linkColor={() => 'rgba(255,255,255,0.10)'}
+              linkColor={() => linkColor}
               linkWidth={(l) => Math.max(0.4, Math.log1p((l as ForceLink).weight) * 0.8)}
               onNodeClick={(n) => handleNodeClick(n as ForceNode)}
               onBackgroundClick={() => setFocused(null)}
@@ -275,12 +290,11 @@ export default function MindPage() {
               nodeCanvasObject={(node, ctx, scale) => {
                 const n = node as ForceNode;
                 if (!n.x || !n.y) return;
-                // Only render labels for larger nodes (signal weight) or when zoomed in.
                 if (n.weight < 3 && scale < 1.8) return;
                 const fontSize =
                   Math.max(10, Math.min(14, 8 + Math.log2(n.weight + 1) * 2)) / scale;
                 ctx.font = `500 ${fontSize}px -apple-system, system-ui, sans-serif`;
-                ctx.fillStyle = focused === n.id ? '#ffffff' : 'rgba(255,255,255,0.78)';
+                ctx.fillStyle = focused === n.id ? labelFocusedColor : labelColor;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 const radius = Math.max(2, Math.sqrt(n.weight) * 1.6);
@@ -293,12 +307,20 @@ export default function MindPage() {
         {/* Side panel */}
         <aside className="flex flex-col gap-3">
           {/* Clusters card */}
-          <div className="bg-white/3 border border-white/8 rounded-2xl p-4">
-            <div className="text-[11px] uppercase tracking-widest text-white/40 font-semibold mb-3">
+          <div
+            className="rounded-2xl p-4"
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+          >
+            <div
+              className="text-[11px] uppercase tracking-widest font-semibold mb-3"
+              style={{ color: 'var(--muted-2)' }}
+            >
               Clusters
             </div>
             {data && data.clusters.length === 0 && (
-              <p className="text-xs text-white/40">No clusters yet.</p>
+              <p className="text-xs" style={{ color: 'var(--muted)' }}>
+                No clusters yet.
+              </p>
             )}
             <div className="flex flex-col gap-1.5">
               {data?.clusters.slice(0, 10).map((c) => (
@@ -307,21 +329,30 @@ export default function MindPage() {
                     className="w-3 h-3 rounded shrink-0"
                     style={{ background: colorForCluster(c.id) }}
                   />
-                  <span className="text-white/80 truncate flex-1" title={c.topicName}>
+                  <span
+                    className="truncate flex-1"
+                    title={c.topicName}
+                    style={{ color: 'var(--ink-2)' }}
+                  >
                     {c.topicName}
                   </span>
-                  <span className="text-white/35 tabular-nums">{c.size}</span>
+                  <span className="tabular-nums" style={{ color: 'var(--muted-2)' }}>
+                    {c.size}
+                  </span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Focused topic detail */}
-          <div className="bg-white/3 border border-white/8 rounded-2xl p-4">
+          <div
+            className="rounded-2xl p-4"
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+          >
             {focusedNode ? (
               <FocusedPanel node={focusedNode} cluster={focusedCluster} />
             ) : (
-              <div className="text-xs text-white/45 leading-relaxed">
+              <div className="text-xs leading-relaxed" style={{ color: 'var(--muted)' }}>
                 Click a node to inspect it — recent platforms, dormancy, cluster context, and a
                 jump-to-trail link.
               </div>
@@ -329,23 +360,14 @@ export default function MindPage() {
           </div>
 
           {/* Help / spec note */}
-          <div className="text-[11px] text-white/30 leading-relaxed px-2">
+          <div className="text-[11px] leading-relaxed px-2" style={{ color: 'var(--muted-2)' }}>
             Layout is force-directed in your browser; the cluster assignment was computed on the
             server (Louvain over your co-occurrence graph). Per{' '}
-            <code className="text-white/45">ADR-0014 §2</code>.
+            <code style={{ color: 'var(--muted)' }}>ADR-0014 §2</code>.
           </div>
         </aside>
       </div>
-
-      <div className="mt-10 text-center">
-        <Link
-          href="/dashboard"
-          className="text-xs text-white/30 hover:text-white/60 transition-colors"
-        >
-          ← Back to dashboard
-        </Link>
-      </div>
-    </div>
+    </AppShell>
   );
 }
 
@@ -353,11 +375,20 @@ export default function MindPage() {
 
 function Stat({ k, v }: { k: string; v: number | string | null }) {
   return (
-    <div className="bg-white/3 border border-white/6 rounded-xl p-3">
-      <div className="text-[10px] uppercase tracking-widest text-white/35 font-semibold mb-1">
+    <div
+      className="rounded-xl p-3"
+      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+    >
+      <div
+        className="text-[10px] uppercase tracking-widest font-semibold mb-1"
+        style={{ color: 'var(--muted-2)' }}
+      >
         {k}
       </div>
-      <div className="text-xl font-black tracking-tight text-white/90 tabular-nums">
+      <div
+        className="text-xl font-black tracking-tight tabular-nums"
+        style={{ color: 'var(--ink)' }}
+      >
         {v === null ? '—' : v}
       </div>
     </div>
@@ -374,9 +405,11 @@ function FocusedPanel({ node, cluster }: { node: MindMapNode; cluster: MindMapCl
           style={{ background: colorForCluster(node.cluster) }}
         />
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-bold leading-snug">{node.name}</h3>
-          <p className="text-[11px] text-white/40 mt-0.5">
-            Cluster: <span className="text-white/65">{cluster?.topicName ?? '—'}</span>
+          <h3 className="text-sm font-semibold leading-snug" style={{ color: 'var(--ink)' }}>
+            {node.name}
+          </h3>
+          <p className="text-[11px] mt-0.5" style={{ color: 'var(--muted-2)' }}>
+            Cluster: <span style={{ color: 'var(--ink-2)' }}>{cluster?.topicName ?? '—'}</span>
           </p>
         </div>
       </div>
@@ -388,14 +421,22 @@ function FocusedPanel({ node, cluster }: { node: MindMapNode; cluster: MindMapCl
       </div>
       {node.platforms.length > 0 && (
         <div className="mb-3">
-          <div className="text-[10px] uppercase tracking-widest text-white/35 font-semibold mb-1.5">
+          <div
+            className="text-[10px] uppercase tracking-widest font-semibold mb-1.5"
+            style={{ color: 'var(--muted-2)' }}
+          >
             Platforms
           </div>
           <div className="flex flex-wrap gap-1.5">
             {node.platforms.map((p) => (
               <span
                 key={p}
-                className="text-[10px] bg-white/4 border border-white/8 rounded px-1.5 py-0.5 text-white/65"
+                className="text-[10px] rounded px-1.5 py-0.5"
+                style={{
+                  background: 'var(--surface-3)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--ink-2)',
+                }}
               >
                 {p}
               </span>
@@ -405,7 +446,8 @@ function FocusedPanel({ node, cluster }: { node: MindMapNode; cluster: MindMapCl
       )}
       <Link
         href={`/dashboard?topic=${encodeURIComponent(node.name)}`}
-        className="block text-center text-xs font-semibold bg-white text-(--ink) py-2 rounded-md hover:bg-white/90 transition-colors"
+        className="block text-center text-xs font-semibold py-2 rounded-md hover:opacity-90 transition-opacity"
+        style={{ background: 'var(--accent)', color: 'var(--on-accent)' }}
       >
         Open trail →
       </Link>
@@ -415,11 +457,19 @@ function FocusedPanel({ node, cluster }: { node: MindMapNode; cluster: MindMapCl
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-white/2 border border-white/6 rounded-md p-2">
-      <div className="text-[9px] uppercase tracking-widest text-white/35 font-semibold mb-0.5">
+    <div
+      className="rounded-md p-2"
+      style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
+    >
+      <div
+        className="text-[9px] uppercase tracking-widest font-semibold mb-0.5"
+        style={{ color: 'var(--muted-2)' }}
+      >
         {label}
       </div>
-      <div className="text-xs font-bold text-white/85 truncate">{value}</div>
+      <div className="text-xs font-bold truncate" style={{ color: 'var(--ink)' }}>
+        {value}
+      </div>
     </div>
   );
 }
