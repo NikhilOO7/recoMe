@@ -21,8 +21,10 @@ export class TokenService {
     const config = getConfig();
 
     const payload: AccessTokenPayload = { sub: userId, tier, deviceId };
+    // jsonwebtoken's expiresIn typedef rejects the broad `string`; we narrow
+    // via the lib's StringValue branding (e.g. '15m', '30d') without a cast.
     const accessToken = jwt.sign(payload, config.JWT_SECRET, {
-      expiresIn: config.JWT_ACCESS_TTL,
+      expiresIn: config.JWT_ACCESS_TTL as jwt.SignOptions['expiresIn'],
     });
 
     const refreshTokenRaw = randomBytes(48).toString('base64url');

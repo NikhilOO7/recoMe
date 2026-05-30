@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import type { AuthEnv } from '../types.js';
 import { z } from 'zod';
 import { SyncEngine } from './SyncEngine.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
@@ -29,8 +30,8 @@ const pushSchema = z.object({
   checksum: z.string(),
 });
 
-export function createSyncRoutes(): Hono {
-  const app = new Hono();
+export function createSyncRoutes(): Hono<AuthEnv> {
+  const app = new Hono<AuthEnv>();
   const engine = new SyncEngine();
 
   app.use('*', authMiddleware);

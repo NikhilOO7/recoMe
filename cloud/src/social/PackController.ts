@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import type { AuthEnv } from '../types.js';
 import { z } from 'zod';
 import { PackService } from './PackService.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
@@ -31,8 +32,8 @@ const rateSchema = z.object({
   rating: z.number().min(1).max(5),
 });
 
-export function createPackRoutes(): Hono {
-  const app = new Hono();
+export function createPackRoutes(): Hono<AuthEnv> {
+  const app = new Hono<AuthEnv>();
   const service = new PackService();
 
   // Public: search packs

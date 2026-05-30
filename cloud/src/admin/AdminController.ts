@@ -1,10 +1,12 @@
 import { Hono } from 'hono';
+import type { AuthEnv } from '../types.js';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../db.js';
 import { adminMiddleware } from '../middleware/adminMiddleware.js';
 
-export function createAdminRoutes(): Hono {
-  const app = new Hono();
+export function createAdminRoutes(): Hono<AuthEnv> {
+  const app = new Hono<AuthEnv>();
 
   // All admin routes require admin role
   app.use('*', adminMiddleware);
@@ -267,8 +269,15 @@ export function createAdminRoutes(): Hono {
       })
       .parse(await c.req.json());
 
+    const reporterId = c.get('userId') ?? null;
     const error = await prisma.errorLog.create({
-      data: { ...body, userId: c.get('userId') as string | undefined },
+      data: {
+        ...body,
+        userId: reporterId,
+        // Cast through unknown so the Zod-inferred Record<string, unknown> can
+        // sit in a Prisma JSON column without losing type info elsewhere.
+        metadata: body.metadata as unknown as Prisma.InputJsonValue | undefined,
+      },
     });
 
     return c.json(error, 201);

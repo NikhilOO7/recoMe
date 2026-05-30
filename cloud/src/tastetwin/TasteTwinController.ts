@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import type { AuthEnv } from '../types.js';
 import { z } from 'zod';
 import { TasteTwinService } from './TasteTwinService.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
@@ -19,8 +20,8 @@ const discoverableSchema = z.object({
   isDiscoverable: z.boolean(),
 });
 
-export function createTasteTwinRoutes(): Hono {
-  const app = new Hono();
+export function createTasteTwinRoutes(): Hono<AuthEnv> {
+  const app = new Hono<AuthEnv>();
   const service = new TasteTwinService();
 
   // All routes require authentication

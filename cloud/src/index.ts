@@ -8,7 +8,6 @@ import { createSyncRoutes } from './sync/SyncController.js';
 import { createBillingRoutes } from './billing/BillingController.js';
 import { createUserRoutes } from './storage/UserController.js';
 import { createPackRoutes } from './social/PackController.js';
-import { createAgentRoutes } from './agent/AgentController.js';
 import { createTasteTwinRoutes } from './tastetwin/TasteTwinController.js';
 import { createAdminRoutes } from './admin/AdminController.js';
 import { createIntelligenceRoutes } from './intelligence/IntelligenceController.js';
@@ -71,8 +70,10 @@ app.route('/sync', createSyncRoutes());
 app.route('/billing', createBillingRoutes());
 app.route('/user', createUserRoutes());
 app.route('/packs', createPackRoutes());
-app.route('/agent', createAgentRoutes());
 app.route('/twins', createTasteTwinRoutes());
+// Legacy /agent (singular) chat stub archived to graveyard 2026-05-30.
+// All real agent surfaces live under /intelligence/agents/* — see
+// docs/architecture/0016-lld.md §1 and dev-plan WS-3 P2.5.
 app.route('/admin', createAdminRoutes());
 
 if (getConfig().INTELLIGENCE_ENABLED) {

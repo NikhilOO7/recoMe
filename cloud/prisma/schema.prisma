@@ -36,6 +36,9 @@ model User {
   // Taste Twin
   tasteProfile  TasteProfile?
 
+  // ConciergeAgent watchlist (see WatchlistItem below)
+  watchlistItems WatchlistItem[]
+
   // Timestamps
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -545,4 +548,29 @@ enum TenantStatus {
 enum ApiKeyEnv {
   LIVE
   TEST
+}
+
+// ── ConciergeAgent watchlist ────────────────────────────────────────────────
+// Per-user explicit watch items. ConciergeAgent's scheduled sweep
+// (cloud/src/agents/concierge/ConciergeAgent.ts) reads listWatchlist(userId)
+// each pass and updates lastPriceUsd / lastPriceAt as quotes come in. See
+// dev-plan WS-3 P2.2 for the swap-from-in-memory note.
+
+model WatchlistItem {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  label           String
+  targetPriceUsd  Float?
+  retailers       String[] @default([])
+  pageUrl         String?
+  createdAt       DateTime @default(now())
+
+  // Refreshed by Concierge on every checkOne() call (event or scheduled trigger).
+  lastPriceUsd    Float?
+  lastPriceAt     DateTime?
+
+  @@index([userId])
+  @@index([userId, createdAt])
 }

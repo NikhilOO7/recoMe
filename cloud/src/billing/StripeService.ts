@@ -1,7 +1,7 @@
 import Stripe from 'stripe';
 import { prisma } from '../db.js';
 import { getConfig } from '../config.js';
-import type { Tier } from '@prisma/client';
+import { Prisma, type Tier } from '@prisma/client';
 
 const TIER_PRICE_MAP: Record<string, 'STRIPE_PRO_PRICE_ID' | 'STRIPE_PREMIUM_PRICE_ID'> = {
   PRO: 'STRIPE_PRO_PRICE_ID',
@@ -129,7 +129,9 @@ export class StripeService {
           userId,
           eventType: event.type,
           stripeEventId: event.id,
-          metadata: event.data.object as unknown as Record<string, unknown>,
+          // Prisma JSON column accepts InputJsonValue; Stripe's union doesn't
+          // narrow cleanly, so we cast through unknown to the Prisma type alias.
+          metadata: event.data.object as unknown as Prisma.InputJsonValue,
         },
       });
     }
@@ -183,7 +185,7 @@ export class StripeService {
   }
 
   private extractUserId(event: Stripe.Event): string | null {
-    const obj = event.data.object as Record<string, unknown>;
+    const obj = event.data.object as unknown as Record<string, unknown>;
     if (typeof obj.metadata === 'object' && obj.metadata && 'userId' in obj.metadata) {
       return (obj.metadata as Record<string, string>).userId ?? null;
     }

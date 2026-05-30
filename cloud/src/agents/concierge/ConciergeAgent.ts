@@ -61,7 +61,7 @@ export class ConciergeAgent extends BaseAgent {
 
     if (ctx.trigger === 'scheduled') {
       // Only run a scheduled sweep when there's something explicit to watch.
-      return listWatchlist(ctx.userId).length > 0;
+      return (await listWatchlist(ctx.userId)).length > 0;
     }
     if (ctx.trigger !== 'event') return false;
 
@@ -91,7 +91,7 @@ export class ConciergeAgent extends BaseAgent {
 
   /** Walk the user's Watchlist; emit the first item that hits target or threshold. */
   private async runWatchlistSweep(ctx: AgentContext): Promise<AgentResult> {
-    const items = listWatchlist(ctx.userId);
+    const items = await listWatchlist(ctx.userId);
     if (items.length === 0) {
       return { status: 'skipped', reason: 'empty_watchlist' };
     }
@@ -114,7 +114,7 @@ export class ConciergeAgent extends BaseAgent {
 
     // If the touched entity is on the user's Watchlist, surface the watchlist
     // target so the user's explicit threshold beats the generic 10%-off rule.
-    const wlItem = listWatchlist(ctx.userId).find(
+    const wlItem = (await listWatchlist(ctx.userId)).find(
       (i) => i.label.trim().toLowerCase() === entityKey.toLowerCase(),
     );
     const emission = await this.checkOne(entityKey, ctx, { event, item: wlItem });
@@ -148,7 +148,7 @@ export class ConciergeAgent extends BaseAgent {
     if (src.item) {
       // Refresh the explicit-watch row regardless of whether we emit, so the
       // user sees Concierge actively tracking it on /ask.
-      updateWatchlistPrice(ctx.userId, src.item.id, cheapest.amountCents / 100);
+      await updateWatchlistPrice(ctx.userId, src.item.id, cheapest.amountCents / 100);
     }
 
     if (!hitsTarget && !hitsThreshold) return null;

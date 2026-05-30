@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import type { AuthEnv } from '../types.js';
 import { z } from 'zod';
 import { UserDataStore } from './UserDataStore.js';
 import { UsageTracker } from '../billing/UsageTracker.js';
@@ -15,8 +16,8 @@ const registerDeviceSchema = z.object({
   fingerprint: z.string().min(8).max(256),
 });
 
-export function createUserRoutes(): Hono {
-  const app = new Hono();
+export function createUserRoutes(): Hono<AuthEnv> {
+  const app = new Hono<AuthEnv>();
   const store = new UserDataStore();
   const usage = new UsageTracker();
 

@@ -57,9 +57,11 @@ export class SyncEngine {
     return {
       hasUpdate: true,
       version: state.version,
-      encryptedData: state.encryptedData?.toString('base64'),
-      iv: state.iv?.toString('base64'),
-      authTag: state.authTag?.toString('base64'),
+      encryptedData: state.encryptedData
+        ? Buffer.from(state.encryptedData).toString('base64')
+        : undefined,
+      iv: state.iv ? Buffer.from(state.iv).toString('base64') : undefined,
+      authTag: state.authTag ? Buffer.from(state.authTag).toString('base64') : undefined,
       checksum: state.checksum ?? undefined,
     };
   }
@@ -78,9 +80,9 @@ export class SyncEngine {
         serverVersion: existing.version,
         serverData: existing.encryptedData
           ? {
-              encryptedData: existing.encryptedData.toString('base64'),
-              iv: existing.iv?.toString('base64') ?? '',
-              authTag: existing.authTag?.toString('base64') ?? '',
+              encryptedData: Buffer.from(existing.encryptedData).toString('base64'),
+              iv: existing.iv ? Buffer.from(existing.iv).toString('base64') : '',
+              authTag: existing.authTag ? Buffer.from(existing.authTag).toString('base64') : '',
               checksum: existing.checksum ?? '',
             }
           : undefined,
@@ -95,17 +97,17 @@ export class SyncEngine {
         userId,
         dataType: payload.dataType,
         version: newVersion,
-        encryptedData: payload.encryptedData,
-        iv: payload.iv,
-        authTag: payload.authTag,
+        encryptedData: new Uint8Array(payload.encryptedData),
+        iv: new Uint8Array(payload.iv),
+        authTag: new Uint8Array(payload.authTag),
         checksum: payload.checksum,
         lastModified: new Date(),
       },
       update: {
         version: newVersion,
-        encryptedData: payload.encryptedData,
-        iv: payload.iv,
-        authTag: payload.authTag,
+        encryptedData: new Uint8Array(payload.encryptedData),
+        iv: new Uint8Array(payload.iv),
+        authTag: new Uint8Array(payload.authTag),
         checksum: payload.checksum,
         lastModified: new Date(),
       },

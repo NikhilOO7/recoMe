@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import type { AuthEnv } from '../types.js';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../db.js';
@@ -26,8 +27,8 @@ const refreshSchema = z.object({
   refreshToken: z.string().min(1),
 });
 
-export function createAuthRoutes(): Hono {
-  const app = new Hono();
+export function createAuthRoutes(): Hono<AuthEnv> {
+  const app = new Hono<AuthEnv>();
   const tokenService = new TokenService();
 
   // POST /auth/register

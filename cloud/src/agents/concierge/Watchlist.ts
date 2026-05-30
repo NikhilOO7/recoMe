@@ -1,17 +1,19 @@
 /**
  * Watchlist — per-user explicit watch list for ConciergeAgent.
  *
- * Phase-4 stub: in-memory Map per user. Survives a hot-reload of the same
- * process but not a restart. Production swap: add `WatchlistItem` to
- * Prisma schema with `userId, label, targetPriceUsd, retailers[], createdAt`
- * and rewire the four methods below.
+ * Backed by Prisma `WatchlistItem` (cloud/prisma/schema.prisma). Items survive
+ * process restart and replicate across Fly machines via the shared Neon DB.
+ *
+ * The four exported functions match the contract that ConciergeAgent +
+ * AgentController already call — only the implementation switched from an
+ * in-memory Map (the Phase-4 stub) to Prisma. All callers must await.
  *
  * Why a separate module: the watchlist concept will move to its own
  * `WatchlistAgent` (ADR-0012 Tier-2) — keeping the store decoupled means
  * that future agent + the consumer-facing endpoints both share state.
  */
 
-import { randomUUID } from 'node:crypto';
+import { prisma } from '../../db.js';
 
 export interface WatchlistItem {
   id: string;
@@ -27,45 +29,80 @@ export interface WatchlistItem {
   lastPriceAt?: string;
 }
 
-const STORE = new Map<string, WatchlistItem[]>();
+// ── Helpers ─────────────────────────────────────────────────────────────────
 
-export function listWatchlist(userId: string): WatchlistItem[] {
-  return STORE.get(userId) ?? [];
-}
+// Prisma returns null for unset optional columns; the WatchlistItem contract
+// uses `undefined` so the JSON shape matches what the extension/web clients
+// have been consuming since Phase 4. This one helper keeps the boundary tidy.
+type PrismaRow = {
+  id: string;
+  label: string;
+  targetPriceUsd: number | null;
+  retailers: string[];
+  pageUrl: string | null;
+  createdAt: Date;
+  lastPriceUsd: number | null;
+  lastPriceAt: Date | null;
+};
 
-export function addWatchlistItem(
-  userId: string,
-  input: Omit<WatchlistItem, 'id' | 'createdAt'>,
-): WatchlistItem {
-  const items = STORE.get(userId) ?? [];
-  const item: WatchlistItem = {
-    id: `wl_${randomUUID()}`,
-    createdAt: new Date().toISOString(),
-    ...input,
+function toClient(row: PrismaRow): WatchlistItem {
+  const out: WatchlistItem = {
+    id: row.id,
+    label: row.label,
+    retailers: row.retailers,
+    createdAt: row.createdAt.toISOString(),
   };
-  items.unshift(item);
-  STORE.set(userId, items);
-  return item;
+  if (row.targetPriceUsd != null) out.targetPriceUsd = row.targetPriceUsd;
+  if (row.pageUrl) out.pageUrl = row.pageUrl;
+  if (row.lastPriceUsd != null) out.lastPriceUsd = row.lastPriceUsd;
+  if (row.lastPriceAt) out.lastPriceAt = row.lastPriceAt.toISOString();
+  return out;
 }
 
-export function removeWatchlistItem(userId: string, id: string): boolean {
-  const items = STORE.get(userId);
-  if (!items) return false;
-  const idx = items.findIndex((i) => i.id === id);
-  if (idx === -1) return false;
-  items.splice(idx, 1);
-  return true;
+// ── Public API ──────────────────────────────────────────────────────────────
+
+export async function listWatchlist(userId: string): Promise<WatchlistItem[]> {
+  const rows = await prisma.watchlistItem.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' },
+  });
+  return rows.map(toClient);
 }
 
-export function updateWatchlistPrice(
+export async function addWatchlistItem(
+  userId: string,
+  input: Omit<WatchlistItem, 'id' | 'createdAt' | 'lastPriceUsd' | 'lastPriceAt'>,
+): Promise<WatchlistItem> {
+  const row = await prisma.watchlistItem.create({
+    data: {
+      userId,
+      label: input.label,
+      targetPriceUsd: input.targetPriceUsd ?? null,
+      retailers: input.retailers ?? [],
+      pageUrl: input.pageUrl ?? null,
+    },
+  });
+  return toClient(row);
+}
+
+export async function removeWatchlistItem(userId: string, id: string): Promise<boolean> {
+  // Scope the delete to (id, userId) so a forged id from another user can't
+  // delete a row that doesn't belong to them. deleteMany returns a count.
+  const res = await prisma.watchlistItem.deleteMany({ where: { id, userId } });
+  return res.count > 0;
+}
+
+export async function updateWatchlistPrice(
   userId: string,
   id: string,
   priceUsd: number,
-): WatchlistItem | null {
-  const items = STORE.get(userId);
-  const item = items?.find((i) => i.id === id);
-  if (!item) return null;
-  item.lastPriceUsd = priceUsd;
-  item.lastPriceAt = new Date().toISOString();
-  return item;
+): Promise<WatchlistItem | null> {
+  // Same tenant-safety pattern as removeWatchlistItem.
+  const res = await prisma.watchlistItem.updateMany({
+    where: { id, userId },
+    data: { lastPriceUsd: priceUsd, lastPriceAt: new Date() },
+  });
+  if (res.count === 0) return null;
+  const row = await prisma.watchlistItem.findUnique({ where: { id } });
+  return row ? toClient(row) : null;
 }

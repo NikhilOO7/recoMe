@@ -23,6 +23,8 @@
     "@prisma/client": "^6.5.0",
     "@qdrant/js-client-rest": "^1.11.0",
     "bcryptjs": "^3.0.2",
+    "graphology": "^0.26.0",
+    "graphology-communities-louvain": "^2.0.2",
     "hono": "^4.7.6",
     "jsonwebtoken": "^9.0.2",
     "nanoid": "^5.1.5",

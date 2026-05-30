@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import type { AuthEnv } from '../types.js';
 import { z } from 'zod';
 import { StripeService } from './StripeService.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
@@ -9,8 +10,8 @@ const checkoutSchema = z.object({
   cancelUrl: z.string().url(),
 });
 
-export function createBillingRoutes(): Hono {
-  const app = new Hono();
+export function createBillingRoutes(): Hono<AuthEnv> {
+  const app = new Hono<AuthEnv>();
   const stripe = new StripeService();
 
   // Webhook route — no auth middleware (Stripe calls this)

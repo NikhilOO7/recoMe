@@ -201,7 +201,7 @@ export function createAgentRoutes(): Hono<AuthVars> {
 
   app.get('/agents/concierge/watchlist', async (c) => {
     const userId = c.get('userId');
-    return c.json({ items: listWatchlist(userId) });
+    return c.json({ items: await listWatchlist(userId) });
   });
 
   app.post('/agents/concierge/watchlist', async (c) => {
@@ -210,14 +210,14 @@ export function createAgentRoutes(): Hono<AuthVars> {
     if (!body.success) {
       return c.json({ error: 'invalid_watchlist_item', details: body.error.flatten() }, 400);
     }
-    const item = addWatchlistItem(userId, body.data);
+    const item = await addWatchlistItem(userId, body.data);
     return c.json({ item }, 201);
   });
 
   app.delete('/agents/concierge/watchlist/:id', async (c) => {
     const userId = c.get('userId');
     const id = c.req.param('id');
-    const removed = removeWatchlistItem(userId, id);
+    const removed = await removeWatchlistItem(userId, id);
     return removed ? c.json({ ok: true }) : c.json({ error: 'not_found' }, 404);
   });
 
