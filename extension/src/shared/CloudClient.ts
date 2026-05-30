@@ -102,10 +102,39 @@ export async function getInbox(
   const params = new URLSearchParams();
   if (opts.unseen) params.set('unseen', '1');
   if (opts.limit) params.set('limit', String(opts.limit));
-  if (opts.since) params.set('since', String(opts.since));
+  // Cloud parses `since` as new Date(value) → both ISO strings and epoch ms
+  // parse, but we send ISO for safety.
+  if (opts.since) params.set('since', new Date(opts.since).toISOString());
   const q = params.toString();
   const res = await authedFetch(`/intelligence/inbox${q ? `?${q}` : ''}`, { method: 'GET' });
-  return parseOrThrow<InboxResponse>(res);
+  const raw = await parseOrThrow<{ events: RawAgentEvent[] }>(res);
+  return { events: raw.events.map(normalizeEvent) };
+}
+
+// Cloud's Prisma model serializes DateTime as ISO strings; the extension
+// types AgentEvent.createdAt/seenAt as numbers (epoch ms) because every
+// in-extension consumer does Date.now()-style math on them. Normalize at the
+// network boundary so the rest of the extension never sees the string form.
+interface RawAgentEvent extends Omit<AgentEvent, 'createdAt' | 'seenAt'> {
+  createdAt: string | number;
+  seenAt: string | number | null | undefined;
+}
+function normalizeEvent(raw: RawAgentEvent): AgentEvent {
+  const out: AgentEvent = {
+    id: raw.id,
+    agent: raw.agent,
+    kind: raw.kind,
+    title: raw.title,
+    sources: raw.sources ?? [],
+    createdAt: toMs(raw.createdAt),
+  };
+  if (raw.body) out.body = raw.body;
+  if (raw.actionUrl) out.actionUrl = raw.actionUrl;
+  if (raw.seenAt) out.seenAt = toMs(raw.seenAt);
+  return out;
+}
+function toMs(v: string | number): number {
+  return typeof v === 'number' ? v : new Date(v).getTime();
 }
 
 export async function markInboxSeen(eventId: string): Promise<void> {

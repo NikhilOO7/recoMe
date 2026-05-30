@@ -91,18 +91,6 @@ const ROSTER: AgentMeta[] = [
     trigger: 'event-triggered on capture',
   },
   {
-    name: 'watchlist',
-    displayName: 'Watchlist',
-    color: '#fb7185',
-    soft: 'rgba(251, 113, 133, 0.14)',
-    glyph: 'W',
-    tagline: 'Explicit watches on a topic, entity, or person',
-    description:
-      'User-set tracking with real-time fires on price, new mention, or sentiment shift. Phase-3 launch.',
-    trigger: 'event-triggered on watch hit',
-    comingSoon: true,
-  },
-  {
     name: 'decision',
     displayName: 'Decision',
     color: '#60a5fa',
@@ -110,9 +98,19 @@ const ROSTER: AgentMeta[] = [
     glyph: 'D',
     tagline: 'On-demand: summarise a trail, call out conflicts, recommend',
     description:
-      'Pulls the full trail for one decision, summarises options, calls out criteria conflicts, cites every signal. Phase-3 launch.',
+      'Pulls the full trail for one decision, summarises options, calls out criteria conflicts, cites every signal. Invoked from the in-page "Ask Decision" panel and the /ask Advisor chat.',
     trigger: 'on-demand only',
-    comingSoon: true,
+  },
+  {
+    name: 'curriculum',
+    displayName: 'Curriculum',
+    color: '#fb7185',
+    soft: 'rgba(251, 113, 133, 0.14)',
+    glyph: 'L',
+    tagline: '"I want to learn X" — bridges from what you already know',
+    description:
+      'Reads your graph, finds the closest anchor topics, and produces a four-week reading plan that bridges from familiar ground to the target. Surfaces from Udemy / Coursera / edX overlays.',
+    trigger: 'on-demand from learning platforms',
   },
   {
     name: 'synthesist',

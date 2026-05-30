@@ -2,6 +2,7 @@ import { BaseAgent } from '../BaseAgent.js';
 import type { AgentContext, AgentResult, AgentEventSource } from '../types.js';
 import type { Platform } from '../../graph/types.js';
 import { compareOffers, formatUsd } from './tools.js';
+import { listWatchlist, updateWatchlistPrice, type WatchlistItem } from './Watchlist.js';
 import { logger } from '../../observability/logger.js';
 
 /**
@@ -48,10 +49,22 @@ interface ConciergeTriggerEvent {
 export class ConciergeAgent extends BaseAgent {
   readonly name = 'concierge';
   readonly displayName = 'Concierge';
-  readonly triggers = ['event'] as const;
+  // 'event'     → fired by signalIngestTrigger when the user lands on a PDP
+  //              (or by the extension's ConciergeFlow on PDP nav).
+  // 'scheduled' → walks the user's Watchlist and price-checks each item;
+  //              runs N×/day from a cron (BullMQ today, Fly cron command in
+  //              the interim). Same agent class; the trigger picks the path.
+  readonly triggers = ['event', 'scheduled'] as const;
 
   override async canRun(ctx: AgentContext): Promise<boolean> {
+    if (this.priceVendorBlockedInProd()) return false;
+
+    if (ctx.trigger === 'scheduled') {
+      // Only run a scheduled sweep when there's something explicit to watch.
+      return listWatchlist(ctx.userId).length > 0;
+    }
     if (ctx.trigger !== 'event') return false;
+
     const event = ctx.event as Partial<ConciergeTriggerEvent> | undefined;
     if (!event?.signalId || !event.topicNormalizedName) return false;
     // Concierge only fires when the user touched a commerce platform AND we
@@ -59,43 +72,92 @@ export class ConciergeAgent extends BaseAgent {
     // (e.g. browsing Amazon's homepage with no product entity) is skipped.
     if (!event.platform || !COMMERCE_PLATFORMS.includes(event.platform)) return false;
     if (!event.entityNames || event.entityNames.length === 0) return false;
-    // Per ADR-0017 §2.3, in prod the price vendor must be explicitly set.
-    // Allow stub in dev/test by default.
-    const vendor = process.env.INTELLIGENCE_AGENTS_PRICE_VENDOR ?? 'stub';
-    if (process.env.NODE_ENV === 'production' && vendor === 'stub') {
-      logger.warn({ agent: this.name }, 'concierge skipped: stub vendor not allowed in production');
-      return false;
-    }
     return true;
   }
 
+  private priceVendorBlockedInProd(): boolean {
+    const vendor = process.env.INTELLIGENCE_AGENTS_PRICE_VENDOR ?? 'stub';
+    if (process.env.NODE_ENV === 'production' && vendor === 'stub') {
+      logger.warn({ agent: this.name }, 'concierge skipped: stub vendor not allowed in production');
+      return true;
+    }
+    return false;
+  }
+
   async run(ctx: AgentContext): Promise<AgentResult> {
+    if (ctx.trigger === 'scheduled') return this.runWatchlistSweep(ctx);
+    return this.runEvent(ctx);
+  }
+
+  /** Walk the user's Watchlist; emit the first item that hits target or threshold. */
+  private async runWatchlistSweep(ctx: AgentContext): Promise<AgentResult> {
+    const items = listWatchlist(ctx.userId);
+    if (items.length === 0) {
+      return { status: 'skipped', reason: 'empty_watchlist' };
+    }
+
+    for (const item of items) {
+      const emission = await this.checkOne(item.label, ctx, { item });
+      if (emission) {
+        return { status: 'succeeded', emit: emission, llmTokens: 0, costMicros: 0 };
+      }
+    }
+    return { status: 'skipped', reason: 'no_watchlist_deals' };
+  }
+
+  private async runEvent(ctx: AgentContext): Promise<AgentResult> {
     const event = ctx.event as unknown as ConciergeTriggerEvent;
     const entityKey = (event.entityNames?.[0] ?? '').trim();
     if (!entityKey) {
       return { status: 'skipped', reason: 'no entity to price-check' };
     }
 
-    // ── Compare offers across all supported retailers ────────────────────
-    const cmp = await compareOffers(entityKey);
-    if (!cmp.cheapest) {
-      return { status: 'skipped', reason: `no in-stock quotes for entity "${entityKey}"` };
+    // If the touched entity is on the user's Watchlist, surface the watchlist
+    // target so the user's explicit threshold beats the generic 10%-off rule.
+    const wlItem = listWatchlist(ctx.userId).find(
+      (i) => i.label.trim().toLowerCase() === entityKey.toLowerCase(),
+    );
+    const emission = await this.checkOne(entityKey, ctx, { event, item: wlItem });
+    if (!emission) {
+      return { status: 'skipped', reason: `no deal on "${entityKey}"` };
     }
+    return { status: 'succeeded', emit: emission, llmTokens: 0, costMicros: 0 };
+  }
+
+  /**
+   * Shared "check one entity" path. Returns an AgentEmission when the cheapest
+   * quote either hits the watchlist target (if any) or is ≥10% below baseline.
+   * Side effect: updates Watchlist.lastPriceUsd / lastPriceAt when an item is
+   * provided, so the /ask Watchlist UI reflects fresh data.
+   */
+  private async checkOne(
+    entityKey: string,
+    ctx: AgentContext,
+    src: { event?: ConciergeTriggerEvent; item?: WatchlistItem },
+  ): Promise<NonNullable<AgentResult & { status: 'succeeded' }>['emit'] | null> {
+    const cmp = await compareOffers(entityKey);
+    if (!cmp.cheapest) return null;
 
     const { cheapest } = cmp;
+    const targetCents = src.item?.targetPriceUsd ? Math.round(src.item.targetPriceUsd * 100) : null;
     const ref = cheapest.referenceCents;
     const dropPct = ref ? 1 - cheapest.amountCents / ref : 0;
-    if (!ref || dropPct < DEAL_THRESHOLD) {
-      return {
-        status: 'skipped',
-        reason: `cheapest ${formatUsd(cheapest.amountCents)} not a deal (drop ${(dropPct * 100).toFixed(1)}%)`,
-      };
+    const hitsTarget = targetCents != null && cheapest.amountCents <= targetCents;
+    const hitsThreshold = ref != null && dropPct >= DEAL_THRESHOLD;
+
+    if (src.item) {
+      // Refresh the explicit-watch row regardless of whether we emit, so the
+      // user sees Concierge actively tracking it on /ask.
+      updateWatchlistPrice(ctx.userId, src.item.id, cheapest.amountCents / 100);
     }
 
-    // ── Build the emission ───────────────────────────────────────────────
-    const savingsCents = ref - cheapest.amountCents;
+    if (!hitsTarget && !hitsThreshold) return null;
+
     const retailerLabel = retailerDisplay(cheapest.retailer);
-    const title = `${retailerLabel} dropped "${entityKey}" to ${formatUsd(cheapest.amountCents)} — ${formatUsd(savingsCents)} below baseline.`;
+    const reasonLabel = hitsTarget
+      ? `at or below your target of ${formatUsd(targetCents!)}`
+      : `${formatUsd(ref! - cheapest.amountCents)} below baseline`;
+    const title = `${retailerLabel} dropped "${entityKey}" to ${formatUsd(cheapest.amountCents)} — ${reasonLabel}.`;
 
     const otherQuotes = cmp.quotes.filter((q) => q.retailer !== cheapest.retailer && q.inStock);
     const otherSummary = otherQuotes
@@ -104,9 +166,10 @@ export class ConciergeAgent extends BaseAgent {
       .map((q) => `${retailerDisplay(q.retailer)} ${formatUsd(q.amountCents)}`)
       .join(' · ');
 
-    const bodyParts: string[] = [
-      `You're looking at this on ${retailerDisplay(event.platform ?? cheapest.retailer)} — Concierge checked ${cmp.quotes.length} retailers.`,
-    ];
+    const contextLine = src.item
+      ? `From your /ask Watchlist — Concierge checked ${cmp.quotes.length} retailers.`
+      : `You're looking at this on ${retailerDisplay(src.event?.platform ?? cheapest.retailer)} — Concierge checked ${cmp.quotes.length} retailers.`;
+    const bodyParts: string[] = [contextLine];
     if (otherSummary) bodyParts.push(`Other in-stock offers: ${otherSummary}.`);
     if (cmp.spreadCents > 0) {
       bodyParts.push(`Cross-retailer spread: ${formatUsd(cmp.spreadCents)}.`);
@@ -115,34 +178,47 @@ export class ConciergeAgent extends BaseAgent {
       bodyParts.push('Note: prices are illustrative — Concierge is in early access (ADR-0017).');
     }
 
-    const sources: AgentEventSource[] = [
-      { kind: 'signal', id: event.signalId, label: `capture that triggered this check` },
-      { kind: 'entity', id: entityKey, label: entityKey },
-      { kind: 'topic', id: event.topicNormalizedName, label: event.topicName },
-      ...cmp.quotes.map(
-        (q): AgentEventSource => ({
-          kind: 'page',
-          id: q.url,
-          label: `${retailerDisplay(q.retailer)} · ${formatUsd(q.amountCents)}${q.inStock ? '' : ' (out of stock)'}`,
-          url: q.url,
-        }),
-      ),
-    ];
+    const sources: AgentEventSource[] = [];
+    if (src.event?.signalId) {
+      sources.push({
+        kind: 'signal',
+        id: src.event.signalId,
+        label: 'capture that triggered this check',
+      });
+    }
+    if (src.item) {
+      sources.push({
+        kind: 'entity',
+        id: `watchlist:${src.item.id}`,
+        label: `Watchlist item · ${src.item.label}`,
+      });
+    }
+    sources.push({ kind: 'entity', id: entityKey, label: entityKey });
+    if (src.event?.topicNormalizedName) {
+      sources.push({
+        kind: 'topic',
+        id: src.event.topicNormalizedName,
+        label: src.event.topicName ?? src.event.topicNormalizedName,
+      });
+    }
+    for (const q of cmp.quotes) {
+      sources.push({
+        kind: 'page',
+        id: q.url,
+        label: `${retailerDisplay(q.retailer)} · ${formatUsd(q.amountCents)}${q.inStock ? '' : ' (out of stock)'}`,
+        url: q.url,
+      });
+    }
 
     return {
-      status: 'succeeded',
-      emit: {
-        kind: 'deal_drop',
-        title,
-        body: bodyParts.join(' '),
-        actionUrl: cheapest.url,
-        sources,
-        // One Concierge emission per (user, entity, day-bucket). Repeated views
-        // of the same product within 24h won't re-notify.
-        dedupeKey: `concierge:${entityKey.toLowerCase()}:${Math.floor(ctx.now.getTime() / (24 * 60 * 60 * 1000))}`,
-      },
-      llmTokens: 0,
-      costMicros: 0,
+      kind: 'deal_drop',
+      title,
+      body: bodyParts.join(' '),
+      actionUrl: cheapest.url,
+      sources,
+      // One Concierge emission per (user, entity, day-bucket). Repeated views
+      // of the same product within 24h won't re-notify.
+      dedupeKey: `concierge:${entityKey.toLowerCase()}:${Math.floor(ctx.now.getTime() / (24 * 60 * 60 * 1000))}`,
     };
   }
 }

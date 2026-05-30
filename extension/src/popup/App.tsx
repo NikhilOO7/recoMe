@@ -84,10 +84,13 @@ export function App() {
     };
   }, [load]);
 
-  const openLogin = useCallback(
-    () => chrome.tabs.create({ url: `${webUrl}/login?from=extension` }),
-    [webUrl],
-  );
+  const openLogin = useCallback(() => {
+    // Web /login reads `return=extension` + `ext_id`; on success it redirects
+    // to chrome-extension://<ext_id>/callback.html with the tokens as URL
+    // params. callback.html persists them via shared/AuthClient storage keys.
+    const extId = chrome.runtime.id;
+    chrome.tabs.create({ url: `${webUrl}/login?return=extension&ext_id=${extId}` });
+  }, [webUrl]);
   const openWeb = useCallback(
     (path = '') => chrome.tabs.create({ url: `${webUrl}${path}` }),
     [webUrl],
