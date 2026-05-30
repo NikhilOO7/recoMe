@@ -13,10 +13,10 @@ This is the **single forward-looking source of truth** for development decisions
 
 1. **Read §3 (priority queue)** — pick the next item.
 2. **Find the workstream it belongs to in §5–§16** — read the _what_, _done_, _next_, _deps_.
-3. **Check the acceptance criteria in §17** before claiming done.
+3. **Check the acceptance criteria in §18** before claiming done.
 4. **Update this doc** when an item ships — move from `Next` to `Done`, add follow-ups.
 
-If a decision blocks work, escalate to §18 (open decisions) and tag the relevant ADR — don't sit on it.
+If a decision blocks work, escalate to §19 (open decisions) and tag the relevant ADR — don't sit on it.
 
 ---
 
@@ -77,13 +77,14 @@ Each item is a workstream-scoped task with an acceptance criterion. Move items t
 
 ### P2 — Next sprint (cloud hardening + CI; ~3 days)
 
-| #    | Item                                                                                                   | Workstream                             | Acceptance                                                                |
-| ---- | ------------------------------------------------------------------------------------------------------ | -------------------------------------- | ------------------------------------------------------------------------- |
-| P2.1 | Fix 70 cloud TS errors via Hono `Variables` interface                                                  | [WS-3](#7-ws-3--cloud-correctness--ci) | `cd cloud && npx tsc --noEmit` exits 0                                    |
-| P2.2 | Swap `Watchlist` in-memory Map → Prisma `WatchlistItem` model                                          | [WS-3](#7-ws-3--cloud-correctness--ci) | Watchlist items survive process restart; ConciergeAgent tests still green |
-| P2.3 | Restore `graphology` + `graphology-communities-louvain` in `cloud/package.json` for MindMap clustering | [WS-3](#7-ws-3--cloud-correctness--ci) | `cd cloud && npm run test` passes including MindMap cluster tests         |
-| P2.4 | Wire `.github/workflows/ci.yml`: typecheck + test on push to all subprojects                           | [WS-3](#7-ws-3--cloud-correctness--ci) | PRs blocked when extension typecheck or cloud tests fail                  |
-| P2.5 | Archive `cloud/src/agent/` (singular, legacy chat stub)                                                | [WS-3](#7-ws-3--cloud-correctness--ci) | Moved to `graveyard/2026-05-30-extension-rewrite/cloud-agent-singular/`   |
+| #    | Item                                                                                                   | Workstream                               | Acceptance                                                                                                                                                            |
+| ---- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P2.1 | Fix 70 cloud TS errors via Hono `Variables` interface                                                  | [WS-3](#7-ws-3--cloud-correctness--ci)   | `cd cloud && npx tsc --noEmit` exits 0                                                                                                                                |
+| P2.2 | Swap `Watchlist` in-memory Map → Prisma `WatchlistItem` model                                          | [WS-3](#7-ws-3--cloud-correctness--ci)   | Watchlist items survive process restart; ConciergeAgent tests still green                                                                                             |
+| P2.3 | Restore `graphology` + `graphology-communities-louvain` in `cloud/package.json` for MindMap clustering | [WS-3](#7-ws-3--cloud-correctness--ci)   | `cd cloud && npm run test` passes including MindMap cluster tests                                                                                                     |
+| P2.4 | Wire `.github/workflows/ci.yml`: typecheck + test on push to all subprojects                           | [WS-3](#7-ws-3--cloud-correctness--ci)   | PRs blocked when extension typecheck or cloud tests fail                                                                                                              |
+| P2.5 | Archive `cloud/src/agent/` (singular, legacy chat stub)                                                | [WS-3](#7-ws-3--cloud-correctness--ci)   | Moved to `graveyard/2026-05-30-extension-rewrite/cloud-agent-singular/`                                                                                               |
+| P2.6 | Demo-seed script + `demo@recome.app` account                                                           | [WS-13](#17-ws-13--stakeholder-showcase) | `npm run seed:demo` populates the demo user with ~30 cross-platform signals over 21 days; `/mind`, `/inbox`, `/agents`, `/ask` all render non-empty for a fresh login |
 
 ### P3 — Two weeks out (real Concierge + Decision streaming + BullMQ + CardScorer)
 
@@ -93,6 +94,7 @@ Each item is a workstream-scoped task with an acceptance criterion. Move items t
 | P3.2 | Real `CardScorer` with LLM reasoning polish                             | [WS-5](#9-ws-5--cardscorer-llm-polish)     | `POST /intelligence/score/cards` returns reasoning that beats the deterministic baseline on a 50-card eval set |
 | P3.3 | Decision agent SSE streaming                                            | [WS-6](#10-ws-6--decision-llm-streaming)   | Extension `OverlayChat` and web `/ask` chat stream token-by-token; latency p95 first-token < 1.5s              |
 | P3.4 | BullMQ worker fleet (Curator 1×/day + Concierge watchlist sweep)        | [WS-7](#11-ws-7--bullmq-scheduled-workers) | Curator emits weekly via cron without manual `/run`; Concierge sweeps Watchlist on schedule                    |
+| P3.5 | `/how-it-works` page with live pipeline streaming                       | [WS-13](#17-ws-13--stakeholder-showcase)   | Public web route streams capture → signal → graph → agent → emission for the demo account via SSE; ~2-3 days   |
 
 ### P4 — Month out (IaaS public launch + notifications + new surfaces)
 
@@ -118,20 +120,21 @@ Each item is a workstream-scoped task with an acceptance criterion. Move items t
 
 Twelve workstreams, ordered by current priority:
 
-| WS                                                               | Title                                  | Owner              | Current P |
-| ---------------------------------------------------------------- | -------------------------------------- | ------------------ | --------- |
-| [WS-1](#5-ws-1--security--hygiene)                               | Security + Hygiene                     | (founder)          | P0        |
-| [WS-2](#6-ws-2--docs--listing-alignment)                         | Docs + Listing Alignment               | (founder)          | P1        |
-| [WS-3](#7-ws-3--cloud-correctness--ci)                           | Cloud Correctness + CI                 | (cloud)            | P2        |
-| [WS-4](#8-ws-4--concierge-price-vendor)                          | Concierge Price Vendor (ADR-0017)      | (founder, blocked) | P3        |
-| [WS-5](#9-ws-5--cardscorer-llm-polish)                           | CardScorer LLM Polish                  | (cloud)            | P3        |
-| [WS-6](#10-ws-6--decision-llm-streaming)                         | Decision LLM Streaming                 | (cloud + clients)  | P3        |
-| [WS-7](#11-ws-7--bullmq-scheduled-workers)                       | BullMQ Scheduled Workers               | (cloud)            | P3        |
-| [WS-8](#12-ws-8--iaas-public-launch)                             | IaaS Public Launch                     | (cloud + web)      | P4        |
-| [WS-9](#13-ws-9--mobile-a-b-hybrid-pwa--native-share-extensions) | Mobile (PWA + native share extensions) | (founder)          | P3        |
-| [WS-10](#14-ws-10--notifications--digests)                       | Notifications + Digests                | (cloud + web)      | P4        |
-| [WS-11](#15-ws-11--synthesist-agent)                             | Synthesist Agent                       | (cloud)            | P5        |
-| [WS-12](#16-ws-12--remaining-surfaces)                           | Remaining Unique Surfaces              | (cloud + web)      | P5        |
+| WS                                                               | Title                                            | Owner              | Current P |
+| ---------------------------------------------------------------- | ------------------------------------------------ | ------------------ | --------- |
+| [WS-1](#5-ws-1--security--hygiene)                               | Security + Hygiene                               | (founder)          | P0        |
+| [WS-2](#6-ws-2--docs--listing-alignment)                         | Docs + Listing Alignment                         | (founder)          | P1        |
+| [WS-3](#7-ws-3--cloud-correctness--ci)                           | Cloud Correctness + CI                           | (cloud)            | P2        |
+| [WS-4](#8-ws-4--concierge-price-vendor)                          | Concierge Price Vendor (ADR-0017)                | (founder, blocked) | P3        |
+| [WS-5](#9-ws-5--cardscorer-llm-polish)                           | CardScorer LLM Polish                            | (cloud)            | P3        |
+| [WS-6](#10-ws-6--decision-llm-streaming)                         | Decision LLM Streaming                           | (cloud + clients)  | P3        |
+| [WS-7](#11-ws-7--bullmq-scheduled-workers)                       | BullMQ Scheduled Workers                         | (cloud)            | P3        |
+| [WS-8](#12-ws-8--iaas-public-launch)                             | IaaS Public Launch                               | (cloud + web)      | P4        |
+| [WS-9](#13-ws-9--mobile-a-b-hybrid-pwa--native-share-extensions) | Mobile (PWA + native share extensions)           | (founder)          | P3        |
+| [WS-10](#14-ws-10--notifications--digests)                       | Notifications + Digests                          | (cloud + web)      | P4        |
+| [WS-11](#15-ws-11--synthesist-agent)                             | Synthesist Agent                                 | (cloud)            | P5        |
+| [WS-12](#16-ws-12--remaining-surfaces)                           | Remaining Unique Surfaces                        | (cloud + web)      | P5        |
+| [WS-13](#17-ws-13--stakeholder-showcase)                         | Stakeholder Showcase (demo seed + /how-it-works) | (founder + web)    | P2 + P3   |
 
 ---
 
@@ -540,7 +543,71 @@ Pulled forward from ADR-0014 — the surfaces flagged "spec only" that haven't b
 
 ---
 
-## 17. Acceptance criteria — definition of done
+## 17. WS-13 — Stakeholder Showcase
+
+**Why it matters:** A stakeholder (investor / hire candidate / first IaaS customer) currently can't see what RecoMe does without you driving the demo. Two pieces close that gap:
+
+1. **A seeded demo account** so an unguided login at `recome.app/login` as `demo@recome.app` produces a populated `/mind`, `/inbox`, `/ask`, `/agents` immediately — no waiting for two weeks of capture.
+2. **A `/how-it-works` page** that streams the pipeline live (capture → signal → graph → agent → emission) so the architecture's strongest argument — "no competitor has this cross-platform signal density" — is visible without screenshare narration.
+
+The mistake to avoid: rebuilding the old in-extension devtools as a stakeholder surface. Those debugged the brain that's gone, and even reborn they'd be one more thing to keep in sync with prod. The seeded demo + `/how-it-works` are both **thin layers over existing surfaces** — they don't add product code, they expose product behavior.
+
+**Done so far:** Nothing. All eight user-facing web routes exist; the gap is data + a tour.
+
+**Next — split across two phases:**
+
+### P2.6 — Demo seed script (~1 day)
+
+**Status:** Shipped (built on top of existing `scripts/seed-local.ts`).
+
+- Extends the existing seed script (was previously called only from `scripts/dev-local.sh` after the cloud `/health` probe).
+- Behavior (idempotent — safe to re-run):
+  1. POST `/auth/register` to create `demo@recome.local` (or fall back to login on 409)
+  2. POST `/intelligence/signals` in batches of 10: 20 signals across 21 days, 5 topics (distributed systems, standing desks, climate adaptation, espresso setup, llm ops), 6 platforms (youtube, reddit, amazon, walmart, generic, …) — produces real cross-platform trails for `/mind`, `/dashboard`, `/inbox`
+  3. POST `/intelligence/agents/concierge/watchlist` to add "Sony WH-1000XM6 headphones" @ $300 (dedup on label) — populates the `/ask` Watchlist column
+  4. POST `/intelligence/agents/recall/run?trigger=event` on the "distributed systems" topic — produces an inbox event so `/inbox` isn't empty on first login
+  5. Smoke check: GET `/intelligence/trails`, `/intelligence/mindmap`, `/intelligence/inbox` and print the row counts + demo creds
+- Run: `npm run seed:demo` (against the API at `API_URL`, default `http://localhost:3001`)
+- Files: [scripts/seed-local.ts](../scripts/seed-local.ts), `package.json` scripts entry
+- For staging / prod demo accounts: set `API_URL=https://api.recome.app` and run the same script; agent-route POSTs no-op gracefully if `INTELLIGENCE_AGENTS_ENABLED` isn't set on that env
+
+### P3.5 — `/how-it-works` page (~2-3 days)
+
+- New: `web/src/app/how-it-works/page.tsx` — public route, no auth required.
+- Two modes:
+  - **Static mode (default):** annotated walkthrough with the four data flows from HLD §3.1-3.4 rendered as animated diagrams. Pre-recorded — no live data.
+  - **Live mode (`?demo=1`):** streams events from the seeded demo account via SSE. The user sees real signals landing as the script keeps feeding new ones. Compelling for in-person demos.
+- New: `GET /intelligence/demo/stream` (SSE) on cloud, scoped to the demo user. Returns: `signal_ingested`, `agent_run_started`, `agent_run_succeeded`, `inbox_event_created` events. Auth: open if user is the demo account, 403 otherwise.
+- Layout:
+  1. Hero: "Watch your interest graph build itself" + live counter (signals captured / topics / agent runs / events emitted)
+  2. Section 1 "Capture" → diagram + live signal feed (last 10)
+  3. Section 2 "Graph" → live mini-MindMap embed
+  4. Section 3 "Agents" → live AgentRun ticker
+  5. Section 4 "Surfaces" → mock extension sidebar + popup with live demo data
+  6. CTA: "Sign up to build your own"
+- Adjacent: a small "Open the demo account" button that auto-fills login form with demo creds on `/login`.
+
+**Dependencies:**
+
+- P2.6 must ship before P3.5 (live mode needs the demo account populated)
+- P3.5 live mode benefits from WS-7 (BullMQ scheduled signals) so the demo "feels alive" without manual seeding — soft dependency
+
+**Acceptance:**
+
+- P2.6: cold log-in as `demo@recome.app` on staging produces non-empty `/mind` + `/inbox` + `/ask` Watchlist + `/agents` audit trail
+- P3.5: `recome.app/how-it-works` works for unauthenticated visitors (static mode); `?demo=1` streams live SSE without auth
+
+**Files to touch:**
+
+- New: `scripts/seed-demo-user.ts`
+- New: `web/src/app/how-it-works/page.tsx`
+- New: `cloud/src/intelligence/DemoStream.ts` + `GET /intelligence/demo/stream` route
+- [package.json](../package.json) — add `seed:demo` script + `tsx` dev-dep
+- [docs/architecture/0002-deployment-notes.md](architecture/0002-deployment-notes.md) — demo-account section
+
+---
+
+## 18. Acceptance criteria — definition of done
 
 For every workstream item, "done" means:
 
@@ -561,7 +628,7 @@ For shipped surfaces (extension v2.x, web v2.x), additionally:
 
 ---
 
-## 18. Open architectural decisions
+## 19. Open architectural decisions
 
 Carried forward from HLD §10 + flagged in audit. Each needs an ADR before the work it blocks can start:
 
@@ -578,7 +645,7 @@ Carried forward from HLD §10 + flagged in audit. Each needs an ADR before the w
 
 ---
 
-## 19. Risk register
+## 20. Risk register
 
 Top 10 from audit, with mitigations:
 
@@ -597,7 +664,7 @@ Top 10 from audit, with mitigations:
 
 ---
 
-## 20. Quality bars (binding NFRs from HLD §4)
+## 21. Quality bars (binding NFRs from HLD §4)
 
 These are not goals — they are conditions the system must meet at all times. If a change would violate them, gate the change.
 
@@ -615,7 +682,7 @@ These are not goals — they are conditions the system must meet at all times. I
 
 ---
 
-## 21. Glossary (for new contributors)
+## 22. Glossary (for new contributors)
 
 - **Signal** — a captured event (view, dwell, like, block, search, etc.) with topics + entities; the atomic unit fed into the graph
 - **Topic** — normalized noun phrase (e.g. "standing desks"); HAS_INTENT edge from User
@@ -629,13 +696,13 @@ These are not goals — they are conditions the system must meet at all times. I
 
 ---
 
-## 22. Maintenance — when to update this doc
+## 23. Maintenance — when to update this doc
 
 - **Item ships** → move from priority queue to that workstream's "Done so far"; add the file paths touched
 - **New priority emerges** → add to queue (P0–P5) and link to its workstream
-- **New decision needed** → add to §18 with target ADR number
-- **Risk realized or mitigated** → update §19
-- **NFR violated** → escalate immediately; update §20 only if the target itself changes (rare)
+- **New decision needed** → add to §19 with target ADR number
+- **Risk realized or mitigated** → update §20
+- **NFR violated** → escalate immediately; update §21 only if the target itself changes (rare)
 - **Quarterly** → archive this doc to `docs/archive/2026-Q2-development-plan.md`; create the next quarter's plan as a fresh file with the same structure
 
 ---

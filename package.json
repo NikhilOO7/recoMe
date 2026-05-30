@@ -16,6 +16,7 @@
     "validate": "npm run typecheck && npm run lint && npm test",
     "version": "node scripts/sync-version.js && git add extension/src/manifest.json",
     "postbuild": "node scripts/sync-version.js",
+    "seed:demo": "npx tsx scripts/seed-local.ts",
     "prepare": "husky"
   },
   "lint-staged": {

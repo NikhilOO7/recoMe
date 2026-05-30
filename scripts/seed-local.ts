@@ -322,8 +322,70 @@ async function main(): Promise<void> {
     `[seed] ingested ${posted} signals across ${new Set(SEEDS.flatMap((s) => s.topics)).size} topics`,
   );
 
+  // Seed a Concierge watchlist item so the /ask Watchlist column renders
+  // non-empty for the demo. Idempotent: dedup on label client-side.
+  try {
+    const existing = await api<{ items: Array<{ label: string }> }>(
+      '/intelligence/agents/concierge/watchlist',
+      {},
+      auth.accessToken,
+    );
+    const hasIt = existing.items.some((i) => i.label === 'Sony WH-1000XM6 headphones');
+    if (!hasIt) {
+      await api(
+        '/intelligence/agents/concierge/watchlist',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            label: 'Sony WH-1000XM6 headphones',
+            targetPriceUsd: 300,
+            retailers: ['amazon', 'walmart', 'bestbuy'],
+          }),
+        },
+        auth.accessToken,
+      );
+      console.log('[seed] watchlist: added "Sony WH-1000XM6 headphones" @ $300');
+    } else {
+      console.log('[seed] watchlist: "Sony WH-1000XM6 headphones" already present');
+    }
+  } catch (err) {
+    console.warn(
+      '[seed] watchlist seed skipped (agent routes may not be enabled):',
+      err instanceof Error ? err.message : err,
+    );
+  }
+
+  // Fire Recall on-demand for a recent distributed-systems signal so the
+  // inbox isn't empty on first login. The cloud's Recall agent looks for
+  // older signals on the same topic — our 27-day-old Kleppmann signal +
+  // the 6-day-old CAP-after-15-years signal are a perfect pair.
+  try {
+    await api(
+      '/intelligence/agents/recall/run?trigger=event',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          event: {
+            signalId: 'seed-5-view-6d',
+            topicNormalizedName: 'distributed systems',
+            topicName: 'distributed systems',
+            ts: Date.now() - 6 * 86_400_000,
+            platform: 'youtube',
+          },
+        }),
+      },
+      auth.accessToken,
+    );
+    console.log('[seed] recall fired on "distributed systems" — inbox should have an event');
+  } catch (err) {
+    console.warn(
+      '[seed] recall fire skipped (agent routes may not be enabled):',
+      err instanceof Error ? err.message : err,
+    );
+  }
+
   // Quick smoke that downstream surfaces have data.
-  const [trails, mind] = await Promise.all([
+  const [trails, mind, inbox] = await Promise.all([
     api<{ trails: unknown[] }>('/intelligence/trails?limit=10', {}, auth.accessToken).catch(() => ({
       trails: [],
     })),
@@ -332,11 +394,16 @@ async function main(): Promise<void> {
       {},
       auth.accessToken,
     ).catch(() => ({ nodes: [] })),
+    api<{ events: unknown[] }>('/intelligence/inbox?limit=10', {}, auth.accessToken).catch(() => ({
+      events: [],
+    })),
   ]);
   console.log(`[seed] /intelligence/trails  → ${trails.trails.length} cross-platform trails`);
   console.log(`[seed] /intelligence/mindmap → ${mind.nodes.length} nodes`);
+  console.log(`[seed] /intelligence/inbox   → ${inbox.events.length} agent events`);
   console.log();
   console.log('[seed] demo login: demo@recome.local / demo1234!');
+  console.log('[seed] visit:      recome.app/ask, recome.app/mind, recome.app/inbox');
 }
 
 main().catch((err) => {
