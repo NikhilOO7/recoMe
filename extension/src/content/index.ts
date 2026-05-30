@@ -19,6 +19,7 @@ import { ScoreBatcher } from '../surfaces/ScoreBatcher';
 import { Sidebar } from '../surfaces/Sidebar';
 import { AgentEventRouter } from '../surfaces/AgentEventRouter';
 import { WorkflowOrchestrator } from '../surfaces/workflows';
+import { maybeShowWelcome } from '../surfaces/WelcomeCard';
 
 const log = createLogger('Content');
 
@@ -137,6 +138,9 @@ async function bootstrap(): Promise<void> {
   chrome.runtime.onMessage.addListener((msg: { type?: string }) => {
     if (msg?.type === 'TOGGLE_OVERLAY') toggleOverlay();
   });
+
+  // First-install onboarding card (idempotent, self-suppresses after first show).
+  void maybeShowWelcome();
 
   log.info(`active surfaces on ${platform}`);
 }

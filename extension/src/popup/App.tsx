@@ -6,7 +6,7 @@ import {
   type InboxFeedbackPayload,
   type SetSettingsPayload,
 } from '../shared/messages';
-import { getWebAppUrl } from '../shared/constants';
+import { getWebAppUrl, STORAGE_KEYS } from '../shared/constants';
 import type { AgentEvent } from '../shared/types';
 import '../styles/popup.css';
 
@@ -35,23 +35,31 @@ export function App() {
   const [webUrl, setWebUrl] = useState('https://recome.app');
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<'all' | 'unseen'>('unseen');
+  const [welcomeDismissed, setWelcomeDismissed] = useState<boolean | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [authRes, settingsRes, inboxRes, url] = await Promise.all([
+      const [authRes, settingsRes, inboxRes, url, flags] = await Promise.all([
         sendMessage<undefined, AuthState>('GET_AUTH_STATE'),
         sendMessage<undefined, Settings>('GET_SETTINGS'),
         sendMessage<GetInboxPayload, { events: AgentEvent[] }>('GET_INBOX', { limit: 30 }),
         getWebAppUrl(),
+        chrome.storage.local.get(STORAGE_KEYS.welcome_popup_dismissed),
       ]);
       if (authRes.success) setAuth(authRes.data!);
       if (settingsRes.success) setSettings(settingsRes.data!);
       if (inboxRes.success) setEvents(inboxRes.data?.events ?? []);
       setWebUrl(url);
+      setWelcomeDismissed(!!flags[STORAGE_KEYS.welcome_popup_dismissed]);
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const dismissWelcome = useCallback(async () => {
+    await chrome.storage.local.set({ [STORAGE_KEYS.welcome_popup_dismissed]: true });
+    setWelcomeDismissed(true);
   }, []);
 
   useEffect(() => {
@@ -156,6 +164,10 @@ export function App() {
         </div>
       </section>
 
+      {welcomeDismissed === false && (events?.length ?? 0) === 0 && (
+        <WelcomePanel onDismiss={dismissWelcome} />
+      )}
+
       <section className="inbox-section">
         <div className="inbox-header">
           <div className="inbox-title">Inbox</div>
@@ -208,6 +220,51 @@ export function App() {
 
       <Footer webUrl={webUrl} onOpen={() => openWeb('/inbox')} onLogout={logout} />
     </>
+  );
+}
+
+function WelcomePanel({ onDismiss }: { onDismiss: () => void }) {
+  return (
+    <section className="welcome-card">
+      <div className="welcome-title">Welcome to RecoMe</div>
+      <p className="welcome-body">
+        RecoMe watches your browsing across YouTube, Amazon, Reddit, and 12 other sites — building a
+        map of what you&apos;re researching.
+      </p>
+      <ul className="welcome-list">
+        <li>
+          <span className="welcome-agent" style={{ color: '#5eead4' }}>
+            Recall
+          </span>{' '}
+          surfaces what you forgot when you re-encounter a topic
+        </li>
+        <li>
+          <span className="welcome-agent" style={{ color: '#10b981' }}>
+            Concierge
+          </span>{' '}
+          tracks prices and finds alternatives when you shop
+        </li>
+        <li>
+          <span className="welcome-agent" style={{ color: '#8b5cf6' }}>
+            Curator
+          </span>{' '}
+          brings fresh content on topics you&apos;ve been quiet on
+        </li>
+        <li>
+          <span className="welcome-agent" style={{ color: '#2356e8' }}>
+            Decision
+          </span>{' '}
+          pulls your research when you ask for a recommendation
+        </li>
+      </ul>
+      <p className="welcome-tip">
+        Try a YouTube video or Amazon product for 10 seconds — you&apos;ll see your first signal
+        captured and your topics start to populate.
+      </p>
+      <button className="btn btn-primary btn-block" onClick={onDismiss}>
+        Got it →
+      </button>
+    </section>
   );
 }
 

@@ -32,6 +32,8 @@ interface SidebarRefs {
   actionsList: HTMLDivElement;
   inboxBadge: HTMLSpanElement;
   collapseBtn: HTMLButtonElement;
+  infoBtn: HTMLButtonElement;
+  helpPanel: HTMLDivElement;
 }
 
 export class Sidebar {
@@ -135,21 +137,13 @@ export class Sidebar {
     if (!this.refs) return;
     this.refs.intentsList.innerHTML = '';
     if (intents.length === 0) {
-      this.refs.intentsList.appendChild(emptyState('Capture a few pages to start your graph.'));
+      this.refs.intentsList.appendChild(buildIntentsEmptyState());
       return;
     }
     for (const i of intents.slice(0, 5)) {
-      const row = document.createElement('div');
-      row.className = 'rcm-row';
       const w = Math.min(1, Math.max(0, i.strength));
-      row.innerHTML = `
-        <div class="rcm-row-head">
-          <span class="rcm-topic">${escapeHtml(i.topicName ?? i.topicNormalizedName)}</span>
-          <span class="rcm-weight">${w.toFixed(2)}</span>
-        </div>
-        <div class="rcm-bar"><div class="rcm-bar-fill" style="width:${(w * 100).toFixed(0)}%"></div></div>
-      `;
-      this.refs.intentsList.appendChild(row);
+      const name = i.topicName ?? i.topicNormalizedName;
+      this.refs.intentsList.appendChild(buildIntentRow(name, w));
     }
   }
 
@@ -157,12 +151,10 @@ export class Sidebar {
     if (!this.refs) return;
     this.refs.agentsList.innerHTML = '';
     if (agents.length === 0) {
-      this.refs.agentsList.appendChild(emptyState('No agents subscribed yet.'));
+      this.refs.agentsList.appendChild(buildAgentsEmptyState());
       return;
     }
     for (const a of agents) {
-      const row = document.createElement('div');
-      row.className = 'rcm-agent';
       const paused = !!a.subscription.pausedAt || !a.subscription.enabled;
       const dotColor = paused ? '#94a3b8' : '#10b981';
       const subText = paused
@@ -170,14 +162,7 @@ export class Sidebar {
         : a.name === 'recall' && unseen > 0
           ? `${unseen} new insight${unseen === 1 ? '' : 's'} ready`
           : 'Watching your graph';
-      row.innerHTML = `
-        <span class="rcm-agent-dot" style="background:${dotColor}"></span>
-        <div class="rcm-agent-body">
-          <div class="rcm-agent-name">${escapeHtml(a.displayName)}</div>
-          <div class="rcm-agent-sub">${escapeHtml(subText)}</div>
-        </div>
-      `;
-      this.refs.agentsList.appendChild(row);
+      this.refs.agentsList.appendChild(buildAgentRow(a.displayName, subText, dotColor));
     }
   }
 
@@ -202,13 +187,34 @@ export class Sidebar {
           <span class="rcm-dot"></span>
           <span class="rcm-status-label">Connecting…</span>
         </div>
-        <button class="rcm-collapse" title="Collapse">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
+        <div class="rcm-head-actions">
+          <button class="rcm-info" title="How RecoMe works" aria-label="How RecoMe works">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+              <line x1="12" y1="10" x2="12" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="12" cy="7.5" r="1.1" fill="currentColor"/>
+            </svg>
+          </button>
+          <button class="rcm-collapse" title="Collapse">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
       </div>
       <div class="rcm-body">
+        <div class="rcm-help" hidden>
+          <div class="rcm-help-title">How RecoMe works</div>
+          <ol class="rcm-help-steps">
+            <li><b>Capture.</b> Dwell + search across 15 sites.</li>
+            <li><b>Graph.</b> Topics and entities feed your personal interest graph in cloud.</li>
+            <li><b>Agents.</b> Recall, Concierge, Curator, Decision, and Curriculum work the graph.</li>
+            <li><b>Surfaces.</b> They speak to you here — badges on cards, insight cards bottom-left, chat via Ask Decision.</li>
+          </ol>
+          <a class="rcm-help-link" href="https://recome.app/about" target="_blank" rel="noopener">
+            Learn more at recome.app/about →
+          </a>
+        </div>
         <div class="rcm-status-lines">
           <div class="rcm-nodes"></div>
           <div class="rcm-session"></div>
@@ -240,10 +246,19 @@ export class Sidebar {
     const actionsList = root.querySelector('.rcm-actions') as HTMLDivElement;
     const inboxBadge = root.querySelector('.rcm-inbox-badge') as HTMLSpanElement;
     const collapseBtn = root.querySelector('.rcm-collapse') as HTMLButtonElement;
+    const infoBtn = root.querySelector('.rcm-info') as HTMLButtonElement;
+    const helpPanel = root.querySelector('.rcm-help') as HTMLDivElement;
 
     collapseBtn.addEventListener('click', () => {
       this.collapsed = !this.collapsed;
       root.classList.toggle('rcm-collapsed', this.collapsed);
+    });
+
+    infoBtn.addEventListener('click', () => {
+      const isOpen = !helpPanel.hasAttribute('hidden');
+      if (isOpen) helpPanel.setAttribute('hidden', '');
+      else helpPanel.removeAttribute('hidden');
+      infoBtn.classList.toggle('rcm-info-active', !isOpen);
     });
 
     return {
@@ -259,21 +274,88 @@ export class Sidebar {
       actionsList,
       inboxBadge,
       collapseBtn,
+      infoBtn,
+      helpPanel,
     };
   }
 }
 
-function emptyState(text: string): HTMLDivElement {
-  const d = document.createElement('div');
-  d.className = 'rcm-empty';
-  d.textContent = text;
-  return d;
+// ── DOM builders (use createElement to satisfy the no-raw-innerHTML rule) ───
+
+function buildIntentRow(name: string, weight: number, demo = false): HTMLDivElement {
+  const row = document.createElement('div');
+  row.className = demo ? 'rcm-row rcm-row-demo' : 'rcm-row';
+  const head = document.createElement('div');
+  head.className = 'rcm-row-head';
+  const topic = document.createElement('span');
+  topic.className = 'rcm-topic';
+  topic.textContent = name;
+  const w = document.createElement('span');
+  w.className = 'rcm-weight';
+  w.textContent = weight.toFixed(2);
+  head.appendChild(topic);
+  head.appendChild(w);
+  const bar = document.createElement('div');
+  bar.className = 'rcm-bar';
+  const fill = document.createElement('div');
+  fill.className = 'rcm-bar-fill';
+  fill.style.width = `${(weight * 100).toFixed(0)}%`;
+  bar.appendChild(fill);
+  row.appendChild(head);
+  row.appendChild(bar);
+  return row;
 }
 
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"]/g, (c) =>
-    c === '&' ? '&amp;' : c === '<' ? '&lt;' : c === '>' ? '&gt;' : '&quot;',
-  );
+function buildAgentRow(name: string, sub: string, dotColor: string): HTMLDivElement {
+  const row = document.createElement('div');
+  row.className = 'rcm-agent';
+  const dot = document.createElement('span');
+  dot.className = 'rcm-agent-dot';
+  dot.style.background = dotColor;
+  row.appendChild(dot);
+  const body = document.createElement('div');
+  body.className = 'rcm-agent-body';
+  const nm = document.createElement('div');
+  nm.className = 'rcm-agent-name';
+  nm.textContent = name;
+  const sb = document.createElement('div');
+  sb.className = 'rcm-agent-sub';
+  sb.textContent = sub;
+  body.appendChild(nm);
+  body.appendChild(sb);
+  row.appendChild(body);
+  return row;
+}
+
+const DEMO_INTENTS: Array<[string, number]> = [
+  ['standing desks', 0.85],
+  ['distributed systems', 0.72],
+  ['italian cooking', 0.58],
+];
+
+function buildIntentsEmptyState(): HTMLDivElement {
+  const wrap = document.createElement('div');
+  wrap.className = 'rcm-intents-empty';
+  const demos = document.createElement('div');
+  demos.className = 'rcm-intents-demos';
+  for (const [name, weight] of DEMO_INTENTS) {
+    demos.appendChild(buildIntentRow(name, weight, true));
+  }
+  wrap.appendChild(demos);
+  const hint = document.createElement('div');
+  hint.className = 'rcm-intents-hint';
+  hint.textContent =
+    'Your topics will appear here as you browse YouTube, Amazon, Reddit, and 12 other sites. Dwell on a page for 10 seconds to capture your first signal.';
+  wrap.appendChild(hint);
+  return wrap;
+}
+
+function buildAgentsEmptyState(): HTMLDivElement {
+  const wrap = document.createElement('div');
+  wrap.className = 'rcm-empty';
+  wrap.textContent =
+    'Agents not enabled on this account yet. Set INTELLIGENCE_AGENTS_ENABLED=true in your cloud env.';
+  return wrap;
 }
 
 const SIDEBAR_CSS = `
@@ -393,4 +475,63 @@ const SIDEBAR_CSS = `
 }
 .rcm-action:hover::before { transform: translateX(2px); }
 .rcm-action:active { transform: translateY(1px); }
+
+/* ── Header actions group (info + collapse) ─────────────────────── */
+.rcm-head-actions { display: inline-flex; gap: 4px; align-items: center; }
+.rcm-info {
+  width: 28px; height: 28px; border: 0; background: transparent;
+  border-radius: 8px; color: rgba(255,255,255,0.45); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background .15s, color .15s;
+}
+.rcm-info:hover { background: rgba(255,255,255,0.06); color: #5eead4; }
+.rcm-info.rcm-info-active { background: rgba(94,234,212,0.16); color: #5eead4; }
+
+/* ── Help panel ─────────────────────────────────────────────────── */
+.rcm-help {
+  background: linear-gradient(135deg, rgba(35,86,232,0.14) 0%, rgba(94,234,212,0.05) 100%);
+  border: 1px solid rgba(94,234,212,0.28);
+  border-radius: 10px;
+  padding: 14px 14px 12px;
+  margin-bottom: 10px;
+}
+.rcm-help[hidden] { display: none; }
+.rcm-help-title {
+  font-size: 11px; font-weight: 700; color: #5eead4;
+  text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 8px;
+}
+.rcm-help-steps {
+  list-style: decimal inside;
+  font-size: 12px;
+  color: rgba(255,255,255,0.78);
+  line-height: 1.55;
+  padding-left: 4px;
+  margin: 0 0 10px;
+}
+.rcm-help-steps li { margin-bottom: 5px; }
+.rcm-help-steps li b { color: #fff; font-weight: 700; }
+.rcm-help-link {
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #5eead4;
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(94,234,212,0.4);
+  padding-bottom: 1px;
+}
+.rcm-help-link:hover { color: #7df0dc; border-bottom-color: #7df0dc; }
+
+/* ── Intents empty state (demo rows + hint) ─────────────────────── */
+.rcm-intents-empty { display: flex; flex-direction: column; gap: 10px; }
+.rcm-intents-demos { display: flex; flex-direction: column; gap: 6px; opacity: 0.45; pointer-events: none; }
+.rcm-row-demo .rcm-bar-fill {
+  background: linear-gradient(90deg, rgba(94,234,212,0.7) 0%, rgba(35,86,232,0.7) 100%);
+}
+.rcm-intents-hint {
+  font-size: 11.5px;
+  color: rgba(255,255,255,0.5);
+  font-style: italic;
+  line-height: 1.55;
+  padding: 2px 0;
+}
 `;

@@ -41,6 +41,9 @@ export const STORAGE_KEYS = {
   theme: 'recome_theme',
   cloud_url: 'recome_cloud_url',
   web_app_url: 'recome_web_app_url',
+  // Onboarding flags — set once, persisted to suppress repeat first-run UI.
+  welcome_popup_dismissed: 'recome_welcome_popup_dismissed',
+  welcome_card_shown: 'recome_welcome_card_shown',
 } as const;
 
 // Default user settings (written on install)
