@@ -51,6 +51,8 @@ export default function SettingsPage() {
               </p>
             </Section>
 
+            <DigestSection />
+
             <Section title="Privacy & data">
               <div className="flex flex-col gap-2">
                 <Link
@@ -111,6 +113,84 @@ export default function SettingsPage() {
         )}
       </div>
     </AppShell>
+  );
+}
+
+// ── Weekly digest opt-in/out ────────────────────────────────────────────
+// Hits /notifications/email/digest (GET + PUT). The toggle is disabled
+// when transportConfigured is false — that's the server-side flag for
+// "RESEND_API_KEY is unset on this deploy", which we communicate to the
+// user instead of letting them flip a setting that won't do anything.
+function DigestSection() {
+  const [state, setState] = useState<{
+    enabled: boolean;
+    lastSentAt: string | null;
+    email: string | null;
+    transportConfigured: boolean;
+  } | null>(null);
+  const [pending, setPending] = useState(false);
+
+  useEffect(() => {
+    authFetch('/notifications/email/digest')
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setState)
+      .catch(() => setState(null));
+  }, []);
+
+  const toggle = async () => {
+    if (!state) return;
+    setPending(true);
+    const next = !state.enabled;
+    try {
+      const res = await authFetch('/notifications/email/digest', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: next }),
+      });
+      if (res.ok) setState({ ...state, enabled: next });
+    } finally {
+      setPending(false);
+    }
+  };
+
+  if (!state) return null;
+  return (
+    <Section title="Email digest">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1">
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-2)' }}>
+            One weekly summary of unseen agent activity, sent to{' '}
+            <strong style={{ color: 'var(--ink)' }}>{state.email ?? '—'}</strong>. We never send an
+            empty digest.
+          </p>
+          {state.lastSentAt && (
+            <p className="text-xs mt-1.5" style={{ color: 'var(--muted-2)' }}>
+              Last sent {new Date(state.lastSentAt).toLocaleString()}
+            </p>
+          )}
+          {!state.transportConfigured && (
+            <p className="text-xs mt-1.5" style={{ color: 'var(--muted-2)' }}>
+              Email transport isn’t configured on this deploy. Toggle will save your preference; no
+              digest will go out until the operator sets RESEND_API_KEY.
+            </p>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={toggle}
+          disabled={pending}
+          className="text-xs font-semibold px-3 py-1.5 rounded-md hover:opacity-80 transition-opacity"
+          style={{
+            background: state.enabled ? 'var(--accent-soft)' : 'var(--surface-2)',
+            border: `1px solid ${state.enabled ? 'var(--accent-border)' : 'var(--border)'}`,
+            color: state.enabled ? 'var(--accent)' : 'var(--ink-2)',
+            cursor: pending ? 'wait' : 'pointer',
+          }}
+        >
+          {state.enabled ? 'On' : 'Off'}
+        </button>
+      </div>
+    </Section>
   );
 }
 

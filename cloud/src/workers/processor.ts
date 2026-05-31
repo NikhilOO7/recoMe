@@ -6,6 +6,7 @@ import { maybeAgentRegistry } from '../agents/AgentRegistry.js';
 import { getAgentRunner } from '../agents/AgentRunner.js';
 import type { AgentContext } from '../agents/types.js';
 import { getStripeMeters } from '../billing/StripeMetersService.js';
+import { getEmailService } from '../notifications/EmailService.js';
 import { AGENTS_QUEUE, type AgentJobName, type TickPayload } from './queues.js';
 
 /**
@@ -47,6 +48,9 @@ export function bootProcessor(connection: ConnectionOptions): Worker<TickPayload
           return;
         case 'tenant-usage-rollup-tick':
           await runTenantUsageRollupTick(job);
+          return;
+        case 'email-weekly-digest-tick':
+          await runWeeklyDigestTick(job);
           return;
         default:
           // Exhaustive — TS will flag if a new AgentJobName is added.
@@ -102,6 +106,14 @@ async function runTenantUsageRollupTick(job: Job<TickPayload, void, string>): Pr
   // so the worker fleet provisioning stays one machine, not two.
   const summary = await getStripeMeters().rollupCurrentPeriod();
   logger.info({ jobId: job.id, ...summary }, 'tenant usage rollup tick done');
+}
+
+async function runWeeklyDigestTick(job: Job<TickPayload, void, string>): Promise<void> {
+  // EmailService no-ops without RESEND_API_KEY, so this tick stays a safe
+  // weekly heartbeat in dev/preview. Bounded by MAX_USERS query in the
+  // service — a backlog tick won't fan a million sends.
+  const summary = await getEmailService().runWeeklyDigest();
+  logger.info({ jobId: job.id, ...summary }, 'weekly digest tick done');
 }
 
 async function runConciergeSweepTick(job: Job<TickPayload, void, string>): Promise<void> {

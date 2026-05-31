@@ -39,6 +39,13 @@ const envSchema = z.object({
   VAPID_PRIVATE_KEY: z.string().optional(),
   VAPID_CONTACT: z.string().default('mailto:hello@recome.app'),
 
+  // ── Email (P4.4, Resend) ───────────────────────────────────────────────────
+  // Weekly digest of unseen AgentEvents. Off by default — the worker no-ops
+  // without an API key, so dev / preview deploys don't accidentally email
+  // anyone. RESEND_FROM must be a verified sender on the Resend account.
+  RESEND_API_KEY: z.string().optional(),
+  RESEND_FROM: z.string().default('Recome <digest@recome.app>'),
+
   PORT: z.coerce.number().default(3001),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   CORS_ORIGINS: z.string().default('chrome-extension://,http://localhost:*'),

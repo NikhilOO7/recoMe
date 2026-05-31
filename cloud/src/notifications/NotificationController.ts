@@ -1,7 +1,9 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { authMiddleware } from '../middleware/authMiddleware.js';
+import { prisma } from '../db.js';
 import { getPushService } from './PushService.js';
+import { getEmailService } from './EmailService.js';
 import type { AuthEnv } from '../types.js';
 
 /**
@@ -81,6 +83,35 @@ export function createNotificationRoutes(): Hono<AuthEnv> {
     const userId = c.get('userId');
     const subscriptions = await getPushService().listForUser(userId);
     return c.json({ subscriptions });
+  });
+
+  // ── Email digest (P4.4) ─────────────────────────────────────────────────
+  // GET returns the current opt-in state + a flag the UI uses to gray out
+  // the toggle when Resend isn't configured on this deploy.
+  app.get('/email/digest', async (c) => {
+    const userId = c.get('userId');
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { digestEnabled: true, lastDigestAt: true, email: true },
+    });
+    return c.json({
+      enabled: user?.digestEnabled ?? true,
+      lastSentAt: user?.lastDigestAt ?? null,
+      email: user?.email ?? null,
+      transportConfigured: getEmailService().isEnabled(),
+    });
+  });
+
+  const digestPrefSchema = z.object({ enabled: z.boolean() });
+  app.put('/email/digest', async (c) => {
+    const userId = c.get('userId');
+    const body = digestPrefSchema.safeParse(await c.req.json().catch(() => null));
+    if (!body.success) return c.json({ error: 'invalid_preference' }, 400);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { digestEnabled: body.data.enabled },
+    });
+    return c.json({ ok: true, enabled: body.data.enabled });
   });
 
   return app;

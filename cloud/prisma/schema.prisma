@@ -29,6 +29,16 @@ model User {
   stripeCustomerId   String?  @unique
   stripeSubscriptionId String?
 
+  // ── Notifications (P4.4) ───────────────────────────────────────────────
+  /// Weekly email digest of unseen AgentEvents. Default on; user can
+  /// opt out from /settings. The worker checks this column before
+  /// rendering + sending, so flipping it false stops the next tick.
+  digestEnabled Boolean   @default(true)
+  /// Last successful digest send. Worker uses this to skip users who
+  /// already received one inside the current week-bucket (idempotent
+  /// across re-runs without a separate sent-log table).
+  lastDigestAt  DateTime?
+
   // Sync
   syncStates    SyncState[]
   devices       Device[]

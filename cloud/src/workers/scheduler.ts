@@ -28,6 +28,13 @@ const CONCIERGE_CRON = '0 */6 * * *';
  * sees the delta. Per P4.1 / ADR-0003 §2.3.
  */
 const TENANT_ROLLUP_CRON = '5 1 * * *';
+/**
+ * Weekly email digest runs Sundays 14:00 UTC (~09:00 ET, ~07:00 MT). Single
+ * timezone for v1 — per-user local-time send is a v1.1 polish that needs the
+ * user's tz column populated. EmailService skips users whose lastDigestAt
+ * is inside the current week-bucket, so a same-day re-run is a no-op.
+ */
+const WEEKLY_DIGEST_CRON = '0 14 * * 0';
 
 export async function registerSchedules(queue: Queue<TickPayload, void, string>): Promise<void> {
   await Promise.all([
@@ -55,9 +62,22 @@ export async function registerSchedules(queue: Queue<TickPayload, void, string>)
         data: { scheduledAt: new Date().toISOString() },
       },
     ),
+    queue.upsertJobScheduler(
+      `weekly-digest:${WEEKLY_DIGEST_CRON}`,
+      { pattern: WEEKLY_DIGEST_CRON, tz: 'UTC' },
+      {
+        name: 'email-weekly-digest-tick',
+        data: { scheduledAt: new Date().toISOString() },
+      },
+    ),
   ]);
   logger.info(
-    { curator: CURATOR_CRON, concierge: CONCIERGE_CRON, tenantRollup: TENANT_ROLLUP_CRON },
+    {
+      curator: CURATOR_CRON,
+      concierge: CONCIERGE_CRON,
+      tenantRollup: TENANT_ROLLUP_CRON,
+      weeklyDigest: WEEKLY_DIGEST_CRON,
+    },
     'agent schedules registered',
   );
 }
