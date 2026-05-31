@@ -48,6 +48,12 @@ export default function Home() {
             >
               The thesis
             </a>
+            <Link
+              href="/how-it-works"
+              className="border border-white/20 px-7 py-3.5 rounded-xl font-semibold text-[15px] hover:bg-white/[0.06] transition-colors"
+            >
+              How it works
+            </Link>
           </div>
 
           {/* Stat row — mirrors the deck. Values are sourced from
