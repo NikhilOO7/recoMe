@@ -1,0 +1,68 @@
+{
+  "expo": {
+    "name": "Recome",
+    "slug": "recome",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "recome",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0a0a0a"
+    },
+    "assetBundlePatterns": ["**/*"],
+
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "app.recome.mobile",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": ["recome"]
+          }
+        ],
+        "NSUserActivityTypes": ["RecomeShareActivity"]
+      },
+      "associatedDomains": ["applinks:recome.app"]
+    },
+
+    "android": {
+      "package": "app.recome.mobile",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0a0a0a"
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            { "scheme": "https", "host": "recome.app", "pathPrefix": "/paste" },
+            { "scheme": "recome" }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"],
+          "autoVerify": true
+        },
+        {
+          "action": "SEND",
+          "data": [{ "mimeType": "text/plain" }],
+          "category": ["DEFAULT"]
+        },
+        {
+          "action": "SEND",
+          "data": [{ "mimeType": "text/*" }],
+          "category": ["DEFAULT"]
+        }
+      ]
+    },
+
+    "plugins": [],
+
+    "extra": {
+      "router": { "origin": false }
+    }
+  }
+}
