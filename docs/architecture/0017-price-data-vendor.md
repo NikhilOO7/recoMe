@@ -1,7 +1,7 @@
 # ADR-0017 — Price-data vendor for the Concierge agent
 
-**Status:** Accepted (v1: stub) · vendor swap deferred
-**Date:** 2026-05-17
+**Status:** Accepted (v1: stub) · v1.1 Keepa skeleton landed 2026-05-30 (off by default) · v1.2 cross-retailer deferred
+**Date:** 2026-05-17 (original) · 2026-05-30 (supplement §7)
 **Decider:** Founder + Principal Engineering
 **Extends:** [ADR-0012 §2.5](0012-active-agents-and-personality-mirror.md#25-real-time-deals--cross-platform-comparison) (Concierge tools), [0014 §4.4](0014-unique-product-surfaces.md#44-whats-missing) (price-API vendor — open)
 
@@ -107,3 +107,45 @@ The vendor swap is one file (`cloud/src/agents/concierge/PriceFetcher.ts`) plus 
 - [0014 §4.3 — F-403 Cross-platform Concierge](0014-unique-product-surfaces.md#43-cross-platform-concierge)
 - [ADR-0010 §2](0010-security-privacy-ops.md) — third-party data flow constraints (PriceFetcher requests do not include the user's identity)
 - [0011 §1.1](0011-cost-and-iaas-gtm.md#11) — Concierge cost line item (~$0.30/user/mo per ADR-0012 §4)
+
+---
+
+## 7. Supplement (2026-05-30) — vendor-pick decision criteria + v1.1 Keepa skeleton
+
+This supplement lands when WS-7 (BullMQ workers) ships so the Concierge sweep cadence is real and the telemetry below is collectible.
+
+### 7.1 What just shipped
+
+- `cloud/src/agents/concierge/KeepaPriceFetcher.ts` — v1 Amazon-only implementation against Keepa's `/product` endpoint, 15-min in-process cache, server-reported token-bucket honored, ASIN-shaped entity-key gate.
+- `INTELLIGENCE_AGENTS_PRICE_VENDOR` widened to accept `keepa`. `KEEPA_API_KEY` added to `cloud/src/config.ts`. Missing key falls back to `stub` with a warn log (no boot failure).
+- The selector in `PriceFetcher.ts` instantiates `KeepaPriceFetcher` when the env says so; the agent + tools didn't change a line.
+
+What this **doesn't** decide: whether to flip prod to `keepa`. That's the vendor swap §2.4 calls for, and it still needs the data from §7.2.
+
+### 7.2 Decision criteria for the prod swap
+
+Flip `INTELLIGENCE_AGENTS_PRICE_VENDOR=keepa` in Fly secrets when **all four** hold over a rolling 14-day window:
+
+| Criterion                | Threshold              | How to measure                                                                                                                                                  |
+| ------------------------ | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Amazon entity share      | ≥ 80%                  | Count `priceCheck` calls with `retailer === 'amazon'` ÷ total. The KeepaPriceFetcher's `keepa: skipping non-ASIN` info logs surface the inverse (resolver gap). |
+| Daily call volume        | < 8,000 / day (≈Keepa) | Sum `priceCheck` calls across all users. At ~$20/mo for 100 tokens/min ⇒ 144k tokens/day ⇒ ample headroom at this threshold.                                    |
+| ASIN-resolver hit-rate   | ≥ 60%                  | (ASIN-shaped entityKeys) ÷ (total commerce-platform entityKeys seen by Concierge). Below this, build the resolver before the swap.                              |
+| Stub deal-drop precision | ≥ 50% useful           | `/inbox/:id/feedback` ratio of `useful` ÷ (`useful` + `not_useful`) for `deal_drop` events during the stub period. If users are dismissing the shape, fix the   |
+|                          |                        | emission copy first — the vendor swap won't help.                                                                                                               |
+
+When all four pass: rotate `KEEPA_API_KEY` into Fly secrets, set `INTELLIGENCE_AGENTS_PRICE_VENDOR=keepa`, redeploy. Keep the stub fetcher in code as the fallback path.
+
+### 7.3 What still needs deciding (next supplement)
+
+- **Cross-retailer coverage (Walmart / eBay).** Keepa is Amazon-only. If telemetry shows ≥ 25% of Concierge-eligible signals come from non-Amazon commerce platforms, wire RainforestAPI alongside Keepa (a v1.2 selector that returns the cheapest of both). Until then, single-vendor is honest about the F-403 promise.
+- **Entity-key → ASIN resolver.** v1 expects `entityKey` to already be an ASIN. Most real signals won't. Two paths:
+  1. Cheap: ask the extension to extract `data-asin` / canonical `/dp/{ASIN}/` from PDP DOM (already partly done — verify in `extension/src/platforms/amazon.ts`) and propagate as `entityName`.
+  2. Expensive: Keepa's `/search` endpoint (5 tokens per call) → map title → ASIN. Only worth it if path (1) hit-rate stays < 60%.
+- **PA-API path.** Worth applying for the affiliate program in parallel; if approval lands and rate-limit math works, PA-API at $0 beats Keepa at $20. The selector's `case 'pa-api'` is already stubbed.
+
+### 7.4 Risks introduced by the Keepa skeleton
+
+- **Stale 15-min cache during fast price drops.** Acceptable for Concierge's ~6h emission dedupe window; Watchlist users won't get sub-15-min notifications. Documented gap.
+- **Token-bucket starvation on a noisy day.** `KeepaPriceFetcher.applyTokenAccounting` honors the server-reported `tokensLeft`; when 0, calls short-circuit to `null` and the agent skips emission. Worst case: Concierge silently no-ops for a window — no incorrect emissions, no infra alarm. Acceptable for v1.1.
+- **Off-by-default ships dead code in prod.** Acceptable trade-off — the alternative (delaying the integration until the data is in) leaves more diff to land at the moment the founder makes the swap call, which is precisely when we want minimal change.

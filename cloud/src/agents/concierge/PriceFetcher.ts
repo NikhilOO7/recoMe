@@ -1,5 +1,6 @@
 import type { Platform } from '../../graph/types.js';
 import { logger } from '../../observability/logger.js';
+import { KeepaPriceFetcher } from './KeepaPriceFetcher.js';
 
 /**
  * PriceFetcher — the interface every Concierge price source implements
@@ -135,9 +136,18 @@ export function getPriceFetcher(): PriceFetcher {
     case 'stub':
       svc = new StubPriceFetcher();
       break;
-    // case 'keepa': svc = new KeepaPriceFetcher(...); break;       // v1.1
-    // case 'rainforest': svc = new RainforestPriceFetcher(...); break;
-    // case 'pa-api': svc = new PaApiPriceFetcher(...); break;
+    case 'keepa': {
+      const apiKey = process.env.KEEPA_API_KEY;
+      if (!apiKey) {
+        logger.warn('KEEPA_API_KEY not set; falling back to stub fetcher');
+        svc = new StubPriceFetcher();
+      } else {
+        svc = new KeepaPriceFetcher({ apiKey });
+      }
+      break;
+    }
+    // case 'rainforest': svc = new RainforestPriceFetcher(...); break;    // v1.2
+    // case 'pa-api': svc = new PaApiPriceFetcher(...); break;             // v1.2
     default:
       logger.warn({ vendor }, 'unknown price vendor, falling back to stub');
       svc = new StubPriceFetcher();

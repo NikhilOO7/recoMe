@@ -59,6 +59,15 @@ const envSchema = z.object({
   CARDSCORER_LLM_ENABLED: z.coerce.boolean().default(false),
   CARDSCORER_LLM_MODEL: z.string().default('gpt-4o-mini'),
 
+  // ── Concierge price vendor (ADR-0017) ──────────────────────────────────────
+  // Vendor selector: stub | keepa. RainforestAPI + PA-API are v1.2.
+  //   - stub  : deterministic test prices. Required explicitly to run in prod
+  //             (ConciergeAgent.priceVendorBlockedInProd refuses unset stub).
+  //   - keepa : real Amazon prices via keepa.com. Requires KEEPA_API_KEY.
+  // Telemetry plan + decision criteria documented in ADR-0017 §5.
+  INTELLIGENCE_AGENTS_PRICE_VENDOR: z.enum(['stub', 'keepa']).optional(),
+  KEEPA_API_KEY: z.string().optional(),
+
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).optional(),
 });
 
