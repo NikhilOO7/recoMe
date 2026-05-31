@@ -14,6 +14,8 @@
 
 import { sendMessage, type AgentRunOnDemandPayload } from '@shared/messages';
 import type { AgentRunResult } from '@shared/CloudClient';
+import { getAccessToken } from '@shared/AuthClient';
+import { getCloudUrl } from '@shared/constants';
 import { detectPlatform } from '../capture/detect';
 import { createCapture } from '../capture';
 
@@ -125,17 +127,30 @@ async function send(): Promise<void> {
   const platform = detectPlatform();
   const ex = createCapture(platform).extract();
 
+  const event = {
+    pageUrl: location.href,
+    pageTitle: ex?.pageTitle ?? document.title,
+    platform,
+    topicHint: ex?.topics[0]?.name ?? text.toLowerCase(),
+    entityHint: ex?.entities[0]?.name,
+    userQuery: text,
+  };
+
+  // Try real SSE first; on any failure (older cloud / no auth / network)
+  // fall back to the single-response AGENT_RUN_ONDEMAND + typewriter path.
+  pending.row.classList.remove('pending');
+  pending.textEl.textContent = '';
+
+  const ok = await streamDecision(event, pending.textEl);
+  if (ok) return;
+
+  // ── Fallback: non-streamed AGENT_RUN_ONDEMAND ─────────────────────────
+  pending.textEl.textContent = 'Thinking…';
+  pending.row.classList.add('pending');
   const res = await sendMessage<AgentRunOnDemandPayload, AgentRunResult>('AGENT_RUN_ONDEMAND', {
     agent: 'decision',
     trigger: 'on_demand',
-    event: {
-      pageUrl: location.href,
-      pageTitle: ex?.pageTitle ?? document.title,
-      platform,
-      topicHint: ex?.topics[0]?.name ?? text.toLowerCase(),
-      entityHint: ex?.entities[0]?.name,
-      userQuery: text,
-    },
+    event,
   });
 
   if (!res.success) {
@@ -161,6 +176,71 @@ async function send(): Promise<void> {
   const full = (result.emission.body ?? result.emission.title).trim();
   pending.row.classList.remove('pending');
   await typewriter(pending.textEl, full);
+}
+
+/**
+ * Stream the Decision agent's response token-by-token via SSE. Returns true
+ * on success (chunks rendered into `el`), false to signal the caller to use
+ * the non-streamed fallback path.
+ *
+ * Protocol mirrors cloud/src/agents/AgentController.ts `/decision/stream`:
+ *   data: <text-chunk>
+ *   data: __meta__:{"sources":…,"actionUrl":…}
+ *   data: [DONE]
+ */
+async function streamDecision(
+  event: Record<string, unknown>,
+  el: HTMLDivElement,
+): Promise<boolean> {
+  try {
+    const [base, token] = await Promise.all([getCloudUrl(), getAccessToken()]);
+    if (!token) return false;
+
+    const res = await fetch(`${base}/intelligence/agents/decision/stream`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${token}`,
+        accept: 'text/event-stream',
+      },
+      body: JSON.stringify({ event }),
+    });
+    if (!res.ok || !res.body) return false;
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    let textRendered = false;
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+
+      // SSE messages are split by "\n\n" terminators; each starts with "data:"
+      let idx: number;
+      while ((idx = buf.indexOf('\n\n')) !== -1) {
+        const raw = buf.slice(0, idx);
+        buf = buf.slice(idx + 2);
+        const line = raw.replace(/^data:\s?/, '');
+        if (line === '[DONE]') {
+          reader.cancel().catch(() => undefined);
+          return textRendered;
+        }
+        if (line.startsWith('__meta__:')) {
+          // Citations / actionUrl land here. We don't render them today
+          // (sidebar already shows the same data); Phase-4 can extend.
+          continue;
+        }
+        el.textContent = (el.textContent ?? '') + line;
+        textRendered = true;
+        if (messagesEl) messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+    }
+    return textRendered;
+  } catch {
+    return false;
+  }
 }
 
 interface RenderedTurn {

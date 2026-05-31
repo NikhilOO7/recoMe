@@ -126,47 +126,57 @@ function AdvisorPanel() {
     if (!q || busy) return;
     setInput('');
     setBusy(true);
-    setTurns((t) => [
-      ...t,
-      { role: 'user', text: q },
-      { role: 'agent', text: 'Thinking…', pending: true },
-    ]);
+
+    // Append user turn + an empty agent turn we'll progressively fill via SSE.
+    setTurns((t) => [...t, { role: 'user', text: q }, { role: 'agent', text: '' }]);
+
+    const event = {
+      userQuery: q,
+      topicHint: q.toLowerCase(),
+      pageUrl: typeof window !== 'undefined' ? window.location.href : undefined,
+    };
+
+    // Helper that appends `chunk` to the last agent turn in state.
+    const appendChunk = (chunk: string): void =>
+      setTurns((t) => {
+        const last = t[t.length - 1];
+        if (!last || last.role !== 'agent') return t;
+        const next = t.slice(0, -1);
+        next.push({ ...last, text: last.text + chunk });
+        return next;
+      });
+    const replaceLast = (text: string): void =>
+      setTurns((t) => {
+        const next = t.slice(0, -1);
+        next.push({ role: 'agent', text });
+        return next;
+      });
 
     try {
-      const res = await authFetch('/intelligence/agents/decision/run?trigger=on_demand', {
-        method: 'POST',
-        body: JSON.stringify({
-          event: {
-            userQuery: q,
-            topicHint: q.toLowerCase(),
-            pageUrl: typeof window !== 'undefined' ? window.location.href : undefined,
-          },
-        }),
-      });
-      const body = (await res.json().catch(() => null)) as { status?: DecisionRunResult } | null;
-      const status = body?.status;
-      setTurns((t) => {
-        const next = t.slice(0, -1);
+      const ok = await streamDecision(event, appendChunk);
+      if (!ok) {
+        // Fallback to single-response /run if SSE failed (older cloud, etc).
+        const res = await authFetch('/intelligence/agents/decision/run?trigger=on_demand', {
+          method: 'POST',
+          body: JSON.stringify({ event }),
+        });
+        const body = (await res.json().catch(() => null)) as {
+          status?: DecisionRunResult;
+        } | null;
+        const status = body?.status;
         if (!status || (status.status !== 'succeeded' && !status.emission)) {
-          next.push({
-            role: 'agent',
-            text:
-              status?.status === 'skipped'
-                ? 'Your graph is still empty. Capture a few pages and ask me again.'
-                : `Couldn't run: ${status?.reason ?? status?.status ?? 'unknown'}`,
-          });
+          replaceLast(
+            status?.status === 'skipped'
+              ? 'Your graph is still empty. Capture a few pages and ask me again.'
+              : `Couldn't run: ${status?.reason ?? status?.status ?? 'unknown'}`,
+          );
         } else {
           const e = status.emission!;
-          next.push({ role: 'agent', text: (e.body ?? e.title).trim() });
+          replaceLast((e.body ?? e.title).trim());
         }
-        return next;
-      });
+      }
     } catch (e) {
-      setTurns((t) => {
-        const next = t.slice(0, -1);
-        next.push({ role: 'agent', text: `Network error: ${(e as Error).message}` });
-        return next;
-      });
+      replaceLast(`Network error: ${(e as Error).message}`);
     } finally {
       setBusy(false);
     }
@@ -657,5 +667,66 @@ function statusLabel(s: AgentRun['status']): { label: string; color: string } {
       return { label: 'failed', color: '#fb7185' };
     case 'started':
       return { label: 'running', color: '#60a5fa' };
+  }
+}
+
+/**
+ * Stream the Decision agent's response token-by-token via SSE. Returns true
+ * on success (chunks delivered via `onChunk`), false to signal the caller
+ * to fall back to the non-streamed /run path.
+ *
+ * Mirrors extension/src/surfaces/OverlayChat.ts#streamDecision so the two
+ * client surfaces handle the same wire protocol from cloud's
+ * `/intelligence/agents/decision/stream`. See AgentController.ts for the
+ * server side of this contract.
+ */
+async function streamDecision(
+  event: Record<string, unknown>,
+  onChunk: (chunk: string) => void,
+): Promise<boolean> {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://recome-api.fly.dev';
+  const token = typeof window !== 'undefined' ? localStorage.getItem('recome_token') : null;
+  if (!token) return false;
+
+  let textRendered = false;
+  try {
+    const res = await fetch(`${API_URL}/intelligence/agents/decision/stream`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${token}`,
+        accept: 'text/event-stream',
+      },
+      body: JSON.stringify({ event }),
+    });
+    if (!res.ok || !res.body) return false;
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+
+      let idx: number;
+      while ((idx = buf.indexOf('\n\n')) !== -1) {
+        const raw = buf.slice(0, idx);
+        buf = buf.slice(idx + 2);
+        const line = raw.replace(/^data:\s?/, '');
+        if (line === '[DONE]') {
+          reader.cancel().catch(() => undefined);
+          return textRendered;
+        }
+        // __meta__: envelope carries citations + actionUrl; not rendered yet.
+        if (line.startsWith('__meta__:')) continue;
+        onChunk(line);
+        textRendered = true;
+      }
+    }
+    return textRendered;
+  } catch {
+    return false;
   }
 }

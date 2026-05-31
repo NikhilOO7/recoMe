@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { streamSSE } from 'hono/streaming';
 import { z } from 'zod';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { prisma } from '../db.js';
@@ -125,6 +126,57 @@ export function createAgentRoutes(): Hono<AuthVars> {
     const status = await getAgentRunner().runOne(agent, ctx);
     logger.info({ userId, agent: name, trigger, status }, 'agent run on demand');
     return c.json({ ok: true, agent: name, trigger, status });
+  });
+
+  // ── POST /agents/decision/stream — SSE stream of a Decision run.
+  //
+  // Streams the body in word-ish chunks so the extension OverlayChat + web
+  // /ask AdvisorPanel render token-by-token. v1 is deterministic (cost:
+  // 0 LLM tokens, matches Guardian's daily cap on the route as `/run`).
+  // Real LLM streaming swaps DecisionAgent.runStream() inner loop without
+  // touching the client protocol.
+  //
+  // Protocol per message:
+  //   data: <text-chunk>\n\n              ← appended to the assistant turn
+  //   data: __meta__:{"sources":…}\n\n    ← final envelope (citations etc)
+  //   data: [DONE]\n\n                    ← close marker
+  app.post('/agents/decision/stream', async (c) => {
+    const userId = c.get('userId');
+    const registry = maybeAgentRegistry();
+    const agent = registry?.byName('decision');
+    if (!agent) return c.json({ error: 'unknown_agent' }, 404);
+
+    const body = (await c.req.json().catch(() => null)) as {
+      event?: Record<string, unknown>;
+    } | null;
+    const ctx: AgentContext = {
+      userId,
+      trigger: 'on_demand',
+      now: new Date(),
+      ...(body?.event ? { event: body.event } : {}),
+    };
+
+    // Type-narrow to the concrete DecisionAgent so we can call runStream.
+    // Falls back to a single non-streamed chunk if the agent doesn't expose it.
+    const streamable = agent as unknown as {
+      runStream?: (ctx: AgentContext) => AsyncIterable<string>;
+    };
+    if (!streamable.runStream) {
+      return c.json({ error: 'agent_not_streamable' }, 501);
+    }
+
+    return streamSSE(c, async (stream) => {
+      try {
+        for await (const chunk of streamable.runStream!(ctx)) {
+          await stream.writeSSE({ data: chunk });
+        }
+      } catch (err) {
+        logger.error({ err, userId, agent: 'decision' }, 'decision stream failed');
+        await stream.writeSSE({ data: '__meta__:{"error":"stream_failed"}' });
+      } finally {
+        await stream.writeSSE({ data: '[DONE]' });
+      }
+    });
   });
 
   // ── GET /agents/:name/runs — recent AgentRun records (audit + UI).
