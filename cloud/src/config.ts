@@ -30,6 +30,15 @@ const envSchema = z.object({
   INTELLIGENCE_RUN_MIGRATIONS_ON_BOOT: z.coerce.boolean().default(false),
   /** Active agents (ADR-0012). Off by default — dark deploy → opt-in. */
   INTELLIGENCE_AGENTS_ENABLED: z.coerce.boolean().default(false),
+  /**
+   * BullMQ scheduled-tick workers for Curator (daily) + Concierge (4×/day
+   * watchlist sweep). Requires REDIS_URL. Off by default — turn on only
+   * when one (and only one) instance per fleet should own scheduling,
+   * to avoid duplicate ticks across machines (BullMQ dedupes on job key
+   * but multiple registrants on boot still race).
+   */
+  AGENT_WORKERS_ENABLED: z.coerce.boolean().default(false),
+  REDIS_URL: z.string().optional(),
 
   NEO4J_URI: z.string().optional(),
   NEO4J_USERNAME: z.string().optional(),

@@ -4,6 +4,7 @@ import { initQdrant } from './vector/QdrantClient.js';
 import { OpenAIEmbeddings } from './vector/OpenAIEmbeddings.js';
 import { IntelligenceService, setIntelligence } from './intelligence/IntelligenceService.js';
 import { bootAgents } from './agents/index.js';
+import { bootAgentWorkers } from './workers/index.js';
 import { logger } from './observability/logger.js';
 
 /**
@@ -59,6 +60,13 @@ export async function bootIntelligence(config: Config): Promise<void> {
   // no-op when the registry isn't booted.
   if (config.INTELLIGENCE_AGENTS_ENABLED) {
     bootAgents();
+    // Scheduled tick workers (Curator daily + Concierge 4×/day sweep). Only
+    // boots when AGENT_WORKERS_ENABLED + REDIS_URL — see workers/index.ts.
+    if (config.AGENT_WORKERS_ENABLED) {
+      await bootAgentWorkers();
+    } else {
+      logger.info('agent workers disabled (AGENT_WORKERS_ENABLED=false)');
+    }
   } else {
     logger.info('agent layer disabled (INTELLIGENCE_AGENTS_ENABLED=false)');
   }
