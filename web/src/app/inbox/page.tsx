@@ -4,6 +4,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { authFetch, getToken } from '@/lib/auth';
 import { AppShell } from '@/components/AppShell';
+import {
+  currentPushStatus,
+  subscribeToPush,
+  unsubscribeFromPush,
+  type PushStatus,
+} from '@/lib/push';
 
 // ── Types mirror cloud/src/agents/types.ts + AgentEventStore.listForUser shape ─
 type AgentEventKind =
@@ -183,17 +189,20 @@ export default function InboxPage() {
       title="Inbox"
       subtitle="Things your agents brought you. Sorted by when they need you, not when they fired."
       actions={
-        <button
-          type="button"
-          className="text-[12.5px] font-semibold px-3 py-1.5 rounded-md hover:opacity-80 transition-opacity"
-          style={{
-            background: 'var(--surface-2)',
-            border: '1px solid var(--border)',
-            color: 'var(--ink-2)',
-          }}
-        >
-          Mark all read
-        </button>
+        <div className="flex items-center gap-2">
+          <PushToggle />
+          <button
+            type="button"
+            className="text-[12.5px] font-semibold px-3 py-1.5 rounded-md hover:opacity-80 transition-opacity"
+            style={{
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              color: 'var(--ink-2)',
+            }}
+          >
+            Mark all read
+          </button>
+        </div>
       }
       preface={<LiveStrip liveAgents={liveAgents} />}
     >
@@ -437,6 +446,72 @@ export default function InboxPage() {
 }
 
 // ── Subcomponents ───────────────────────────────────────────────────────────
+
+function PushToggle() {
+  const [status, setStatus] = useState<PushStatus | null>(null);
+  const [pending, setPending] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    void currentPushStatus().then(setStatus);
+  }, []);
+
+  if (!status || !status.supported) return null;
+
+  const onClick = async () => {
+    setErr(null);
+    setPending(true);
+    try {
+      if (status.subscribed) {
+        await unsubscribeFromPush();
+      } else {
+        const res = await subscribeToPush();
+        if (!res.ok) {
+          // permission_denied is the user saying no, not a real error — be
+          // gentle. Other reasons (e.g. VAPID unavailable, http_503) are
+          // worth surfacing so the founder can debug.
+          if (res.reason === 'permission_denied') setErr('Notifications were blocked.');
+          else if (res.reason === 'vapid_key_unavailable')
+            setErr('Push isn’t configured server-side.');
+          else setErr(res.reason);
+        }
+      }
+      setStatus(await currentPushStatus());
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const label = pending
+    ? 'Working…'
+    : status.subscribed
+      ? 'Notifications on'
+      : 'Turn on notifications';
+
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={pending}
+        className="text-[12.5px] font-semibold px-3 py-1.5 rounded-md hover:opacity-80 transition-opacity"
+        style={{
+          background: status.subscribed ? 'var(--accent-soft)' : 'var(--surface-2)',
+          border: `1px solid ${status.subscribed ? 'var(--accent-border)' : 'var(--border)'}`,
+          color: status.subscribed ? 'var(--accent)' : 'var(--ink-2)',
+          cursor: pending ? 'wait' : 'pointer',
+        }}
+      >
+        {label}
+      </button>
+      {err && (
+        <span className="text-[10.5px]" style={{ color: 'var(--muted-2)' }}>
+          {err}
+        </span>
+      )}
+    </div>
+  );
+}
 
 function LiveStrip({ liveAgents }: { liveAgents: string[] }) {
   if (liveAgents.length === 0) return null;

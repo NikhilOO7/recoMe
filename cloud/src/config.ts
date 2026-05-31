@@ -28,6 +28,17 @@ const envSchema = z.object({
   STRIPE_METER_QUERIES_ID: z.string().optional(),
   STRIPE_METER_EMBEDDINGS_ID: z.string().optional(),
 
+  // ── PWA push (P4.3, VAPID) ─────────────────────────────────────────────────
+  // Generate once with `npx web-push generate-vapid-keys` and put both into
+  // Fly secrets. The public key is also exposed via GET
+  // /notifications/push/vapid-public-key so the web client can register a
+  // subscription without hardcoding it. CONTACT must be a mailto: that the
+  // push provider can reach on delivery problems (Apple, Mozilla, Google
+  // enforce this in production).
+  VAPID_PUBLIC_KEY: z.string().optional(),
+  VAPID_PRIVATE_KEY: z.string().optional(),
+  VAPID_CONTACT: z.string().default('mailto:hello@recome.app'),
+
   PORT: z.coerce.number().default(3001),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   CORS_ORIGINS: z.string().default('chrome-extension://,http://localhost:*'),

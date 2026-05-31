@@ -17,6 +17,7 @@ import { createAdminRoutes } from './admin/AdminController.js';
 import { createIntelligenceRoutes } from './intelligence/IntelligenceController.js';
 import { createV1Routes } from './iaas/V1Controller.js';
 import { createDeveloperRoutes } from './iaas/DeveloperController.js';
+import { createNotificationRoutes } from './notifications/NotificationController.js';
 import { rateLimiter } from './middleware/rateLimiter.js';
 import { logger } from './observability/logger.js';
 import { installSignalHandlers } from './observability/lifecycle.js';
@@ -89,6 +90,8 @@ if (getConfig().INTELLIGENCE_ENABLED) {
   // Developer dashboard surface — JWT-authed, lets users manage the
   // tenants + keys they own. Backs the web /developer page (P4.2).
   app.route('/developer', createDeveloperRoutes());
+  // PWA push subscription lifecycle (P4.3). VAPID-gated; no-op without keys.
+  app.route('/notifications', createNotificationRoutes());
 }
 
 // ── 404 / Error ──────────────────────────────────────────────────────────────

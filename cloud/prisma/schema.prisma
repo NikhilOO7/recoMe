@@ -471,6 +471,31 @@ model AgentEvent {
   @@index([agent])
 }
 
+/// PWA / web push subscriptions (P4.3). One row per (user, endpoint) — a
+/// user with N devices has N rows. Endpoint is the unique key because
+/// browsers reuse it on resubscribe; p256dh + auth round out the
+/// crypto material `web-push` needs to encrypt the payload.
+model PushSubscription {
+  id            String          @id @default(cuid())
+  userId        String
+  endpoint      String          @unique
+  p256dh        String
+  auth          String
+  /// User-agent string at subscribe time — purely informational, for
+  /// the settings UI "which devices are subscribed" list.
+  userAgent     String?
+  /// Cleared on first 410 GONE / 404 from the push provider — we keep
+  /// the row for a deletion audit + so the unsubscribe UI shows
+  /// "expired" instead of vanishing silently.
+  disabledAt    DateTime?
+  /// Last successful push delivery (NOT last attempt). Used to age out
+  /// stale rows in v1.1 when we add a sweep.
+  lastDeliveredAt DateTime?
+  createdAt     DateTime        @default(now())
+
+  @@index([userId])
+}
+
 /// Personality Mirror (ADR-0012 §2.4 / 0014 F-407) — opt-in, per-user.
 ///
 /// The row exists ONLY when the user has interacted with the surface.

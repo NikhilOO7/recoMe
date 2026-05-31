@@ -1,18 +1,22 @@
 /**
- * Recome service worker — v1 (WS-9 M-1).
+ * Recome service worker — v2 (WS-9 M-1 + P4.3 push handler).
  *
- * Minimum viable SW: lets Chrome / Edge / Brave / Arc count us as a PWA
- * (manifest + SW + https = installable). Caches the app shell so first
- * paint after install is offline-friendly. Web Share Target is handled
- * entirely by manifest.webmanifest → GET /paste?url=…&title=…&text=… —
- * no SW intercept needed for that.
+ * Responsibilities:
+ *   1. PWA installability — manifest + SW + https. App-shell precache for
+ *      offline-friendly first paint.
+ *   2. Stale-while-revalidate for same-origin GETs. API calls and any
+ *      cross-origin request go straight to the network.
+ *   3. PWA push (P4.3) — listens for `push` events from the VAPID-signed
+ *      server send, renders a notification, opens the actionUrl on click.
  *
- * Phase 4 (WS-10) will extend this file with the `push` + `notificationclick`
- * handlers for AgentEvent push notifications. Bump CACHE_VERSION when that
- * lands so old clients refetch.
+ * Web Share Target is handled entirely by manifest.webmanifest →
+ * GET /paste?url=…&title=…&text=… — no SW intercept needed there.
+ *
+ * Bump CACHE_VERSION when the app shell or this file change so old
+ * clients pick up the new SW on next page load.
  */
 
-const CACHE_VERSION = 'recome-v1';
+const CACHE_VERSION = 'recome-v2';
 const APP_SHELL = ['/', '/paste', '/manifest.webmanifest', '/icon-192.png'];
 
 self.addEventListener('install', (event) => {
@@ -37,6 +41,59 @@ self.addEventListener('activate', (event) => {
     ),
   );
   self.clients.claim();
+});
+
+// ── Push (P4.3) ─────────────────────────────────────────────────────────────
+// The server (cloud/src/notifications/PushService.ts) encrypts a JSON
+// payload with the subscription's keys; the browser hands us the decoded
+// body via event.data. We render a single notification per event — the
+// dedupe window on AgentEventStore already prevents repeats.
+
+self.addEventListener('push', (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    // Fall through with empty payload; the catch-all title below kicks in.
+  }
+
+  const title = payload.title || 'Recome';
+  const options = {
+    body: payload.body || '',
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+    tag: payload.eventId || payload.url || undefined,
+    // Renotify=false collapses repeats with the same tag — a re-deliver of
+    // the same eventId won't buzz the user a second time.
+    renotify: false,
+    data: {
+      url: payload.url || '/inbox',
+      eventId: payload.eventId || null,
+      agent: payload.agent || null,
+    },
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = (event.notification.data && event.notification.data.url) || '/inbox';
+
+  // Reuse an existing tab if one is on the same origin — opening a fresh tab
+  // for every click would explode the user's tab strip.
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: 'window', includeUncontrolled: true })
+      .then((windows) => {
+        for (const w of windows) {
+          if (new URL(w.url).origin === self.location.origin) {
+            w.focus();
+            return w.navigate(target);
+          }
+        }
+        return self.clients.openWindow(target);
+      }),
+  );
 });
 
 self.addEventListener('fetch', (event) => {
