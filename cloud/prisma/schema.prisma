@@ -360,6 +360,11 @@ model ApiKey {
 
 /// Per-tenant, per-period usage counters. Window is "YYYY-MM" (monthly).
 /// Updated on every signal ingest / query. Used for quota enforcement and billing.
+///
+/// The `*Reported*` columns track how much of each metric has been forwarded
+/// to Stripe Meters by the daily rollup worker (P4.1). delta = current -
+/// reported; daily job sends the delta and advances `reported`. Survives
+/// reboots; idempotent across late-arriving signals.
 model TenantUsage {
   id            String      @id @default(cuid())
   tenantId      String
@@ -369,6 +374,11 @@ model TenantUsage {
   signalsIngested  Int      @default(0)
   queriesServed    Int      @default(0)
   embeddingsBilled Int      @default(0)
+  /// Last-reported counts per metric (P4.1 Stripe Meters rollup).
+  signalsReported     Int       @default(0)
+  queriesReported     Int       @default(0)
+  embeddingsReported  Int       @default(0)
+  lastReportedAt      DateTime?
   updatedAt     DateTime    @updatedAt
 
   @@unique([tenantId, period])

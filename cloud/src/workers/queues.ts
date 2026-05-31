@@ -15,7 +15,7 @@ import { onShutdown } from '../observability/lifecycle.js';
 
 export const AGENTS_QUEUE = 'agents-scheduled';
 
-export type AgentJobName = 'curator-tick' | 'concierge-sweep-tick';
+export type AgentJobName = 'curator-tick' | 'concierge-sweep-tick' | 'tenant-usage-rollup-tick';
 
 export interface TickPayload {
   /** ISO timestamp the tick was scheduled for — propagates into AgentContext.now. */

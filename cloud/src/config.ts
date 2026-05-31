@@ -21,6 +21,13 @@ const envSchema = z.object({
   STRIPE_PRO_PRICE_ID: z.string().optional(),
   STRIPE_PREMIUM_PRICE_ID: z.string().optional(),
 
+  // Stripe Meters (P4.1) — per-metric event names for usage-based IaaS billing.
+  // Daily rollup worker (cloud/src/billing/StripeMetersService.ts) skips a
+  // metric when its ID is unset, so meters can roll out one at a time.
+  STRIPE_METER_SIGNALS_ID: z.string().optional(),
+  STRIPE_METER_QUERIES_ID: z.string().optional(),
+  STRIPE_METER_EMBEDDINGS_ID: z.string().optional(),
+
   PORT: z.coerce.number().default(3001),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   CORS_ORIGINS: z.string().default('chrome-extension://,http://localhost:*'),

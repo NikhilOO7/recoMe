@@ -22,6 +22,12 @@ import type { TickPayload } from './queues.js';
 
 const CURATOR_CRON = '0 12 * * *';
 const CONCIERGE_CRON = '0 */6 * * *';
+/**
+ * Tenant-usage rollup runs at 01:05 UTC daily — late enough that yesterday's
+ * write-burst has settled, early enough that the daily Stripe invoice cron
+ * sees the delta. Per P4.1 / ADR-0003 §2.3.
+ */
+const TENANT_ROLLUP_CRON = '5 1 * * *';
 
 export async function registerSchedules(queue: Queue<TickPayload, void, string>): Promise<void> {
   await Promise.all([
@@ -41,6 +47,17 @@ export async function registerSchedules(queue: Queue<TickPayload, void, string>)
         data: { scheduledAt: new Date().toISOString() },
       },
     ),
+    queue.upsertJobScheduler(
+      `tenant-usage-rollup:${TENANT_ROLLUP_CRON}`,
+      { pattern: TENANT_ROLLUP_CRON, tz: 'UTC' },
+      {
+        name: 'tenant-usage-rollup-tick',
+        data: { scheduledAt: new Date().toISOString() },
+      },
+    ),
   ]);
-  logger.info({ curator: CURATOR_CRON, concierge: CONCIERGE_CRON }, 'agent schedules registered');
+  logger.info(
+    { curator: CURATOR_CRON, concierge: CONCIERGE_CRON, tenantRollup: TENANT_ROLLUP_CRON },
+    'agent schedules registered',
+  );
 }

@@ -5,6 +5,7 @@ import { onShutdown } from '../observability/lifecycle.js';
 import { maybeAgentRegistry } from '../agents/AgentRegistry.js';
 import { getAgentRunner } from '../agents/AgentRunner.js';
 import type { AgentContext } from '../agents/types.js';
+import { getStripeMeters } from '../billing/StripeMetersService.js';
 import { AGENTS_QUEUE, type AgentJobName, type TickPayload } from './queues.js';
 
 /**
@@ -43,6 +44,9 @@ export function bootProcessor(connection: ConnectionOptions): Worker<TickPayload
           return;
         case 'concierge-sweep-tick':
           await runConciergeSweepTick(job);
+          return;
+        case 'tenant-usage-rollup-tick':
+          await runTenantUsageRollupTick(job);
           return;
         default:
           // Exhaustive — TS will flag if a new AgentJobName is added.
@@ -90,6 +94,14 @@ async function runCuratorTick(job: Job<TickPayload, void, string>): Promise<void
     logger.debug({ userId, agent: 'curator', status }, 'curator tick processed user');
   });
   logger.info({ jobId: job.id, users: userIds.length }, 'curator tick fan-out done');
+}
+
+async function runTenantUsageRollupTick(job: Job<TickPayload, void, string>): Promise<void> {
+  // No registry / agent involvement — this is a billing job that walks
+  // TenantUsage rows directly. Kept in the same queue as the agent ticks
+  // so the worker fleet provisioning stays one machine, not two.
+  const summary = await getStripeMeters().rollupCurrentPeriod();
+  logger.info({ jobId: job.id, ...summary }, 'tenant usage rollup tick done');
 }
 
 async function runConciergeSweepTick(job: Job<TickPayload, void, string>): Promise<void> {
