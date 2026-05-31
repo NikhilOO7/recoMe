@@ -12,9 +12,20 @@
 #   scripts/dev-local.sh --no-seed         # skip the seed step
 #   scripts/dev-local.sh --no-web          # cloud only (backend-focused dev)
 #
+# Env-file ownership (2026-05-30):
+#   cloud/.env        — MANAGED by this script. Rewritten on every run with
+#                       local-dev defaults (docker URLs, dev JWT secret,
+#                       intelligence flags on). Has a marker comment so the
+#                       script refuses to clobber a non-managed file.
+#   cloud/.env.local  — USER-OWNED sidecar. Holds real third-party secrets
+#                       (OPENAI_API_KEY, STRIPE_*, OAuth, …). Never touched
+#                       by this script. Loaded AFTER .env by cloud/src/env.ts
+#                       with override=true, so any key here wins.
+#
 # What it does NOT do:
 #   - Touch your existing cloud/.env if it isn't ours (we refuse to clobber
 #     a real Supabase/AuraDB config). Move it aside if you want full local.
+#   - Touch cloud/.env.local at all — that file is yours.
 #   - Install npm deps — run `npm install` in each package the first time.
 
 set -euo pipefail
@@ -134,9 +145,25 @@ OPENAI_EMBEDDING_MODEL="text-embedding-3-small"
 EOF
 ok "wrote $LOCAL_ENV"
 
-if [ -z "${OPENAI_API_KEY:-}" ] && ! grep -E '^OPENAI_API_KEY=".+"' "$LOCAL_ENV" >/dev/null; then
-  warn "OPENAI_API_KEY is empty in your shell. The cloud API will refuse to boot."
-  warn "Export OPENAI_API_KEY=sk-... and re-run, or edit cloud/.env."
+# OPENAI_API_KEY can come from three places (cloud/src/env.ts load order;
+# later wins): managed .env (from the shell at write time), the user-owned
+# .env.local sidecar (persists across runs), or the shell at boot time.
+LOCAL_SIDECAR="cloud/.env.local"
+key_in_sidecar=0
+if [ -f "$LOCAL_SIDECAR" ] && grep -E '^OPENAI_API_KEY=".+"' "$LOCAL_SIDECAR" >/dev/null; then
+  key_in_sidecar=1
+  ok "OPENAI_API_KEY found in $LOCAL_SIDECAR — will override .env at boot"
+fi
+if [ -z "${OPENAI_API_KEY:-}" ] && [ "$key_in_sidecar" = "0" ] \
+   && ! grep -E '^OPENAI_API_KEY=".+"' "$LOCAL_ENV" >/dev/null; then
+  warn "OPENAI_API_KEY missing — looked in shell env, $LOCAL_ENV, and $LOCAL_SIDECAR."
+  warn "Three ways to fix (any one works):"
+  warn "  1. Add to sidecar (recommended — persists across runs):"
+  warn "       echo 'OPENAI_API_KEY=\"sk-...\"' >> $LOCAL_SIDECAR"
+  warn "  2. Export in shell, then re-run:"
+  warn "       export OPENAI_API_KEY=sk-... && $0"
+  warn "  3. Inline once:"
+  warn "       OPENAI_API_KEY=sk-... $0"
   die  "set OPENAI_API_KEY then re-run"
 fi
 fi  # end of docker-mode env-write branch

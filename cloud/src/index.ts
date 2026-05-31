@@ -1,3 +1,7 @@
+// MUST be the first import: loads .env then .env.local (override) before
+// any module reads process.env. See src/env.ts for the load-order rationale.
+import './env.js';
+
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger as honoLogger } from 'hono/logger';
