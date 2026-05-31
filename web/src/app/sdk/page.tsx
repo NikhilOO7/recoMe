@@ -99,14 +99,22 @@ const ranked = await reco.rank({
             <p className="text-white/40 text-sm mb-4">
               The extension is the foundation. Try it now — the SDK builds on top.
             </p>
-            <a
-              href={CWS_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-white text-[var(--ink)] px-6 py-3 rounded-xl font-bold text-sm hover:opacity-[0.88] transition-opacity"
-            >
-              Try the Extension Now
-            </a>
+            <div className="flex gap-3 justify-center flex-wrap">
+              <a
+                href={CWS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-white text-[var(--ink)] px-6 py-3 rounded-xl font-bold text-sm hover:opacity-[0.88] transition-opacity"
+              >
+                Try the Extension Now
+              </a>
+              <a
+                href="/developer"
+                className="border border-[#5eead4]/40 text-[#5eead4] px-6 py-3 rounded-xl font-bold text-sm hover:bg-[#5eead4]/[0.08] transition-colors"
+              >
+                Issue an API key
+              </a>
+            </div>
           </div>
         </div>
       </section>

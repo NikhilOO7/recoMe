@@ -16,6 +16,7 @@ import { createTasteTwinRoutes } from './tastetwin/TasteTwinController.js';
 import { createAdminRoutes } from './admin/AdminController.js';
 import { createIntelligenceRoutes } from './intelligence/IntelligenceController.js';
 import { createV1Routes } from './iaas/V1Controller.js';
+import { createDeveloperRoutes } from './iaas/DeveloperController.js';
 import { rateLimiter } from './middleware/rateLimiter.js';
 import { logger } from './observability/logger.js';
 import { installSignalHandlers } from './observability/lifecycle.js';
@@ -85,6 +86,9 @@ if (getConfig().INTELLIGENCE_ENABLED) {
   // Public IaaS surface — same backend, API-key auth + tenant scoping.
   // See ADR-0003 §2.3 and cloud/src/iaas/V1Controller.ts for the contract.
   app.route('/v1', createV1Routes());
+  // Developer dashboard surface — JWT-authed, lets users manage the
+  // tenants + keys they own. Backs the web /developer page (P4.2).
+  app.route('/developer', createDeveloperRoutes());
 }
 
 // ── 404 / Error ──────────────────────────────────────────────────────────────

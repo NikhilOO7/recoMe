@@ -4,6 +4,7 @@ import { composeTenantUserId } from './tenantUserId.js';
 import { getIntelligence } from '../intelligence/IntelligenceService.js';
 import { signalBatchSchema } from '../intelligence/schemas.js';
 import { bumpUsage, getUsage, planQuota, nextPeriodBoundaryIso } from './usageTracker.js';
+import { OPENAPI_SPEC, swaggerUiHtml } from './openapi.js';
 import { logger } from '../observability/logger.js';
 
 // ── Public IaaS API: /v1/* ───────────────────────────────────────────────────
@@ -21,6 +22,13 @@ import { logger } from '../observability/logger.js';
 
 export function createV1Routes(): Hono<TenantVars> {
   const app = new Hono<TenantVars>();
+
+  // ── Public docs (no API-key auth) ─────────────────────────────────────────
+  // Both routes must be declared BEFORE the apiKeyMiddleware below — Hono
+  // matches in declaration order, so these short-circuit the auth check.
+  app.get('/openapi.json', (c) => c.json(OPENAPI_SPEC));
+  app.get('/docs', (c) => c.html(swaggerUiHtml('/v1/openapi.json')));
+
   app.use('*', apiKeyMiddleware());
 
   // ── POST /v1/signals — ingest a batch of signals for one external user ────
