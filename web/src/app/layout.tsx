@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider, THEME_INIT_SCRIPT } from '@/components/ThemeProvider';
 import { LayoutSwitcher } from '@/components/LayoutSwitcher';
+import { RegisterServiceWorker } from '@/components/RegisterServiceWorker';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -71,6 +72,8 @@ export default function RootLayout({
         <ThemeProvider>
           <LayoutSwitcher>{children}</LayoutSwitcher>
         </ThemeProvider>
+        {/* PWA installability — registers /sw.js once in the browser. */}
+        <RegisterServiceWorker />
       </body>
     </html>
   );
