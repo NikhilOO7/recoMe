@@ -43,6 +43,13 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_EMBEDDING_MODEL: z.string().default('text-embedding-3-small'),
 
+  // CardScorer — opt-in LLM polish for /intelligence/score/cards reasoning.
+  // Off by default so dev/test doesn't accidentally rack up LLM spend.
+  // Set true + OPENAI_API_KEY to enable; falls back to deterministic scoring
+  // on any LLM failure (see cloud/src/intelligence/CardScorer.ts).
+  CARDSCORER_LLM_ENABLED: z.coerce.boolean().default(false),
+  CARDSCORER_LLM_MODEL: z.string().default('gpt-4o-mini'),
+
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).optional(),
 });
 

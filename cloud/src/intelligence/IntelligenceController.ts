@@ -1,9 +1,11 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { authMiddleware } from '../middleware/authMiddleware.js';
+import { getConfig } from '../config.js';
 import { getIntelligence } from './IntelligenceService.js';
 import { parseWindowParam } from './MindMap.js';
 import { signalBatchSchema } from './schemas.js';
+import { CardScorer } from './CardScorer.js';
 import { createAgentRoutes } from '../agents/AgentController.js';
 import { logger } from '../observability/logger.js';
 
@@ -225,14 +227,14 @@ export function createIntelligenceRoutes(): Hono<AuthVars> {
   /**
    * POST /intelligence/score/cards — batch-score visible cards on a page.
    *
-   * Phase-2 stub for the extension's in-page badge surface. Returns a verdict
-   * (relevant | caution | filtered | neutral) + reasoning string per card,
-   * grounded in the user's existing topic + entity affinities.
+   * Two-stage pipeline (see cloud/src/intelligence/CardScorer.ts):
+   *   1. Deterministic topic-overlap against the user's top intents — always
+   *      runs, always cheap.
+   *   2. Optional LLM polish of `reason` for the top-N cards. Gated on
+   *      CARDSCORER_LLM_ENABLED. Verdict + score stay deterministic so a
+   *      prompt-inject can't flip a "filtered" badge to "relevant."
    *
-   * Real algorithm lives in cloud/src/intelligence/CardScorer.ts (TODO);
-   * this stub gives the extension something honest to render while the
-   * Scorer is being built. It hits Neo4j for the user's top intents and
-   * scores each card by topic/brand overlap.
+   * Client-visible shape unchanged: { scores: [{id, score, verdict, reason}] }.
    */
   app.post('/score/cards', async (c) => {
     const body = (await c.req.json().catch(() => null)) as {
@@ -248,58 +250,17 @@ export function createIntelligenceRoutes(): Hono<AuthVars> {
     }
 
     const userId = c.get('userId');
+    const config = getConfig();
     const intents = await getIntelligence()
       .graph.getTopIntents(userId, 30)
       .catch(() => [] as Array<{ topicName: string; strength: number }>);
 
-    const topicWeight = new Map<string, number>();
-    for (const i of intents) {
-      topicWeight.set(i.topicName.toLowerCase(), Math.min(1, Math.max(0, i.strength)));
-    }
-
-    const scores = body.cards.map((card) => {
-      const text = (card.title + ' ' + (card.brand ?? '')).toLowerCase();
-      // Sum the matched-topic weights — bounded at 1.0.
-      let matched = 0;
-      const matches: Array<{ topic: string; w: number }> = [];
-      for (const [topic, w] of topicWeight) {
-        if (topic.length < 3) continue;
-        if (text.includes(topic)) {
-          matched += w;
-          matches.push({ topic, w });
-        }
-      }
-      const score = Math.min(1, matched);
-
-      let verdict: 'relevant' | 'caution' | 'filtered' | 'neutral';
-      if (score >= 0.7) verdict = 'relevant';
-      else if (score >= 0.4) verdict = 'neutral';
-      else if (score > 0) verdict = 'caution';
-      else verdict = 'neutral';
-
-      // Heuristic filter: flag "miracle cure" / unverified clickbait outright.
-      const FLAG_WORDS = /miracle|guaranteed cure|forbidden|secret formula|big pharma/i;
-      if (FLAG_WORDS.test(card.title)) verdict = 'filtered';
-
-      const topMatches = matches.sort((a, b) => b.w - a.w).slice(0, 3);
-      let reason = '';
-      if (verdict === 'filtered') {
-        reason = 'Unverified claims detected. Hidden by GuardianAgent.';
-      } else if (topMatches.length === 0) {
-        reason = 'No signal from your graph yet — neutral.';
-      } else if (verdict === 'relevant') {
-        reason = `Strong match: you've been researching ${topMatches
-          .map((m) => m.topic)
-          .join(', ')} across multiple platforms.`;
-      } else if (verdict === 'caution') {
-        reason = `Conflicting signals in your research history for ${topMatches[0]!.topic}.`;
-      } else {
-        reason = `Limited evidence in your specific context for ${topMatches[0]!.topic}.`;
-      }
-
-      return { id: card.id, score: Number(score.toFixed(2)), verdict, reason };
+    const scorer = new CardScorer({
+      llmEnabled: config.CARDSCORER_LLM_ENABLED,
+      openaiKey: config.OPENAI_API_KEY,
+      model: config.CARDSCORER_LLM_MODEL,
     });
-
+    const scores = await scorer.score({ intents, cards: body.cards });
     return c.json({ scores });
   });
 
