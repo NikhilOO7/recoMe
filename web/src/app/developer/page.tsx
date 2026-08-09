@@ -485,8 +485,8 @@ function IssuedKeyBanner({ issued, onClose }: { issued: IssuedKey; onClose: () =
             New {issued.environment.toLowerCase()} key — copy it now
           </div>
           <p className="text-xs text-amber-200/80 mb-3">
-            This is the only time the raw key is shown. Store it in your server's secrets — we keep
-            the hash, not the key.
+            This is the only time the raw key is shown. Store it in your server&rsquo;s secrets — we
+            keep the hash, not the key.
           </p>
           <div className="flex items-center gap-2 font-mono text-[13px] bg-black/40 rounded-lg px-3 py-2.5">
             <code className="flex-1 break-all">{issued.raw}</code>

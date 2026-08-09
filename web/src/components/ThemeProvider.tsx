@@ -6,7 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useState,
+  useSyncExternalStore,
   type ReactNode,
 } from 'react';
 
@@ -20,8 +20,14 @@ interface ThemeContextValue {
 
 const STORAGE_KEY = 'recome_theme';
 const DEFAULT_THEME: Theme = 'dark';
+const THEME_EVENT = 'recome-theme-change';
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
+
+function subscribeThemeChange(cb: () => void) {
+  window.addEventListener(THEME_EVENT, cb);
+  return () => window.removeEventListener(THEME_EVENT, cb);
+}
 
 // Reads the theme that the no-flash inline script already applied to
 // <html> on first paint. Falls back to the default if hydration runs
@@ -33,23 +39,25 @@ function readInitialTheme(): Theme {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME);
+  // The <html data-theme> attribute (set pre-paint by the inline script) is
+  // the source of truth; React reads it as an external store. The server
+  // snapshot is the default, and React reconciles to the real value right
+  // after hydration — no setState-in-effect, no flash, no mismatch error.
+  const theme = useSyncExternalStore(subscribeThemeChange, readInitialTheme, () => DEFAULT_THEME);
 
-  // Hydrate from whatever the inline script set, then mark
-  // `theme-ready` so subsequent changes animate.
+  // Mark `theme-ready` after mount so subsequent changes animate.
   useEffect(() => {
-    setThemeState(readInitialTheme());
     document.documentElement.classList.add('theme-ready');
   }, []);
 
   const setTheme = useCallback((next: Theme) => {
-    setThemeState(next);
     document.documentElement.setAttribute('data-theme', next);
     try {
       localStorage.setItem(STORAGE_KEY, next);
     } catch {
       // Private mode / storage disabled — preference doesn't persist, no-op.
     }
+    window.dispatchEvent(new Event(THEME_EVENT));
   }, []);
 
   const toggle = useCallback(() => {

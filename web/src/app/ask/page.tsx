@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { authFetch, getToken } from '@/lib/auth';
+import { authFetch } from '@/lib/auth';
+import { useAuthGate } from '@/lib/useAuth';
 import { AppShell } from '@/components/AppShell';
 
 /**
@@ -81,15 +82,7 @@ export default function AskPage() {
 }
 
 function Layout() {
-  const [authed, setAuthed] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    if (!getToken()) {
-      window.location.href = '/login?next=/ask';
-      return;
-    }
-    setAuthed(true);
-  }, []);
+  const authed = useAuthGate('/ask');
 
   if (!authed) return null;
 
@@ -311,9 +304,27 @@ function ShopperPanel() {
     }
   }, []);
 
+  // Initial fetch — subscription shape (state lands in a callback after the
+  // response, never synchronously in the effect body), with unmount guard.
   useEffect(() => {
-    void load();
-  }, [load]);
+    let cancelled = false;
+    authFetch('/intelligence/agents/concierge/watchlist')
+      .then(async (res) => {
+        if (cancelled) return;
+        if (res.ok) {
+          const body = (await res.json()) as { items: WatchlistItem[] };
+          if (!cancelled) setItems(body.items);
+        } else {
+          setItems([]);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setItems([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const add = useCallback(async () => {
     const trimmed = label.trim();

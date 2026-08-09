@@ -396,7 +396,10 @@ function Stat({ k, v }: { k: string; v: number | string | null }) {
 }
 
 function FocusedPanel({ node, cluster }: { node: MindMapNode; cluster: MindMapCluster | null }) {
-  const dormancyDays = Math.floor((Date.now() - node.lastSeen) / 86_400_000);
+  // Clock read captured once per mount — render stays idempotent, and
+  // day-granularity dormancy doesn't need a live-ticking clock.
+  const [now] = useState(() => Date.now());
+  const dormancyDays = Math.floor((now - node.lastSeen) / 86_400_000);
   return (
     <div>
       <div className="flex items-start gap-2 mb-3">

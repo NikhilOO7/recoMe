@@ -25,7 +25,6 @@ export function RegisterServiceWorker(): null {
     navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch((err) => {
       // Swallow in prod; surface in dev for debugging.
       if (process.env.NODE_ENV !== 'production') {
-        // eslint-disable-next-line no-console
         console.warn('[sw] register failed:', err);
       }
     });

@@ -64,14 +64,15 @@ export function SocialLoginButtons({ returnTo, extId }: Props) {
   function handleOAuth(provider: string) {
     const params = new URLSearchParams();
 
-    // After OAuth completes, redirect back to the current page to handle tokens
+    // After OAuth completes, redirect back — to the explicit returnTo when
+    // the caller threads one (extension flow), else the current page.
     const currentUrl = window.location.origin + window.location.pathname;
-    params.set('return_url', currentUrl);
+    params.set('return_url', returnTo ?? currentUrl);
 
     // Thread extension params if present
     if (extId) params.set('ext_id', extId);
 
-    window.location.href = `${API_URL}/auth/${provider}?${params.toString()}`;
+    window.location.assign(`${API_URL}/auth/${provider}?${params.toString()}`);
   }
 
   return (

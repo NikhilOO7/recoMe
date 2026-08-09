@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState, type ReactNode } from 'react';
-import { authFetch, getToken } from '@/lib/auth';
+import { useState, type ReactNode } from 'react';
+import { authFetch } from '@/lib/auth';
+import { useAuthed } from '@/lib/useAuth';
 import { ThemeToggle } from './ThemeToggle';
 
 // ── Nav model — mirrors docs/demo/recome-app.html sidebar ────────
@@ -41,11 +42,7 @@ interface AppShellProps {
 export function AppShell({ children, title, subtitle, actions, preface }: AppShellProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [authed, setAuthed] = useState<boolean>(false);
-
-  useEffect(() => {
-    setAuthed(!!getToken());
-  }, [pathname]);
+  const authed = useAuthed();
 
   return (
     <div

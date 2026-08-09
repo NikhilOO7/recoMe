@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { authFetch, getToken } from '@/lib/auth';
+import { authFetch } from '@/lib/auth';
+import { useAuthGate } from '@/lib/useAuth';
 import { AppShell } from '@/components/AppShell';
 
 // ── Backend shapes — mirror cloud/src/intelligence/PersonalityMirror.ts ────
@@ -59,20 +60,14 @@ export default function PersonalityPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<'enable' | 'disable' | 'wipe' | 'aspiration' | null>(null);
   const [confirmWipe, setConfirmWipe] = useState(false);
-
-  // Auth gate + initial load.
-  useEffect(() => {
-    if (!getToken()) {
-      window.location.href = '/login?next=/personality';
-      return;
-    }
-    void load();
-  }, []);
+  const authed = useAuthGate('/personality');
 
   const load = useCallback(async () => {
     try {
-      setError(null);
+      // No state writes before the first await — keeps this callable from
+      // the initial-load effect without a synchronous setState cascade.
       const res = await authFetch('/intelligence/personality');
+      setError(null);
       if (res.status === 404 || res.status === 501) {
         setError('Personality Mirror is not enabled on this account.');
         setData(null);
@@ -86,6 +81,12 @@ export default function PersonalityPage() {
       setError(err instanceof Error ? err.message : 'Could not load mirror.');
     }
   }, []);
+
+  // Initial load once the auth gate resolves.
+  useEffect(() => {
+    if (!authed) return;
+    void load();
+  }, [authed, load]);
 
   const enable = useCallback(async () => {
     setBusy('enable');
