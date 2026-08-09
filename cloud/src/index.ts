@@ -100,7 +100,32 @@ if (getConfig().INTELLIGENCE_ENABLED) {
 // ── 404 / Error ──────────────────────────────────────────────────────────────
 
 app.notFound((c) => c.json({ error: 'Not found' }, 404));
+
+// Prisma error shapes that mean "the database is unreachable / not ready",
+// as opposed to a bug in our code. Surfaced as 503 so clients and probes can
+// tell an infra outage from a defect — a register 500 that is really a dead
+// DB cost us a debugging round-trip (2026-08-09 prod incident).
+const DB_UNAVAILABLE_NAMES = new Set([
+  'PrismaClientInitializationError',
+  'PrismaClientRustPanicError',
+]);
+const DB_UNAVAILABLE_CODES = new Set(['P1001', 'P1002', 'P1008', 'P1017', 'P2024']);
+
+function isDbUnavailable(err: unknown): boolean {
+  if (typeof err !== 'object' || err === null) return false;
+  const e = err as { name?: string; code?: string };
+  return (
+    (typeof e.name === 'string' && DB_UNAVAILABLE_NAMES.has(e.name)) ||
+    (typeof e.code === 'string' && DB_UNAVAILABLE_CODES.has(e.code))
+  );
+}
+
 app.onError((err, c) => {
+  if (isDbUnavailable(err)) {
+    logger.error({ err, path: c.req.path }, 'database unreachable');
+    c.header('Retry-After', '10');
+    return c.json({ error: 'service_unavailable', reason: 'database_unreachable' }, 503);
+  }
   logger.error({ err, path: c.req.path }, 'unhandled error');
   return c.json({ error: 'Internal server error' }, 500);
 });

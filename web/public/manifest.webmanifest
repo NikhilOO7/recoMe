@@ -1,7 +1,7 @@
 {
-  "name": "Recome — Your Research, Connected",
-  "short_name": "Recome",
-  "description": "Recome remembers what you research across YouTube, Reddit, Amazon, and more — your second brain for what you actually did.",
+  "name": "RecoMe — Everything you research, working for you",
+  "short_name": "RecoMe",
+  "description": "RecoMe captures what you pay attention to across the web, builds it into an interest graph you control, and puts five background agents to work on it.",
   "id": "/?source=pwa",
   "start_url": "/paste",
   "scope": "/",
@@ -34,6 +34,7 @@
   "share_target": {
     "action": "/paste",
     "method": "GET",
+    "enctype": "application/x-www-form-urlencoded",
     "params": {
       "url": "url",
       "title": "title",
