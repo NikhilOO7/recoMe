@@ -10,6 +10,7 @@ import {
   findOrCreateOAuthUser,
   isProviderConfigured,
 } from './OAuthService.js';
+import { ipRateLimiter } from '../middleware/rateLimiter.js';
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -30,6 +31,11 @@ const refreshSchema = z.object({
 export function createAuthRoutes(): Hono<AuthEnv> {
   const app = new Hono<AuthEnv>();
   const tokenService = new TokenService();
+
+  // Brute-force guard: credential endpoints get a much tighter per-IP budget
+  // than the global layer-1 ceiling. Scoped bucket so it never collides with
+  // the global counter for the same IP.
+  app.use('*', ipRateLimiter({ scope: 'auth', maxRequests: 30 }));
 
   // POST /auth/register
   app.post('/register', async (c) => {

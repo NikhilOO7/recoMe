@@ -1,10 +1,12 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { authMiddleware } from '../middleware/authMiddleware.js';
+import { userRateLimiter } from '../middleware/rateLimiter.js';
 import { getConfig } from '../config.js';
 import { getIntelligence } from './IntelligenceService.js';
 import { parseWindowParam } from './MindMap.js';
-import { signalBatchSchema } from './schemas.js';
+import { signalBatchEnvelopeSchema } from './schemas.js';
+import { ingestBatch } from './ingestBatch.js';
 import { CardScorer } from './CardScorer.js';
 import { createAgentRoutes } from '../agents/AgentController.js';
 import { logger } from '../observability/logger.js';
@@ -18,10 +20,18 @@ type AuthVars = { Variables: { userId: string; tier?: string; deviceId?: string 
 export function createIntelligenceRoutes(): Hono<AuthVars> {
   const app = new Hono<AuthVars>();
   app.use('*', authMiddleware);
+  // Tier-keyed per-user limits — must sit AFTER authMiddleware so userId/tier
+  // are populated (the pre-auth global limiter can only see IPs).
+  app.use('*', userRateLimiter());
 
-  /** POST /intelligence/signals — batched signal ingestion. */
+  /**
+   * POST /intelligence/signals — batched signal ingestion.
+   * Per-item semantics: valid signals ingest even when neighbors fail.
+   * `rejected` items are permanent (client drops), `retryable` items hit a
+   * transient ingest error (client keeps + resends; ingest is idempotent).
+   */
   app.post('/signals', async (c) => {
-    const parsed = signalBatchSchema.safeParse(await c.req.json().catch(() => null));
+    const parsed = signalBatchEnvelopeSchema.safeParse(await c.req.json().catch(() => null));
     if (!parsed.success) {
       return c.json({ error: 'invalid_signals', details: parsed.error.flatten() }, 400);
     }
@@ -35,21 +45,15 @@ export function createIntelligenceRoutes(): Hono<AuthVars> {
       createdAt: Date.now(),
     });
 
-    const results: Array<{ signalId: string; topicsCreated: number; entitiesCreated: number }> = [];
-    for (const sig of parsed.data.signals) {
-      try {
-        const r = await svc.ingestion.ingest({ ...sig, userId });
-        results.push({
-          signalId: r.signalId,
-          topicsCreated: r.topicsCreated,
-          entitiesCreated: r.entitiesCreated,
-        });
-      } catch (err) {
-        logger.error({ err, userId, kind: sig.kind }, 'signal ingest failed');
-        return c.json({ error: 'ingest_failed', signalId: sig.id ?? null }, 500);
-      }
-    }
-    return c.json({ ok: true, count: results.length, results });
+    const outcome = await ingestBatch(svc.ingestion, userId, parsed.data.signals);
+    return c.json({
+      ok: true,
+      count: outcome.accepted,
+      results: outcome.results,
+      accepted: outcome.accepted,
+      rejected: outcome.rejected,
+      retryable: outcome.retryable,
+    });
   });
 
   /** GET /intelligence/trails — cross-platform research trails for the user. */

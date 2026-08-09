@@ -130,11 +130,14 @@ export function createAgentRoutes(): Hono<AuthVars> {
 
   // ── POST /agents/decision/stream — SSE stream of a Decision run.
   //
-  // Streams the body in word-ish chunks so the extension OverlayChat + web
-  // /ask AdvisorPanel render token-by-token. v1 is deterministic (cost:
-  // 0 LLM tokens, matches Guardian's daily cap on the route as `/run`).
-  // Real LLM streaming swaps DecisionAgent.runStream() inner loop without
-  // touching the client protocol.
+  // Streams token-by-token for the extension OverlayChat + web /ask panel.
+  // With AGENTS_LLM_ENABLED the chunks are real model output; otherwise the
+  // deterministic composition streams in word-ish chunks. Client protocol is
+  // identical in both modes.
+  //
+  // Cost discipline: this path goes through the SAME Guardian pre-check and
+  // AgentRun ledger as runner-driven runs — streaming is not a side door
+  // around the $0.10/user/day cap (PRODUCT.md P3 / D-register).
   //
   // Protocol per message:
   //   data: <text-chunk>\n\n              ← appended to the assistant turn
@@ -157,24 +160,58 @@ export function createAgentRoutes(): Hono<AuthVars> {
     };
 
     // Type-narrow to the concrete DecisionAgent so we can call runStream.
-    // Falls back to a single non-streamed chunk if the agent doesn't expose it.
     const streamable = agent as unknown as {
-      runStream?: (ctx: AgentContext) => AsyncIterable<string>;
+      runStream?: (
+        ctx: AgentContext,
+        onUsage?: (u: { llmTokens: number; costMicros: number }) => void,
+      ) => AsyncIterable<string>;
     };
     if (!streamable.runStream) {
       return c.json({ error: 'agent_not_streamable' }, 501);
     }
 
+    // Guardian pre-check — same gate as AgentRunner.runOne().
+    const guardian = getGuardian();
+    const decision = await guardian.check('decision', ctx);
+    if (!decision.allow) {
+      await getAgentRunner().recordExternalRun('decision', ctx, {
+        status: decision.status,
+        meta: { reason: decision.reason, stream: true },
+      });
+      return streamSSE(c, async (stream) => {
+        await stream.writeSSE({
+          data: `__meta__:${JSON.stringify({ capped: true, reason: decision.reason })}`,
+        });
+        await stream.writeSSE({ data: '[DONE]' });
+      });
+    }
+
     return streamSSE(c, async (stream) => {
+      const startedAt = new Date();
+      let usage = { llmTokens: 0, costMicros: 0 };
+      let status: 'succeeded' | 'failed' = 'succeeded';
       try {
-        for await (const chunk of streamable.runStream!(ctx)) {
+        for await (const chunk of streamable.runStream!(ctx, (u) => (usage = u))) {
           await stream.writeSSE({ data: chunk });
         }
       } catch (err) {
+        status = 'failed';
         logger.error({ err, userId, agent: 'decision' }, 'decision stream failed');
         await stream.writeSSE({ data: '__meta__:{"error":"stream_failed"}' });
       } finally {
         await stream.writeSSE({ data: '[DONE]' });
+        // Land stream spend in the ledger Guardian reads. Never let a
+        // bookkeeping failure break the user-facing stream.
+        await getAgentRunner()
+          .recordExternalRun('decision', ctx, {
+            status,
+            startedAt,
+            finishedAt: new Date(),
+            llmTokens: usage.llmTokens,
+            costMicros: usage.costMicros,
+            meta: { stream: true },
+          })
+          .catch(() => undefined);
       }
     });
   });

@@ -116,11 +116,27 @@ function seedGreeting(): void {
   });
 }
 
+/** Last N completed turns, oldest first — the multi-turn context the server
+ *  actually receives (D5). Pending rows and the greeting are excluded;
+ *  each turn is truncated so a pasted novel can't blow up the payload. */
+const HISTORY_TURNS = 10;
+const HISTORY_TURN_CHARS = 500;
+function boundedHistory(): Array<{ role: 'user' | 'agent'; text: string }> {
+  return history
+    .filter((t) => !t.pending)
+    .slice(1) // drop the canned greeting — it carries no user information
+    .slice(-HISTORY_TURNS)
+    .map((t) => ({ role: t.role, text: t.text.slice(0, HISTORY_TURN_CHARS) }));
+}
+
 async function send(): Promise<void> {
   const text = (inputEl?.value ?? '').trim();
   if (!text) return;
   inputEl!.value = '';
   inputEl!.style.height = 'auto';
+  // Snapshot BEFORE pushing this turn: the new question travels as userQuery,
+  // so history must contain only the turns that came before it.
+  const priorTurns = boundedHistory();
   pushTurn({ role: 'user', text });
   const pending = pushTurn({ role: 'agent', text: 'Thinking…', pending: true });
 
@@ -134,6 +150,7 @@ async function send(): Promise<void> {
     topicHint: ex?.topics[0]?.name ?? text.toLowerCase(),
     entityHint: ex?.entities[0]?.name,
     userQuery: text,
+    history: priorTurns,
   };
 
   // Try real SSE first; on any failure (older cloud / no auth / network)
@@ -141,8 +158,11 @@ async function send(): Promise<void> {
   pending.row.classList.remove('pending');
   pending.textEl.textContent = '';
 
-  const ok = await streamDecision(event, pending.textEl);
-  if (ok) return;
+  const ok = await streamDecision(event, pending);
+  if (ok) {
+    finalizeTurn(pending);
+    return;
+  }
 
   // ── Fallback: non-streamed AGENT_RUN_ONDEMAND ─────────────────────────
   pending.textEl.textContent = 'Thinking…';
@@ -176,6 +196,50 @@ async function send(): Promise<void> {
   const full = (result.emission.body ?? result.emission.title).trim();
   pending.row.classList.remove('pending');
   await typewriter(pending.textEl, full);
+  renderSources(pending, result.emission.sources ?? []);
+  finalizeTurn(pending);
+}
+
+/** Write the streamed/typed text back into the Turn object so the next
+ *  question's history actually contains this answer (D5). */
+function finalizeTurn(rt: RenderedTurn): void {
+  rt.turn.text = rt.textEl.textContent ?? '';
+  rt.turn.pending = false;
+}
+
+/** Citation chips under an agent answer — every emission cites its sources
+ *  (ADR-0012 §5); the client now renders them instead of discarding (D5). */
+function renderSources(
+  rt: RenderedTurn,
+  sources: Array<{ kind?: string; id?: string; label?: string; url?: string }>,
+): void {
+  if (!sources.length) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'rcm-chat-sources';
+  const lead = document.createElement('span');
+  lead.className = 'rcm-chat-sources-lead';
+  lead.textContent = 'From your graph:';
+  wrap.appendChild(lead);
+  for (const s of sources.slice(0, 5)) {
+    const label = (s.label ?? s.id ?? '').slice(0, 40);
+    if (!label) continue;
+    if (s.url) {
+      const a = document.createElement('a');
+      a.className = 'rcm-chat-src';
+      a.textContent = label;
+      a.href = s.url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      wrap.appendChild(a);
+    } else {
+      const chip = document.createElement('span');
+      chip.className = 'rcm-chat-src';
+      chip.textContent = label;
+      wrap.appendChild(chip);
+    }
+  }
+  rt.row.appendChild(wrap);
+  if (messagesEl) messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
 /**
@@ -188,10 +252,8 @@ async function send(): Promise<void> {
  *   data: __meta__:{"sources":…,"actionUrl":…}
  *   data: [DONE]
  */
-async function streamDecision(
-  event: Record<string, unknown>,
-  el: HTMLDivElement,
-): Promise<boolean> {
+async function streamDecision(event: Record<string, unknown>, rt: RenderedTurn): Promise<boolean> {
+  const el = rt.textEl;
   try {
     const [base, token] = await Promise.all([getCloudUrl(), getAccessToken()]);
     if (!token) return false;
@@ -228,8 +290,7 @@ async function streamDecision(
           return textRendered;
         }
         if (line.startsWith('__meta__:')) {
-          // Citations / actionUrl land here. We don't render them today
-          // (sidebar already shows the same data); Phase-4 can extend.
+          textRendered = handleStreamMeta(line.slice('__meta__:'.length), rt) || textRendered;
           continue;
         }
         el.textContent = (el.textContent ?? '') + line;
@@ -243,9 +304,47 @@ async function streamDecision(
   }
 }
 
+/**
+ * Final `__meta__` envelope: citations, skip, or Guardian cap. Returns true
+ * when it rendered something, so the caller doesn't double-run the fallback
+ * path for an answer the server already gave.
+ */
+function handleStreamMeta(json: string, rt: RenderedTurn): boolean {
+  let meta: {
+    sources?: Array<{ kind?: string; id?: string; label?: string; url?: string }>;
+    skipped?: boolean;
+    reason?: string;
+    capped?: boolean;
+    error?: string;
+  };
+  try {
+    meta = JSON.parse(json);
+  } catch {
+    return false;
+  }
+
+  if (meta.skipped) {
+    rt.textEl.textContent =
+      meta.reason === 'no_intents_for_user'
+        ? 'Your graph is still empty. Capture a few pages and come back — Decision needs signals to ground a recommendation.'
+        : `Decision skipped this one (${meta.reason ?? 'no reason given'}).`;
+    return true;
+  }
+  if (meta.capped) {
+    rt.textEl.textContent =
+      "Decision is resting — today's agent budget for your account is used up. It resets within 24 hours.";
+    return true;
+  }
+  if (meta.error) return false; // let the fallback path try
+  if (meta.sources?.length) renderSources(rt, meta.sources);
+  return false; // sources alone don't count as an answer
+}
+
 interface RenderedTurn {
   row: HTMLDivElement;
   textEl: HTMLDivElement;
+  /** The live Turn in `history` — finalizeTurn() writes the answer back. */
+  turn: Turn;
 }
 
 function pushTurn(turn: Turn): RenderedTurn {
@@ -259,7 +358,7 @@ function pushTurn(turn: Turn): RenderedTurn {
   row.appendChild(text);
   messagesEl.appendChild(row);
   messagesEl.scrollTop = messagesEl.scrollHeight;
-  return { row, textEl: text };
+  return { row, textEl: text, turn };
 }
 
 async function typewriter(el: HTMLDivElement, full: string): Promise<void> {
@@ -333,6 +432,34 @@ const CHAT_CSS = `
   white-space: pre-wrap;
   word-wrap: break-word;
 }
+.rcm-chat-sources {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  max-width: 86%;
+  margin-top: 5px;
+}
+.rcm-chat-sources-lead {
+  font-size: 10.5px;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.rcm-chat-src {
+  font-size: 11px;
+  color: #5eead4;
+  background: rgba(94,234,212,0.09);
+  border: 1px solid rgba(94,234,212,0.25);
+  border-radius: 999px;
+  padding: 2px 9px;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+a.rcm-chat-src:hover { background: rgba(94,234,212,0.18); }
 .rcm-chat-row.rcm-user .rcm-chat-text {
   background: linear-gradient(135deg, #2356e8 0%, #4a73ed 100%);
   color: #fff;

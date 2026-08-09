@@ -18,7 +18,7 @@ import { createIntelligenceRoutes } from './intelligence/IntelligenceController.
 import { createV1Routes } from './iaas/V1Controller.js';
 import { createDeveloperRoutes } from './iaas/DeveloperController.js';
 import { createNotificationRoutes } from './notifications/NotificationController.js';
-import { rateLimiter } from './middleware/rateLimiter.js';
+import { ipRateLimiter } from './middleware/rateLimiter.js';
 import { logger } from './observability/logger.js';
 import { installSignalHandlers } from './observability/lifecycle.js';
 import { bootIntelligence } from './bootstrap.js';
@@ -53,7 +53,10 @@ app.use(
   }),
 );
 
-app.use('*', rateLimiter());
+// Layer-1 abuse guard: coarse per-IP ceiling, pre-auth by design. Identity-
+// keyed limits (per-user tier, per-tenant plan) are mounted inside the route
+// groups AFTER their auth middleware — see rateLimiter.ts for the layering.
+app.use('*', ipRateLimiter({ maxRequests: 300 }));
 
 // ── Health checks ────────────────────────────────────────────────────────────
 // /live  — process is up (cheap, used by orchestrator liveness probes)

@@ -84,6 +84,14 @@ const envSchema = z.object({
   CARDSCORER_LLM_ENABLED: z.coerce.boolean().default(false),
   CARDSCORER_LLM_MODEL: z.string().default('gpt-4o-mini'),
 
+  // Agent LLM synthesis (PRODUCT.md P3) — real reasoning in Decision (and
+  // later Curriculum/Curator) outputs. Off by default: every agent keeps a
+  // deterministic $0 mode, and Guardian's daily cost cap binds on the exact
+  // usage each call reports (see cloud/src/agents/llm.ts).
+  AGENTS_LLM_ENABLED: z.coerce.boolean().default(false),
+  AGENTS_LLM_MODEL: z.string().default('gpt-4o-mini'),
+  AGENTS_LLM_MAX_OUTPUT_TOKENS: z.coerce.number().int().positive().default(400),
+
   // ── Concierge price vendor (ADR-0017) ──────────────────────────────────────
   // Vendor selector: stub | keepa. RainforestAPI + PA-API are v1.2.
   //   - stub  : deterministic test prices. Required explicitly to run in prod

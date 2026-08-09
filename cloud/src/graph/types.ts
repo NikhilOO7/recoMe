@@ -9,6 +9,8 @@ export type EntityKind =
   | 'place'
   | 'person';
 
+// Keep in lockstep with platformEnum in intelligence/schemas.ts (which must
+// stay a superset of the extension's client Platform union).
 export type Platform =
   | 'youtube'
   | 'reddit'
@@ -20,7 +22,13 @@ export type Platform =
   | 'instagram'
   | 'tiktok'
   | 'linkedin'
-  | 'generic';
+  | 'indeed'
+  | 'glassdoor'
+  | 'udemy'
+  | 'coursera'
+  | 'edx'
+  | 'generic'
+  | 'unknown';
 
 export type SignalKind =
   | 'view'

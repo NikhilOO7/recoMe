@@ -139,8 +139,9 @@ export default function Home() {
               &ldquo;Perplexity for what you&rsquo;ve already looked at.&rdquo;
             </span>{' '}
             <span className="text-white/65">
-              The one-line pitch. Whether anyone wants this is the real question &mdash; everything
-              else is execution.
+              Search answers questions you know to ask. Your graph answers the ones you forgot you
+              had &mdash; the review you half-read, the course you meant to start, the price you
+              were waiting on.
             </span>
           </div>
         </div>

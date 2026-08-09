@@ -74,6 +74,12 @@ export interface IngestResult {
 
 export interface BatchIngestResponse {
   results: IngestResult[];
+  /** Signals actually ingested. Absent on pre-per-item cloud versions. */
+  accepted?: number;
+  /** Failed validation — permanent; do NOT retry these. */
+  rejected?: Array<{ index: number; id: string | null; code: string; issues: string[] }>;
+  /** Transient ingest failure — keep queued and resend (idempotent server-side). */
+  retryable?: Array<{ index: number; id: string | null }>;
 }
 
 export async function postSignals(signals: Signal[]): Promise<BatchIngestResponse> {
@@ -197,6 +203,8 @@ export interface AgentRunResult {
     title: string;
     body?: string;
     actionUrl?: string;
+    /** Citations back to the user's graph — every emission carries them (ADR-0012 §5). */
+    sources?: Array<{ kind?: string; id?: string; label?: string; url?: string }>;
   };
 }
 

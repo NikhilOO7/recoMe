@@ -1,8 +1,10 @@
 import { Hono } from 'hono';
 import { apiKeyMiddleware, type TenantVars } from './apiKeyMiddleware.js';
+import { tenantRateLimiter } from '../middleware/rateLimiter.js';
 import { composeTenantUserId } from './tenantUserId.js';
 import { getIntelligence } from '../intelligence/IntelligenceService.js';
-import { signalBatchSchema } from '../intelligence/schemas.js';
+import { signalBatchEnvelopeSchema } from '../intelligence/schemas.js';
+import { ingestBatch } from '../intelligence/ingestBatch.js';
 import { bumpUsage, getUsage, planQuota, nextPeriodBoundaryIso } from './usageTracker.js';
 import { OPENAPI_SPEC, swaggerUiHtml } from './openapi.js';
 import { logger } from '../observability/logger.js';
@@ -30,6 +32,9 @@ export function createV1Routes(): Hono<TenantVars> {
   app.get('/docs', (c) => c.html(swaggerUiHtml('/v1/openapi.json')));
 
   app.use('*', apiKeyMiddleware());
+  // Plan-keyed per-tenant burst limits — AFTER key auth so tenantId/plan are
+  // set. Monthly volume quotas live in usageTracker; this guards requests/min.
+  app.use('*', tenantRateLimiter());
 
   // ── POST /v1/signals — ingest a batch of signals for one external user ────
   app.post('/signals', async (c) => {
@@ -37,13 +42,14 @@ export function createV1Routes(): Hono<TenantVars> {
     const externalUserId = c.get('externalUserId');
     const plan = c.get('plan');
 
-    const parsed = signalBatchSchema.safeParse(await c.req.json().catch(() => null));
+    const parsed = signalBatchEnvelopeSchema.safeParse(await c.req.json().catch(() => null));
     if (!parsed.success) {
       return c.json({ error: 'invalid_signals', details: parsed.error.flatten() }, 400);
     }
 
     // Quota check — peek at the current period's usage and refuse if the
-    // post-ingest count would exceed the plan ceiling.
+    // post-ingest count would exceed the plan ceiling. Checked against the
+    // submitted count (upper bound); billed on the accepted count below.
     const usage = await getUsage(tenantId);
     const quota = planQuota(plan);
     const incoming = parsed.data.signals.length;
@@ -70,29 +76,23 @@ export function createV1Routes(): Hono<TenantVars> {
     // for IaaS users.
     await svc.graph.upsertUser({ id: userId, tier: 'FREE', createdAt: Date.now() });
 
-    const results: Array<{ signalId: string; topicsCreated: number; entitiesCreated: number }> = [];
-    for (const sig of parsed.data.signals) {
-      try {
-        const r = await svc.ingestion.ingest({ ...sig, userId });
-        results.push({
-          signalId: r.signalId,
-          topicsCreated: r.topicsCreated,
-          entitiesCreated: r.entitiesCreated,
-        });
-      } catch (err) {
-        logger.error({ err, tenantId, externalUserId, kind: sig.kind }, 'v1 signal ingest failed');
-        return c.json({ error: 'ingest_failed', signalId: sig.id ?? null }, 500);
-      }
-    }
+    // Per-item ingestion: valid signals land even when neighbors are invalid
+    // (`rejected` — permanent, don't retry) or hit a transient store error
+    // (`retryable` — resend safely; ingest is idempotent on signal id).
+    // Usage is billed on ACCEPTED signals only, never on rejects.
+    const outcome = await ingestBatch(svc.ingestion, userId, parsed.data.signals);
 
-    void bumpUsage(tenantId, 'signalsIngested', incoming);
+    if (outcome.accepted > 0) void bumpUsage(tenantId, 'signalsIngested', outcome.accepted);
 
     return c.json({
       ok: true,
       tenantId,
       externalUserId,
-      count: results.length,
-      results,
+      count: outcome.accepted,
+      accepted: outcome.accepted,
+      results: outcome.results,
+      rejected: outcome.rejected,
+      retryable: outcome.retryable,
     });
   });
 

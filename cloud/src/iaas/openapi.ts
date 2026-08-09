@@ -63,7 +63,13 @@ export const OPENAPI_SPEC = {
           'instagram',
           'tiktok',
           'linkedin',
+          'indeed',
+          'glassdoor',
+          'udemy',
+          'coursera',
+          'edx',
           'generic',
+          'unknown',
         ],
       },
       SignalKind: {
@@ -124,11 +130,16 @@ export const OPENAPI_SPEC = {
       },
       SignalIngestResponse: {
         type: 'object',
+        description:
+          'Per-item ingestion outcome. Signals in `rejected` failed validation and must not be ' +
+          'resent. Signals in `retryable` hit a transient error and may be resent safely — ' +
+          'ingestion is idempotent on the signal `id`. Usage is metered on `accepted` only.',
         properties: {
           ok: { type: 'boolean' },
           tenantId: { type: 'string' },
           externalUserId: { type: 'string' },
-          count: { type: 'integer' },
+          count: { type: 'integer', description: 'Alias of accepted' },
+          accepted: { type: 'integer' },
           results: {
             type: 'array',
             items: {
@@ -137,6 +148,28 @@ export const OPENAPI_SPEC = {
                 signalId: { type: 'string' },
                 topicsCreated: { type: 'integer' },
                 entitiesCreated: { type: 'integer' },
+              },
+            },
+          },
+          rejected: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                index: { type: 'integer', description: 'Position in the submitted batch' },
+                id: { type: 'string', nullable: true },
+                code: { type: 'string', enum: ['invalid_signal'] },
+                issues: { type: 'array', items: { type: 'string' } },
+              },
+            },
+          },
+          retryable: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                index: { type: 'integer', description: 'Position in the submitted batch' },
+                id: { type: 'string', nullable: true },
               },
             },
           },

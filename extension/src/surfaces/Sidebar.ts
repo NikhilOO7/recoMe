@@ -336,8 +336,15 @@ const DEMO_INTENTS: Array<[string, number]> = [
 function buildIntentsEmptyState(): HTMLDivElement {
   const wrap = document.createElement('div');
   wrap.className = 'rcm-intents-empty';
+  // Invented data must never render unlabeled next to real data (PRODUCT.md
+  // principle 7 / D4): the example rows carry an explicit badge.
+  const badge = document.createElement('div');
+  badge.className = 'rcm-intents-demo-badge';
+  badge.textContent = 'Example preview — not your data';
+  wrap.appendChild(badge);
   const demos = document.createElement('div');
   demos.className = 'rcm-intents-demos';
+  demos.setAttribute('aria-hidden', 'true');
   for (const [name, weight] of DEMO_INTENTS) {
     demos.appendChild(buildIntentRow(name, weight, true));
   }
@@ -353,8 +360,9 @@ function buildIntentsEmptyState(): HTMLDivElement {
 function buildAgentsEmptyState(): HTMLDivElement {
   const wrap = document.createElement('div');
   wrap.className = 'rcm-empty';
+  // User-facing copy — server env details belong in ops docs, not in the UI.
   wrap.textContent =
-    'Agents not enabled on this account yet. Set INTELLIGENCE_AGENTS_ENABLED=true in your cloud env.';
+    "Agents aren't switched on for your account yet. They activate automatically once your plan includes them — nothing to configure here.";
   return wrap;
 }
 
@@ -533,5 +541,16 @@ const SIDEBAR_CSS = `
   font-style: italic;
   line-height: 1.55;
   padding: 2px 0;
+}
+.rcm-intents-demo-badge {
+  display: inline-block;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(240,180,41,0.9);
+  border: 1px solid rgba(240,180,41,0.35);
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin-bottom: 6px;
 }
 `;

@@ -4,6 +4,9 @@ import { z } from 'zod';
 // Used by /intelligence (consumer, user-auth) AND /v1 (IaaS, key-auth).
 // Single source of truth so the two surfaces cannot drift in validation shape.
 
+// Contract law (docs/PRODUCT.md §3): this enum MUST be a superset of the
+// client Platform union in extension/src/shared/types.ts — a platform the
+// client can emit but the cloud rejects silently loses signals.
 export const platformEnum = z.enum([
   'youtube',
   'reddit',
@@ -15,7 +18,13 @@ export const platformEnum = z.enum([
   'instagram',
   'tiktok',
   'linkedin',
+  'indeed',
+  'glassdoor',
+  'udemy',
+  'coursera',
+  'edx',
   'generic',
+  'unknown',
 ]);
 
 export const signalKindEnum = z.enum([
@@ -66,5 +75,12 @@ export const signalSchema = z.object({
 });
 
 export const signalBatchSchema = z.object({ signals: z.array(signalSchema).min(1).max(100) });
+
+// Loose envelope for per-item validation: the batch shape is enforced here,
+// while each signal is validated individually in ingestBatch() so one bad
+// signal can never reject (or silently drop) its 99 valid neighbors.
+export const signalBatchEnvelopeSchema = z.object({
+  signals: z.array(z.unknown()).min(1).max(100),
+});
 
 export type SignalInput = z.infer<typeof signalSchema>;

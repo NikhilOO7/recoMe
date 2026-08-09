@@ -35,7 +35,7 @@ RecoMe watches how you research across 15 sites — YouTube videos, Reddit threa
 3. **One-click pause per agent.** Or per platform. Or globally. Your call.
 4. **You can see and delete everything.** The Audit Log of You shows every signal, every agent run, every decision the system surfaced. One-click export, one-click delete.
 
-**Hard daily cost cap of $0.10/user/month** (the Guardian agent enforces it). LLM model routing minimizes spend: Haiku for routing, Sonnet only for synthesis. Stripe-funded, never your API key.
+**Hard daily cost cap of $0.10/user/day** (the Guardian gate enforces it in code). Funded by your subscription — never your API key.
 
 **Supported platforms (15):**
 

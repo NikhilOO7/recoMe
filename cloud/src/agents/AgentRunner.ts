@@ -102,6 +102,27 @@ export class AgentRunner {
     }
   }
 
+  /**
+   * Record a run that happened OUTSIDE runOne() — today that's the SSE
+   * stream path in AgentController, which drives the agent iterator itself.
+   * Public so the controller can land stream usage in the same AgentRun
+   * ledger Guardian reads for the daily cost cap.
+   */
+  async recordExternalRun(
+    agentName: string,
+    ctx: AgentContext,
+    opts: {
+      status: AgentRunStatus;
+      startedAt?: Date;
+      finishedAt?: Date;
+      llmTokens?: number;
+      costMicros?: number;
+      meta?: Record<string, unknown>;
+    },
+  ): Promise<void> {
+    await this.persistRun(agentName, ctx, opts);
+  }
+
   private async persistRun(
     agentName: string,
     ctx: AgentContext,

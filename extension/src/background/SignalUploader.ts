@@ -54,20 +54,45 @@ export async function flush(): Promise<{ uploaded: number; remaining: number }> 
       if (batch.length === 0) break;
 
       try {
-        await postSignals(batch);
-        await ack(batch.map((s) => s.id));
-        uploaded += batch.length;
+        const res = await postSignals(batch);
+
+        // Per-item outcome: ack everything except signals the cloud marked
+        // transiently failed (`retryable`) — those stay queued and resend on
+        // the next flush (server ingest is idempotent on signal id).
+        // `rejected` signals failed validation permanently: ack (drop) them
+        // individually and loudly, never their valid neighbors.
+        const retryIdx = new Set((res.retryable ?? []).map((r) => r.index));
+        const ackIds = batch.filter((_, i) => !retryIdx.has(i)).map((s) => s.id);
+        await ack(ackIds);
+        uploaded += res.accepted ?? batch.length;
+
+        if (res.rejected && res.rejected.length > 0) {
+          log.warn(
+            `cloud permanently rejected ${res.rejected.length}/${batch.length} signals`,
+            res.rejected.map((r) => `#${r.index} ${r.id ?? '?'}: ${r.issues.join('; ')}`),
+          );
+        }
+        if (retryIdx.size > 0) {
+          // Transient store trouble server-side — don't spin on it this cycle.
+          backoffUntil = Date.now() + 60_000;
+          log.warn(`${retryIdx.size} signals deferred by cloud; backing off`);
+          break;
+        }
       } catch (e) {
         if (e instanceof CloudHttpError && e.status >= 400 && e.status < 500) {
-          // 4xx other than 401 means malformed signals — log + drop to avoid
-          // poisoning the queue forever.
+          // Envelope-level 4xx other than 401: the batch shape itself is
+          // malformed — a client bug, since per-item validation handles bad
+          // signals without erroring. Drop to avoid poisoning the queue, and
+          // log at error level so it's never silent.
           if (e.status !== 401) {
-            log.warn(`drop ${batch.length} signals (cloud rejected ${e.code})`);
+            log.error(
+              `ENVELOPE REJECTED — dropping ${batch.length} signals (${e.code}); client bug likely`,
+            );
             await ack(batch.map((s) => s.id));
             continue;
           }
         }
-        // 5xx / network: back off, retry on next alarm
+        // 401 / 5xx / network: back off, retry on next alarm
         const wait = 60_000;
         backoffUntil = Date.now() + wait;
         log.warn(`upload failed; backing off ${wait}ms`, e);
