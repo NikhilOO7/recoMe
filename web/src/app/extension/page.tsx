@@ -1,7 +1,5 @@
 // Link import removed — footer is now in layout
 
-const CWS_URL = 'https://chromewebstore.google.com/detail/recome/fgpjboodmfnjbpdmbapjjjbfkflhbkcf';
-
 const FEATURES = [
   {
     icon: '⌖',
@@ -129,21 +127,16 @@ export default function ExtensionPage() {
             Concierge, Curator, Decision, Curriculum — find for you while you browse.
           </p>
 
-          <div className="flex gap-3.5 flex-wrap mb-14">
-            <a
-              href={CWS_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-white text-[var(--ink)] px-7 py-3.5 rounded-xl font-bold text-[15px] hover:opacity-[0.88] transition-opacity"
-            >
-              Add to Chrome — Free
+          <div className="flex gap-3.5 flex-wrap items-center mb-14">
+            <a href="/signup" className="btn btn-primary">
+              Start free at recome.app
             </a>
-            <a
-              href="#use-cases"
-              className="border border-white/[0.22] px-7 py-3.5 rounded-xl font-semibold text-[15px] hover:bg-white/[0.06] transition-all"
-            >
-              See It In Action
+            <a href="#use-cases" className="btn btn-secondary">
+              See it in action
             </a>
+            <span className="text-[12px] text-[var(--muted-2)]">
+              Chrome Web Store listing in review — coming soon
+            </span>
           </div>
 
           {/* Stat row */}
@@ -284,16 +277,11 @@ export default function ExtensionPage() {
             Free. Sign in once on the web app and the extension picks up your session. Works in
             Chrome, Edge, Brave, Arc, and other Chromium browsers.
           </p>
-          <a
-            href={CWS_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-white text-[var(--ink)] px-8 py-4 rounded-xl font-bold text-base hover:opacity-[0.88] transition-opacity"
-          >
-            Add to Chrome — Free
+          <a href="/signup" className="btn btn-primary !px-8 !py-4">
+            Create your account first
           </a>
           <p className="text-xs text-white/25 mt-5">
-            v2.0.0 &middot; Manifest V3 &middot; Open source
+            v2.0.0 &middot; Manifest V3 &middot; Chrome Web Store listing in review
           </p>
         </div>
       </section>

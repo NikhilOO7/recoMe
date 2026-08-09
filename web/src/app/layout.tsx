@@ -16,9 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Recome — Personal memory, as infrastructure',
+  title: 'RecoMe — Everything you research, working for you',
   description:
-    'Recome remembers what you research across YouTube, Reddit, Amazon, Substack and more — then surfaces it back to you, or to any product you build, as a typed personal interest graph powered by Neo4j, Qdrant, and active agents.',
+    'RecoMe captures what you pay attention to across 15 platforms, builds it into an interest graph you control, and puts five background agents to work on it — every output cited, nothing acted on without you.',
   // PWA wiring — see web/public/manifest.webmanifest. Installable on
   // Android/iOS, ships with share-target so the OS share-sheet routes URLs
   // to /paste. See ADR-0003 §2.1.
