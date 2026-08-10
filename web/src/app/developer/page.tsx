@@ -174,7 +174,7 @@ export default function DeveloperPage() {
           </p>
           <Link
             href="/login?next=/developer"
-            className="bg-white text-[var(--ink)] px-6 py-3 rounded-xl font-bold"
+            className="bg-[var(--accent)] text-[var(--on-accent)] px-6 py-3 rounded-xl font-bold"
           >
             Sign in
           </Link>
@@ -313,7 +313,7 @@ function TenantList({
         <button
           type="submit"
           disabled={!name.trim()}
-          className="w-full bg-white text-[var(--ink)] py-2 rounded-lg text-sm font-semibold disabled:opacity-40"
+          className="w-full bg-[var(--accent)] text-[var(--on-accent)] py-2 rounded-lg text-sm font-semibold disabled:opacity-40"
         >
           Create
         </button>
@@ -436,7 +436,7 @@ function TenantDetail({
           <button
             type="submit"
             disabled={!label.trim()}
-            className="bg-white text-[var(--ink)] px-5 py-2 rounded-lg text-sm font-semibold disabled:opacity-40"
+            className="bg-[var(--accent)] text-[var(--on-accent)] px-5 py-2 rounded-lg text-sm font-semibold disabled:opacity-40"
           >
             Issue key
           </button>

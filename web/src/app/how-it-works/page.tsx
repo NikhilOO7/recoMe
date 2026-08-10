@@ -209,10 +209,7 @@ export default function HowItWorksPage() {
             your interest graph — the agents take it from there.
           </p>
           <div className="flex gap-3 justify-center flex-wrap">
-            <Link
-              href="/signup"
-              className="bg-white text-[var(--ink)] px-7 py-3.5 rounded-xl font-bold text-[15px] hover:opacity-[0.88] transition-opacity"
-            >
+            <Link href="/signup" className="btn btn-primary">
               Start at recome.app
             </Link>
             <Link

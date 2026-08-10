@@ -78,7 +78,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Mobile nav */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--ink)] border-t border-white/[0.08] px-2 py-2 flex gap-1 overflow-x-auto">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--surface-2)] border-t border-[var(--border)] px-2 py-2 flex gap-1 overflow-x-auto">
         {ADMIN_NAV.map((item) => {
           const active = pathname === item.href;
           return (

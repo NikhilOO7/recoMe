@@ -172,7 +172,7 @@ export default function AuditLogPage() {
             <button
               onClick={exportAll}
               disabled={exporting}
-              className="text-xs font-semibold bg-white text-(--ink) px-4 py-2 rounded-md hover:bg-white/90 transition-colors disabled:opacity-50 cursor-pointer"
+              className="text-xs font-semibold bg-[var(--accent)] text-[var(--on-accent)] px-4 py-2 rounded-md hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer"
             >
               {exporting ? 'Exporting…' : 'Export JSON ↓'}
             </button>
@@ -194,7 +194,7 @@ export default function AuditLogPage() {
             onClick={() => toggleType(t)}
             className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors cursor-pointer ${
               active.has(t)
-                ? 'bg-white text-(--ink) border-white'
+                ? 'bg-[var(--accent)] text-[var(--on-accent)] border-[var(--accent)]'
                 : 'bg-white/4 border-white/10 text-white/60 hover:bg-white/8 hover:text-white'
             }`}
           >
@@ -363,7 +363,7 @@ export default function AuditLogPage() {
               </button>
               <button
                 onClick={deleteAll}
-                className="text-xs font-semibold bg-rose-400/85 text-(--ink) px-4 py-2 rounded-md hover:bg-rose-400 transition-colors cursor-pointer"
+                className="text-xs font-semibold bg-rose-500 text-white px-4 py-2 rounded-md hover:bg-rose-400 transition-colors cursor-pointer"
               >
                 Yes, delete everything
               </button>
