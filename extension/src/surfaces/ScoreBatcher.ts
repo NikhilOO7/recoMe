@@ -115,15 +115,35 @@ export class ScoreBatcher {
       // recycle). Re-resolve via the data-recome-id attribute.
       const el = document.querySelector<HTMLElement>(`[data-recome-id="${CSS.escape(c.id)}"]`);
       if (!el) continue;
+      const topics = score.matchedTopics ?? [];
       renderBadge({
         el,
         verdict: score.verdict,
         score: score.score,
         reason: score.reason,
+        matchedTopics: topics,
+        onFeedback: topics.length > 0 ? (kind) => this.sendFeedback(kind, topics) : undefined,
       });
     }
 
     // If more cards accumulated during the round-trip, keep going.
     if (this.pending.size > 0) this.scheduleFlush();
+  }
+
+  /**
+   * Explicit feedback from a badge action (PRODUCT.md P1 "explicit signals"):
+   * boost = "more like this", block = "not for me". These become ordinary
+   * signals through the same queue as capture — the graph learns; nothing is
+   * filtered client-side. FLUSH_NOW so the sidebar reflects it within seconds.
+   */
+  private sendFeedback(kind: 'boost' | 'block', topics: string[]): void {
+    void sendMessage('CAPTURE_SIGNAL', {
+      signal: {
+        kind,
+        pageUrl: location.href,
+        platform: this.surface.platform,
+        topics: topics.map((name) => ({ name })),
+      },
+    }).then(() => sendMessage('FLUSH_NOW', undefined));
   }
 }

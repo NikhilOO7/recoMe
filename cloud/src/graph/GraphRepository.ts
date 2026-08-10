@@ -474,12 +474,19 @@ export class GraphRepository {
     limit = 10,
   ): Promise<Array<{ topicName: string; strength: number; lastSeen: number }>> {
     return this.neo4j.read(async (tx) => {
+      // Blocked topics are excluded outright; boosted topics get a fixed
+      // ranking lift so an explicit "more like this" outweighs passive dwell.
+      // Until 2026-08-10 BOOSTS was write-only — edges recorded, never read.
       const result = await tx.run(
         `
         MATCH (u:User { id: $userId })-[r:HAS_INTENT]->(t:Topic)
         WHERE NOT EXISTS { (u)-[:BLOCKS]->(t) }
-        RETURN t.name AS topicName, r.strength AS strength, r.lastSeen AS lastSeen
-        ORDER BY r.strength DESC, r.lastSeen DESC
+        OPTIONAL MATCH (u)-[b:BOOSTS]->(t)
+        RETURN t.name AS topicName,
+               r.strength AS strength,
+               r.lastSeen AS lastSeen,
+               r.strength + (CASE WHEN b IS NULL THEN 0.0 ELSE 0.25 END) AS effective
+        ORDER BY effective DESC, r.lastSeen DESC
         LIMIT $limit
         `,
         { userId, limit: i(limit) },

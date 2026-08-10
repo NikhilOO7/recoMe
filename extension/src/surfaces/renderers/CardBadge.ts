@@ -114,6 +114,41 @@ function ensureStyles(): void {
       opacity: 0.7;
       filter: grayscale(0.2);
     }
+    .recome-feedback {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+      pointer-events: auto;
+    }
+    .recome-fb-btn {
+      appearance: none;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 999px;
+      cursor: pointer;
+      border: 1px solid rgba(94,234,212,0.35);
+      background: rgba(94,234,212,0.10);
+      color: #5eead4;
+      transition: background .12s, border-color .12s;
+    }
+    .recome-fb-btn:hover { background: rgba(94,234,212,0.22); }
+    .recome-fb-btn.recome-fb-block {
+      border-color: rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.65);
+    }
+    .recome-fb-btn.recome-fb-block:hover {
+      border-color: rgba(251,113,133,0.45);
+      color: #fb7185;
+      background: rgba(251,113,133,0.08);
+    }
+    .recome-fb-done {
+      font-size: 11px;
+      color: rgba(255,255,255,0.65);
+      margin-top: 8px;
+    }
   `;
   document.head.appendChild(style);
 }
@@ -125,9 +160,22 @@ export interface RenderInput {
   reason: string;
   /** Always show the reasoning bar (true for PDP-style single-card overlays). */
   alwaysShowReason?: boolean;
+  /** Graph topics the card matched — the targets of the feedback actions. */
+  matchedTopics?: string[];
+  /** When set (and matchedTopics is non-empty), the reasoning bar grows
+   *  "More like this" / "Not for me" actions emitting boost/block signals. */
+  onFeedback?: (kind: 'boost' | 'block') => void;
 }
 
-export function renderBadge({ el, verdict, score, reason, alwaysShowReason }: RenderInput): void {
+export function renderBadge({
+  el,
+  verdict,
+  score,
+  reason,
+  alwaysShowReason,
+  matchedTopics,
+  onFeedback,
+}: RenderInput): void {
   ensureStyles();
 
   // Make sure the card is the positioning anchor.
@@ -156,9 +204,53 @@ export function renderBadge({ el, verdict, score, reason, alwaysShowReason }: Re
   if (reason) {
     const note = document.createElement('div');
     note.className = 'recome-reasoning';
-    note.textContent = reason;
+    const text = document.createElement('div');
+    text.textContent = reason;
+    note.appendChild(text);
+
+    // Explicit-feedback actions: only when we know which graph topics this
+    // card matched — feedback always targets real topics, never guesses.
+    if (onFeedback && matchedTopics && matchedTopics.length > 0 && verdict !== 'filtered') {
+      const topicLabel = matchedTopics[0]!;
+      const actions = document.createElement('div');
+      actions.className = 'recome-feedback';
+
+      const boost = document.createElement('button');
+      boost.className = 'recome-fb-btn';
+      boost.textContent = '＋ More like this';
+      boost.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onFeedback('boost');
+        confirmFeedback(actions, `Noted — boosted “${topicLabel}” in your graph.`);
+      });
+
+      const block = document.createElement('button');
+      block.className = 'recome-fb-btn recome-fb-block';
+      block.textContent = '－ Not for me';
+      block.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onFeedback('block');
+        el.classList.add('recome-filtered');
+        confirmFeedback(actions, `Got it — “${topicLabel}” won’t drive suggestions anymore.`);
+      });
+
+      actions.appendChild(boost);
+      actions.appendChild(block);
+      note.appendChild(actions);
+    }
+
     el.appendChild(note);
   }
+}
+
+/** Swap the action buttons for a one-line confirmation. */
+function confirmFeedback(actionsEl: HTMLElement, message: string): void {
+  const done = document.createElement('div');
+  done.className = 'recome-fb-done';
+  done.textContent = message;
+  actionsEl.replaceWith(done);
 }
 
 export function clearAllBadges(): void {

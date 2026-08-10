@@ -234,6 +234,8 @@ export interface CardScore {
   score: number;
   verdict: CardVerdict;
   reason: string;
+  /** Graph topics the card matched (≤3, strongest first). Absent on older clouds. */
+  matchedTopics?: string[];
 }
 
 export async function scoreCards(input: {

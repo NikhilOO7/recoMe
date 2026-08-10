@@ -45,6 +45,12 @@ export interface CardScore {
   score: number;
   verdict: CardVerdict;
   reason: string;
+  /**
+   * Graph topics this card matched, strongest first (≤3). The client's
+   * feedback actions (More like this / Not for me) attach boost/block
+   * signals to exactly these topics — never to invented ones.
+   */
+  matchedTopics: string[];
 }
 
 export interface IntentRow {
@@ -145,7 +151,9 @@ export class CardScorer {
     const topMatches = matches.sort((a, b) => b.w - a.w).slice(0, 3);
     let reason: string;
     if (verdict === 'filtered') {
-      reason = 'Unverified claims detected. Hidden by GuardianAgent.';
+      // Honest attribution: this is the deterministic claim filter, not an
+      // agent run (the old copy credited GuardianAgent, which never ran here).
+      reason = 'Unverified marketing claims detected — dimmed by the claim filter.';
     } else if (topMatches.length === 0) {
       reason = 'No signal from your graph yet — neutral.';
     } else if (verdict === 'relevant') {
@@ -158,7 +166,13 @@ export class CardScorer {
       reason = `Limited evidence in your specific context for ${topMatches[0]!.topic}.`;
     }
 
-    return { id: card.id, score: Number(score.toFixed(2)), verdict, reason };
+    return {
+      id: card.id,
+      score: Number(score.toFixed(2)),
+      verdict,
+      reason,
+      matchedTopics: topMatches.map((m) => m.topic),
+    };
   }
 
   /**

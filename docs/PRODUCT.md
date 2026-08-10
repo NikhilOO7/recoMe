@@ -81,7 +81,7 @@ Each pillar lists: **Now** (verified against code 2026-08-09), **Next** (committ
 - Capture QA harness: per-platform fixture pages + selector health telemetry so a platform redesign is detected within a day, not discovered by silence.
   **Future:**
 - **Imports v2** (returns from v1, as a web/PWA surface per HLD §3, not an extension concern): Google Takeout (YouTube history), Spotify, Netflix, Reddit saved, Amazon orders. Each import is a batch of ordinary signals through the same pipeline — no special-case graph writes.
-- **Explicit signals:** lightweight “More like this / Not for me” on in-page cards emitting `boost`/`block` signal kinds (the graph edges already exist, unused). This is the return of v1's feed control, rebuilt the v2 way: explicit signals enrich the graph; they do not create a client-side filtering engine.
+- **Explicit signals:** ✅ _Shipped 2026-08-10._ “More like this / Not for me” actions on card badges emit `boost`/`block` signals targeting the card's matched graph topics (CardScorer now returns `matchedTopics`; feedback only ever targets real topics). Server made both edges real: BLOCKS already excluded topics from intents; BOOSTS was write-only and now lifts ranking (+0.25 effective strength in `getTopIntents`). Immediate FLUSH_NOW so the sidebar updates in seconds. Also fixed en route: the claim-filter reason falsely credited GuardianAgent.
 - **Email newsletter capture** (forward-to-address ingest) — high signal density for learning/finance interests. Requires its own eligibility rules; not before Trust §P6 push/pref-center work.
 
 ### P2 · The Interest Graph

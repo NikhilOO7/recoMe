@@ -58,6 +58,71 @@ describe('CardBadge', () => {
     expect(el.classList.contains('recome-show-reason')).toBe(true);
   });
 
+  test('feedback actions render only with matched topics and a callback', () => {
+    const el = host();
+    renderBadge({ el, verdict: 'relevant', score: 0.8, reason: 'r', matchedTopics: [] });
+    expect(el.querySelector('.recome-feedback')).toBeNull();
+
+    const el2 = host();
+    renderBadge({
+      el: el2,
+      verdict: 'relevant',
+      score: 0.8,
+      reason: 'r',
+      matchedTopics: ['standing desks'],
+      onFeedback: () => undefined,
+    });
+    expect(el2.querySelector('.recome-feedback')).not.toBeNull();
+    expect(el2.querySelectorAll('.recome-fb-btn')).toHaveLength(2);
+  });
+
+  test('boost click fires the callback and swaps actions for a confirmation', () => {
+    const el = host();
+    const calls: string[] = [];
+    renderBadge({
+      el,
+      verdict: 'relevant',
+      score: 0.8,
+      reason: 'r',
+      matchedTopics: ['standing desks'],
+      onFeedback: (k) => calls.push(k),
+    });
+    (el.querySelector('.recome-fb-btn') as HTMLButtonElement).click();
+    expect(calls).toEqual(['boost']);
+    expect(el.querySelector('.recome-feedback')).toBeNull();
+    expect(el.querySelector('.recome-fb-done')?.textContent).toContain('standing desks');
+  });
+
+  test('block click fires the callback, dims the card, and confirms', () => {
+    const el = host();
+    const calls: string[] = [];
+    renderBadge({
+      el,
+      verdict: 'neutral',
+      score: 0.4,
+      reason: 'r',
+      matchedTopics: ['standing desks'],
+      onFeedback: (k) => calls.push(k),
+    });
+    (el.querySelector('.recome-fb-block') as HTMLButtonElement).click();
+    expect(calls).toEqual(['block']);
+    expect(el.classList.contains('recome-filtered')).toBe(true);
+    expect(el.querySelector('.recome-fb-done')?.textContent).toContain('won’t drive suggestions');
+  });
+
+  test('filtered verdict never shows feedback actions', () => {
+    const el = host();
+    renderBadge({
+      el,
+      verdict: 'filtered',
+      score: 0,
+      reason: 'claims',
+      matchedTopics: ['x'],
+      onFeedback: () => undefined,
+    });
+    expect(el.querySelector('.recome-feedback')).toBeNull();
+  });
+
   test('clearAllBadges removes badges and host marker classes', () => {
     const el1 = host();
     const el2 = host();
