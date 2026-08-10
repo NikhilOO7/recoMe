@@ -1,3 +1,6 @@
+/* eslint-disable no-console -- this file IS the sanctioned console gateway;
+   everything else logs through it, which is what lets the no-console rule
+   hold everywhere else. */
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 const LEVEL_ORDER: Record<LogLevel, number> = {

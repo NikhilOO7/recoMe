@@ -1,5 +1,13 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ConciergeAgent } from '../concierge/ConciergeAgent.js';
+
+// The Watchlist module is Prisma-backed; these tests exercise Concierge's
+// pricing/verdict logic, not persistence, so it's mocked to an empty list —
+// the suite must pass on a clean checkout with no database running (D11).
+vi.mock('../concierge/Watchlist.js', () => ({
+  listWatchlist: vi.fn(async () => []),
+  updateWatchlistPrice: vi.fn(async () => undefined),
+}));
 import {
   StubPriceFetcher,
   setPriceFetcher,

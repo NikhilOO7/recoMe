@@ -4,6 +4,7 @@ import { ConciergeAgent } from './concierge/ConciergeAgent.js';
 import { CuratorAgent } from './curator/CuratorAgent.js';
 import { DecisionAgent } from './decision/DecisionAgent.js';
 import { CurriculumAgent } from './curriculum/CurriculumAgent.js';
+import { SynthesistAgent } from './synthesist/SynthesistAgent.js';
 import { logger } from '../observability/logger.js';
 
 /**
@@ -25,6 +26,7 @@ export function bootAgents(): void {
   registry.register(new CuratorAgent());
   registry.register(new DecisionAgent());
   registry.register(new CurriculumAgent());
+  registry.register(new SynthesistAgent());
   setAgentRegistry(registry);
   logger.info({ count: registry.names().length, agents: registry.names() }, 'agents booted');
 }

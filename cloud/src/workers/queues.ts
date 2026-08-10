@@ -18,6 +18,7 @@ export const AGENTS_QUEUE = 'agents-scheduled';
 export type AgentJobName =
   | 'curator-tick'
   | 'concierge-sweep-tick'
+  | 'synthesist-weekly-tick'
   | 'tenant-usage-rollup-tick'
   | 'email-weekly-digest-tick';
 

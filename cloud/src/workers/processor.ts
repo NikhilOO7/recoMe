@@ -46,6 +46,9 @@ export function bootProcessor(connection: ConnectionOptions): Worker<TickPayload
         case 'concierge-sweep-tick':
           await runConciergeSweepTick(job);
           return;
+        case 'synthesist-weekly-tick':
+          await runSynthesistTick(job);
+          return;
         case 'tenant-usage-rollup-tick':
           await runTenantUsageRollupTick(job);
           return;
@@ -98,6 +101,28 @@ async function runCuratorTick(job: Job<TickPayload, void, string>): Promise<void
     logger.debug({ userId, agent: 'curator', status }, 'curator tick processed user');
   });
   logger.info({ jobId: job.id, users: userIds.length }, 'curator tick fan-out done');
+}
+
+async function runSynthesistTick(job: Job<TickPayload, void, string>): Promise<void> {
+  const agent = maybeAgentRegistry()?.byName('synthesist');
+  if (!agent) {
+    logger.warn('synthesist tick: agent registry not booted, skipping');
+    return;
+  }
+  // Same population as Curator: subscribed users plus anyone active in the
+  // last 60 days. run() skips users with no trails; Guardian's 144h throttle
+  // makes a duplicate tick a no-op.
+  const userIds = await eligibleUsersForCurator();
+  await fanOut(userIds, async (userId) => {
+    const ctx: AgentContext = {
+      userId,
+      trigger: 'scheduled',
+      now: new Date(),
+    };
+    const status = await getAgentRunner().runOne(agent, ctx);
+    logger.debug({ userId, agent: 'synthesist', status }, 'synthesist tick processed user');
+  });
+  logger.info({ jobId: job.id, users: userIds.length }, 'synthesist tick fan-out done');
 }
 
 async function runTenantUsageRollupTick(job: Job<TickPayload, void, string>): Promise<void> {

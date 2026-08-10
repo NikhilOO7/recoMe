@@ -35,6 +35,12 @@ const TENANT_ROLLUP_CRON = '5 1 * * *';
  * is inside the current week-bucket, so a same-day re-run is a no-op.
  */
 const WEEKLY_DIGEST_CRON = '0 14 * * 0';
+/**
+ * Synthesist runs Sundays 13:00 UTC — one hour BEFORE the digest tick so the
+ * weekly_summary event exists when the digest email is assembled. Guardian's
+ * 144h synthesist throttle makes a re-fired cron a no-op.
+ */
+const SYNTHESIST_CRON = '0 13 * * 0';
 
 export async function registerSchedules(queue: Queue<TickPayload, void, string>): Promise<void> {
   await Promise.all([
@@ -63,6 +69,14 @@ export async function registerSchedules(queue: Queue<TickPayload, void, string>)
       },
     ),
     queue.upsertJobScheduler(
+      `synthesist-weekly:${SYNTHESIST_CRON}`,
+      { pattern: SYNTHESIST_CRON, tz: 'UTC' },
+      {
+        name: 'synthesist-weekly-tick',
+        data: { scheduledAt: new Date().toISOString() },
+      },
+    ),
+    queue.upsertJobScheduler(
       `weekly-digest:${WEEKLY_DIGEST_CRON}`,
       { pattern: WEEKLY_DIGEST_CRON, tz: 'UTC' },
       {
@@ -75,6 +89,7 @@ export async function registerSchedules(queue: Queue<TickPayload, void, string>)
     {
       curator: CURATOR_CRON,
       concierge: CONCIERGE_CRON,
+      synthesist: SYNTHESIST_CRON,
       tenantRollup: TENANT_ROLLUP_CRON,
       weeklyDigest: WEEKLY_DIGEST_CRON,
     },

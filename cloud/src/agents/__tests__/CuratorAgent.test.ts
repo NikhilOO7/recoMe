@@ -113,7 +113,7 @@ describe('Curator tools — fixture source', () => {
     const fresh = await findFreshForTopic(
       'distributed-systems',
       NOW_MS - 10 * 86_400_000,
-      {},
+      { nowMs: NOW_MS },
       source,
     );
     expect(fresh.map((i) => i.title)).toEqual(['A', 'B']);

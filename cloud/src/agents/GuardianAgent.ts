@@ -28,7 +28,10 @@ const DEFAULT_RECALL_MIN_GAP_HOURS = 84; // ~2/wk = at most one every 3.5 days
 // the daily cost cap for unlisted agents). Keep in lockstep with ADR-0012.
 const AGENT_MIN_GAP_HOURS: Readonly<Record<string, number>> = {
   recall: DEFAULT_RECALL_MIN_GAP_HOURS,
-  // concierge / curator / synthesist get their own values when shipped
+  // Synthesist is weekly by design; 144h (6 days) blocks double-sends when a
+  // cron re-fires while still allowing the Sunday slot to drift an hour.
+  synthesist: 144,
+  // concierge / curator get their own values when shipped
 };
 
 interface GuardianConfig {

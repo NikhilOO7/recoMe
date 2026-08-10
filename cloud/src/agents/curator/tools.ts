@@ -19,6 +19,13 @@ export interface FindFreshOpts {
   limit?: number;
   /** How long an item can have existed before we no longer call it "fresh". */
   maxAgeMs?: number;
+  /**
+   * Wall-clock for the freshness cutoff. Agents must pass ctx.now.getTime()
+   * (types.ts convention: no Date.now() inside agent code paths — it makes
+   * behavior untestable and time-dependent). Defaults to Date.now() only for
+   * non-agent callers.
+   */
+  nowMs?: number;
 }
 
 export async function findFreshForTopic(
@@ -30,7 +37,7 @@ export async function findFreshForTopic(
   const limit = opts.limit ?? 5;
   const items = await source.fetchFreshFor(topicNormalizedName, sinceMs, limit);
   const maxAge = opts.maxAgeMs ?? 30 * 24 * 60 * 60 * 1000; // 30d
-  const cutoff = Date.now() - maxAge;
+  const cutoff = (opts.nowMs ?? Date.now()) - maxAge;
   return items
     .filter((i) => i.publishedAt > cutoff && i.publishedAt > sinceMs)
     .sort((a, b) => b.publishedAt - a.publishedAt)

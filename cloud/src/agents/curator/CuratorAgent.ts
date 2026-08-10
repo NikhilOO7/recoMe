@@ -74,7 +74,10 @@ export class CuratorAgent extends BaseAgent {
     const scored: ScoredItem[] = [];
     for (const trail of trails) {
       const sinceMs = trail.lastSeenAt;
-      const fresh = await findFreshForTopic(trail.topicNormalizedName, sinceMs, { limit: 3 });
+      const fresh = await findFreshForTopic(trail.topicNormalizedName, sinceMs, {
+        limit: 3,
+        nowMs: ctx.now.getTime(),
+      });
       for (const item of fresh) {
         const dormancyMs = Math.max(0, now.getTime() - trail.lastSeenAt);
         // Dormant-bonus: 0 if fresh-touched, 1.5× at 7d+, plateaus past 30d.
