@@ -225,6 +225,175 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── IN-PAGE MOCKUP ─────────────────────────────────────────────
+          Faithful CSS recreation of the extension surfaces (Sidebar,
+          InsightCard, CardBadge) in their exact shipped palette. The
+          extension always renders dark, so this block paints explicit
+          colors — it depicts a screenshot, not themed site chrome. */}
+      <section className="py-24 border-t border-[var(--border)]">
+        <div className="max-w-6xl mx-auto px-6">
+          <p className="eyebrow text-[var(--accent)] mb-3">On the page</p>
+          <h2 className="section-title mb-5 max-w-3xl">You browse. RecoMe works in the margins.</h2>
+          <p className="text-[var(--muted)] mb-12 max-w-2xl leading-relaxed">
+            The extension draws three quiet surfaces onto the sites you already use — the sidebar
+            with your live graph, cards from agents when they have something, and a relevance badge
+            on results you researched. Nothing to open, nothing to maintain.
+          </p>
+
+          {/* Browser frame */}
+          <div className="rounded-2xl border border-[var(--border)] overflow-hidden shadow-2xl">
+            {/* Chrome bar */}
+            <div className="flex items-center gap-3 px-4 py-2.5 bg-[#161b23] border-b border-white/[0.06]">
+              <div className="flex gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+                <span className="w-3 h-3 rounded-full bg-[#febc2e]" />
+                <span className="w-3 h-3 rounded-full bg-[#28c840]" />
+              </div>
+              <div className="flex-1 max-w-md mx-auto bg-[#0a0d12] rounded-md px-3 py-1 text-[11px] font-mono text-white/40 text-center truncate">
+                amazon.com/s?k=standing+desk
+              </div>
+            </div>
+
+            {/* Page body: product column + sidebar column */}
+            <div className="grid md:grid-cols-[1fr_300px] gap-6 p-6 bg-[#0d1117]">
+              {/* Left: product card with badge + insight card */}
+              <div className="flex flex-col gap-5 min-w-0">
+                {/* Product card with CardBadge */}
+                <div className="rounded-xl bg-white/[0.04] border border-white/[0.07] p-4 flex gap-4">
+                  <div className="w-24 h-24 rounded-lg bg-white/[0.06] flex-shrink-0 grid place-items-center text-3xl">
+                    🪑
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="h-3.5 w-3/4 rounded bg-white/[0.12] mb-2" />
+                    <div className="h-3 w-1/2 rounded bg-white/[0.07] mb-3" />
+                    <div className="h-3 w-1/3 rounded bg-white/[0.07] mb-4" />
+                    {/* CardBadge */}
+                    <div className="inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 bg-[#10151d]/95 border border-[#5eead4]/35">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#5eead4]" />
+                      <span className="text-[11px] font-semibold text-[#5eead4]">Relevant</span>
+                      <span className="text-[11px] text-white/55">
+                        matches your standing-desks trail
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Skeleton second product row */}
+                <div className="rounded-xl bg-white/[0.03] border border-white/[0.05] p-4 flex gap-4 opacity-60">
+                  <div className="w-24 h-24 rounded-lg bg-white/[0.05] flex-shrink-0" />
+                  <div className="flex-1 pt-1">
+                    <div className="h-3.5 w-2/3 rounded bg-white/[0.09] mb-2" />
+                    <div className="h-3 w-1/2 rounded bg-white/[0.06] mb-3" />
+                    <div className="h-3 w-1/4 rounded bg-white/[0.06]" />
+                  </div>
+                </div>
+
+                {/* InsightCard — Recall emission */}
+                <div className="rounded-xl p-4 bg-gradient-to-br from-[#10151d]/[0.98] to-[#0a0d12]/[0.98] border border-[#5eead4]/35 flex gap-3.5 max-w-md">
+                  <div className="w-8 h-8 rounded-lg grid place-items-center text-sm font-black bg-[#5eead4]/15 border border-[#5eead4]/40 text-[#5eead4] flex-shrink-0">
+                    ↻
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-bold tracking-[0.12em] uppercase text-[#5eead4] mb-1">
+                      Recall
+                    </div>
+                    <p className="text-[13px] font-semibold text-white/90 leading-snug mb-1">
+                      You watched two reviews of this desk — three weeks ago.
+                    </p>
+                    <p className="text-[12px] text-white/55 leading-relaxed mb-2.5">
+                      The r/StandingDesks thread you dwelled on called out this exact model&rsquo;s
+                      motor under load.
+                    </p>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] uppercase tracking-wider text-white/40">
+                        From your graph:
+                      </span>
+                      <span className="text-[11px] px-2 py-0.5 rounded-full text-[#5eead4] bg-[#5eead4]/10 border border-[#5eead4]/25">
+                        standing desks
+                      </span>
+                      <span className="text-[11px] px-2 py-0.5 rounded-full text-[#5eead4] bg-[#5eead4]/10 border border-[#5eead4]/25">
+                        r/StandingDesks thread
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Sidebar mockup */}
+              <div className="rounded-[14px] bg-gradient-to-b from-[#10151d] to-[#0a0d12] border border-[#5eead4]/[0.18] overflow-hidden self-start hidden md:block">
+                <div className="flex items-center justify-between px-3.5 py-3 border-b border-white/[0.06] bg-[#5eead4]/[0.04]">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#10b981]" />
+                    <span className="text-[13px] font-bold text-white">RecoMe Active</span>
+                  </div>
+                  <span className="text-white/40 text-xs">⌄</span>
+                </div>
+                <div className="p-3">
+                  <div className="rounded-[10px] border border-[#5eead4]/[0.18] bg-gradient-to-br from-[#0d9488]/10 to-[#5eead4]/[0.04] p-3 mb-2.5">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.07em] text-[#5eead4] mb-2">
+                      Interest graph
+                    </div>
+                    {[
+                      ['standing desks', 0.85],
+                      ['mechanical keyboards', 0.61],
+                      ['espresso grinders', 0.55],
+                    ].map(([name, w]) => (
+                      <div key={String(name)} className="mb-2 last:mb-0">
+                        <div className="flex justify-between items-baseline mb-1">
+                          <span className="text-[12px] text-white/85">{name}</span>
+                          <span className="text-[10.5px] font-mono text-white/50">
+                            {Number(w).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="h-1 rounded-sm bg-white/[0.06] overflow-hidden">
+                          <div
+                            className="h-full rounded-sm bg-gradient-to-r from-[#5eead4] to-[#a78bfa]"
+                            style={{ width: `${Number(w) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="rounded-[10px] border border-[#5eead4]/[0.18] bg-gradient-to-br from-[#0d9488]/10 to-[#5eead4]/[0.04] p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[10px] font-bold uppercase tracking-[0.07em] text-[#5eead4]">
+                        Agents
+                      </span>
+                      <span className="min-w-[18px] h-[18px] px-1.5 rounded-full bg-[#5eead4] text-[#0a0d12] text-[10.5px] font-extrabold grid place-items-center">
+                        2
+                      </span>
+                    </div>
+                    {[
+                      ['Recall', '2 new insights ready', '#10b981'],
+                      ['Curator', 'Watching your graph', '#10b981'],
+                      ['Decision', 'Ask about this page', '#60a5fa'],
+                    ].map(([name, sub, dot]) => (
+                      <div
+                        key={String(name)}
+                        className="flex gap-2.5 py-1.5 border-b border-white/[0.04] last:border-0"
+                      >
+                        <span
+                          className="w-1.5 h-1.5 rounded-full mt-[7px] flex-shrink-0"
+                          style={{ background: String(dot) }}
+                        />
+                        <div>
+                          <div className="text-[12px] font-semibold text-white/85">{name}</div>
+                          <div className="text-[11px] text-white/50">{sub}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p className="text-[12px] text-[var(--muted-2)] mt-4 text-center">
+            Illustrative mock-up of the shipped surfaces — example topics, not anyone&rsquo;s data.
+          </p>
+        </div>
+      </section>
+
       {/* ── HOW IT WORKS ───────────────────────────────────────────── */}
       <section id="how" className="py-24 border-t border-[var(--border)] bg-[var(--surface)]/40">
         <div className="max-w-6xl mx-auto px-6">

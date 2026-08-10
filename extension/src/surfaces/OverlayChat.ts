@@ -377,11 +377,11 @@ const CHAT_CSS = `
 :host { all: initial; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 .rcm-chat {
-  background: linear-gradient(180deg, #0d1a30 0%, #060d1a 100%);
+  background: linear-gradient(180deg, #10151d 0%, #0a0d12 100%);
   border: 1px solid rgba(94,234,212,0.22);
   border-radius: 14px;
   color: #fff;
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-size: 13px;
   line-height: 1.55;
   height: 100%;
@@ -394,12 +394,12 @@ const CHAT_CSS = `
   padding: 12px 14px;
   border-bottom: 1px solid rgba(255,255,255,0.06);
   display: flex; align-items: center; justify-content: space-between;
-  background: rgba(35, 86, 232, 0.06);
+  background: rgba(94,234,212,0.05);
 }
 .rcm-chat-title { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; }
 .rcm-chat-dot {
-  width: 8px; height: 8px; border-radius: 50%; background: #2356e8;
-  box-shadow: 0 0 0 3px rgba(35, 86, 232, 0.18);
+  width: 8px; height: 8px; border-radius: 50%; background: #5eead4;
+  box-shadow: 0 0 0 3px rgba(94,234,212,0.20);
 }
 .rcm-chat-sub {
   font-weight: 500; font-size: 11px; color: rgba(255,255,255,0.45);
@@ -461,8 +461,8 @@ const CHAT_CSS = `
 }
 a.rcm-chat-src:hover { background: rgba(94,234,212,0.18); }
 .rcm-chat-row.rcm-user .rcm-chat-text {
-  background: linear-gradient(135deg, #2356e8 0%, #4a73ed 100%);
-  color: #fff;
+  background: #5eead4;
+  color: #04211c;
   border-bottom-right-radius: 4px;
 }
 .rcm-chat-row.rcm-agent .rcm-chat-text {
@@ -505,7 +505,7 @@ a.rcm-chat-src:hover { background: rgba(94,234,212,0.18); }
   width: 34px; height: 34px;
   border-radius: 8px;
   background: #5eead4;
-  color: #060d1a;
+  color: #0a0d12;
   border: 0;
   font-size: 16px;
   font-weight: 800;

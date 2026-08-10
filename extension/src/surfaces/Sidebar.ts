@@ -370,11 +370,11 @@ const SIDEBAR_CSS = `
 :host { all: initial; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 .rcm {
-  background: linear-gradient(180deg, #0d1a30 0%, #060d1a 100%);
+  background: linear-gradient(180deg, #10151d 0%, #0a0d12 100%);
   border: 1px solid rgba(94,234,212,0.18);
   border-radius: 14px;
   color: #fff;
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-size: 13px;
   line-height: 1.5;
   overflow: hidden;
@@ -432,7 +432,7 @@ const SIDEBAR_CSS = `
 .rcm-topic { font-size: 12.5px; font-weight: 500; color: rgba(255,255,255,0.85); }
 .rcm-weight { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; color: rgba(255,255,255,0.55); }
 .rcm-bar { height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
-.rcm-bar-fill { height: 100%; background: linear-gradient(90deg, #5eead4 0%, #2356e8 100%); border-radius: 2px; }
+.rcm-bar-fill { height: 100%; background: linear-gradient(90deg, #5eead4 0%, #a78bfa 100%); border-radius: 2px; }
 
 .rcm-agent {
   display: flex; align-items: flex-start; gap: 10px; padding: 8px 0;
@@ -447,7 +447,7 @@ const SIDEBAR_CSS = `
 .rcm-inbox-badge {
   display: none; align-items: center; justify-content: center;
   min-width: 18px; height: 18px; padding: 0 6px;
-  background: #5eead4; color: #060d1a;
+  background: #5eead4; color: #0a0d12;
   border-radius: 9px; font-size: 10.5px; font-weight: 800;
   margin-left: auto;
 }
@@ -497,7 +497,7 @@ const SIDEBAR_CSS = `
 
 /* ── Help panel ─────────────────────────────────────────────────── */
 .rcm-help {
-  background: linear-gradient(135deg, rgba(35,86,232,0.14) 0%, rgba(94,234,212,0.05) 100%);
+  background: linear-gradient(135deg, rgba(167,139,250,0.12) 0%, rgba(94,234,212,0.05) 100%);
   border: 1px solid rgba(94,234,212,0.28);
   border-radius: 10px;
   padding: 14px 14px 12px;
@@ -533,7 +533,7 @@ const SIDEBAR_CSS = `
 .rcm-intents-empty { display: flex; flex-direction: column; gap: 10px; }
 .rcm-intents-demos { display: flex; flex-direction: column; gap: 6px; opacity: 0.45; pointer-events: none; }
 .rcm-row-demo .rcm-bar-fill {
-  background: linear-gradient(90deg, rgba(94,234,212,0.7) 0%, rgba(35,86,232,0.7) 100%);
+  background: linear-gradient(90deg, rgba(94,234,212,0.7) 0%, rgba(167,139,250,0.7) 100%);
 }
 .rcm-intents-hint {
   font-size: 11.5px;

@@ -64,7 +64,7 @@ function ensureStyles(): void {
       z-index: 999;
       padding: 4px 10px;
       border-radius: 999px;
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       font-size: 11.5px;
       font-weight: 700;
       letter-spacing: 0.2px;
@@ -87,9 +87,9 @@ function ensureStyles(): void {
       right: 0;
       bottom: 0;
       padding: 10px 12px;
-      background: linear-gradient(to bottom, rgba(6,13,26,0) 0%, rgba(6,13,26,0.92) 35%, rgba(6,13,26,0.97) 100%);
+      background: linear-gradient(to bottom, rgba(10,13,18,0) 0%, rgba(10,13,18,0.92) 35%, rgba(10,13,18,0.97) 100%);
       color: rgba(255,255,255,0.92);
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       font-size: 12.5px;
       line-height: 1.5;
       pointer-events: none;

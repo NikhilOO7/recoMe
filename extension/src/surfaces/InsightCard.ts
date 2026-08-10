@@ -26,7 +26,7 @@ const KIND_META: Record<string, { label: string; accent: string; icon: string; c
   deal_drop: { label: 'Concierge', accent: '#10b981', icon: '$', cta: 'View deal' },
   new_alternative: { label: 'Concierge', accent: '#10b981', icon: '⇄', cta: 'View alternative' },
   fresh_content: { label: 'Curator', accent: '#8b5cf6', icon: '★', cta: 'View' },
-  decision_nudge: { label: 'Decision', accent: '#2356e8', icon: '?', cta: 'Decide' },
+  decision_nudge: { label: 'Decision', accent: '#60a5fa', icon: '?', cta: 'Decide' },
   weekly_summary: { label: 'Synthesist', accent: '#5eead4', icon: '∑', cta: 'Read summary' },
 };
 
@@ -53,11 +53,11 @@ function ensureStyles(): void {
       align-items: flex-start;
       gap: 12px;
       padding: 14px 16px;
-      background: linear-gradient(135deg, rgba(13,26,48,0.97) 0%, rgba(6,13,26,0.97) 100%);
+      background: linear-gradient(135deg, rgba(16,21,29,0.97) 0%, rgba(10,13,18,0.97) 100%);
       border: 1px solid rgba(94,234,212,0.22);
       border-radius: 12px;
       color: #fff;
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       font-size: 13.5px;
       line-height: 1.5;
       backdrop-filter: blur(10px);
@@ -96,7 +96,7 @@ function ensureStyles(): void {
       transition: transform .08s, background .15s;
     }
     .recome-insight-btn:active { transform: translateY(1px); }
-    .recome-insight-primary { background: #fff; color: #060d1a; }
+    .recome-insight-primary { background: #fff; color: #0a0d12; }
     .recome-insight-primary:hover { background: #d6f5ee; }
     .recome-insight-dismiss {
       background: transparent;

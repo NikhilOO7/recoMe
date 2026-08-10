@@ -34,11 +34,11 @@ function ensureStyles(): void {
       align-items: flex-start;
       gap: 12px;
       padding: 14px 16px;
-      background: linear-gradient(135deg, rgba(13,26,48,0.97) 0%, rgba(6,13,26,0.97) 100%);
-      border: 1px solid rgba(35,86,232,0.5);
+      background: linear-gradient(135deg, rgba(16,21,29,0.97) 0%, rgba(10,13,18,0.97) 100%);
+      border: 1px solid rgba(94,234,212,0.35);
       border-radius: 12px;
       color: #fff;
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       font-size: 13.5px;
       line-height: 1.5;
       backdrop-filter: blur(10px);
@@ -72,7 +72,7 @@ function ensureStyles(): void {
       display: flex; gap: 8px; align-items: center; margin-top: 2px;
     }
     .recome-welcome-btn {
-      background: #5eead4; color: #060d1a;
+      background: #5eead4; color: #0a0d12;
       border: 0; border-radius: 8px;
       padding: 8px 14px;
       font-family: inherit; font-size: 12.5px; font-weight: 700;
