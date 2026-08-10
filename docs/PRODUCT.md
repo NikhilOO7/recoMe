@@ -74,13 +74,25 @@ Each pillar lists: **Now** (verified against code 2026-08-09), **Next** (committ
 ### P1 · Capture
 
 **Now:** MV3 extension with per-platform extractors for 15 platforms (Amazon/YouTube/Reddit substantial; most others single-selector; Facebook/Instagram/TikTok fragile and default-off). Two signal kinds emitted: `view` (10s dwell) and `search`. IndexedDB outbound queue, 30s batch upload. PWA share-target (`/paste`) live; Android share intent live; iOS share extension is a documented Xcode scaffold.
+**The mobile capture pyramid (decided 2026-08-10):** most people live in mobile apps, where passive third-party capture is impossible by OS design — and the workarounds (accessibility-service abuse, VPN sniffing) are trust poison we will never touch. On mobile, the capture surface is not the device; it is the platforms' own record of the user's activity, granted by the user. Channels, ranked by signal-per-user-effort:
+
+1. **OAuth connectors** (connect once, zero effort after) — server-side polling of official APIs (Spotify listens, Reddit saves, YouTube likes/subscriptions) mapped into ordinary signals through the same ingestion pipeline. The strategic unlock for mobile-first users; scheduled R3.
+2. **Takeout imports** (one upload, retroactive) — years of history from platform export files; the cold-start killer. Pairs with connectors: import backfills, connector keeps it current.
+3. **Share sheet** (one tap, in-the-moment) — an explicit share from any app is a STRONGER signal than passive dwell, not a consolation prize. Android live; iOS is an hour of Xcode from done.
+4. **Email ingest** (set up once) — newsletters + purchase receipts; gated on the notification pref-center (P6).
+5. **PWA /paste** (manual) — live.
+6. **iOS Safari Web Extension** (install once) — mobile-browser capture; our MV3 code ports. Post-launch.
+
+Also structural: every `/v1` tenant app is a mobile capture channel — distribution is capture (the dual-sided flywheel on mobile).
+
 **Next:**
 
 - Fix batch-poisoning drop (Defect D1) so all 15 platforms actually land.
 - iOS share extension: complete the prebuild + Xcode target flow; ship in TestFlight.
 - Capture QA harness: per-platform fixture pages + selector health telemetry so a platform redesign is detected within a day, not discovered by silence.
   **Future:**
-- **Imports v2** (returns from v1, as a web/PWA surface per HLD §3, not an extension concern): Google Takeout (YouTube history), Spotify, Netflix, Reddit saved, Amazon orders. Each import is a batch of ordinary signals through the same pipeline — no special-case graph writes.
+- **OAuth connectors v1 (R3):** Spotify + Reddit first (friendly APIs, exactly Aman's platforms), YouTube after. New cloud connector service: provider OAuth + encrypted token storage + refresh, BullMQ polling workers within provider rate limits, per-provider signal mapping. Connector events are ordinary signals — agents never know the source. Security surface (token custody, scope minimization, revocation) gets a design doc before code.
+- **Imports v2 (R3, with connectors):** Google Takeout (YouTube history), Netflix, Amazon orders as a web/PWA upload surface per HLD §3. Each import is a batch of ordinary signals through the same pipeline — no special-case graph writes.
 - **Explicit signals:** ✅ _Shipped 2026-08-10._ “More like this / Not for me” actions on card badges emit `boost`/`block` signals targeting the card's matched graph topics (CardScorer now returns `matchedTopics`; feedback only ever targets real topics). Server made both edges real: BLOCKS already excluded topics from intents; BOOSTS was write-only and now lifts ranking (+0.25 effective strength in `getTopIntents`). Immediate FLUSH_NOW so the sidebar updates in seconds. Also fixed en route: the claim-filter reason falsely credited GuardianAgent.
 - **Email newsletter capture** (forward-to-address ingest) — high signal density for learning/finance interests. Requires its own eligibility rules; not before Trust §P6 push/pref-center work.
 
@@ -162,12 +174,13 @@ Everything the demo and diligence touch is real or clearly labeled.
 ### R2 — Launch
 
 - Chrome Web Store listing live (screenshots produced, claims audited against this doc). Onboarding: sign-in → first-capture → first-Recall within 10 minutes of install.
-- Push delivery + digest live with preference center. Consumer Pro purchasable. iOS share extension in TestFlight.
+- Push delivery + digest live with preference center. Consumer Pro purchasable. iOS share extension in TestFlight — share-sheet capture is the mobile story at launch (capture pyramid tier 3).
 - **Exit:** installable by a stranger; first 100 external WAU; RAR baseline measured.
 
 ### R3 — The Graph Gets Real
 
-- Semantic ingest v2 (LLM entities + eval gate). Vector read path. Explicit boost/block signals from cards. Cross-platform linking v1 (YouTube↔Amazon).
+- Semantic ingest v2 (LLM entities + eval gate). Vector read path. Cross-platform linking v1 (YouTube↔Amazon). (Explicit boost/block signals shipped early, 2026-08-10.)
+- **Mobile capture tier 1–2:** OAuth connectors v1 (Spotify + Reddit) and Takeout imports — a mobile-first user with zero extension installs gets a real, growing graph.
 - Concierge live if Keepa license landed; otherwise stays honest-off.
 - **Exit:** RAR up ≥ 50% over R2 baseline on cohort comparison; entity precision ≥ 0.85 on the eval set.
 
