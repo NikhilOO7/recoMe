@@ -2,8 +2,11 @@
  * Cloud + web URLs. Override locally by setting in chrome.storage.local:
  *   chrome.storage.local.set({ recome_cloud_url: 'http://localhost:8080' })
  */
-export const CLOUD_URL_DEFAULT = 'https://api.recome.app';
-export const WEB_APP_URL_DEFAULT = 'https://recome.app';
+// Defaults point at the LIVE deployments. recome.app / api.recome.app are
+// not registered DNS yet (verified dead 2026-08-10) — when the domains land,
+// flip these back and keep the deployment hosts in manifest CSP as fallbacks.
+export const CLOUD_URL_DEFAULT = 'https://recome-api.fly.dev';
+export const WEB_APP_URL_DEFAULT = 'https://recome-web.vercel.app';
 
 export async function getCloudUrl(): Promise<string> {
   const r = await chrome.storage.local.get('recome_cloud_url');

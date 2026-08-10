@@ -10,6 +10,7 @@
  */
 
 import { sendMessage, type GetIntentsPayload, type GetInboxPayload } from '@shared/messages';
+import { getWebAppUrl } from '@shared/constants';
 import type { IntentRow, AgentInfo } from '@shared/CloudClient';
 import type { AgentEvent } from '@shared/types';
 import type { Workflow } from './workflows';
@@ -128,7 +129,7 @@ export class Sidebar {
     this.refs.statusDot.style.background = '#94a3b8';
     this.refs.statusLabel.textContent = 'Signed out';
     this.refs.nodesLine.textContent = '';
-    this.refs.sessionLine.textContent = 'Sign in on recome.app';
+    this.refs.sessionLine.textContent = 'Sign in via the RecoMe web app';
     this.refs.intentsList.innerHTML = '';
     this.refs.agentsList.innerHTML = '';
   }
@@ -211,8 +212,8 @@ export class Sidebar {
             <li><b>Agents.</b> Recall, Concierge, Curator, Decision, and Curriculum work the graph.</li>
             <li><b>Surfaces.</b> They speak to you here — badges on cards, insight cards bottom-left, chat via Ask Decision.</li>
           </ol>
-          <a class="rcm-help-link" href="https://recome.app/about" target="_blank" rel="noopener">
-            Learn more at recome.app/about →
+          <a class="rcm-help-link" href="#" target="_blank" rel="noopener">
+            Learn more: how RecoMe works →
           </a>
         </div>
         <div class="rcm-status-lines">
@@ -248,6 +249,13 @@ export class Sidebar {
     const collapseBtn = root.querySelector('.rcm-collapse') as HTMLButtonElement;
     const infoBtn = root.querySelector('.rcm-info') as HTMLButtonElement;
     const helpPanel = root.querySelector('.rcm-help') as HTMLDivElement;
+
+    // The web-app base is config (storage-overridable), so the help link is
+    // resolved at mount rather than hardcoded in the template.
+    const helpLink = root.querySelector('.rcm-help-link') as HTMLAnchorElement;
+    void getWebAppUrl().then((base) => {
+      helpLink.href = `${base}/how-it-works`;
+    });
 
     collapseBtn.addEventListener('click', () => {
       this.collapsed = !this.collapsed;
