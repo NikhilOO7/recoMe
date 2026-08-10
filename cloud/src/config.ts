@@ -101,6 +101,15 @@ const envSchema = z.object({
   INTELLIGENCE_AGENTS_PRICE_VENDOR: z.enum(['stub', 'keepa']).optional(),
   KEEPA_API_KEY: z.string().optional(),
 
+  // ── Curator content vendor ─────────────────────────────────────────────────
+  // Vendor selector: stub | rss.
+  //   - stub : deterministic fixtures with fabricated URLs. Blocked in prod
+  //            (CuratorAgent.contentSourceBlockedInProd) — fake sources must
+  //            never reach a real inbox.
+  //   - rss  : Google News RSS search per topic. Keyless, real URLs, cached
+  //            20min per topic, hard-timeout, never-throw.
+  INTELLIGENCE_AGENTS_CONTENT_SOURCE: z.enum(['stub', 'rss']).optional(),
+
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).optional(),
 });
 

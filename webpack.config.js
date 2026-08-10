@@ -10,12 +10,12 @@ module.exports = {
   mode: isDev ? 'development' : 'production',
   devtool: isDev ? 'cheap-module-source-map' : false,
 
+  // Popup removed 2026-08-10 (PRODUCT.md D3): it shipped unreachable — the
+  // action button opens the web app, which owns the inbox. Source archived
+  // in graveyard/2026-08-10-popup-removal/.
   entry: {
     background: './extension/src/background/index.ts',
     content: './extension/src/content/index.ts',
-    popup: './extension/src/popup/index.tsx',
-    // devtools removed from public build — admin panel only
-    // devtools: './extension/src/devtools/index.tsx',
   },
 
   output: {
@@ -30,13 +30,11 @@ module.exports = {
       // Shared packages
       '@schema': path.resolve(__dirname, 'packages/schema'),
       '@utils': path.resolve(__dirname, 'packages/utils'),
-      '@ui': path.resolve(__dirname, 'packages/ui'),
 
       // Extension
       '@shared': path.resolve(__dirname, 'extension/src/shared'),
       '@background': path.resolve(__dirname, 'extension/src/background'),
       '@content': path.resolve(__dirname, 'extension/src/content'),
-      '@popup': path.resolve(__dirname, 'extension/src/popup'),
     },
   },
 
@@ -60,19 +58,6 @@ module.exports = {
     }),
 
     new HtmlWebpackPlugin({
-      template: './public/popup.html',
-      filename: 'popup.html',
-      chunks: ['vendor', 'popup'],
-    }),
-
-    // devtools removed from public build — admin panel only
-    // new HtmlWebpackPlugin({
-    //   template: './public/devtools.html',
-    //   filename: 'devtools.html',
-    //   chunks: ['devtools'],
-    // }),
-
-    new HtmlWebpackPlugin({
       template: './public/callback.html',
       filename: 'callback.html',
       chunks: [],
@@ -87,17 +72,8 @@ module.exports = {
     }),
   ],
 
-  optimization: {
-    splitChunks: {
-      cacheGroups: {
-        vendor: {
-          test: /[\\/]node_modules[\\/](react|react-dom)[\\/]/,
-          name: 'vendor',
-          chunks: (chunk) => chunk.name === 'popup',
-        },
-      },
-    },
-  },
+  // No splitChunks: with the popup gone, no entry ships React — background
+  // and content stay single-file bundles.
 
   performance: {
     hints: 'warning',

@@ -49,7 +49,22 @@ export class CuratorAgent extends BaseAgent {
   readonly triggers = ['scheduled'] as const;
 
   override async canRun(ctx: AgentContext): Promise<boolean> {
+    if (this.contentSourceBlockedInProd()) return false;
     return ctx.trigger === 'scheduled';
+  }
+
+  /**
+   * Same law as Concierge's price vendor: fixture content carries fabricated
+   * URLs, and fake sources must never reach a real user's inbox ("never
+   * invent sources" — trust constraint #1). Prod requires the rss vendor.
+   */
+  private contentSourceBlockedInProd(): boolean {
+    const vendor = process.env.INTELLIGENCE_AGENTS_CONTENT_SOURCE ?? 'stub';
+    const blocked = process.env.NODE_ENV === 'production' && vendor === 'stub';
+    if (blocked) {
+      logger.warn({ vendor }, 'curator: stub content source blocked in production');
+    }
+    return blocked;
   }
 
   async run(ctx: AgentContext): Promise<AgentResult> {

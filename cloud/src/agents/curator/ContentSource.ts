@@ -1,4 +1,5 @@
 import { logger } from '../../observability/logger.js';
+import { RssContentSource } from './RssContentSource.js';
 
 /**
  * ContentSource — the interface Curator content-discovery tools compose
@@ -156,8 +157,10 @@ export function getContentSource(): ContentSource {
     case 'stub':
       svc = new StubContentSource();
       break;
-    // case 'rss-multi': svc = new RssMultiContentSource(...); break;       // v1.1
-    // case 'youtube':   svc = new YoutubeContentSource(...); break;
+    case 'rss':
+      svc = new RssContentSource();
+      break;
+    // case 'youtube': svc = new YoutubeContentSource(...); break;          // v1.1
     default:
       logger.warn({ vendor }, 'unknown content source, falling back to stub');
       svc = new StubContentSource();

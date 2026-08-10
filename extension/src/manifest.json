@@ -3,7 +3,7 @@
   "name": "RecoMe",
   "version": "2.0.0",
   "description": "Your personal interest graph plus a team of background agents that work it for you.",
-  "permissions": ["storage", "alarms", "tabs", "notifications"],
+  "permissions": ["storage", "alarms", "tabs"],
   "host_permissions": [
     "https://api.recome.app/*",
     "https://recome-api.fly.dev/*",
@@ -179,14 +179,7 @@
         "default": "Ctrl+Shift+R",
         "mac": "Command+Shift+R"
       },
-      "description": "Open RecoMe popup"
-    },
-    "quick_block": {
-      "suggested_key": {
-        "default": "Ctrl+Shift+B",
-        "mac": "Command+Shift+B"
-      },
-      "description": "Quick block current page topic"
+      "description": "Open RecoMe (web app)"
     },
     "toggle_extension": {
       "suggested_key": {
