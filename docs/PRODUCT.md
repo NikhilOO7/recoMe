@@ -128,7 +128,7 @@ Also structural: every `/v1` tenant app is a mobile capture channel — distribu
 **Next:** fix D3–D6 (decisions recorded in §7); wire push delivery on `AgentEventStore.insert`; ship digest with a real Resend key and a preference center (per-agent, per-channel opt-outs) — notification trust is a product feature, not ops.
 **Future:**
 
-- **Surface adapters beyond 4 platforms** in adoption order (Walmart, LinkedIn, Coursera next).
+- **Surface adapters beyond 4 platforms:** Walmart + Coursera shipped 2026-08-10 (6 total) with a DOM-contract fixture harness — each surface's supported DOM is written down as a test, so a platform redesign fails loudly in CI instead of dying silently. LinkedIn next.
 - **Mind map time-scrub** (deferred P5.2) — replay your attention over time.
 - **Per-row audit deletion** (deferred P5.4) — delete a single signal and its downstream traces.
 - **Weekly review ritual:** Synthesist card + 3-tap interest confirmation ("still deciding / done / not interested") — the highest-quality explicit signal source we can build.
