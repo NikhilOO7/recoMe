@@ -3,6 +3,7 @@ import { handleMessage } from './messageHandler';
 import { registerSignalUploader, handleAlarm as handleSignalAlarm } from './SignalUploader';
 import { registerInboxPoller, handleAlarm as handleInboxAlarm } from './InboxPoller';
 import { getWebAppUrl, STORAGE_KEYS, DEFAULT_SETTINGS } from '@shared/constants';
+import { getAuthState } from '@shared/AuthClient';
 import type { RecoMeMessage, MessageResponse } from '@shared/messages';
 import { createLogger } from '@shared/Logger';
 
@@ -82,7 +83,14 @@ chrome.commands.onCommand.addListener(async (command) => {
 // ── Action button — open web app or popup ───────────────────────────────────
 
 chrome.action.onClicked.addListener(async () => {
-  const url = await getWebAppUrl();
+  const base = await getWebAppUrl();
+  const auth = await getAuthState();
+  // Signed out → the extension sign-in handoff (login page forwards tokens
+  // to callback.html, including for already-signed-in web sessions).
+  // Signed in → straight to the dashboard.
+  const url = auth.loggedIn
+    ? `${base}/dashboard`
+    : `${base}/login?return=extension&ext_id=${chrome.runtime.id}`;
   await chrome.tabs.create({ url });
 });
 

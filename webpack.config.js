@@ -68,6 +68,10 @@ module.exports = {
       patterns: [
         { from: 'extension/src/manifest.json', to: 'manifest.json' },
         { from: 'public/icons', to: 'icons', noErrorOnMissing: true },
+        // MV3 CSP blocks inline scripts on extension pages — callback.html
+        // loads this external file (inline, the login handoff silently
+        // stored nothing, which is why the extension stayed "Signed out").
+        { from: 'public/callback.js', to: 'callback.js' },
       ],
     }),
   ],

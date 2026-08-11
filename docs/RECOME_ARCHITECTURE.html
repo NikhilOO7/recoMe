@@ -1694,6 +1694,67 @@ every password field is inside                   <span class="c-bad">-3</span>
       </div></div>
     </div>
 
+    <h3 class="sub">Capture liveness events — a new seam, and the product insight behind it</h3>
+    <div class="prose">
+      <p>The newest change to the capture layer adds lifecycle callbacks to both triggers. The comment introducing them is
+      the most product-literate sentence in the extension:</p>
+      <blockquote>“Liveness events so surfaces can SHOW capture happening — <strong>the product’s magic moment was
+      invisible; a silent 10s timer reads as ‘not working’.</strong>”</blockquote>
+    </div>
+    <div class="code-label">extension/src/capture/triggers/DwellSignal.ts — the new contract</div>
+    <div class="code"><span class="c-key">export interface</span> <span class="c-type">CaptureEvents</span> {
+  <span class="c-com">/** Timer armed for this page; fires with the total dwell in ms. */</span>
+  onArmed?: (dwellMs: <span class="c-type">number</span>) =&gt; <span class="c-type">void</span>;
+  <span class="c-com">/** Signal captured and queued; fires with the topic display names. */</span>
+  onCaptured?: (topics: <span class="c-type">string</span>[]) =&gt; <span class="c-type">void</span>;
+  <span class="c-com">/** Page had nothing capturable (no topics/entities). */</span>
+  onSkipped?: () =&gt; <span class="c-type">void</span>;
+}
+
+<span class="c-key">constructor</span>(
+  <span class="c-key">private</span> capture: <span class="c-type">PlatformCapture</span>,
+  <span class="c-key">private</span> events: <span class="c-type">CaptureEvents</span> = {},      <span class="c-good">// default {} — every call site still compiles</span>
+) {}
+
+<span class="c-com">// …fired at the three moments that matter:</span>
+<span class="c-key">private</span> <span class="c-fn">arm</span>()  { <span class="c-key">this</span>.events.<span class="c-fn">onArmed</span>?.(DWELL_MS); … }
+<span class="c-key">private</span> <span class="c-key">async</span> <span class="c-fn">fire</span>() {
+  <span class="c-key">const</span> ex = <span class="c-key">this</span>.capture.<span class="c-fn">extract</span>();
+  <span class="c-key">if</span> (!ex || (ex.topics.length === <span class="c-num">0</span> &amp;&amp; ex.entities.length === <span class="c-num">0</span>)) {
+    <span class="c-key">this</span>.events.<span class="c-fn">onSkipped</span>?.();          <span class="c-good">// the silent case is now reportable</span>
+    <span class="c-key">return</span>;
+  }
+  <span class="c-key">this</span>.events.<span class="c-fn">onCaptured</span>?.(ex.topics.<span class="c-fn">map</span>((t) =&gt; t.name));
+  …
+}</div>
+    <div class="prose" style="margin-top:14px">
+      <p><code>SearchSignal</code> receives the same treatment with a single optional
+      <code>onCaptured?: (query: string) =&gt; void</code>, fired in <code>emit()</code> after the duplicate check — so a
+      repeated query neither re-sends a signal nor re-notifies the UI.</p>
+      <p><strong>Honest status:</strong> the seam exists; nothing consumes it yet. <code>content/index.ts</code> still
+      constructs <code>new DwellSignal(capture)</code> and <code>new SearchSignal(platform)</code> with no handlers. Both
+      parameters are optional and default to no-ops, so the change is fully backwards-compatible and
+      <code>npm run validate</code> stays green at 145/145. The next step is a sidebar subscriber — “capturing in 10s…” →
+      “captured: standing desks, ergonomics” — which is a §23 surface change, not a capture change.</p>
+    </div>
+
+    <div class="callout learn">
+      <div class="callout-title">The insight, and its exact inverse elsewhere in this book</div>
+      <p>§37 will argue that the bugs which survive to production are the ones whose <em>failure</em> is indistinguishable
+      from a legitimate empty state — silence that looks like success to an engineer.</p>
+      <p>This change is the same observation pointed the other way: <strong>silence that looks like failure to a user.</strong>
+      Capture working perfectly and capture being broken produce identical observable behaviour — nothing visibly happens —
+      and the user resolves that ambiguity pessimistically. They uninstall.</p>
+      <p>So the general principle covers both: <strong>whenever “working” and “broken” are observationally identical, you owe
+      someone a signal.</strong> For engineers that signal is a metric, a log line, or a test. For users it is UI. The
+      diagnosis is the same; only the audience changes.</p>
+      <p>Note also the API design. The events are an <em>optional</em> parameter with a <code>{}</code> default and
+      optional-chained calls, so the capture classes remain usable without them and every existing call site and test
+      compiles untouched. Adding an observability seam to a component should never force its consumers to care —
+      that is what keeps the extension’s core rule intact: <em>adapters extract, and do nothing else.</em> The triggers now
+      <em>report</em>; they still do not render.</p>
+    </div>
+
     <div class="callout info">
       <div class="callout-title">The SPA navigation pattern, worth knowing verbatim</div>
       <p>YouTube, Amazon and Reddit are single-page apps: navigating from a search page to a video fires no
@@ -4228,6 +4289,10 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
       <div class="card"><div class="card-head"><span class="card-title">Sidebar</span><span class="card-tag">right-edge, shadow DOM</span></div><div class="card-body prose">
         <p>Persistent for the tab’s lifetime: status, Interest Graph bars from <code>/intelligence/intents</code>, the agent
         list with pause state, an inbox badge, and manual “Ask the agents” buttons for the current platform.</p>
+        <p><strong>Next on this surface:</strong> the capture liveness events landed in §07 have no subscriber yet. The
+        sidebar is where they belong — “capturing in 10s…” while the dwell timer runs, then “captured: standing desks,
+        ergonomics” — turning a silent ten-second timer into visible proof the product is working. The seam is built and
+        backwards-compatible; the consumer is one handler away.</p>
         <p>Note it survives SPA navigation — only per-page capture is torn down (§07). And its demo rows now carry an
         explicit <strong>“Example preview — not your data”</strong> badge, after a defect (D4) where invented demo topics
         rendered inside the same widget as real ones. Mixing real and illustrative data in one component without labels is a

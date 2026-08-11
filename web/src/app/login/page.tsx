@@ -36,7 +36,17 @@ export default function LoginPage() {
 
     // Auto-redirect if already logged in
     const existing = localStorage.getItem('recome_token');
-    if (existing && !currentParams.get('return')) {
+    const returnTo = currentParams.get('return');
+    const extIdParam = currentParams.get('ext_id');
+    if (existing && returnTo === 'extension' && extIdParam) {
+      // Already signed in + arriving from the extension: hand the existing
+      // session straight to the extension callback — no re-login. Without
+      // this branch the user sat at a login form they were already past.
+      const refresh = localStorage.getItem('recome_refresh') ?? '';
+      window.location.href = `chrome-extension://${extIdParam}/callback.html?token=${encodeURIComponent(existing)}&refresh=${encodeURIComponent(refresh)}`;
+      return;
+    }
+    if (existing && !returnTo) {
       window.location.href = '/dashboard';
     }
   }, []);

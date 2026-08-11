@@ -179,9 +179,21 @@ export class Sidebar {
     this.refs.statusDot.style.background = '#94a3b8';
     this.refs.statusLabel.textContent = 'Signed out';
     this.refs.nodesLine.textContent = '';
-    this.refs.sessionLine.textContent = 'Sign in via the RecoMe web app';
-    this.refs.intentsList.innerHTML = '';
+    this.refs.sessionLine.textContent = 'One click connects your web session:';
     this.refs.agentsList.innerHTML = '';
+
+    // A real sign-in button — previously this state was text-only, so there
+    // was NO path from the extension into the login handoff at all.
+    this.refs.intentsList.innerHTML = '';
+    const btn = document.createElement('button');
+    btn.className = 'rcm-action';
+    btn.textContent = 'Sign in to RecoMe';
+    btn.addEventListener('click', () => {
+      void getWebAppUrl().then((base) => {
+        window.open(`${base}/login?return=extension&ext_id=${chrome.runtime.id}`, '_blank');
+      });
+    });
+    this.refs.intentsList.appendChild(btn);
   }
 
   private renderIntents(intents: IntentRow[]): void {
