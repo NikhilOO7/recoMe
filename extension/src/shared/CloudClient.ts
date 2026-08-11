@@ -33,7 +33,10 @@ async function authedFetch(
   retried = false,
 ): Promise<Response> {
   const base = await getCloudUrl();
-  const token = await getAccessToken();
+  let token = await getAccessToken();
+  // Access tokens live 15 minutes. If ours is gone, refresh BEFORE firing a
+  // headerless request — the old order guaranteed a noisy 401 per expiry.
+  if (!token) token = await refreshAccessToken();
 
   const headers = new Headers(init.headers);
   headers.set('content-type', 'application/json');

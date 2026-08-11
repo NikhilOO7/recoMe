@@ -92,6 +92,11 @@ function ensureStyles(): void {
       left: 0;
       right: 0;
       bottom: 0;
+      /* Geometry-proof: even if the anchor turns out narrow (host sites keep
+         inventing layouts), the box widens past its container instead of
+         letter-wrapping into a vertical strip. */
+      min-width: 240px;
+      max-width: min(90vw, 560px);
       padding: 10px 12px;
       background: linear-gradient(to bottom, rgba(10,13,18,0) 0%, rgba(10,13,18,0.92) 35%, rgba(10,13,18,0.97) 100%);
       color: rgba(255,255,255,0.92);
