@@ -168,6 +168,10 @@
         "https://*.coursera.org/*",
         "https://*.edx.org/*"
       ]
+    },
+    {
+      "resources": ["callback.html", "callback.js"],
+      "matches": ["https://recome-web.vercel.app/*", "https://recome.app/*"]
     }
   ],
   "content_security_policy": {

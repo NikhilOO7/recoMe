@@ -189,8 +189,16 @@ export class Sidebar {
     btn.className = 'rcm-action';
     btn.textContent = 'Sign in to RecoMe';
     btn.addEventListener('click', () => {
+      // After an extension reload, orphaned content scripts lose their
+      // runtime id — interpolating undefined produced ext_id=undefined and
+      // a chrome-extension://invalid/ dead end. Guard and ask for a refresh.
+      const extId = chrome.runtime?.id;
+      if (!extId) {
+        btn.textContent = 'Extension updated — refresh this page first';
+        return;
+      }
       void getWebAppUrl().then((base) => {
-        window.open(`${base}/login?return=extension&ext_id=${chrome.runtime.id}`, '_blank');
+        window.open(`${base}/login?return=extension&ext_id=${extId}`, '_blank');
       });
     });
     this.refs.intentsList.appendChild(btn);

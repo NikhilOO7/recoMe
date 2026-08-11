@@ -38,7 +38,11 @@ export default function LoginPage() {
     const existing = localStorage.getItem('recome_token');
     const returnTo = currentParams.get('return');
     const extIdParam = currentParams.get('ext_id');
-    if (existing && returnTo === 'extension' && extIdParam) {
+    // Extension ids are exactly 32 chars of a–p; anything else (including the
+    // literal string "undefined" from a broken caller) must never be
+    // navigated to — chrome-extension://<garbage> renders as ://invalid/.
+    const validExtId = extIdParam && /^[a-p]{32}$/.test(extIdParam);
+    if (existing && returnTo === 'extension' && validExtId) {
       // Already signed in + arriving from the extension: hand the existing
       // session straight to the extension callback — no re-login. Without
       // this branch the user sat at a login form they were already past.
@@ -75,11 +79,13 @@ export default function LoginPage() {
         return;
       }
 
-      if (returnTo === 'extension' && extId) {
-        window.location.href = `chrome-extension://${extId}/callback.html?token=${data.accessToken}&refresh=${data.refreshToken}`;
+      // Store the session in the web app either way, then hand off to the
+      // extension only when the id is well-formed (32 chars of a–p).
+      localStorage.setItem('recome_token', data.accessToken);
+      localStorage.setItem('recome_refresh', data.refreshToken);
+      if (returnTo === 'extension' && extId && /^[a-p]{32}$/.test(extId)) {
+        window.location.href = `chrome-extension://${extId}/callback.html?token=${encodeURIComponent(data.accessToken)}&refresh=${encodeURIComponent(data.refreshToken)}`;
       } else {
-        localStorage.setItem('recome_token', data.accessToken);
-        localStorage.setItem('recome_refresh', data.refreshToken);
         window.location.href = '/dashboard';
       }
     } catch {
