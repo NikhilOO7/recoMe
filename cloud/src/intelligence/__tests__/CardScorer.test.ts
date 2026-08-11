@@ -26,6 +26,32 @@ describe('CardScorer deterministic stage', () => {
     expect(s!.verdict).toBe('neutral');
   });
 
+  it('never matches topics inside words ("men" vs "replacement development")', async () => {
+    const scorer = new CardScorer({});
+    const [s] = await scorer.score({
+      cards: [{ id: 'w', title: 'Saber replacement midway through development' }],
+      intents: [
+        { topicName: 'men', strength: 0.9 },
+        { topicName: 'development', strength: 0.5 },
+      ],
+    });
+    // 'men' is <4 chars → ignored entirely; 'development' matches as a word.
+    expect(s!.matchedTopics).toEqual(['development']);
+  });
+
+  it('matches whole words and phrases, not substrings', async () => {
+    const scorer = new CardScorer({});
+    const [a, b] = await scorer.score({
+      cards: [
+        { id: 'a', title: 'A great desk for offices' },
+        { id: 'b', title: 'Desktop tower PC' },
+      ],
+      intents: [{ topicName: 'desk', strength: 0.8 }],
+    });
+    expect(a!.matchedTopics).toEqual(['desk']);
+    expect(b!.matchedTopics).toEqual([]); // "desktop" must not match "desk"
+  });
+
   it('claim-filter reason no longer credits an agent that never ran', async () => {
     const [s] = await score([{ id: 'c', title: 'Miracle standing desks — guaranteed cure!' }]);
     expect(s!.verdict).toBe('filtered');

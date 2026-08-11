@@ -147,15 +147,15 @@ describe('CardBadge', () => {
     expect(ghost.classList.contains('recome-card-host')).toBe(false);
   });
 
-  test('degenerate anchors get the self-sizing badge but never the overlay', () => {
+  test('degenerate anchors still get badge + popover (fixed-size, safe at any geometry)', () => {
     const ghost = document.createElement('div');
     ghost.style.display = 'contents';
     document.body.appendChild(ghost);
     ghost.getBoundingClientRect = () => ({ width: 0 }) as DOMRect; // no usable child either
 
-    renderBadge({ el: ghost, verdict: 'neutral', score: 0.2, reason: 'would be vertical' });
+    renderBadge({ el: ghost, verdict: 'neutral', score: 0.2, reason: 'safe anywhere' });
     expect(document.querySelector('.recome-card-badge')).not.toBeNull();
-    expect(document.querySelector('.recome-reasoning')).toBeNull();
+    expect(document.querySelector('.recome-reasoning')?.textContent).toContain('safe anywhere');
   });
 
   test('clearAllBadges removes badges and host marker classes', () => {

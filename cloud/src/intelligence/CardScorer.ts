@@ -58,6 +58,12 @@ export interface IntentRow {
   strength: number;
 }
 
+/** Whole-word/phrase presence: "desk" matches "a desk!" but never "desktop". */
+export function topicMatchesText(topic: string, text: string): boolean {
+  const escaped = topic.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, 'i').test(text);
+}
+
 export interface CardScorerOptions {
   /** Set true to enable the LLM-polish second stage. Default off in dev. */
   llmEnabled?: boolean;
@@ -132,8 +138,11 @@ export class CardScorer {
     let matched = 0;
     const matches: Array<{ topic: string; w: number }> = [];
     for (const [topic, w] of topicWeight) {
-      if (topic.length < 3) continue;
-      if (text.includes(topic)) {
+      // Word-boundary matching, minimum 4 chars: plain substring matching
+      // let the topic "men" match inside "replaceMENt" and told a user they'd
+      // "been researching men across multiple platforms". Never again.
+      if (topic.length < 4) continue;
+      if (topicMatchesText(topic, text)) {
         matched += w;
         matches.push({ topic, w });
       }

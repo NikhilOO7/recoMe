@@ -88,32 +88,35 @@ function ensureStyles(): void {
       margin-left: 2px;
     }
     .recome-reasoning {
+      /* Compact opaque popover anchored under the badge — never a translucent
+         band over the host's content or its action row. Fixed width makes it
+         geometry-proof regardless of the anchor's box. */
       position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      /* Geometry-proof: even if the anchor turns out narrow (host sites keep
-         inventing layouts), the box widens past its container instead of
-         letter-wrapping into a vertical strip. */
-      min-width: 240px;
-      max-width: min(90vw, 560px);
+      top: 36px;
+      left: 8px;
+      width: 280px;
+      max-width: 85vw;
       padding: 10px 12px;
-      background: linear-gradient(to bottom, rgba(10,13,18,0) 0%, rgba(10,13,18,0.92) 35%, rgba(10,13,18,0.97) 100%);
+      background: #0f141b;
+      border: 1px solid rgba(94,234,212,0.30);
+      border-radius: 10px;
+      box-shadow: 0 10px 32px rgba(0,0,0,0.5);
       color: rgba(255,255,255,0.92);
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       font-size: 12.5px;
       line-height: 1.5;
-      pointer-events: none;
+      pointer-events: auto;
       opacity: 0;
-      transform: translateY(6px);
-      transition: opacity .18s ease, transform .18s ease;
-      border-bottom-left-radius: inherit;
-      border-bottom-right-radius: inherit;
-      z-index: 998;
+      visibility: hidden;
+      transform: translateY(-4px);
+      transition: opacity .15s ease, transform .15s ease, visibility .15s;
+      z-index: 2147483000;
     }
     .recome-card-host:hover .recome-reasoning,
+    .recome-reasoning:hover,
     .recome-card-host.recome-show-reason .recome-reasoning {
       opacity: 1;
+      visibility: visible;
       transform: translateY(0);
     }
     .recome-card-host.recome-filtered {
@@ -208,12 +211,6 @@ export function renderBadge({
   ensureStyles();
 
   const el = resolveAnchor(cardEl);
-  // If even the resolved anchor has no usable box (ghost host whose children
-  // haven't laid out yet — virtualized feeds), the badge still works: it is
-  // max-content sized. The reasoning overlay is left:0;right:0 and would
-  // render as a vertical strip in a narrow containing block — skip it.
-  const anchorCs = getComputedStyle(el);
-  const anchorUsable = anchorCs.display !== 'contents' && el.getBoundingClientRect().width >= 160;
 
   // Make sure the card is the positioning anchor.
   const cs = getComputedStyle(el);
@@ -238,7 +235,7 @@ export function renderBadge({
       : `<span>${meta.icon} ${meta.label}</span><span class="recome-score">${score.toFixed(2)}</span>`;
   el.appendChild(badge);
 
-  if (reason && anchorUsable) {
+  if (reason) {
     const note = document.createElement('div');
     note.className = 'recome-reasoning';
     const text = document.createElement('div');
