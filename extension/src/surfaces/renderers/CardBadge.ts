@@ -62,6 +62,12 @@ function ensureStyles(): void {
       top: 8px;
       left: 8px;
       z-index: 999;
+      /* Never letter-wrap: absolute boxes shrink-to-fit their containing
+         block, and a narrow host (Reddit vote gutter) turned the badge into
+         a vertical character strip. */
+      width: max-content;
+      max-width: 260px;
+      white-space: nowrap;
       padding: 4px 10px;
       border-radius: 999px;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
@@ -167,8 +173,26 @@ export interface RenderInput {
   onFeedback?: (kind: 'boost' | 'block') => void;
 }
 
+/**
+ * Some card elements are layout ghosts — e.g. Reddit's <shreddit-post> is
+ * `display: contents`, which generates NO box: position:relative on it is a
+ * no-op and absolute children anchor to some unrelated (often narrow)
+ * ancestor. Resolve to the first descendant that actually has a usable box.
+ */
+function resolveAnchor(el: HTMLElement): HTMLElement {
+  const cs = getComputedStyle(el);
+  const width = el.getBoundingClientRect().width;
+  if (cs.display !== 'contents' && width >= 160) return el;
+  for (const child of Array.from(el.children)) {
+    if (!(child instanceof HTMLElement)) continue;
+    if (getComputedStyle(child).display === 'contents') continue;
+    if (child.getBoundingClientRect().width >= 160) return child;
+  }
+  return el;
+}
+
 export function renderBadge({
-  el,
+  el: cardEl,
   verdict,
   score,
   reason,
@@ -177,6 +201,8 @@ export function renderBadge({
   onFeedback,
 }: RenderInput): void {
   ensureStyles();
+
+  const el = resolveAnchor(cardEl);
 
   // Make sure the card is the positioning anchor.
   const cs = getComputedStyle(el);

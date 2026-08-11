@@ -123,6 +123,24 @@ describe('CardBadge', () => {
     expect(el.querySelector('.recome-feedback')).toBeNull();
   });
 
+  test('display:contents hosts anchor the badge into their first real-boxed child', () => {
+    // Reddit's <shreddit-post> generates no box — the badge must land on a
+    // descendant with real geometry, never the ghost element.
+    const ghost = document.createElement('div');
+    ghost.style.display = 'contents';
+    const inner = document.createElement('div');
+    ghost.appendChild(inner);
+    document.body.appendChild(ghost);
+    // jsdom has no layout — mock the geometry the resolver reads.
+    ghost.getBoundingClientRect = () => ({ width: 0 }) as DOMRect;
+    inner.getBoundingClientRect = () => ({ width: 640 }) as DOMRect;
+
+    renderBadge({ el: ghost, verdict: 'relevant', score: 0.9, reason: 'r' });
+    expect(inner.querySelector('.recome-card-badge')).not.toBeNull();
+    expect(ghost.querySelector(':scope > .recome-card-badge')).toBeNull();
+    expect(inner.classList.contains('recome-card-host')).toBe(true);
+  });
+
   test('clearAllBadges removes badges and host marker classes', () => {
     const el1 = host();
     const el2 = host();
