@@ -162,6 +162,8 @@ Also structural: every `/v1` tenant app is a mobile capture channel — distribu
 
 Sequenced releases with exit criteria. No dates until R1 is done and velocity is known; order is the commitment.
 
+**Production milestone 2026-08-11:** the full stack is LIVE — Fly Postgres/Neo4j/Qdrant/Redis, intelligence enabled, all six agents booted, BullMQ schedules registered (Curator daily, Concierge 6h, Synthesist Sun 13:00 UTC, rollup, digest), signals→graph→trails verified end-to-end in prod. `AGENTS_LLM_ENABLED` remains off: the live-model spot check is blocked on OpenAI credits (`credit_balance_exhausted`) — top up at platform.openai.com, rerun spot check, then flip the flag.
+
 ### R1 — Truthful Core (current)
 
 Everything the demo and diligence touch is real or clearly labeled.
