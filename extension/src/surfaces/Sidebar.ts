@@ -226,7 +226,7 @@ export class Sidebar {
       return;
     }
     for (const a of agents) {
-      const paused = !!a.subscription.pausedAt || !a.subscription.enabled;
+      const paused = a.paused || !a.enabled;
       const dotColor = paused ? '#94a3b8' : '#10b981';
       const subText = paused
         ? 'Paused'

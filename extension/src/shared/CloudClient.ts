@@ -163,15 +163,19 @@ export async function postInboxFeedback(
 
 // ── Agents ───────────────────────────────────────────────────────────────────
 
+// Mirrors GET /intelligence/agents (AgentController) — FLAT fields, not a
+// nested subscription object. The previous shape here was invented and made
+// the sidebar throw 'reading pausedAt of undefined' on every refresh.
 export interface AgentInfo {
   name: string;
   displayName: string;
   triggers: string[];
-  subscription: {
-    enabled: boolean;
-    pausedAt: string | null;
-    lastEmittedAt: string | null;
-  };
+  /** Defaults true server-side when the user has no subscription row. */
+  enabled: boolean;
+  paused: boolean;
+  pausedReason: string | null;
+  lastRunAt: string | null;
+  lastEmittedAt: string | null;
 }
 
 export async function listAgents(): Promise<{ agents: AgentInfo[] }> {
