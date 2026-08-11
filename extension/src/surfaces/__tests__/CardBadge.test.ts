@@ -136,9 +136,12 @@ describe('CardBadge', () => {
     inner.getBoundingClientRect = () => ({ width: 640 }) as DOMRect;
 
     renderBadge({ el: ghost, verdict: 'relevant', score: 0.9, reason: 'r' });
-    expect(inner.querySelector('.recome-card-badge')).not.toBeNull();
-    expect(ghost.querySelector(':scope > .recome-card-badge')).toBeNull();
+    const badge = document.querySelector('.recome-card-badge');
+    // Parent must be the real-boxed child, never the ghost (jsdom mangles
+    // `:scope >` queries, so assert parentage directly).
+    expect(badge?.parentElement).toBe(inner);
     expect(inner.classList.contains('recome-card-host')).toBe(true);
+    expect(ghost.classList.contains('recome-card-host')).toBe(false);
   });
 
   test('clearAllBadges removes badges and host marker classes', () => {
