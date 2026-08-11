@@ -7,6 +7,9 @@ function host(): HTMLElement {
   const el = document.createElement('div');
   el.style.width = '200px';
   el.style.height = '200px';
+  // jsdom has no layout: mock a real box so the renderer treats this as a
+  // usable anchor (degenerate anchors skip the reasoning overlay by design).
+  el.getBoundingClientRect = () => ({ width: 640, height: 200 }) as DOMRect;
   document.body.appendChild(el);
   return el;
 }
@@ -142,6 +145,17 @@ describe('CardBadge', () => {
     expect(badge?.parentElement).toBe(inner);
     expect(inner.classList.contains('recome-card-host')).toBe(true);
     expect(ghost.classList.contains('recome-card-host')).toBe(false);
+  });
+
+  test('degenerate anchors get the self-sizing badge but never the overlay', () => {
+    const ghost = document.createElement('div');
+    ghost.style.display = 'contents';
+    document.body.appendChild(ghost);
+    ghost.getBoundingClientRect = () => ({ width: 0 }) as DOMRect; // no usable child either
+
+    renderBadge({ el: ghost, verdict: 'neutral', score: 0.2, reason: 'would be vertical' });
+    expect(document.querySelector('.recome-card-badge')).not.toBeNull();
+    expect(document.querySelector('.recome-reasoning')).toBeNull();
   });
 
   test('clearAllBadges removes badges and host marker classes', () => {

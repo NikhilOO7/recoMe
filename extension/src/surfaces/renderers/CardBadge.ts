@@ -203,6 +203,12 @@ export function renderBadge({
   ensureStyles();
 
   const el = resolveAnchor(cardEl);
+  // If even the resolved anchor has no usable box (ghost host whose children
+  // haven't laid out yet — virtualized feeds), the badge still works: it is
+  // max-content sized. The reasoning overlay is left:0;right:0 and would
+  // render as a vertical strip in a narrow containing block — skip it.
+  const anchorCs = getComputedStyle(el);
+  const anchorUsable = anchorCs.display !== 'contents' && el.getBoundingClientRect().width >= 160;
 
   // Make sure the card is the positioning anchor.
   const cs = getComputedStyle(el);
@@ -227,7 +233,7 @@ export function renderBadge({
       : `<span>${meta.icon} ${meta.label}</span><span class="recome-score">${score.toFixed(2)}</span>`;
   el.appendChild(badge);
 
-  if (reason) {
+  if (reason && anchorUsable) {
     const note = document.createElement('div');
     note.className = 'recome-reasoning';
     const text = document.createElement('div');
