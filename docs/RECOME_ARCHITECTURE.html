@@ -451,7 +451,7 @@ footer a{color:var(--text-dim)}
   <div class="hero-stats">
     <div class="stat stat-accent-1"><div class="stat-num">15.5k<span class="unit">LOC cloud</span></div><div class="stat-label">103 TypeScript modules</div></div>
     <div class="stat stat-accent-2"><div class="stat-num">4<span class="unit">data planes</span></div><div class="stat-label">Postgres · Neo4j · Qdrant · Redis</div></div>
-    <div class="stat stat-accent-3"><div class="stat-num">290<span class="unit">tests green</span></div><div class="stat-label">145 extension · 145 cloud</div></div>
+    <div class="stat stat-accent-3"><div class="stat-num">294<span class="unit">tests green</span></div><div class="stat-label">147 extension · 147 cloud</div></div>
     <div class="stat stat-accent-4"><div class="stat-num">$0.10<span class="unit">/user/day</span></div><div class="stat-label">Cost ceiling enforced in code</div></div>
   </div>
   <div class="callout ok" style="margin-top:24px;max-width:960px">
@@ -1162,8 +1162,8 @@ footer a{color:var(--text-dim)}
     <div class="tbl-wrap"><table class="grid">
       <thead><tr><th style="width:150px">Tool</th><th style="width:130px">Where</th><th>Notes worth knowing</th></tr></thead>
       <tbody>
-        <tr><td><strong>Jest + jsdom</strong></td><td>extension, packages</td><td>145 tests, 8 suites. <code>fake-indexeddb</code> lets the IndexedDB queue be tested without a browser — the queue is the most correctness-critical client code, so this dependency earns its place.</td></tr>
-        <tr><td><strong>Vitest</strong></td><td>cloud</td><td>145 tests passing, 3 skipped (the skipped ones are the integration suite that needs live Postgres + Neo4j + Qdrant). Faster than Jest on ESM, which matters because the cloud is <code>"type": "module"</code>.</td></tr>
+        <tr><td><strong>Jest + jsdom</strong></td><td>extension, packages</td><td>147 tests, 8 suites. <code>fake-indexeddb</code> lets the IndexedDB queue be tested without a browser — the queue is the most correctness-critical client code, so this dependency earns its place.</td></tr>
+        <tr><td><strong>Vitest</strong></td><td>cloud</td><td>147 tests passing, 3 skipped (the skipped ones are the integration suite that needs live Postgres + Neo4j + Qdrant). Faster than Jest on ESM, which matters because the cloud is <code>"type": "module"</code>.</td></tr>
         <tr><td><strong>webpack 5</strong></td><td>extension</td><td>Multi-entry build (background / content), CSS extraction, manifest copying. Chosen over Vite because MV3 needs precise control over separate non-module entry bundles and static asset layout.</td></tr>
         <tr><td><strong>ESLint 9 + Prettier + husky</strong></td><td>repo</td><td><code>lint-staged</code> on commit; <code>npm run validate</code> = typecheck + lint + test as the single gate. One command that means “safe to push” is worth more than a wiki page describing five commands.</td></tr>
       </tbody>
@@ -1171,8 +1171,8 @@ footer a{color:var(--text-dim)}
 
     <div class="callout info">
       <div class="callout-title">Verified as of this writing</div>
-      <p><code>npm run validate</code> → typecheck clean, lint clean, <strong>145/145 tests pass</strong> (8 suites).
-      <code>cd cloud &amp;&amp; npx tsc --noEmit</code> → clean. <code>npx vitest run</code> → <strong>145 passed, 3
+      <p><code>npm run validate</code> → typecheck clean, lint clean, <strong>147/147 tests pass</strong> (8 suites).
+      <code>cd cloud &amp;&amp; npx tsc --noEmit</code> → clean. <code>npx vitest run</code> → <strong>147 passed, 3
       skipped</strong> across 18 files. The skipped trio is the DB-backed integration suite; CI runs cloud typecheck only,
       and the workflow file says so out loud rather than pretending the suite is green.</p>
     </div>
@@ -1731,11 +1731,25 @@ every password field is inside                   <span class="c-bad">-3</span>
       <p><code>SearchSignal</code> receives the same treatment with a single optional
       <code>onCaptured?: (query: string) =&gt; void</code>, fired in <code>emit()</code> after the duplicate check — so a
       repeated query neither re-sends a signal nor re-notifies the UI.</p>
-      <p><strong>Honest status:</strong> the seam exists; nothing consumes it yet. <code>content/index.ts</code> still
-      constructs <code>new DwellSignal(capture)</code> and <code>new SearchSignal(platform)</code> with no handlers. Both
-      parameters are optional and default to no-ops, so the change is fully backwards-compatible and
-      <code>npm run validate</code> stays green at 145/145. The next step is a sidebar subscriber — “capturing in 10s…” →
-      “captured: standing desks, ergonomics” — which is a §23 surface change, not a capture change.</p>
+      <p><strong>Status: wired end to end.</strong> <code>content/index.ts</code> now passes handlers straight through to
+      the sidebar, and the search trigger announces itself too:</p>
+    </div>
+    <div class="code-label">extension/src/content/index.ts — startPerPage()</div>
+    <div class="code"><span class="c-com">// Capture liveness → sidebar: countdown while dwelling, pulse + named</span>
+<span class="c-com">// topics on capture, then a fast refresh so the graph visibly grows.</span>
+dwell = <span class="c-key">new</span> <span class="c-type">DwellSignal</span>(capture, {
+  onArmed:    (ms)     =&gt; sidebar?.<span class="c-fn">onCaptureArmed</span>(ms),
+  onCaptured: (topics) =&gt; sidebar?.<span class="c-fn">onCaptureFired</span>(topics),
+  onSkipped:  ()       =&gt; sidebar?.<span class="c-fn">onCaptureSkipped</span>(),
+});
+
+search = <span class="c-key">new</span> <span class="c-type">SearchSignal</span>(platform, (query) =&gt;
+  sidebar?.<span class="c-fn">onCaptureFired</span>([<span class="c-str">`“${query}” (search)`</span>]),
+);</div>
+    <div class="prose" style="margin-top:14px">
+      <p>Note the optional chaining on every call. The sidebar is a tab-lifetime surface and capture is per-page, so the
+      two lifecycles are independent — capture must keep working if the sidebar was never mounted (overlay toggled off) or
+      has been unmounted. The consumer side is §23.</p>
     </div>
 
     <div class="callout learn">
@@ -1991,6 +2005,33 @@ every password field is inside                   <span class="c-bad">-3</span>
       <p>The fix is one module-level promise: the first caller creates it, everyone else awaits the same one, and the
       <code>finally</code> block clears it. In <code>CloudClient</code>, <code>authedFetch</code> retries a 401 exactly
       once after refresh; a second 401 surfaces as an error so the UI can show a logged-out state instead of looping.</p>
+    </div>
+
+    <div class="callout bug">
+      <div class="callout-title">Reactive vs proactive refresh — a guaranteed 401 every 15 minutes</div>
+      <p><code>authedFetch</code> originally read the access token, and if it was absent, <strong>sent the request
+      anyway</strong> — headerless — then handled the inevitable 401 by refreshing and retrying:</p>
+      <div class="code small" style="margin:10px 0"><span class="c-com">// before: refresh only AFTER a failure</span>
+<span class="c-key">const</span> token = <span class="c-key">await</span> <span class="c-fn">getAccessToken</span>();          <span class="c-bad">// null once the 15-min token expires</span>
+<span class="c-com">// …fire request with no Authorization header → 401 → refresh → retry</span>
+
+<span class="c-com">// after: refresh BEFORE firing</span>
+<span class="c-key">let</span> token = <span class="c-key">await</span> <span class="c-fn">getAccessToken</span>();
+<span class="c-com">// Access tokens live 15 minutes. If ours is gone, refresh BEFORE firing a</span>
+<span class="c-com">// headerless request — the old order guaranteed a noisy 401 per expiry.</span>
+<span class="c-key">if</span> (!token) token = <span class="c-key">await</span> <span class="c-fn">refreshAccessToken</span>();</div>
+      <p><strong>Why it mattered.</strong> The retry logic worked, so the feature worked — this was never a user-visible
+      failure. What it produced was <em>one guaranteed server-side 401 per client per expiry cycle</em>, logged as
+      <code>"Missing authorization header"</code>. With the stack now live, that is a permanent stream of authentication
+      failures in production logs that mean nothing — and a real one, from an actual attack or a genuinely broken client,
+      would be indistinguishable from the noise.</p>
+      <p><strong>The lesson is about observability, not correctness.</strong> A retry that always succeeds hides a defect
+      whose only cost is a false signal — until the day you need that signal. <em>Error logs are a resource with a signal-to-noise
+      ratio, and a “harmless” recurring error spends it.</em> The fix also removes a full round-trip from the first request
+      after every expiry, which is the kind of latency nobody attributes correctly.</p>
+      <p>Note the two mechanisms now compose: proactive refresh handles the <em>expected</em> expiry, and the 401-retry-once
+      path remains for the <em>unexpected</em> case (a token revoked server-side mid-session). Both are needed; the bug was
+      using the exceptional path for the routine case.</p>
     </div>
     <div class="callout learn">
       <div class="callout-title">Generalisable: single-flight around any expensive shared refresh</div>
@@ -2709,11 +2750,32 @@ every password field is inside                   <span class="c-bad">-3</span>
       earn their keep. Systems that blur the line inherit the model’s entire attack surface as their own.</p>
     </div>
 
+    <div class="callout ok">
+      <div class="callout-title">Fixed: substring matching → whole-word matching</div>
+      <p>The scorer used to test <code>text.includes(topic)</code> with only a <code>topic.length &lt; 3</code> guard. The
+      real-world consequence was worse than the obvious <em>“desk” matches “Desktop”</em> case: the topic
+      <strong><code>men</code> matched inside <code>replaceMENt</code></strong>, and the badge cheerfully told a user they
+      had “been researching <em>men</em> across multiple platforms.”</p>
+      <div class="code small" style="margin:10px 0"><span class="c-com">/** Whole-word/phrase presence: "desk" matches "a desk!" but never "desktop". */</span>
+<span class="c-key">export function</span> <span class="c-fn">topicMatchesText</span>(topic: <span class="c-type">string</span>, text: <span class="c-type">string</span>): <span class="c-type">boolean</span> {
+  <span class="c-key">const</span> escaped = topic.<span class="c-fn">replace</span>(/[.*+?^${}()|[\]\\]/g, <span class="c-str">'\\$&amp;'</span>);   <span class="c-good">// topics are user data — escape</span>
+  <span class="c-key">return new</span> <span class="c-type">RegExp</span>(<span class="c-str">`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`</span>, <span class="c-str">'i'</span>).<span class="c-fn">test</span>(text);
+}
+<span class="c-com">// …and the minimum length rose from 3 to 4 chars.</span></div>
+      <p>Three details worth noting. <strong>The delimiter class is <code>[^a-z0-9]</code>, not <code>\b</code></strong> —
+      which correctly treats hyphens and punctuation as boundaries, so <code>"desk"</code> matches <code>"a desk!"</code> and
+      <code>"stand-up desk"</code>. <strong>Phrases work</strong>, because the topic is embedded whole rather than
+      tokenised. And <strong>the topic is regex-escaped</strong>: topics originate in page titles, so an unescaped
+      <code>.</code> or <code>(</code> would either over-match or throw — this is a user-data-into-regex path, which is
+      exactly where injection-shaped bugs live.</p>
+      <p>Two regression tests were added, and the one that matters is named after the bug:
+      <em>“never matches topics inside words (‘men’ vs ‘replacement development’)”</em>. <strong>Naming a test after the
+      incident it prevents is how a fix survives the next refactor</strong> — a future engineer “simplifying” back to
+      <code>includes()</code> gets a failure that explains itself.</p>
+    </div>
+
     <div class="callout warn">
-      <div class="callout-title">Two honest weaknesses in the scorer</div>
-      <p><strong>Substring matching is crude.</strong> A topic <code>"desk"</code> matches the card title
-      <code>"Desktop computer"</code>. There is a <code>topic.length &lt; 3</code> guard and nothing more — no word-boundary
-      check, no stemming. Word-boundary matching is a one-line improvement with a measurable false-positive reduction.</p>
+      <div class="callout-title">The remaining honest weakness in the scorer</div>
       <p><strong>The eval set is missing, and the file says so.</strong> The header admits the 50 hand-labelled tuples are
       deferred, and draws the correct conclusion: <em>“Without it we can’t quantify ‘LLM beats deterministic on N% of
       cards’, so shipping the LLM path off-by-default is the honest move.”</em> That is exactly right — the alternative,
@@ -3943,6 +4005,104 @@ graphLines                    <span class="c-com">// "- standing desks (intent s
       too long-lived for browsers. The apparent duplication is the correct answer.</p>
     </div>
 
+    <h3 class="sub">The login handoff: how a token crosses from a web page into an extension</h3>
+    <div class="prose">
+      <p>The extension holds no credential UI, so a session has to arrive from the web app. That crossing is one of the
+      genuinely awkward flows in browser-extension engineering, and it is worth walking because <strong>it was completely
+      broken until recently — in three independent ways at once</strong>, and the fixes are instructive.</p>
+    </div>
+    <div class="diagram">
+      <svg viewBox="0 0 1080 300" preserveAspectRatio="xMidYMid meet">
+        <g transform="translate(20,40)"><rect class="node-bg teal" width="180" height="60" rx="10"/><text class="node-label sm" x="90" y="23">Sidebar “Sign in”</text><text class="node-sub" x="90" y="41">guards chrome.runtime.id</text></g>
+        <g transform="translate(20,140)"><rect class="node-bg teal" width="180" height="60" rx="10"/><text class="node-label sm" x="90" y="23">Toolbar click</text><text class="node-sub" x="90" y="41">signed-out → handoff</text></g>
+
+        <g transform="translate(250,90)"><rect class="node-bg violet" width="230" height="60" rx="10"/><text class="node-label sm" x="115" y="23">web /login</text><text class="node-sub" x="115" y="41">?return=extension&amp;ext_id=…</text></g>
+        <g transform="translate(250,180)"><rect class="node-bg" width="230" height="72" rx="10"/><text class="node-label sm" x="115" y="22">validate ext_id</text><text class="node-sub" x="115" y="40">/^[a-p]{32}$/ on BOTH</text><text class="node-sub" x="115" y="56">branches</text></g>
+
+        <g transform="translate(530,40)"><rect class="node-bg green" width="230" height="60" rx="10"/><text class="node-label sm" x="115" y="23">already signed in?</text><text class="node-sub" x="115" y="41">forward existing tokens</text></g>
+        <g transform="translate(530,140)"><rect class="node-bg" width="230" height="60" rx="10"/><text class="node-label sm" x="115" y="23">else: login form</text><text class="node-sub" x="115" y="41">store web session too</text></g>
+
+        <g transform="translate(810,90)" class="node-pulse"><rect class="node-bg amber" width="250" height="72" rx="10"/><text class="node-label sm" x="125" y="22">chrome-extension://&lt;id&gt;/</text><text class="node-label sm" x="125" y="40">callback.html</text><text class="node-sub" x="125" y="58">+ callback.js (external!)</text></g>
+        <g transform="translate(810,190)"><rect class="node-bg" width="250" height="60" rx="10"/><text class="node-label sm" x="125" y="23">LOGIN_WITH_TOKEN</text><text class="node-sub" x="125" y="41">→ storeTokens · wake workers</text></g>
+
+        <path d="M200 70 C 225 70 230 108 250 112" class="edge flow" stroke="#5EEAD4" marker-end="url(#arrow-teal)"/>
+        <path d="M200 170 C 225 170 230 130 250 126" class="edge flow" stroke="#5EEAD4" marker-end="url(#arrow-teal)"/>
+        <path d="M365 150 L 365 180" class="edge flow" stroke="#A78BFA" marker-end="url(#arrow-violet)"/>
+        <path d="M480 200 C 505 200 508 78 530 70" class="edge flow" stroke="#4ADE80" marker-end="url(#arrow-green)"/>
+        <path d="M480 216 C 505 216 508 176 530 170" class="edge flow" marker-end="url(#arrow)"/>
+        <path d="M760 70 C 790 70 790 112 810 116" class="edge flow" stroke="#FBBF24" marker-end="url(#arrow-amber)"/>
+        <path d="M760 170 C 790 170 790 132 810 128" class="edge flow" stroke="#FBBF24" marker-end="url(#arrow-amber)"/>
+        <path d="M935 162 L 935 190" class="edge flow" marker-end="url(#arrow)"/>
+      </svg>
+      <div class="diagram-caption">Tokens travel in a URL to an extension-page origin. Every hop validates: the sidebar
+      guards its own runtime id, the login page validates the extension id on both branches, and the callback routes through
+      the same message handler the rest of the extension uses.</div>
+    </div>
+
+    <div class="cols-2" style="margin-top:16px">
+      <div class="defect fixed">
+        <div class="defect-head"><span class="defect-id">Gap 1</span><span class="defect-title">No entry path existed at all</span></div>
+        <dl>
+          <dt>What</dt><dd>Nothing anywhere constructed the handoff URL. The sidebar’s signed-out state was <em>plain text</em> (“Sign in via the RecoMe web app”), and a toolbar click opened the bare web app root.</dd>
+          <dt>Effect</dt><dd><strong>The extension could never receive a login.</strong> Every capture sat in the IndexedDB queue until the 72-hour TTL pruned it (§08) — the queue worked perfectly, and there was no way to ever drain it.</dd>
+          <dt>Fix</dt><dd>A real button in the sidebar, and the toolbar click now routes signed-out users into the handoff and signed-in users to <code>/dashboard</code>.</dd>
+          <dt>Lesson</dt><dd><strong>A flow with no entry point is not a flow.</strong> Every piece of this worked in isolation — auth, storage, the callback page — and the composition had a hole nobody had walked end to end.</dd>
+        </dl>
+      </div>
+      <div class="defect fixed">
+        <div class="defect-head"><span class="defect-id">Gap 2</span><span class="defect-title">Already-signed-in sessions dead-ended</span></div>
+        <dl>
+          <dt>What</dt><dd><code>/login</code> checked <code>existing &amp;&amp; !params.get('return')</code> before redirecting — so arriving <em>from</em> the extension with a live web session skipped the redirect and rendered the login form.</dd>
+          <dt>Effect</dt><dd>The most common case — a user already signed in on the web — was asked to log in again, at a form they were already past.</dd>
+          <dt>Fix</dt><dd>An explicit branch: existing session + <code>return=extension</code> + valid id ⇒ forward the stored tokens straight to the callback. No re-login.</dd>
+          <dt>Lesson</dt><dd>A boolean guard written for one caller (“don’t auto-redirect when someone passed <code>return</code>”) became wrong when a second caller appeared. <strong>Negated conditions age badly</strong>; enumerate the cases instead.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="callout bug" style="margin-top:16px">
+      <div class="callout-title">Gap 3 — MV3 CSP silently swallowed the entire storage step</div>
+      <p><code>callback.html</code> did the actual work of receiving tokens, and its script was <strong>inline</strong>.
+      Extension-page CSP is <code>script-src 'self'</code> (§07), which blocks inline scripts <em>silently from the page’s
+      perspective</em> — the browser logs a CSP violation and simply does not execute it.</p>
+      <p><strong>So the page rendered “Signed in successfully!”… and stored nothing.</strong> The most convincing possible
+      failure: a success message with no effect. The extension stayed “Signed out” forever, and the only evidence was a CSP
+      line in a console nobody had open.</p>
+      <p><strong>Fix:</strong> extract to <code>public/callback.js</code>, copied into <code>dist/</code> by a new
+      <code>copy-webpack-plugin</code> pattern whose comment names the reason. A hardcoded dead
+      <code>api.recome.app</code> fallback inside it was fixed at the same time (§27’s DNS problem, one more instance).</p>
+      <p><strong>The generalisable lesson:</strong> a security policy that blocks code produces <em>absence</em>, and absence
+      is invisible unless something asserts presence. When you adopt a restrictive CSP, audit for inline scripts and inline
+      handlers <em>as a migration step</em> — do not wait to discover them one silent feature at a time.</p>
+    </div>
+
+    <div class="callout bug">
+      <div class="callout-title">And the follow-on: <code>chrome-extension://invalid/</code></div>
+      <p>With the script fixed, the handoff still failed — the browser rewrote the URL to
+      <code>chrome-extension://invalid/</code>. Root cause: <strong><code>callback.html</code> was not in
+      <code>web_accessible_resources</code></strong>, so a web page is forbidden from navigating into it and Chrome replaces
+      the target rather than erroring usefully.</p>
+      <p>The fix narrows rather than opens — the resource is exposed only to the two web-app origins:</p>
+      <div class="code small" style="margin:10px 0">{
+  <span class="c-str">"resources"</span>: [<span class="c-str">"callback.html"</span>, <span class="c-str">"callback.js"</span>],
+  <span class="c-str">"matches"</span>: [<span class="c-str">"https://recome-web.vercel.app/*"</span>, <span class="c-str">"https://recome.app/*"</span>]
+}</div>
+      <p>Note what <em>not</em> to do: <code>"matches": ["&lt;all_urls&gt;"]</code> would also have fixed it, and would let any
+      page on the internet navigate into an extension page that accepts tokens from its query string. <strong>The narrow
+      match list is the security-relevant part of this fix</strong>, and it is the part a hurried debugging session would
+      have skipped.</p>
+    </div>
+
+    <div class="callout ok">
+      <div class="callout-title">The hardening that went with it</div>
+      <ul>
+        <li><strong>Extension-id validation on both branches:</strong> <code>/^[a-p]{32}$/</code>. Chrome extension ids are exactly 32 characters from <code>a</code>–<code>p</code>, so the literal string <code>"undefined"</code> from a broken caller can never be navigated. Tokens are also <code>encodeURIComponent</code>’d on both paths.</li>
+        <li><strong>The web session is stored regardless</strong> of whether the handoff happens — so a user who signs in for the extension is also signed in on the web, which is what they expect.</li>
+        <li><strong>Orphan guard in the sidebar:</strong> after an extension reload, content scripts survive with a dead bridge. <code>chrome.runtime?.id</code> becomes undefined, and interpolating it produced <code>ext_id=undefined</code>. The button now says <em>“Extension updated — refresh this page first”</em> instead of building a garbage URL. This is the <code>isContextValid()</code> pattern from §07 applied at the point of use.</li>
+        <li><strong>The callback routes through <code>LOGIN_WITH_TOKEN</code></strong> rather than writing storage directly, so <code>storeTokens()</code> runs and the uploader and poller wake immediately — with a direct-storage fallback if <code>chrome.runtime.lastError</code> indicates no listener received it. One path for the normal case, a belt for the impossible one.</li>
+      </ul>
+    </div>
+
     <div class="callout ok">
       <div class="callout-title">Three details in <code>resolveBearer</code> worth copying</div>
       <ol>
@@ -4289,10 +4449,8 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
       <div class="card"><div class="card-head"><span class="card-title">Sidebar</span><span class="card-tag">right-edge, shadow DOM</span></div><div class="card-body prose">
         <p>Persistent for the tab’s lifetime: status, Interest Graph bars from <code>/intelligence/intents</code>, the agent
         list with pause state, an inbox badge, and manual “Ask the agents” buttons for the current platform.</p>
-        <p><strong>Next on this surface:</strong> the capture liveness events landed in §07 have no subscriber yet. The
-        sidebar is where they belong — “capturing in 10s…” while the dwell timer runs, then “captured: standing desks,
-        ergonomics” — turning a silent ten-second timer into visible proof the product is working. The seam is built and
-        backwards-compatible; the consumer is one handler away.</p>
+        <p><strong>Now also the capture liveness surface</strong> — see the dedicated subsection below; this is where §07’s
+        events land.</p>
         <p>Note it survives SPA navigation — only per-page capture is torn down (§07). And its demo rows now carry an
         explicit <strong>“Example preview — not your data”</strong> badge, after a defect (D4) where invented demo topics
         rendered inside the same widget as real ones. Mixing real and illustrative data in one component without labels is a
@@ -4316,6 +4474,67 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
       </div></div>
     </div>
 
+    <h3 class="sub">Making capture visibly alive — the diagnosis and the fix</h3>
+    <div class="prose">
+      <p>The diagnosis recorded in the commit is worth quoting because it is a <em>product</em> diagnosis expressed as three
+      concrete engineering causes:</p>
+      <blockquote>Diagnosis of “looks static”: the product’s core moment (capture) was a silent 10-second timer with zero
+      feedback, the sidebar spoke dev telemetry (<em>“0 top topics loaded · Session: cloud · 33ms latency”</em>), and users
+      from the pre-intelligence era had their early signals eaten by 404 batch drops.</blockquote>
+      <p>Three causes, three different layers, one perceived symptom. That is the normal shape of a “feels broken” report and
+      it is why “looks static” is worth treating as a bug with a root cause rather than a design opinion.</p>
+    </div>
+
+    <div class="cols-2">
+      <div class="card"><div class="card-head"><span class="card-title">The live line</span><span class="card-tag">Sidebar.onCaptureArmed / Fired / Skipped</span></div><div class="card-body prose">
+        <p><strong>Armed</strong> → a ticking countdown driven by a 1 s interval:
+        <code>"Reading this page — capturing in 9s…"</code>. <strong>Fired</strong> → <code>"✓ Captured: gaming pcs"</code>
+        (first two topics, then <code>+N</code>), plus a teal pulse on the status dot for three animation cycles.
+        <strong>Skipped</strong> → <code>"Nothing to capture on this page."</code></p>
+        <p>Search captures announce themselves in the same line as <code>"pcs" (search)</code>, so the two trigger types are
+        visibly distinct.</p>
+      </div></div>
+      <div class="card"><div class="card-head"><span class="card-title">The instant-growth trick</span><span class="card-tag">FLUSH_NOW + delayed refresh</span></div><div class="card-body prose">
+        <p><code>onCaptureFired</code> does not just update text — it sends <code>FLUSH_NOW</code> to drain the queue
+        immediately rather than waiting up to 30 s for the alarm, then schedules an intents refresh <strong>1.5 s
+        later</strong>.</p>
+        <p>So the Interest Graph panel visibly gains the new topic seconds after capture. That 1.5 s is a deliberate guess at
+        server round-trip plus graph write; it is the kind of number that should eventually be replaced by the flush
+        response confirming acceptance, but as a first version it converts an invisible pipeline into a visible one.</p>
+      </div></div>
+    </div>
+
+    <div class="callout ok">
+      <div class="callout-title">The state-collision guard, which is the detail that makes it work</div>
+      <div class="code small" style="margin:8px 0"><span class="c-com">// Never clobber a live capture countdown/confirmation with telemetry.</span>
+<span class="c-key">if</span> (<span class="c-key">this</span>.countdownTimer === <span class="c-key">null</span>) {
+  <span class="c-key">this</span>.refs.nodesLine.textContent =
+    intents.length === <span class="c-num">0</span>
+      ? <span class="c-str">'Your graph is warming up.'</span>
+      : <span class="c-str">`${intents.length} topic${intents.length === 1 ? '' : 's'} live in your graph`</span>;
+}</div>
+      <p>The sidebar has a 60-second background refresh <em>and</em> an event-driven live line, both writing the same DOM
+      node. Without the guard, a refresh landing mid-countdown would overwrite “capturing in 4s…” with a topic count — the
+      classic two-writers-one-widget bug, and one that only reproduces on a timing coincidence.</p>
+      <p><strong>The general pattern:</strong> when a UI element has both a <em>steady-state</em> writer and a
+      <em>transient</em> writer, the transient one owns the element while it is active and the steady one must check. The
+      alternative — a small state machine for the element — is better at scale, but an explicit “am I mid-transient?” check
+      is the honest minimum, and it is far better than discovering the interleaving in the wild.</p>
+    </div>
+
+    <div class="callout learn">
+      <div class="callout-title">Copy is engineering: dev telemetry vs user language</div>
+      <p>The old strings were <code>"Interest Graph: 0 top topics loaded"</code> and
+      <code>"Session: cloud · 33ms latency"</code>. The new ones are <code>"Your graph is warming up."</code>,
+      <code>"7 topics live in your graph"</code>, and <code>"Synced · 33ms"</code>.</p>
+      <p>Nothing about the system changed. What changed is that <strong>the empty state now says what is happening rather
+      than reporting a zero</strong> — “0 top topics loaded” reads as a failure; “your graph is warming up” reads as a
+      process. And “Session: cloud” was leaking an implementation detail that means nothing to a user, in the same family as
+      the D4 defect where an env-var name (<code>INTELLIGENCE_AGENTS_ENABLED</code>) appeared in an empty state.</p>
+      <p><strong>Zero states are the highest-leverage copy in any product</strong>, because every user sees them first and
+      they are written last. Worth an explicit review pass of their own.</p>
+    </div>
+
     <h3 class="sub">ScoreBatcher: being a good guest in someone else’s page</h3>
     <div class="prose">
       <p>The naive implementation of card badges is: find every card, call the scoring API for each. On an Amazon search
@@ -4327,6 +4546,88 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
       batching is not an optimisation, it is a courtesy that determines whether you get uninstalled.</strong> The same
       reasoning produced the 30-second signal flush rather than per-event uploads, and the 2-minute inbox poll rather than
       a websocket.</p>
+      <p><strong>One fixed bug worth noting.</strong> Cards the server failed to score were added to the <code>scored</code>
+      set anyway, so they were <em>badge-less forever</em> on that page — a transient server degrade (an empty
+      <code>scores</code> array, which is exactly what the <code>.catch(() =&gt; [])</code> paths in §12 produce) turned into
+      a permanent visual hole until navigation. The fix is one line: <code>this.scored.delete(c.id)</code> when no score came
+      back, so a later <code>discover()</code> pass retries.</p>
+      <p>The general shape is worth recognising because it recurs: <strong>an idempotency set that records
+      “attempted” when it means “succeeded.”</strong> Same family as the batch-poisoning ack in §08 — marking work complete
+      on the basis of having tried it. If a set exists to prevent duplicate work, only add to it on confirmed success.</p>
+    </div>
+
+    <h3 class="sub">Anchoring a badge in a DOM you do not control</h3>
+    <div class="prose">
+      <p>The badge is <code>position: absolute</code> inside the card, which requires the card to be a positioning ancestor —
+      so <code>renderBadge</code> sets <code>position: relative</code> if the computed position is <code>static</code>.
+      Textbook, and it broke on Reddit in a way that is worth understanding properly.</p>
+    </div>
+    <div class="callout bug">
+      <div class="callout-title">War story: the vertical one-character-per-line badge</div>
+      <p><strong>Symptom:</strong> on Reddit, badges rendered as a vertical strip — one character per line, down the page.</p>
+      <p><strong>Cause:</strong> Reddit’s <code>&lt;shreddit-post&gt;</code> is <code>display: contents</code>. That value means
+      <em>the element generates no box at all</em> — its children participate in the parent’s layout as if the element were
+      not there. Consequences, in order:</p>
+      <ol>
+        <li><code>position: relative</code> on it is a <strong>no-op</strong>. You cannot position relative to something with no box.</li>
+        <li>The absolutely-positioned badge therefore anchored to the nearest <em>actual</em> positioned ancestor — which on Reddit is the narrow vote gutter.</li>
+        <li>An absolute box shrink-to-fits its containing block. In a ~40 px gutter, “Strong match” becomes one character per line.</li>
+      </ol>
+      <p><strong>The two-part fix.</strong> First, <em>resolve the anchor</em> — walk to the first descendant that has a real
+      box:</p>
+      <div class="code small" style="margin:10px 0"><span class="c-key">function</span> <span class="c-fn">resolveAnchor</span>(el: <span class="c-type">HTMLElement</span>): <span class="c-type">HTMLElement</span> {
+  <span class="c-key">const</span> cs = <span class="c-fn">getComputedStyle</span>(el);
+  <span class="c-key">const</span> width = el.<span class="c-fn">getBoundingClientRect</span>().width;
+  <span class="c-key">if</span> (cs.display !== <span class="c-str">'contents'</span> &amp;&amp; width &gt;= <span class="c-num">160</span>) <span class="c-key">return</span> el;   <span class="c-good">// already fine</span>
+  <span class="c-key">for</span> (<span class="c-key">const</span> child <span class="c-key">of</span> <span class="c-type">Array</span>.<span class="c-fn">from</span>(el.children)) {
+    <span class="c-key">if</span> (!(child <span class="c-key">instanceof</span> <span class="c-type">HTMLElement</span>)) <span class="c-key">continue</span>;
+    <span class="c-key">if</span> (<span class="c-fn">getComputedStyle</span>(child).display === <span class="c-str">'contents'</span>) <span class="c-key">continue</span>;
+    <span class="c-key">if</span> (child.<span class="c-fn">getBoundingClientRect</span>().width &gt;= <span class="c-num">160</span>) <span class="c-key">return</span> child;
+  }
+  <span class="c-key">return</span> el;                                            <span class="c-com">// give up gracefully</span>
+}</div>
+      <p>Second — and this is the more important half — <em>make the failure mode impossible</em> rather than merely
+      unlikely. The badge CSS gained <code>width: max-content</code>, <code>white-space: nowrap</code> and a 260 px cap, so
+      <strong>letter-wrapping cannot happen at any anchor</strong>, resolved or not.</p>
+      <p><strong>The principle:</strong> anchor resolution is a heuristic about someone else’s markup and will be wrong
+      again — “host sites keep inventing layouts our heuristics miss,” as the follow-up commit puts it. The CSS hardening is
+      a <em>guarantee</em>. When you must rely on a heuristic, pair it with a constraint that bounds how bad the heuristic
+      being wrong can be. Heuristic plus guarantee beats a better heuristic.</p>
+    </div>
+
+    <div class="prose">
+      <p>The reasoning overlay took three iterations to reach the same conclusion, and the sequence is instructive:</p>
+      <ol>
+        <li><strong>Hardened the badge, overlay still broke.</strong> The reasoning was <code>left:0; right:0; bottom:0</code> — stretched to its containing block — so on a boxless host it became a vertical strip even though the badge was now fine.</li>
+        <li><strong>Skipped the overlay on degenerate anchors.</strong> Rationale: “a missing hover hint beats a broken one.” Correct triage, and a real capability loss — some cards silently lost their explanation.</li>
+        <li><strong>Made it geometry-proof instead.</strong> A fixed-width opaque popover (280 px, capped at <code>85vw</code>) anchored under the badge at <code>top: 36px; left: 8px</code>. A fixed width cannot be squeezed by its container, so <strong>the skip was removed and every scored card gets its reasoning back.</strong></li>
+      </ol>
+      <p>The redesign fixed a separate UX problem at the same time: the old overlay was a translucent gradient band across
+      the bottom of the host card, covering the post’s own links and action row with text bleeding through. The popover is
+      opaque, bordered, shadowed, and — via <code>pointer-events: auto</code> plus a <code>.recome-reasoning:hover</code>
+      rule — <strong>stays open while hovered</strong>, so the “More like this / Not for me” buttons inside it are reachable.
+      The previous version had <code>pointer-events: none</code>, which meant the feedback controls were visible and
+      unclickable.</p>
+    </div>
+
+    <div class="callout learn">
+      <div class="callout-title">Three transferable lessons from this sequence</div>
+      <ol>
+        <li><strong>Prefer a constraint to a smarter guess.</strong> Iterations 1–2 improved the heuristic and narrowed the
+        symptom. Iteration 3 changed the geometry so the symptom was unreachable, and that is what let the defensive skip be
+        deleted. <em>Fixes that let you remove earlier defensive code are the ones that were actually right.</em></li>
+        <li><strong>“Skip the feature on hard cases” is valid triage and a debt.</strong> Shipping it was correct — a broken
+        overlay is worse than none — but it must be recorded as a capability loss, because otherwise it quietly becomes the
+        permanent behaviour. Here it lasted two commits.</li>
+        <li><strong><code>pointer-events: none</code> on anything containing controls is a bug.</strong> It is the standard
+        way to make an overlay non-blocking, and it silently disables every interactive element inside. If a container holds
+        buttons, it needs <code>auto</code> plus a hover rule that keeps it alive.</li>
+      </ol>
+      <p>And a testing note: jsdom has no layout engine, so <code>getBoundingClientRect()</code> returns zeros and this logic
+      is untestable by default. The new anchoring tests <strong>mock geometry explicitly</strong> — which is the right call,
+      and also a reminder that <em>any</em> code branching on measured layout needs either a mock or a real browser to be
+      covered at all. One of the two new tests exists purely to pin a jsdom <code>:scope</code> quirk in the assertion, which
+      is the tax you pay for testing DOM code outside a browser.</p>
     </div>
 
     <div class="callout info">
@@ -5307,7 +5608,7 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
     <div class="tbl-wrap"><table class="grid">
       <thead><tr><th style="width:130px">Job</th><th style="width:230px">Steps</th><th>Assessment</th></tr></thead>
       <tbody>
-        <tr><td><strong>extension</strong></td><td>typecheck → lint → jest (145) → build → upload <code>dist/</code></td><td>The most complete gate. The artifact upload on main pushes (7-day retention) means any commit is installable without a local toolchain — genuinely useful for QA and for demoing a branch.</td></tr>
+        <tr><td><strong>extension</strong></td><td>typecheck → lint → jest (147) → build → upload <code>dist/</code></td><td>The most complete gate. The artifact upload on main pushes (7-day retention) means any commit is installable without a local toolchain — genuinely useful for QA and for demoing a branch.</td></tr>
         <tr><td><strong>cloud</strong></td><td><code>prisma generate</code> → <code>tsc --noEmit</code></td><td>Typecheck only. The workflow is <strong>candid about why</strong>: <em>“Vitest tests are skipped here for now (many are integration tests that need Postgres + Neo4j + Qdrant service containers). When the integration suite is reorganised, swap <code>npm run typecheck</code> for <code>npm test</code>.”</em> Note <code>prisma generate</code> must precede typecheck, because model types are generated.</td></tr>
         <tr><td><strong>web</strong></td><td><code>next build</code></td><td>Build includes typecheck, so one step covers both. No lint step, though lint is clean as of Aug 2026 — worth adding to keep it that way.</td></tr>
       </tbody>
@@ -5347,10 +5648,10 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
       still deploy. And when the readiness probe fails, the pipeline goes red but <strong>the bad version stays live</strong>;
       there is no <code>flyctl releases rollback</code>. Both fixes are a few lines and they are the highest-value CI work
       available.</p>
-      <p><strong>2 · The cloud test suite is not in CI.</strong> 145 passing tests, 3 skipped, running in one second locally —
+      <p><strong>2 · The cloud test suite is not in CI.</strong> 147 passing tests, 3 skipped, running in one second locally —
       and CI runs none of them. The comment blames integration tests needing service containers, but the actual split is 17
       unit files versus 1 integration file. The fix is one flag: <code>vitest run --exclude '**/*.integration.test.ts'</code>,
-      which puts 145 real tests in the gate today. The perfect solution (service containers for the integration suite) is
+      which puts 147 real tests in the gate today. The perfect solution (service containers for the integration suite) is
       blocking the good one.</p>
       <p><strong>The general lesson:</strong> a test suite that is not in CI is documentation. It rots, and it stops being run
       by the people who most need its signal — the ones reviewing someone else’s pull request at 6 p.m.</p>
@@ -5364,7 +5665,7 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
       <li><strong>Add secret scanning</strong> (gitleaks or trufflehog) as a required check. §20 documents a live Fly token sitting in a tracked <code>.env.example</code> — exactly what this catches, and exactly the file human reviewers skip.</li>
       <li><strong>Add dependency audit</strong> (<code>npm audit --audit-level=high</code>) and Dependabot. Four workspaces means four dependency trees drifting independently.</li>
       <li><strong>Add <code>terraform plan</code> on PR</strong> once §28 lands, posting the plan as a PR comment. Apply gated behind an environment approval for production.</li>
-      <li><strong>Add a smoke test after deploy</strong> beyond <code>/ready</code>: sign up a throwaway user, post a signal, fetch trails, delete the user. One scripted journey catches an entire class of integration break that no unit test can.</li>
+      <li><strong>Add a smoke test after deploy</strong> beyond <code>/ready</code>: sign up a throwaway user, post a signal, fetch trails, delete the user. One scripted journey catches an entire class of integration break that no unit test can. <strong>This is now empirically the highest-value item on the list</strong> — the batch of fixes in §36 included two P0s (no login was possible at all; badge reasoning was unreachable) that a single end-to-end journey would have caught, and that a fully green unit suite could not.</li>
       <li><strong>Add migration ordering.</strong> Once Prisma migrations exist (§27), the deploy must run them before the new code goes live, and the pipeline must handle a failed migration by not deploying. This is the single most dangerous part of any deploy pipeline and it is currently unbuilt because migrations are unbuilt.</li>
     </ol>
 
@@ -6098,7 +6399,7 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
         <tr><td><strong>—</strong></td><td>No Postgres migration history — schema managed by <code>db push</code></td><td><span class="chip status-broken">P0 · live</span></td><td>The project’s own HLD calls this “a P0 hard requirement before any further schema change ships to prod.” <strong>Production now has data.</strong> The next schema change without a migration is unreviewable and unrollbackable.</td></tr>
         <tr><td><strong>—</strong></td><td>No backups configured; no restore ever drilled</td><td><span class="chip status-broken">P0 · live</span></td><td>Neo4j loss is unrecoverable — signals are retained in raw form nowhere else. Was a theoretical risk on 2026-08-10; is a live one now (§31).</td></tr>
         <tr><td><strong>—</strong></td><td><code>/auth</code> brute-force limiter exists in the API, not mounted</td><td><span class="chip status-wip">P1</span></td><td>Login is protected only by the global 300/min/IP ceiling (§21).</td></tr>
-        <tr><td><strong>—</strong></td><td>Cloud test suite not in CI (145 passing tests unused as a gate)</td><td><span class="chip status-wip">P1</span></td><td>One <code>--exclude</code> flag away from being gated (§29).</td></tr>
+        <tr><td><strong>—</strong></td><td>Cloud test suite not in CI (147 passing tests unused as a gate)</td><td><span class="chip status-wip">P1</span></td><td>One <code>--exclude</code> flag away from being gated (§29).</td></tr>
         <tr><td><strong>—</strong></td><td>Deploy is not gated on CI, and has no rollback</td><td><span class="chip status-wip">P1</span></td><td>A failing typecheck can deploy; a failing readiness probe leaves the bad version live (§29).</td></tr>
         <tr><td><strong>—</strong></td><td><code>npm run build</code> is <code>tsc || true</code></td><td><span class="chip status-open">P2</span></td><td>A type error cannot fail the container build. Vestigial now that typecheck is clean (§27).</td></tr>
         <tr><td><strong>—</strong></td><td>Silent truncation at <code>MAX_USERS_PER_TICK = 1000</code></td><td><span class="chip status-open">P2</span></td><td>User 1,001 gets nothing and nothing logs it. One line to fix (§17).</td></tr>
@@ -6107,7 +6408,38 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
       </tbody>
     </table></div>
 
-    <h3 class="sub">Closed — worth reading for the pattern</h3>
+    <h3 class="sub">Closed since this book’s first draft (2026-08-11)</h3>
+    <p class="feature-lede" style="margin-bottom:14px">Nine commits landed while this document was being written. Seven of
+    them fixed defects, and two of those were weaknesses this book had flagged as open.</p>
+    <div class="tbl-wrap"><table class="grid">
+      <thead><tr><th style="width:230px">Was</th><th style="width:110px">Severity</th><th>Fix, and where it is covered</th></tr></thead>
+      <tbody>
+        <tr><td><strong>The extension could never receive a login</strong> — three independent breaks: no code anywhere constructed the handoff URL; <code>/login</code> dead-ended already-signed-in sessions; and <code>callback.html</code>’s inline script was silently blocked by MV3 CSP so it stored nothing while displaying “Signed in successfully!”</td><td><span class="chip status-broken">was P0</span></td><td>Sign-in button in the sidebar + toolbar routing; an explicit already-signed-in forwarding branch; script extracted to <code>callback.js</code> and copied into <code>dist/</code>. <strong>Every capture was queuing into a queue that could never drain.</strong> §20, §37.7.</td></tr>
+        <tr><td><code>chrome-extension://invalid/</code> on handoff — <code>callback.html</code> absent from <code>web_accessible_resources</code></td><td><span class="chip status-broken">was P0</span></td><td>Exposed to the two web-app origins only — deliberately <em>not</em> <code>&lt;all_urls&gt;</code>. Plus <code>/^[a-p]{32}$/</code> extension-id validation on both branches and an orphaned-content-script guard. §20.</td></tr>
+        <tr><td><strong>Agents panel permanently empty, throwing every 60 s</strong> — the client’s <code>AgentInfo</code> declared a nested <code>subscription</code> object that the server never returns</td><td><span class="chip status-broken">was P1</span></td><td>Type now mirrors the server’s flat fields; <code>paused = a.paused || !a.enabled</code>. <strong>An invented type crashed a real surface for every signed-in user.</strong> §37.8.</td></tr>
+        <tr><td><strong>CardScorer matched topics as raw substrings</strong> — topic <code>men</code> matched inside <code>replaceMENt</code> and told users they had “been researching men across multiple platforms”</td><td><span class="chip status-broken">was P1</span></td><td>Whole-word/phrase matching via an escaped regex with a 4-char minimum, plus two regression tests. <strong>This book flagged substring matching as a weakness before the real instance surfaced.</strong> §12.</td></tr>
+        <tr><td><strong>Badges rendered as a vertical one-character-per-line strip on Reddit</strong> — <code>&lt;shreddit-post&gt;</code> is <code>display:contents</code>, generating no box, so <code>position:relative</code> was a no-op and the badge anchored to the vote gutter</td><td><span class="chip status-wip">was P2</span></td><td>Anchor resolution to the first descendant with real geometry, <em>and</em> CSS hardening (<code>max-content</code>, <code>nowrap</code>, 260 px cap) that makes letter-wrap impossible at any anchor. §23, §37.9.</td></tr>
+        <tr><td><strong>Reasoning overlay covered the host card’s own links and actions</strong>, and its <code>pointer-events: none</code> made the feedback buttons inside it unclickable</td><td><span class="chip status-wip">was P2</span></td><td>Redesigned as a fixed-width opaque popover under the badge, <code>pointer-events: auto</code> with a hover-keep-open rule. Being geometry-proof allowed the earlier degenerate-anchor skip to be deleted. §23.</td></tr>
+        <tr><td><strong>Cards the server failed to score were badge-less forever</strong> — marked as scored on attempt rather than on success</td><td><span class="chip status-wip">was P2</span></td><td>Un-mark on a missing score so a later pass retries. Same family as the batch-poisoning ack: <em>only record completion on confirmed success</em>. §23.</td></tr>
+        <tr><td><strong>A guaranteed 401 per client per 15-minute expiry cycle</strong> — <code>authedFetch</code> fired a headerless request and refreshed only after the failure</td><td><span class="chip status-open">was P2</span></td><td>Refresh proactively when no access token is present; the 401-retry path remains for genuine mid-session revocation. Not a correctness bug — a permanent stream of meaningless auth failures in production logs. §08.</td></tr>
+        <tr><td><strong>Capture was invisible</strong> — a silent 10-second timer, a sidebar speaking dev telemetry, and no evidence the product was working</td><td><span class="chip status-wip">was P1 (UX)</span></td><td>Liveness events consumed by the sidebar: countdown → “✓ Captured: gaming pcs” → pulse → <code>FLUSH_NOW</code> + a 1.5 s intents refresh so the graph visibly grows. Copy humanised. §07, §23.</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="callout learn">
+      <div class="callout-title">What that batch of nine commits is actually an example of</div>
+      <p>Look at the severities: two P0s that made core flows <em>completely non-functional</em> (no login was possible; no
+      badge reasoning was reachable), sitting behind a fully green test suite and a live production deployment.</p>
+      <p>Both were <strong>composition failures</strong>. Auth worked; storage worked; the callback page worked; the login page
+      worked — and no code path connected them, so the assembled feature had never run end to end. Unit tests cannot find
+      this class of defect by construction, because every unit passes.</p>
+      <p><strong>The countermeasure is not more unit tests.</strong> It is one scripted journey through the real system — the
+      smoke test proposed in §29: sign in, capture, see a trail. That single test would have caught the login handoff, the
+      empty agents panel, and the badge-less cards. <em>A test that exercises the seams is worth twenty that exercise the
+      units.</em></p>
+    </div>
+
+    <h3 class="sub">Closed earlier — worth reading for the pattern</h3>
     <div class="tbl-wrap"><table class="grid">
       <thead><tr><th style="width:60px">ID</th><th style="width:300px">Was</th><th>How it was fixed</th></tr></thead>
       <tbody>
@@ -6145,9 +6477,9 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
     <div>
       <div class="feature-num">37 · Judgement</div>
       <h2 class="feature-title">War stories — bugs that encode principles</h2>
-      <p class="feature-lede">Six real bugs from this repository, each chosen because the principle it teaches is worth
+      <p class="feature-lede">Ten real bugs from this repository, each chosen because the principle it teaches is worth
       more than the fix. Read these the way a pilot reads incident reports: not for the specific aircraft, but for the
-      class of mistake.</p>
+      class of mistake. The last four landed <em>while this document was being written</em>.</p>
     </div>
   </div>
 
@@ -6226,9 +6558,65 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
       </div></div>
     </div>
 
+    <div class="cols-2" style="margin-top:16px">
+      <div class="card"><div class="card-head"><span class="card-title">37.7 · The success message that stored nothing</span><span class="card-tag">login handoff</span></div><div class="card-body prose">
+        <p><strong>Symptom:</strong> <code>callback.html</code> displayed “Signed in successfully!” and the extension remained
+        “Signed out.” Forever.</p>
+        <p><strong>Cause:</strong> the page’s token-storing script was <em>inline</em>, and MV3 extension-page CSP is
+        <code>script-src 'self'</code>. The browser blocked it, logged a violation in a console nobody had open, and rendered
+        the static success markup — which was hardcoded in the HTML, not produced by the script.</p>
+        <p><strong>Principles:</strong> ① <em>A security policy that blocks code produces absence, and absence is invisible
+        unless something asserts presence.</em> ② <strong>Never hardcode a success state that the code is supposed to
+        earn</strong> — the markup was lying independently of the CSP bug. ③ Adopting a restrictive CSP requires an
+        inline-script audit as a migration step, not a discovery process.</p>
+      </div></div>
+
+      <div class="card"><div class="card-head"><span class="card-title">37.8 · The type that invented a server response</span><span class="card-tag">agents panel</span></div><div class="card-body prose">
+        <p><strong>Symptom:</strong> the sidebar’s agents panel was permanently empty, and threw
+        <code>reading pausedAt of undefined</code> every 60 seconds for every signed-in user.</p>
+        <p><strong>Cause:</strong> <code>GET /intelligence/agents</code> returns flat fields —
+        <code>enabled</code>, <code>paused</code>, <code>pausedReason</code>, <code>lastRunAt</code>,
+        <code>lastEmittedAt</code>. The extension’s <code>AgentInfo</code> interface declared a nested
+        <code>subscription: { enabled, pausedAt, lastEmittedAt }</code> object that <strong>had never existed</strong>.
+        TypeScript happily verified the client against its own fiction.</p>
+        <p><strong>Principles:</strong> ① <em>A hand-written type for a remote response is an assertion, not a
+        guarantee</em> — the compiler validates you against your belief, not against the server. ② The fix that prevents
+        recurrence is generating client types from the OpenAPI spec (the planned SDK, §18), or validating responses with the
+        same Zod schemas the server uses — the pattern already applied to <em>requests</em> and not to responses. ③ Note the
+        asymmetry this codebase currently has: inputs share one schema file across both surfaces (§00), outputs are
+        hand-mirrored. That is where the drift lives.</p>
+      </div></div>
+
+      <div class="card"><div class="card-head"><span class="card-title">37.9 · The element with no box</span><span class="card-tag">display: contents</span></div><div class="card-body prose">
+        <p><strong>Symptom:</strong> badges rendered as a vertical strip, one character per line, on Reddit only.</p>
+        <p><strong>Cause:</strong> <code>&lt;shreddit-post&gt;</code> is <code>display: contents</code> — it generates no box, so
+        <code>position: relative</code> on it is a no-op, the absolute badge anchored to Reddit’s narrow vote gutter, and an
+        absolute box shrink-to-fits its containing block.</p>
+        <p><strong>Principles:</strong> ① <em>Know the CSS values that break your assumptions.</em> <code>display: contents</code>,
+        <code>position: sticky</code>, containing blocks created by <code>transform</code> and <code>filter</code>, and
+        <code>overflow: hidden</code> ancestors are the four that ruin injected UI. ② <strong>Pair a heuristic with a
+        guarantee.</strong> Anchor resolution will be wrong again on the next site; <code>width: max-content</code> plus
+        <code>nowrap</code> bounds how wrong it can look. ③ jsdom has no layout, so anything branching on
+        <code>getBoundingClientRect()</code> is untested unless you mock geometry deliberately.</p>
+      </div></div>
+
+      <div class="card"><div class="card-head"><span class="card-title">37.10 · The retry that hid a defect</span><span class="card-tag">token refresh</span></div><div class="card-body prose">
+        <p><strong>Symptom:</strong> none, functionally. A recurring <code>"Missing authorization header"</code> 401 in the
+        logs, once per client per 15 minutes, forever.</p>
+        <p><strong>Cause:</strong> <code>authedFetch</code> read the access token and, if absent, sent the request anyway
+        before refreshing on the 401. The retry always succeeded, so the feature always worked.</p>
+        <p><strong>Principles:</strong> ① <em>Error logs are a resource with a signal-to-noise ratio, and a “harmless”
+        recurring error spends it.</em> Once the stack went live, a genuine attack would have been indistinguishable from
+        this noise. ② <strong>Do not use the exceptional path for the routine case.</strong> Expiry is expected — handle it
+        proactively; keep the 401 path for mid-session revocation, which is genuinely exceptional. ③ Any log line you have
+        learned to ignore is a defect, either in the code or in the logging.</p>
+      </div></div>
+    </div>
+
     <div class="callout learn">
-      <div class="callout-title">The thread running through all six</div>
-      <p>Five of the six produced <strong>no error signal at all</strong>. Not an exception, not a 500, not a failing test.
+      <div class="callout-title">The thread running through all ten</div>
+      <p>Nine of the ten produced <strong>no error signal a human would see</strong>. Not an exception surfaced to a user, not
+      a 500, not a failing test.
       The system behaved exactly as written, and what was written was wrong in a way that looks like normal operation:
       an empty result set, a default value, a fallback branch, a variable that resolves to nothing.</p>
       <p><strong>This is the defining characteristic of the bugs that survive to production.</strong> Loud bugs are found in
@@ -6429,8 +6817,8 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
       <div class="callout-title">The gate before you push</div>
       <p><code>npm run validate</code> — typecheck + lint + jest for extension and packages. For cloud:
       <code>npx tsc --noEmit &amp;&amp; npx vitest run</code>. For web: <code>npm run build</code>.</p>
-      <p>Current state, verified: extension <strong>145/145 passing</strong> across 8 suites, lint and typecheck clean;
-      cloud <strong>145 passing, 3 skipped</strong> across 18 files, typecheck clean. Both green — which is why the defects
+      <p>Current state, verified: extension <strong>147/147 passing</strong> across 8 suites, lint and typecheck clean;
+      cloud <strong>147 passing, 3 skipped</strong> across 18 files, typecheck clean. Both green — which is why the defects
       in §36 are interesting: <strong>they all survive a fully green build.</strong> A passing suite tells you the code does
       what the tests say. It has nothing to say about the tests you did not write.</p>
     </div>
@@ -6528,7 +6916,8 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
       <li><strong>Turn on backups and drill a restore.</strong> Neo4j first — its loss is unrecoverable and there is no derivation path. Postgres PITR is a checkbox. Then actually restore something, because untested backups do not count.</li>
       <li><strong>Fix D14.</strong> Two MERGE statements plus a backfill plus one integration test. It restores the flagship agent, unblocks the Personality Mirror trajectory (D15), and removes the impossible promise from the R2 onboarding target.</li>
       <li><strong>Fix D16.</strong> One line and a re-index. It closes a live cross-user seam and a GDPR-erasure hole.</li>
-      <li><strong>Put the cloud tests in CI, and gate the deploy on it.</strong> One <code>--exclude</code> flag plus a <code>needs:</code>. 145 tests currently produce no signal on anyone’s pull request.</li>
+      <li><strong>Put the cloud tests in CI, and gate the deploy on it.</strong> One <code>--exclude</code> flag plus a <code>needs:</code>. 147 tests currently produce no signal on anyone’s pull request.</li>
+      <li><strong>Add the post-deploy smoke journey</strong> — sign up, capture, fetch a trail, delete. The nine-commit batch in §36 contained two P0 composition failures that unit tests structurally cannot catch and one scripted journey would have. This has moved up the list on evidence.</li>
       <li><strong>Add rollback on readiness-probe failure.</strong> Presently a bad deploy stays live and the pipeline merely turns red.</li>
       <li><strong>Fix D17</strong> before the entity table grows further — the backfill gets more expensive every day it runs live.</li>
       <li><strong>Instrument four numbers</strong> (§30): RAR, signals per platform per day, agent emissions and pause rate, and LLM cost per user per day. The last is computable from a table that already exists and nothing reads.</li>
@@ -6559,10 +6948,10 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
 <footer>
   <p><strong>RecoMe — The Complete Architecture Book</strong><br/>
   HLD · LLD · Infrastructure · Scale · Judgement</p>
-  <p>Verified against the working tree at commit <code style="font-family:var(--mono)">83630b9</code> · production probed live ·
+  <p>Verified against the working tree at commit <code style="font-family:var(--mono)">d056805</code> · production probed live ·
   2026-08-11<br/>
-  Extension 145/145 tests · cloud 145 passing / 3 skipped · typecheck and lint clean<br/>
-  Four previously-unrecorded defects (D14–D17) and one security finding were discovered while writing this document.</p>
+  Extension 147/147 tests · cloud 147 passing / 3 skipped · typecheck and lint clean<br/>
+  Four previously-unrecorded defects (D14–D17) and one security finding were discovered while writing this document.<br/>Nine commits landed during the writing; §36 and §37 record them.</p>
   <p style="margin-top:18px;color:var(--text-faint)">Written with <span class="heart">♥</span> and a great deal of reading the actual code.</p>
 </footer>
 
