@@ -175,6 +175,8 @@ Everything the demo and diligence touch is real or clearly labeled.
 
 ### R2 — Launch
 
+> Operational breakdown with founder actions + build order: [LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md) (created 2026-08-11).
+
 - Chrome Web Store listing live (screenshots produced, claims audited against this doc). Onboarding: sign-in → first-capture → first-Recall within 10 minutes of install.
 - Push delivery + digest live with preference center. Consumer Pro purchasable. iOS share extension in TestFlight — share-sheet capture is the mobile story at launch (capture pyramid tier 3).
 - **Exit:** installable by a stranger; first 100 external WAU; RAR baseline measured.
