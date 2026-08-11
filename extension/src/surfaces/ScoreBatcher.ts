@@ -110,7 +110,13 @@ export class ScoreBatcher {
     const byId = new Map(res.data!.scores.map((s) => [s.id, s]));
     for (const c of batch) {
       const score = byId.get(c.id);
-      if (!score) continue;
+      if (!score) {
+        // Server didn't score this card (e.g. transient degrade returning an
+        // empty list). Un-mark it so a future discover() pass retries —
+        // previously these cards were badge-less forever on this page.
+        this.scored.delete(c.id);
+        continue;
+      }
       // Card may have been removed from DOM in the interim (infinite scroll
       // recycle). Re-resolve via the data-recome-id attribute.
       const el = document.querySelector<HTMLElement>(`[data-recome-id="${CSS.escape(c.id)}"]`);

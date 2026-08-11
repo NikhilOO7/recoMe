@@ -37,7 +37,10 @@ export class SearchSignal {
   private last = '';
   private installed = false;
 
-  constructor(private platform: Platform) {}
+  constructor(
+    private platform: Platform,
+    private onCaptured?: (query: string) => void,
+  ) {}
 
   start(): void {
     if (this.installed) return;
@@ -82,6 +85,7 @@ export class SearchSignal {
   private async emit(query: string): Promise<void> {
     if (query === this.last) return;
     this.last = query;
+    this.onCaptured?.(query);
     await sendMessage<CaptureSignalPayload, unknown>('CAPTURE_SIGNAL', {
       signal: {
         kind: 'search',

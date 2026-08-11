@@ -41,6 +41,49 @@ export class Sidebar {
   private refs: SidebarRefs | null = null;
   private collapsed = false;
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
+  private countdownTimer: ReturnType<typeof setInterval> | null = null;
+
+  // ── Capture liveness (the invisible 10s dwell read as "not working") ──
+  /** Show a ticking countdown while the dwell timer runs on this page. */
+  onCaptureArmed(dwellMs: number): void {
+    if (!this.refs) return;
+    this.clearCountdown();
+    let remaining = Math.round(dwellMs / 1000);
+    const line = this.refs.nodesLine;
+    const tick = () => {
+      if (remaining <= 0) return this.clearCountdown();
+      line.textContent = `Reading this page — capturing in ${remaining}s…`;
+      remaining -= 1;
+    };
+    tick();
+    this.countdownTimer = setInterval(tick, 1000);
+  }
+
+  /** Signal captured: pulse, name the topics, then refresh so the graph
+   *  panel visibly gains the new topic within seconds. */
+  onCaptureFired(topics: string[]): void {
+    if (!this.refs) return;
+    this.clearCountdown();
+    const shown = topics.slice(0, 2).join(', ');
+    this.refs.nodesLine.textContent = `✓ Captured: ${shown}${topics.length > 2 ? ` +${topics.length - 2}` : ''}`;
+    this.refs.statusDot.classList.add('rcm-dot-pulse');
+    setTimeout(() => this.refs?.statusDot.classList.remove('rcm-dot-pulse'), 2500);
+    // Push the queue now and re-pull intents so the topic appears live.
+    void sendMessage('FLUSH_NOW', undefined).then(() => {
+      setTimeout(() => void this.refresh(), 1500);
+    });
+  }
+
+  onCaptureSkipped(): void {
+    if (!this.refs) return;
+    this.clearCountdown();
+    this.refs.nodesLine.textContent = 'Nothing to capture on this page.';
+  }
+
+  private clearCountdown(): void {
+    if (this.countdownTimer !== null) clearInterval(this.countdownTimer);
+    this.countdownTimer = null;
+  }
 
   mount(): void {
     if (this.refs) return;
@@ -53,6 +96,7 @@ export class Sidebar {
   unmount(): void {
     if (this.refreshTimer !== null) clearInterval(this.refreshTimer);
     this.refreshTimer = null;
+    this.clearCountdown();
     this.refs?.host.remove();
     this.refs = null;
   }
@@ -116,8 +160,14 @@ export class Sidebar {
 
     this.refs.statusDot.style.background = '#10b981';
     this.refs.statusLabel.textContent = 'RecoMe Active';
-    this.refs.nodesLine.textContent = `Interest Graph: ${intents.length} top topic${intents.length === 1 ? '' : 's'} loaded`;
-    this.refs.sessionLine.textContent = `Session: cloud · ${latency}ms latency`;
+    // Never clobber a live capture countdown/confirmation with telemetry.
+    if (this.countdownTimer === null) {
+      this.refs.nodesLine.textContent =
+        intents.length === 0
+          ? 'Your graph is warming up.'
+          : `${intents.length} topic${intents.length === 1 ? '' : 's'} live in your graph`;
+    }
+    this.refs.sessionLine.textContent = `Synced · ${latency}ms`;
 
     this.renderIntents(intents);
     this.renderAgents(agents, unseen);
@@ -402,6 +452,11 @@ const SIDEBAR_CSS = `
 .rcm-status { display: flex; align-items: center; gap: 8px; font-weight: 700; }
 .rcm-dot { width: 8px; height: 8px; border-radius: 50%; background: #94a3b8;
   box-shadow: 0 0 0 3px rgba(255,255,255,0.05); transition: background .25s; }
+@keyframes rcm-capture-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(94,234,212,0.15); }
+  50% { box-shadow: 0 0 0 7px rgba(94,234,212,0.35); }
+}
+.rcm-dot-pulse { animation: rcm-capture-pulse 0.9s ease-in-out 3; background: #5eead4 !important; }
 .rcm-status-label { letter-spacing: -0.2px; }
 .rcm-collapse {
   width: 28px; height: 28px; border: 0; background: transparent;

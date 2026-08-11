@@ -12,12 +12,26 @@ import type { PlatformCapture } from '../PlatformCapture';
 
 const DWELL_MS = 10_000;
 
+/** Liveness events so surfaces can SHOW capture happening (the product's
+ *  magic moment was invisible — a silent 10s timer reads as "not working"). */
+export interface CaptureEvents {
+  /** Timer armed for this page; fires with the total dwell in ms. */
+  onArmed?: (dwellMs: number) => void;
+  /** Signal captured and queued; fires with the topic display names. */
+  onCaptured?: (topics: string[]) => void;
+  /** Page had nothing capturable (no topics/entities). */
+  onSkipped?: () => void;
+}
+
 export class DwellSignal {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private fired = false;
   private visibilityListener: (() => void) | null = null;
 
-  constructor(private capture: PlatformCapture) {}
+  constructor(
+    private capture: PlatformCapture,
+    private events: CaptureEvents = {},
+  ) {}
 
   start(): void {
     this.cancel();
@@ -32,6 +46,7 @@ export class DwellSignal {
   }
 
   private arm(): void {
+    this.events.onArmed?.(DWELL_MS);
     this.timer = setTimeout(() => this.fire(), DWELL_MS);
   }
 
@@ -52,7 +67,11 @@ export class DwellSignal {
     this.fired = true;
 
     const ex = this.capture.extract();
-    if (!ex || (ex.topics.length === 0 && ex.entities.length === 0)) return;
+    if (!ex || (ex.topics.length === 0 && ex.entities.length === 0)) {
+      this.events.onSkipped?.();
+      return;
+    }
+    this.events.onCaptured?.(ex.topics.map((t) => t.name));
 
     await sendMessage<CaptureSignalPayload, unknown>('CAPTURE_SIGNAL', {
       signal: {

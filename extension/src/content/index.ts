@@ -149,10 +149,18 @@ function startPerPage(platform: string): void {
   teardownPerPage();
 
   const capture = createCapture(platform as Parameters<typeof createCapture>[0]);
-  dwell = new DwellSignal(capture);
+  // Capture liveness → sidebar: countdown while dwelling, pulse + named
+  // topics on capture, then a fast refresh so the graph visibly grows.
+  dwell = new DwellSignal(capture, {
+    onArmed: (ms) => sidebar?.onCaptureArmed(ms),
+    onCaptured: (topics) => sidebar?.onCaptureFired(topics),
+    onSkipped: () => sidebar?.onCaptureSkipped(),
+  });
   dwell.start();
   if (!search) {
-    search = new SearchSignal(platform as Parameters<typeof createCapture>[0]);
+    search = new SearchSignal(platform as Parameters<typeof createCapture>[0], (query) =>
+      sidebar?.onCaptureFired([`“${query}” (search)`]),
+    );
     search.start();
   }
 
