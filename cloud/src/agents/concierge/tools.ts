@@ -108,6 +108,30 @@ export async function findAlternatives(
   return alternatives;
 }
 
+// ── resolve_asin(pageUrl) ──────────────────────────────────────────────────
+// Entity→ASIN resolution, v1 (closes ADR-0017 open question §1 for the
+// event-triggered path). Amazon PDP URLs carry the ASIN in a handful of
+// well-known shapes; when the user is ON the product page we don't need a
+// search API to resolve it. Watchlist labels still lack ASINs — that
+// (free-text → ASIN) remains the v1.1 resolver.
+//
+// Recognized: /dp/ASIN · /gp/product/ASIN · /gp/aw/d/ASIN (mobile) ·
+// /product/ASIN · ?asin=ASIN
+const ASIN_PATH_RE = /\/(?:dp|gp\/product|gp\/aw\/d|product)\/([A-Z0-9]{10})(?=[/?#]|$)/i;
+
+export function resolveAsinFromUrl(pageUrl: string | undefined): string | null {
+  if (!pageUrl) return null;
+  const pathMatch = ASIN_PATH_RE.exec(pageUrl);
+  if (pathMatch) return pathMatch[1]!.toUpperCase();
+  try {
+    const qp = new URL(pageUrl).searchParams.get('asin');
+    if (qp && /^[A-Z0-9]{10}$/i.test(qp)) return qp.toUpperCase();
+  } catch {
+    // Not a parseable URL — no ASIN.
+  }
+  return null;
+}
+
 // ── Small helper: pretty-format a USD price for emission copy. ─────────────
 export function formatUsd(amountCents: number): string {
   return `$${(amountCents / 100).toFixed(2)}`;

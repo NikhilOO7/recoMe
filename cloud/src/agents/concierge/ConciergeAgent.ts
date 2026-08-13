@@ -1,7 +1,7 @@
 import { BaseAgent } from '../BaseAgent.js';
 import type { AgentContext, AgentResult, AgentEventSource } from '../types.js';
 import type { Platform } from '../../graph/types.js';
-import { compareOffers, formatUsd } from './tools.js';
+import { compareOffers, formatUsd, resolveAsinFromUrl } from './tools.js';
 import { listWatchlist, updateWatchlistPrice, type WatchlistItem } from './Watchlist.js';
 import { logger } from '../../observability/logger.js';
 
@@ -97,7 +97,9 @@ export class ConciergeAgent extends BaseAgent {
     }
 
     for (const item of items) {
-      const emission = await this.checkOne(item.label, ctx, { item });
+      // Watchlist rows are free-text labels — no ASIN available yet (the
+      // free-text→ASIN resolver is the remaining v1.1 piece of ADR-0017 §1).
+      const emission = await this.checkOne(item.label, item.label, ctx, { item });
       if (emission) {
         return { status: 'succeeded', emit: emission, llmTokens: 0, costMicros: 0 };
       }
@@ -107,19 +109,24 @@ export class ConciergeAgent extends BaseAgent {
 
   private async runEvent(ctx: AgentContext): Promise<AgentResult> {
     const event = ctx.event as unknown as ConciergeTriggerEvent;
-    const entityKey = (event.entityNames?.[0] ?? '').trim();
-    if (!entityKey) {
+    const label = (event.entityNames?.[0] ?? '').trim();
+    if (!label) {
       return { status: 'skipped', reason: 'no entity to price-check' };
     }
+
+    // The user is ON the product page — its URL carries the ASIN, which is
+    // what real vendors (Keepa) key lookups on. Fall back to the label so the
+    // stub vendor (and future title-keyed vendors) keep working.
+    const lookupKey = resolveAsinFromUrl(event.pageUrl) ?? label;
 
     // If the touched entity is on the user's Watchlist, surface the watchlist
     // target so the user's explicit threshold beats the generic 10%-off rule.
     const wlItem = (await listWatchlist(ctx.userId)).find(
-      (i) => i.label.trim().toLowerCase() === entityKey.toLowerCase(),
+      (i) => i.label.trim().toLowerCase() === label.toLowerCase(),
     );
-    const emission = await this.checkOne(entityKey, ctx, { event, item: wlItem });
+    const emission = await this.checkOne(lookupKey, label, ctx, { event, item: wlItem });
     if (!emission) {
-      return { status: 'skipped', reason: `no deal on "${entityKey}"` };
+      return { status: 'skipped', reason: `no deal on "${label}"` };
     }
     return { status: 'succeeded', emit: emission, llmTokens: 0, costMicros: 0 };
   }
@@ -127,15 +134,18 @@ export class ConciergeAgent extends BaseAgent {
   /**
    * Shared "check one entity" path. Returns an AgentEmission when the cheapest
    * quote either hits the watchlist target (if any) or is ≥10% below baseline.
+   * `lookupKey` feeds the price vendor (ASIN when resolvable); `label` is the
+   * human-readable entity name used in all copy and citations.
    * Side effect: updates Watchlist.lastPriceUsd / lastPriceAt when an item is
    * provided, so the /ask Watchlist UI reflects fresh data.
    */
   private async checkOne(
-    entityKey: string,
+    lookupKey: string,
+    label: string,
     ctx: AgentContext,
     src: { event?: ConciergeTriggerEvent; item?: WatchlistItem },
   ): Promise<NonNullable<AgentResult & { status: 'succeeded' }>['emit'] | null> {
-    const cmp = await compareOffers(entityKey);
+    const cmp = await compareOffers(lookupKey);
     if (!cmp.cheapest) return null;
 
     const { cheapest } = cmp;
@@ -157,7 +167,7 @@ export class ConciergeAgent extends BaseAgent {
     const reasonLabel = hitsTarget
       ? `at or below your target of ${formatUsd(targetCents!)}`
       : `${formatUsd(ref! - cheapest.amountCents)} below baseline`;
-    const title = `${retailerLabel} dropped "${entityKey}" to ${formatUsd(cheapest.amountCents)} — ${reasonLabel}.`;
+    const title = `${retailerLabel} dropped "${label}" to ${formatUsd(cheapest.amountCents)} — ${reasonLabel}.`;
 
     const otherQuotes = cmp.quotes.filter((q) => q.retailer !== cheapest.retailer && q.inStock);
     const otherSummary = otherQuotes
@@ -193,7 +203,7 @@ export class ConciergeAgent extends BaseAgent {
         label: `Watchlist item · ${src.item.label}`,
       });
     }
-    sources.push({ kind: 'entity', id: entityKey, label: entityKey });
+    sources.push({ kind: 'entity', id: lookupKey, label });
     if (src.event?.topicNormalizedName) {
       sources.push({
         kind: 'topic',
@@ -217,8 +227,9 @@ export class ConciergeAgent extends BaseAgent {
       actionUrl: cheapest.url,
       sources,
       // One Concierge emission per (user, entity, day-bucket). Repeated views
-      // of the same product within 24h won't re-notify.
-      dedupeKey: `concierge:${entityKey.toLowerCase()}:${Math.floor(ctx.now.getTime() / (24 * 60 * 60 * 1000))}`,
+      // of the same product within 24h won't re-notify. Keyed on lookupKey so
+      // an ASIN-resolved product dedupes across differently-titled captures.
+      dedupeKey: `concierge:${lookupKey.toLowerCase()}:${Math.floor(ctx.now.getTime() / (24 * 60 * 60 * 1000))}`,
     };
   }
 }

@@ -14,7 +14,12 @@ import {
   type PriceFetcher,
   type PriceQuote,
 } from '../concierge/PriceFetcher.js';
-import { compareOffers, findAlternatives, priceCheck } from '../concierge/tools.js';
+import {
+  compareOffers,
+  findAlternatives,
+  priceCheck,
+  resolveAsinFromUrl,
+} from '../concierge/tools.js';
 import type { Platform } from '../../graph/types.js';
 import type { AgentContext } from '../types.js';
 
@@ -221,5 +226,88 @@ describe('ConciergeAgent.run', () => {
     const agent = new ConciergeAgent();
     const result = await agent.run(ctxFor());
     expect(result.status).toBe('skipped');
+  });
+});
+
+describe('resolveAsinFromUrl', () => {
+  it('extracts the ASIN from every known Amazon PDP URL shape', () => {
+    expect(resolveAsinFromUrl('https://www.amazon.com/dp/B0ABCD1234')).toBe('B0ABCD1234');
+    expect(
+      resolveAsinFromUrl('https://www.amazon.com/Uplift-Desk/dp/B0ABCD1234/ref=sr_1_1?th=1'),
+    ).toBe('B0ABCD1234');
+    expect(resolveAsinFromUrl('https://www.amazon.com/gp/product/B0ABCD1234')).toBe('B0ABCD1234');
+    expect(resolveAsinFromUrl('https://www.amazon.com/gp/aw/d/B0ABCD1234')).toBe('B0ABCD1234'); // mobile
+    expect(resolveAsinFromUrl('https://www.amazon.com/some/page?asin=b0abcd1234')).toBe(
+      'B0ABCD1234',
+    );
+  });
+
+  it('returns null for non-PDP, malformed, and missing URLs', () => {
+    expect(resolveAsinFromUrl('https://www.amazon.com/s?k=standing+desk')).toBeNull();
+    expect(resolveAsinFromUrl('https://www.amazon.com/dp/SHORT')).toBeNull();
+    expect(resolveAsinFromUrl('not a url')).toBeNull();
+    expect(resolveAsinFromUrl(undefined)).toBeNull();
+  });
+
+  it('does not swallow trailing path noise into the ASIN', () => {
+    // 11+ alphanumeric chars after /dp/ is not an ASIN.
+    expect(resolveAsinFromUrl('https://www.amazon.com/dp/B0ABCD12345')).toBeNull();
+  });
+});
+
+describe('ConciergeAgent ASIN-keyed lookups', () => {
+  it('feeds the vendor the ASIN from pageUrl while copy keeps the human label', async () => {
+    const seenKeys: string[] = [];
+    class RecordingFetcher extends FixtureFetcher {
+      override async priceCheck(entity: string, retailer: Platform): Promise<PriceQuote | null> {
+        seenKeys.push(entity);
+        return super.priceCheck(entity, retailer);
+      }
+    }
+    setPriceFetcher(
+      new RecordingFetcher({
+        amazon: quote({ amountCents: 58900, referenceCents: 80600 }),
+      }),
+    );
+    const agent = new ConciergeAgent();
+    const result = await agent.run(
+      ctxFor({
+        event: {
+          signalId: 'sig-1',
+          topicNormalizedName: 'standing-desks',
+          topicName: 'Standing desks',
+          ts: NOW.getTime(),
+          platform: 'amazon',
+          entityNames: ['Uplift V2 standing desk'],
+          pageUrl: 'https://www.amazon.com/Uplift-Desk/dp/B0ABCD1234/ref=sr_1_1',
+        },
+      }),
+    );
+
+    // Vendor saw the ASIN, never the free-text title.
+    expect(seenKeys.every((k) => k === 'B0ABCD1234')).toBe(true);
+    expect(result.status).toBe('succeeded');
+    if (result.status !== 'succeeded') return;
+    // Copy and entity citation stay human-readable; dedupe keys on the ASIN.
+    expect(result.emit.title).toContain('Uplift V2 standing desk');
+    expect(result.emit.title).not.toContain('B0ABCD1234');
+    expect(result.emit.dedupeKey).toContain('b0abcd1234');
+    const entitySource = result.emit.sources.find((s) => s.kind === 'entity');
+    expect(entitySource?.id).toBe('B0ABCD1234');
+    expect(entitySource?.label).toBe('Uplift V2 standing desk');
+  });
+
+  it('falls back to the entity label when the URL carries no ASIN', async () => {
+    const seenKeys: string[] = [];
+    class RecordingFetcher extends FixtureFetcher {
+      override async priceCheck(entity: string, retailer: Platform): Promise<PriceQuote | null> {
+        seenKeys.push(entity);
+        return super.priceCheck(entity, retailer);
+      }
+    }
+    setPriceFetcher(new RecordingFetcher({ amazon: quote({}) }));
+    const agent = new ConciergeAgent();
+    await agent.run(ctxFor()); // fixture pageUrl slug is not ASIN-shaped
+    expect(seenKeys.every((k) => k === 'Uplift V2 standing desk')).toBe(true);
   });
 });
