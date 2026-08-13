@@ -438,7 +438,7 @@ footer a{color:var(--text-dim)}
 </defs></svg>
 
 <div class="hero">
-  <span class="hero-eyebrow"><span class="hero-dot"></span>Verified against commit <code style="font-family:var(--mono);font-size:11px">83630b9</code> · production probed live · 2026-08-11</span>
+  <span class="hero-eyebrow"><span class="hero-dot"></span>Verified against commit <code style="font-family:var(--mono);font-size:11px">1fb0d7d</code> · production probed live · 2026-08-13</span>
   <h1 class="hero-title">RecoMe, end to end.<br/>Architecture as a way of thinking.</h1>
   <p class="hero-sub">
     One document that teaches an entire system: <strong>what</strong> every component does, <strong>why</strong> it exists,
@@ -451,18 +451,31 @@ footer a{color:var(--text-dim)}
   <div class="hero-stats">
     <div class="stat stat-accent-1"><div class="stat-num">15.5k<span class="unit">LOC cloud</span></div><div class="stat-label">103 TypeScript modules</div></div>
     <div class="stat stat-accent-2"><div class="stat-num">4<span class="unit">data planes</span></div><div class="stat-label">Postgres · Neo4j · Qdrant · Redis</div></div>
-    <div class="stat stat-accent-3"><div class="stat-num">294<span class="unit">tests green</span></div><div class="stat-label">147 extension · 147 cloud</div></div>
+    <div class="stat stat-accent-3"><div class="stat-num">321<span class="unit">tests green</span></div><div class="stat-label">166 extension · 155 cloud</div></div>
     <div class="stat stat-accent-4"><div class="stat-num">$0.10<span class="unit">/user/day</span></div><div class="stat-label">Cost ceiling enforced in code</div></div>
   </div>
   <div class="callout ok" style="margin-top:24px;max-width:960px">
     <div class="callout-title">Live as of 2026-08-11</div>
     <p>The full stack is in production: Fly-hosted Postgres, Neo4j, Qdrant and Redis; intelligence enabled; all six agents
-    booted; BullMQ schedules registered; signals→graph→trails verified end to end. Independently confirmed while writing
-    this book — <code>/ready</code> returns
-    <code>{"ready":true,"neo4j":{"ok":true,"latencyMs":15},"qdrant":{"ok":true,"latencyMs":13}}</code>.
-    <code>AGENTS_LLM_ENABLED</code> remains off, blocked on OpenAI credits.</p>
+    booted; BullMQ schedules registered; signals→graph→trails verified end to end. Re-probed live for this edition on
+    2026-08-13 — <code>/ready</code> returns
+    <code>{"ready":true,"postgres":true,"ok":true,"neo4j":{"ok":true,"latencyMs":30},"qdrant":{"ok":true,"latencyMs":21}}</code>
+    (the <code>postgres</code> field is new — see §31). <code>AGENTS_LLM_ENABLED</code> remains off, blocked on OpenAI
+    credits.</p>
     <p><strong>Why this matters for how you read what follows:</strong> every defect in §36 is now a live defect rather than
     a task, and the severity scoring reflects that.</p>
+  </div>
+  <div class="callout info" style="margin-top:14px;max-width:960px">
+    <div class="callout-title">Second pass — twelve commits later (2026-08-13)</div>
+    <p>This edition re-verifies the book against <code>1fb0d7d</code>. What changed since the first draft, each covered in
+    place: <strong>push delivery wired</strong> so agent emissions actually reach a device (D6 closed, §26);
+    <strong>the dead Taste-Twins surface deleted</strong> (D10 closed, §36); <strong><code>/ready</code> now proves
+    Postgres</strong> rather than only Neo4j and Qdrant (§31); a <strong>wire-contract harness</strong> that makes
+    client/server shape drift a compile error (§01, §23); the <strong>getting-started walkthrough</strong> (§23);
+    <strong>ASIN resolution</strong> that makes Concierge capable of a real price check at all (§15); and two more
+    in-page/auth defects fixed with their war stories written up (§20, §23, §37).</p>
+    <p>The register in §36 grew a “closed this pass” block rather than losing rows — <strong>a defect list that only ever
+    shrinks is being edited, not maintained.</strong></p>
   </div>
 </div>
 
@@ -872,6 +885,42 @@ footer a{color:var(--text-dim)}
       CI.</strong> Prose contracts rot. Types and tests do not.</p>
     </div>
 
+    <h3 class="sub">The wire-contract harness — the response side of the same idea</h3>
+    <div class="prose">
+      <p>The Zod schema above governs what the client <em>sends</em>. Nothing governed what the server <em>returns</em>, and
+      that asymmetry shipped two production defects within a fortnight: the client’s <code>AgentInfo</code> declared a nested
+      <code>subscription</code> object the server had never returned (crashing the agents panel for every signed-in user,
+      §37.8), and <code>CardScore</code> drifted the same way. Both were hand-written client types describing a server
+      response from memory. <strong>A type you wrote by imagining the other side is a guess with syntax highlighting.</strong></p>
+      <p>The fix (2026-08-13) is a <code>contracts/</code> directory of JSON fixtures that <em>both</em> sides check
+      themselves against, and — the part that makes it work — the fixtures are <strong>generated by running the real server
+      code</strong>, never typed by hand:</p>
+      <ul>
+        <li><strong>Cloud side</strong> (<code>cloud/src/__tests__/contracts.test.ts</code>) drives the genuine handlers —
+        <code>CardScorer.score()</code>, a <code>DecisionAgent</code> stream, and <code>GET /agents</code> through the real
+        Hono route with only auth and Prisma stubbed — then diffs the result against the committed fixture. Changing a
+        response shape fails here until the author regenerates with <code>UPDATE_CONTRACTS=1</code>, which makes the change
+        <em>visible in the diff</em> rather than discovered by a user.</li>
+        <li><strong>Extension side</strong> imports the same JSON and assigns it to the client types. The assignment
+        <em>is</em> the assertion: if <code>AgentInfo</code> drifts from the fixture, <strong>ts-jest fails to compile the
+        test file</strong>. No runtime assertion required, and no way to skip it.</li>
+      </ul>
+      <p>One wrinkle worth knowing, because it will bite anyone copying this: JSON imports widen string literals, so a
+      fixture’s <code>verdict: "relevant"</code> arrives as <code>string</code> and cannot satisfy a union type. The test
+      narrows that single field at runtime and leaves every other field compile-checked — a deliberate, documented hole of
+      exactly one field wide, rather than an <code>as any</code> that would silently forfeit the whole contract.</p>
+    </div>
+    <div class="callout learn">
+      <div class="callout-title">Why fixtures generated from code beat both alternatives</div>
+      <p>The two usual answers are worse. <em>Sharing a types package</em> across client and server sounds stricter but only
+      proves the two sides agree about a <strong>declaration</strong> — it cannot catch a handler that returns something its
+      own return type does not describe, which is exactly what happened here. <em>Contract testing services</em> (Pact and
+      friends) solve this properly and cost a broker, a CI integration, and a concept every new engineer must learn.</p>
+      <p>A committed JSON file generated by the real handler and type-checked by the real client is one directory, no
+      dependencies, and catches the failure both alternatives miss. <strong>Reach for the heavier tool when the number of
+      independently-deployed consumers exceeds one.</strong> Until then this is the whole idea, minus the infrastructure.</p>
+    </div>
+
   </div>
 </section>
 
@@ -1162,8 +1211,8 @@ footer a{color:var(--text-dim)}
     <div class="tbl-wrap"><table class="grid">
       <thead><tr><th style="width:150px">Tool</th><th style="width:130px">Where</th><th>Notes worth knowing</th></tr></thead>
       <tbody>
-        <tr><td><strong>Jest + jsdom</strong></td><td>extension, packages</td><td>147 tests, 8 suites. <code>fake-indexeddb</code> lets the IndexedDB queue be tested without a browser — the queue is the most correctness-critical client code, so this dependency earns its place.</td></tr>
-        <tr><td><strong>Vitest</strong></td><td>cloud</td><td>147 tests passing, 3 skipped (the skipped ones are the integration suite that needs live Postgres + Neo4j + Qdrant). Faster than Jest on ESM, which matters because the cloud is <code>"type": "module"</code>.</td></tr>
+        <tr><td><strong>Jest + jsdom</strong></td><td>extension, packages</td><td>166 tests, 12 suites. <code>fake-indexeddb</code> lets the IndexedDB queue be tested without a browser — the queue is the most correctness-critical client code, so this dependency earns its place.</td></tr>
+        <tr><td><strong>Vitest</strong></td><td>cloud</td><td>155 tests passing, 3 skipped (the skipped ones are the integration suite that needs live Postgres + Neo4j + Qdrant). Faster than Jest on ESM, which matters because the cloud is <code>"type": "module"</code>.</td></tr>
         <tr><td><strong>webpack 5</strong></td><td>extension</td><td>Multi-entry build (background / content), CSS extraction, manifest copying. Chosen over Vite because MV3 needs precise control over separate non-module entry bundles and static asset layout.</td></tr>
         <tr><td><strong>ESLint 9 + Prettier + husky</strong></td><td>repo</td><td><code>lint-staged</code> on commit; <code>npm run validate</code> = typecheck + lint + test as the single gate. One command that means “safe to push” is worth more than a wiki page describing five commands.</td></tr>
       </tbody>
@@ -1171,8 +1220,8 @@ footer a{color:var(--text-dim)}
 
     <div class="callout info">
       <div class="callout-title">Verified as of this writing</div>
-      <p><code>npm run validate</code> → typecheck clean, lint clean, <strong>147/147 tests pass</strong> (8 suites).
-      <code>cd cloud &amp;&amp; npx tsc --noEmit</code> → clean. <code>npx vitest run</code> → <strong>147 passed, 3
+      <p><code>npm run validate</code> → typecheck clean, lint clean, <strong>166/166 tests pass</strong> (12 suites).
+      <code>cd cloud &amp;&amp; npx tsc --noEmit</code> → clean. <code>npx vitest run</code> → <strong>155 passed, 3
       skipped</strong> across 18 files. The skipped trio is the DB-backed integration suite; CI runs cloud typecheck only,
       and the workflow file says so out loud rather than pretending the suite is green.</p>
     </div>
@@ -2989,7 +3038,7 @@ search = <span class="c-key">new</span> <span class="c-type">SearchSignal</span>
       <thead><tr><th style="width:130px">Agent</th><th style="width:340px">dedupeKey</th><th>Policy this expresses</th></tr></thead>
       <tbody>
         <tr><td>Recall</td><td><code>recall:&lt;topic&gt;:&lt;floor(now / 7d)&gt;</code></td><td>At most one recall per topic per week — even if you touch that topic twenty times.</td></tr>
-        <tr><td>Concierge</td><td><code>concierge:&lt;entity&gt;:&lt;floor(now / 24h)&gt;</code></td><td>At most one price alert per product per day. Re-visiting the PDP does not re-notify.</td></tr>
+        <tr><td>Concierge</td><td><code>concierge:&lt;lookupKey&gt;:&lt;floor(now / 24h)&gt;</code></td><td>At most one price alert per product per day. Re-visiting the PDP does not re-notify. Keyed on the resolved ASIN where one exists (§15), so two differently-titled captures of the same product collapse to one alert.</td></tr>
         <tr><td>Curriculum</td><td><code>curriculum:&lt;target&gt;:&lt;yearWeek&gt;</code></td><td>One plan per learning goal per week.</td></tr>
         <tr><td>Synthesist</td><td><code>synthesist:&lt;ISO week&gt;</code></td><td>Exactly one weekly summary per calendar week, regardless of how many times the cron fires.</td></tr>
         <tr><td>Decision</td><td><code>decision:&lt;hint | pageUrl | date&gt;</code></td><td>Coarsest — falls back to a date bucket. Acceptable because Decision is on-demand: the user asked, so suppressing their answer would be wrong.</td></tr>
@@ -3214,10 +3263,20 @@ search = <span class="c-key">new</span> <span class="c-type">SearchSignal</span>
         <p><strong>Trade-off / trust.</strong> An explicit user target beats the generic 10% rule — the user’s stated
         threshold wins over the system’s heuristic. And when the stub vendor is in use, the body literally says
         <em>“prices are illustrative — Concierge is in early access”</em>.</p>
+        <p><strong>The lookup-key split (2026-08-13).</strong> Keepa keys lookups on <strong>ASIN</strong>; our entity names
+        are free-text titles like <em>“Uplift V2 standing desk”</em>. Nobody noticed, because the stub vendor answers to any
+        string — so the whole event path was <em>latently dead the moment a real vendor was plugged in</em>, and would have
+        failed as a silent stream of <code>keepa: skipping non-ASIN entity key</code> log lines rather than an error.
+        The fix exploits a fact the design already had: the user is <em>on the product page</em>, and its URL carries the
+        ASIN. <code>resolveAsinFromUrl()</code> extracts it (<code>/dp/</code>, <code>/gp/product/</code>,
+        <code>/gp/aw/d/</code> mobile, <code>?asin=</code>), and <code>checkOne()</code> now takes a
+        <strong><code>lookupKey</code> and a <code>label</code> separately</strong>: the vendor sees the ASIN, while every
+        line of copy and every citation keeps the human product name. Dedupe moved to the ASIN too, so two differently-titled
+        captures of one product collapse into one alert per day.</p>
         <div class="agent-meta">
           <dt>File</dt><dd><code>agents/concierge/</code> — agent, <code>PriceFetcher</code>, <code>KeepaPriceFetcher</code>, <code>Watchlist</code>, <code>tools</code></dd>
-          <dt>Tests</dt><dd>Mocked Prisma-backed watchlist; suite green with no database</dd>
-          <dt>Status</dt><dd>Logic real, prices stubbed. <code>priceVendorBlockedInProd()</code> makes it <strong>refuse to run in production</strong> until Keepa is licensed. Correct behaviour: never fake a price.</dd>
+          <dt>Tests</dt><dd>Mocked Prisma-backed watchlist; suite green with no database. 18 tests, including a recording fetcher asserting the vendor is handed the ASIN while the emission text is not</dd>
+          <dt>Status</dt><dd>Logic real, prices stubbed. <code>priceVendorBlockedInProd()</code> makes it <strong>refuse to run in production</strong> until Keepa is licensed. Correct behaviour: never fake a price. Remaining resolver gap: <em>watchlist labels</em> are free text with no page URL to mine, so scheduled sweeps still need a free-text→ASIN lookup (ADR-0017 §1, v1.1).</dd>
         </div>
       </div>
 
@@ -4103,6 +4162,40 @@ graphLines                    <span class="c-com">// "- standing desks (intent s
       </ul>
     </div>
 
+    <div class="callout bug">
+      <div class="callout-title">War story: the refresh path treated a cold start as a stolen credential</div>
+      <p>Users kept reporting the sidebar showing <strong>“Signed out”</strong> hours after a successful login, with console
+      noise reading <code>[ScoreBatcher] score failed Missing authorization header: 401</code>. The login handoff had already
+      been fixed twice (above), so the instinct was to look there again. The bug was somewhere else entirely.</p>
+      <p><code>refreshAccessToken()</code> ended with what looks like ordinary defensive code:</p>
+      <div class="code small" style="margin:10px 0"><span class="c-key">if</span> (!res.ok) {
+  log.<span class="c-fn">warn</span>(<span class="c-str">`refresh failed: ${res.status}`</span>);
+  <span class="c-key">await</span> <span class="c-fn">clearTokens</span>();   <span class="c-bad">// ← any non-2xx destroys the session</span>
+  <span class="c-key">return</span> <span class="c-key">null</span>;
+}</div>
+      <p><strong>Why that is catastrophic on this particular infrastructure.</strong> The API runs
+      <code>min_machines_running = 0</code> (§27) with a measured cold start of ~10 s, and <code>/auth/refresh</code> sits
+      behind the same global per-IP rate limiter as everything else. So the two most <em>routine</em> events in this
+      deployment — a scale-to-zero wake-up returning 502/503, and a 429 during a burst — were both interpreted as
+      <em>“the refresh token is invalid, log this person out.”</em> Access tokens live 15 minutes, so every user hit this
+      path four times an hour. The 401 spam was not the bug; it was the <em>echo</em> of a session that had already been
+      deleted locally, after which every request went out with no <code>Authorization</code> header at all.</p>
+      <p><strong>The fix is a taxonomy, not a retry.</strong> Only a status that means <em>the server considered this
+      refresh token and rejected it</em> — 400, 401, 403 — may clear tokens. Every 5xx, 429 and network error returns
+      <code>null</code> for this attempt and <strong>keeps the session</strong> for the next one. And
+      <code>authedFetch</code> no longer fires a request it knows is unauthenticated: with no obtainable token it
+      synthesises a response locally, <strong>401 when there is genuinely no refresh token</strong> (truly signed out) versus
+      <strong>503 when refresh failed transiently</strong> — which is what stops the UI flipping to “Signed out” over a
+      blip, because the sidebar keys its signed-out state on 401 specifically.</p>
+      <p><strong>The generalisable rule:</strong> <em>authentication failures and availability failures must never share a
+      handler.</em> One means “this credential is bad, forget it”; the other means “I could not ask right now, try again.”
+      Collapsing them into <code>if (!res.ok)</code> converts every outage into a mass logout — and the more aggressively you
+      optimise infrastructure cost (scale-to-zero, tight rate limits), the more often your own platform will look like an
+      attacker to code written this way.</p>
+      <p>Five tests now pin the contract per status class, including the one that matters most: <em>a 503 returns null and
+      leaves the refresh token in storage.</em></p>
+    </div>
+
     <div class="callout ok">
       <div class="callout-title">Three details in <code>resolveBearer</code> worth copying</div>
       <ol>
@@ -4462,6 +4555,9 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
         <em>this</em> page: URL-anchored events (a Concierge deal on the product you are viewing) show here; cross-platform
         events do not, because a deal alert for a desk is noise while you are watching a cooking video. That filter is the
         difference between helpful and infuriating.</p>
+        <p><strong>Rebuilt 2026-08-13</strong> into a shadow root with inline fixed geometry, after it stretched across an
+        entire viewport as a collapsed vertical pile — it was the one surface still styling itself from
+        <code>document.head</code>. See the war story below.</p>
       </div></div>
       <div class="card"><div class="card-head"><span class="card-title">OverlayChat</span><span class="card-tag">SSE · Decision agent</span></div><div class="card-body prose">
         <p>Multi-turn chat in a shadow root with typewriter reveal, streaming from
@@ -4533,6 +4629,46 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
       the D4 defect where an env-var name (<code>INTELLIGENCE_AGENTS_ENABLED</code>) appeared in an empty state.</p>
       <p><strong>Zero states are the highest-leverage copy in any product</strong>, because every user sees them first and
       they are written last. Worth an explicit review pass of their own.</p>
+    </div>
+
+    <h3 class="sub">The getting-started walkthrough, and the promise it refused to make</h3>
+    <div class="prose">
+      <p>Making capture <em>visible</em> (above) fixed “nothing appears to happen.” It did not fix the larger first-run
+      problem: a new user has an empty graph, and an empty graph produces nothing worth reading. R2’s exit criterion is
+      <em>sign-in → first capture → first insight within ten minutes</em>, and the walkthrough shipped on 2026-08-13 is what
+      carries a stranger across that gap.</p>
+      <p>Mechanically it is small: a <code>Getting started</code> panel at the top of the sidebar with three steps — sign in,
+      capture your first page, meet your first insight — each checking off live as it happens, persisted in
+      <code>chrome.storage.local</code> so it survives navigation, and retiring itself permanently after a single
+      celebration render. The render model is a <strong>pure function</strong> (<code>onboardingSteps(state, signedIn)</code>
+      returning steps plus a <code>complete</code> flag, or <code>null</code> when dismissed), which is why it has six unit
+      tests and no DOM in any of them. <em>Extracting the decision from the drawing is what makes first-run logic testable
+      at all</em>, and first-run logic is otherwise nearly impossible to exercise — by definition it happens once.</p>
+    </div>
+    <div class="callout learn">
+      <div class="callout-title">The interesting decision: what “first insight” is allowed to be</div>
+      <p>The obvious implementation of step three is <em>fire Recall</em>. It is the flagship agent and the roadmap sentence
+      literally says “first Recall.” It is also <strong>impossible on day one and would have been dishonest to fake</strong>,
+      for two independent reasons:</p>
+      <ol>
+        <li>Recall’s whole premise is dormancy — it surfaces things you touched <em>and forgot</em>, which requires signals at
+        least fourteen days old. A user who installed the extension four minutes ago cannot have one, and no amount of
+        engineering changes that.</li>
+        <li>Recall cannot emit for anyone at all right now (D14, §36) — the edge it queries has no writer.</li>
+      </ol>
+      <p>The three tempting escapes were all rejected: a canned “example insight” (invented data in a real surface — the
+      exact D4 defect, and product principle 7 forbids it), a lowered dormancy threshold for new users (changing what a word
+      means to satisfy a metric), and simply leaving step three permanently unchecked (an onboarding flow that never
+      completes).</p>
+      <p>What ships instead: the first capture triggers a <strong>Synthesist run on demand</strong>. Synthesist summarises
+      the week’s attention, its floor is one signal, and its output is real and cited — “New this week: <em>your topic</em>”
+      built from the page the user just captured. It reaches the screen through the ordinary inbox → <code>InsightCard</code>
+      path with no special-casing, so <strong>the onboarding moment and the steady-state moment are the same code</strong>.
+      Ingestion lag is handled with one retry after four seconds and then silence; the scheduled Sunday run covers the rest.</p>
+      <p><strong>The transferable judgement:</strong> when a first-run promise cannot be kept, the choice is not between
+      faking it and dropping it — it is <em>finding the honest thing that is true on day one</em>. Here that meant reading the
+      roadmap’s intent (“feel the product work within ten minutes”) rather than its noun (“Recall”). A metric written as a
+      specific mechanism will eventually ask you to lie; a metric written as a user outcome will not.</p>
     </div>
 
     <h3 class="sub">ScoreBatcher: being a good guest in someone else’s page</h3>
@@ -4676,11 +4812,45 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
       </div>
     </div>
 
+    <div class="callout bug">
+      <div class="callout-title">War story: the toast that ate the viewport</div>
+      <p><strong>Symptom (2026-08-13):</strong> the first InsightCard a user ever saw — the payoff of the whole onboarding
+      walkthrough — rendered as a band spanning the entire page width, with its icon, label, title and buttons stacked
+      vertically instead of laid out as a row. A screenshot of it is more damning than any bug report.</p>
+      <p><strong>Two independent causes, and the second is the interesting one:</strong></p>
+      <ol>
+        <li><strong>Stretch:</strong> the host was anchored <code>left: 16px</code> <em>and</em> <code>right: 352px</code> with
+        a <code>max-width</code> — an 800 px “toast” that was really a full-width bar wherever the viewport was wide. Anchoring
+        both edges makes width a function of someone else’s layout; a toast has a width, not two margins.</li>
+        <li><strong>Collapse:</strong> the card’s CSS lived in a classed <code>&lt;style&gt;</code> tag appended to
+        <code>document.head</code>, so it competed with the host page’s stylesheet on ordinary cascade rules — and lost. The
+        <code>display: flex</code> that made it a row was overridden, and the flex children became blocks.</li>
+      </ol>
+      <p><strong>The fix is the same shape as the badge fix in the previous subsection:</strong> stop negotiating with the
+      host page. All geometry moved to <em>inline</em> styles on the host element (fixed position, fixed 380 px width,
+      <code>max-width</code> for narrow viewports) where page CSS cannot reach it, and everything inside moved into a
+      <strong>shadow root</strong>, where the cascade cannot reach it either. Five tests pin the invariants — inline fixed
+      width, never both-edges anchored, cards inside the shadow root, at most two unseen, dismiss sends
+      <code>MARK_SEEN</code>.</p>
+      <p>One migration detail worth copying: tabs already running the old build have a host element with no shadow root.
+      <code>ensureStack()</code> detects that (<code>host.shadowRoot</code> is null), removes it and rebuilds, so an open tab
+      heals itself on the next inbox poll instead of rendering the broken card until reload. <strong>When you change the
+      structure of a long-lived injected element, the upgrade path is part of the fix</strong> — content scripts can outlive
+      several versions of themselves.</p>
+    </div>
+
     <h3 class="sub">Shadow DOM and the workflow orchestrator</h3>
     <div class="prose">
       <p>All injected UI lives in a shadow root, which gives hard style encapsulation in both directions — the host page
       cannot break your layout, and your CSS cannot break theirs. That matters commercially: an extension that visibly
       breaks Amazon’s page gets one-star reviews regardless of how good its intelligence is.</p>
+      <p><em>Honesty note:</em> that sentence was written in this book as a description of the architecture, and until
+      2026-08-13 it was <strong>false for one of the four surfaces</strong> — InsightCard styled itself from
+      <code>document.head</code>, and the exception was invisible precisely because the other three were correct. The war
+      story above is the repair. The transferable point is about documentation, not CSS: <strong>an architectural principle
+      stated in prose is a claim about every instance, and prose cannot enforce it.</strong> The lint rule that would have
+      caught this — “no content-script code may write to <code>document.head</code>” — is worth more than the paragraph
+      asserting the rule.</p>
       <p><code>WorkflowOrchestrator</code> maps platforms to agent workflows and splits them into two modes:</p>
       <ul>
         <li><strong>Auto</strong> — fires after a 2.5-second page-settle delay: Concierge on commerce PDPs, Recall on YouTube <code>/watch</code> and Reddit posts. The delay exists because SPA page-kind detection is unreliable before render.</li>
@@ -4938,17 +5108,34 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
         <p>The whole subsystem is VAPID-gated: no keys, no-op. The public key is served from an endpoint so the client never
         hardcodes it.</p>
       </div>
-      <div class="callout bug">
-        <div class="callout-title">D6 — <code>notifyUser</code> has zero callers</div>
-        <p>Verified by grep: the only occurrences of <code>notifyUser</code> in the entire cloud tree are its own definition
-        (line 125) and a comment describing where it <em>should</em> be called (line 10 — “after every successful emission”).</p>
-        <p><strong>So:</strong> users grant notification permission, subscriptions are stored, endpoints are validated —
-        and no push is ever sent. The one-line fix is a call in <code>AgentRunner</code> after a successful
-        <code>AgentEventStore.insert</code>.</p>
-        <p><strong>Why the missing line is not the interesting part:</strong> before wiring it you need quiet hours that are
-        actually per-user (§14 G-1, currently UTC-only) and a preference centre (below). Delivering a real push at 1 a.m.
-        local because the quiet-hours check was written in UTC is worse than delivering nothing. <strong>The gap is
-        correctly ordered, even if it is not documented as such.</strong></p>
+      <div class="callout ok">
+        <div class="callout-title">D6 — closed 2026-08-13: the call site now exists</div>
+        <p><strong>What it was:</strong> verified by grep, the only occurrences of <code>notifyUser</code> in the entire
+        cloud tree were its own definition and a comment describing where it <em>should</em> be called (“after every
+        successful emission”). Users granted notification permission, subscriptions were stored, endpoints were validated —
+        and no push was ever sent. <strong>A complete, correct, well-tested subsystem with no caller is indistinguishable
+        from no subsystem at all, except that it costs storage and reads as done.</strong></p>
+        <p><strong>The fix</strong> is in <code>AgentEventStore.insert()</code> rather than <code>AgentRunner</code>, and the
+        placement is deliberate: <em>every</em> emission goes through the store — scheduled, event-triggered, on-demand and
+        streamed alike — so putting delivery there makes “an event was recorded” and “the user was told” impossible to
+        separate. Three properties of the call are load-bearing:</p>
+        <ul>
+          <li><strong>Fire-and-forget with a catch.</strong> <code>void getPushService().notifyUser(…).catch(log)</code> —
+          push is best-effort and must never fail, delay, or roll back an emission. The inbox is the durable channel; push is
+          a hint that it changed.</li>
+          <li><strong>It runs after the row exists</strong> and carries <code>eventId</code>, so a notification click deep-links
+          to a record that is already committed rather than racing it.</li>
+          <li><strong>Body truncated to 300 characters.</strong> Push payload size is capped by the provider and an
+          over-length payload is rejected at send time — a failure that would appear only in production, only for verbose
+          agents.</li>
+        </ul>
+        <p><strong>What is still true — and now live, so read this as a risk rather than a task.</strong> The ordering
+        argument below has not gone away: quiet hours are still evaluated in UTC (§14 G-1) and there is no preference centre.
+        VAPID keys <em>are</em> configured in production (verified against Fly’s secret list for this edition), so this path
+        is delivering to real devices today. Guardian’s 22:00–08:00 window therefore lands at the wrong local time for
+        anyone far from UTC — for a US Pacific user it is inverted, which is precisely the 1 a.m. push the original ordering
+        argument existed to prevent. <strong>The prerequisite was documented, the feature shipped anyway, and the gap is now
+        pointed at users instead of at a backlog.</strong> Per-user timezones are the next honest step, not an enhancement.</p>
       </div>
     </div>
 
@@ -5608,7 +5795,7 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
     <div class="tbl-wrap"><table class="grid">
       <thead><tr><th style="width:130px">Job</th><th style="width:230px">Steps</th><th>Assessment</th></tr></thead>
       <tbody>
-        <tr><td><strong>extension</strong></td><td>typecheck → lint → jest (147) → build → upload <code>dist/</code></td><td>The most complete gate. The artifact upload on main pushes (7-day retention) means any commit is installable without a local toolchain — genuinely useful for QA and for demoing a branch.</td></tr>
+        <tr><td><strong>extension</strong></td><td>typecheck → lint → jest (166) → build → upload <code>dist/</code></td><td>The most complete gate. The artifact upload on main pushes (7-day retention) means any commit is installable without a local toolchain — genuinely useful for QA and for demoing a branch.</td></tr>
         <tr><td><strong>cloud</strong></td><td><code>prisma generate</code> → <code>tsc --noEmit</code></td><td>Typecheck only. The workflow is <strong>candid about why</strong>: <em>“Vitest tests are skipped here for now (many are integration tests that need Postgres + Neo4j + Qdrant service containers). When the integration suite is reorganised, swap <code>npm run typecheck</code> for <code>npm test</code>.”</em> Note <code>prisma generate</code> must precede typecheck, because model types are generated.</td></tr>
         <tr><td><strong>web</strong></td><td><code>next build</code></td><td>Build includes typecheck, so one step covers both. No lint step, though lint is clean as of Aug 2026 — worth adding to keep it that way.</td></tr>
       </tbody>
@@ -5648,10 +5835,10 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
       still deploy. And when the readiness probe fails, the pipeline goes red but <strong>the bad version stays live</strong>;
       there is no <code>flyctl releases rollback</code>. Both fixes are a few lines and they are the highest-value CI work
       available.</p>
-      <p><strong>2 · The cloud test suite is not in CI.</strong> 147 passing tests, 3 skipped, running in one second locally —
+      <p><strong>2 · The cloud test suite is not in CI.</strong> 155 passing tests, 3 skipped, running in one second locally —
       and CI runs none of them. The comment blames integration tests needing service containers, but the actual split is 17
       unit files versus 1 integration file. The fix is one flag: <code>vitest run --exclude '**/*.integration.test.ts'</code>,
-      which puts 147 real tests in the gate today. The perfect solution (service containers for the integration suite) is
+      which puts 155 real tests in the gate today. The perfect solution (service containers for the integration suite) is
       blocking the good one.</p>
       <p><strong>The general lesson:</strong> a test suite that is not in CI is documentation. It rots, and it stops being run
       by the people who most need its signal — the ones reviewing someone else’s pull request at 6 p.m.</p>
@@ -5820,6 +6007,15 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
       <p><strong>The transferable point:</strong> your health check encodes a policy about what “working” means. Make sure it
       is the same policy your error handling implements. A mismatch here means your degradation design is defeated by your
       load balancer, which is a genuinely confusing incident to debug.</p>
+      <p><strong>Update (2026-08-13) — half of this landed, and it was the more embarrassing half.</strong> The probe checked
+      Neo4j and Qdrant and <em>not Postgres</em> — so an API that could not authenticate a single request, read a
+      subscription, or write an <code>AgentRun</code> reported itself ready and stayed in rotation. It now runs
+      <code>SELECT 1</code> through Prisma and 503s when that fails. The tiered split above (optional dependencies reported
+      in the body, not in the status code) is still open.</p>
+      <p><em>Why the gap existed at all is worth naming:</em> readiness probes get written when a dependency is <strong>new
+      and feared</strong>. Neo4j and Qdrant were exotic, so they were checked. Postgres had been there since the first commit
+      and felt like part of the process. <strong>The dependency you forget to health-check is the one you trust most</strong>
+      — which is exactly the one whose absence is most total.</p>
     </div>
 
     <h3 class="sub">Graceful shutdown</h3>
@@ -6329,8 +6525,8 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
       <div class="callout-title">Why the production milestone changes the scoring</div>
       <p>As of 2026-08-11 the stack is live: Fly-hosted Postgres, Neo4j, Qdrant and Redis; intelligence enabled; all six
       agents booted; BullMQ schedules registered; signals→graph→trails verified end to end in production. Verified
-      independently while writing this section — <code>/ready</code> returns
-      <code>{"ready":true,"neo4j":{"ok":true,"latencyMs":15},"qdrant":{"ok":true,"latencyMs":13}}</code>.</p>
+      independently while writing this section, and re-probed on 2026-08-13 — <code>/ready</code> returns
+      <code>{"ready":true,"postgres":true,"ok":true,"neo4j":{"ok":true,"latencyMs":30},"qdrant":{"ok":true,"latencyMs":21}}</code>.</p>
       <p><strong>A defect in a dark-deployed system is a task. The same defect in a live system is an incident with a
       delay fuse.</strong> Three items below are re-scored upward for exactly that reason: agents are now running on a
       schedule against real user data, so anything that silently produces nothing now silently produces nothing
@@ -6391,15 +6587,14 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
     <div class="tbl-wrap"><table class="grid">
       <thead><tr><th style="width:60px">ID</th><th style="width:280px">Defect</th><th style="width:110px">Severity</th><th>Note</th></tr></thead>
       <tbody>
-        <tr><td><strong>D6</strong></td><td>Push subscriptions collected; <code>notifyUser()</code> has zero callers</td><td><span class="chip status-wip">P1</span></td><td>Correctly ordered behind per-user quiet hours and a preference centre — delivering a real push at 1 a.m. local because the check is UTC-only would be worse than delivering nothing (§26).</td></tr>
+        <tr><td><strong>—</strong></td><td>Quiet hours evaluated in UTC while push delivery is <em>live</em></td><td><span class="chip status-broken">P1 · live</span></td><td>Was the stated prerequisite for closing D6; D6 closed first (§26). Guardian suppresses 22:00–08:00 UTC, so a US Pacific user’s window is inverted and background emissions — which now push to a device — can arrive overnight. Per-user timezone on <code>User</code>, then evaluate against it.</td></tr>
         <tr><td><strong>D7</strong></td><td>IaaS revenue-inert: no plan-change path, no tenant <code>stripeCustomerId</code>, <code>embeddingsBilled</code> never increments, live/test keys share a namespace, <code>scopes</code> unused</td><td><span class="chip status-wip">P1</span></td><td>The hard parts of billing are built and correct; the last mile is missing (§22). The shared key namespace is also a security item (§20).</td></tr>
         <tr><td><strong>D9</strong></td><td>Orphaned <code>packages/schema</code> — zero importers</td><td><span class="chip status-open">P2</span></td><td>Eleven schema files nothing imports. Delete or adopt; dead code taxes every change (§05).</td></tr>
-        <tr><td><strong>D10</strong></td><td><code>/twins</code> and <code>/packs</code> routes plus four Prisma models live despite Taste Twins being anti-featured</td><td><span class="chip status-open">P2</span></td><td>Dead social surface is attack surface and diligence noise — and it is now mounted on a live API.</td></tr>
         <tr><td><strong>D13</strong></td><td>Authed app pages keep old visual styling after the token rename</td><td><span class="chip status-open">P2</span></td><td>Public pages rebuilt token-driven; the authed shell lags (§24).</td></tr>
         <tr><td><strong>—</strong></td><td>No Postgres migration history — schema managed by <code>db push</code></td><td><span class="chip status-broken">P0 · live</span></td><td>The project’s own HLD calls this “a P0 hard requirement before any further schema change ships to prod.” <strong>Production now has data.</strong> The next schema change without a migration is unreviewable and unrollbackable.</td></tr>
         <tr><td><strong>—</strong></td><td>No backups configured; no restore ever drilled</td><td><span class="chip status-broken">P0 · live</span></td><td>Neo4j loss is unrecoverable — signals are retained in raw form nowhere else. Was a theoretical risk on 2026-08-10; is a live one now (§31).</td></tr>
         <tr><td><strong>—</strong></td><td><code>/auth</code> brute-force limiter exists in the API, not mounted</td><td><span class="chip status-wip">P1</span></td><td>Login is protected only by the global 300/min/IP ceiling (§21).</td></tr>
-        <tr><td><strong>—</strong></td><td>Cloud test suite not in CI (147 passing tests unused as a gate)</td><td><span class="chip status-wip">P1</span></td><td>One <code>--exclude</code> flag away from being gated (§29).</td></tr>
+        <tr><td><strong>—</strong></td><td>Cloud test suite not in CI (155 passing tests unused as a gate)</td><td><span class="chip status-wip">P1</span></td><td>One <code>--exclude</code> flag away from being gated (§29).</td></tr>
         <tr><td><strong>—</strong></td><td>Deploy is not gated on CI, and has no rollback</td><td><span class="chip status-wip">P1</span></td><td>A failing typecheck can deploy; a failing readiness probe leaves the bad version live (§29).</td></tr>
         <tr><td><strong>—</strong></td><td><code>npm run build</code> is <code>tsc || true</code></td><td><span class="chip status-open">P2</span></td><td>A type error cannot fail the container build. Vestigial now that typecheck is clean (§27).</td></tr>
         <tr><td><strong>—</strong></td><td>Silent truncation at <code>MAX_USERS_PER_TICK = 1000</code></td><td><span class="chip status-open">P2</span></td><td>User 1,001 gets nothing and nothing logs it. One line to fix (§17).</td></tr>
@@ -6408,7 +6603,27 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
       </tbody>
     </table></div>
 
-    <h3 class="sub">Closed since this book’s first draft (2026-08-11)</h3>
+    <h3 class="sub">Closed in the second pass (2026-08-12 → 08-13)</h3>
+    <p class="feature-lede" style="margin-bottom:14px">Twelve more commits. Note the shape of what they fixed: one
+    subsystem with no caller, one dead surface deleted, one health check that omitted the most important dependency, and
+    three failures that only exist at a boundary — client type vs server response, our CSS vs a host page’s, our auth
+    semantics vs our own infrastructure’s error codes. <strong>Nothing here was a wrong algorithm. All of it was a wrong
+    assumption about the other side of a seam.</strong></p>
+    <div class="tbl-wrap"><table class="grid">
+      <thead><tr><th style="width:230px">Was</th><th style="width:110px">Severity</th><th>Fix, and where it is covered</th></tr></thead>
+      <tbody>
+        <tr><td><strong>D6 — push built, wired to nothing.</strong> Subscriptions collected and validated; <code>notifyUser()</code> had zero callers</td><td><span class="chip status-wip">was P1</span></td><td>Called from <code>AgentEventStore.insert()</code> — the one chokepoint every emission passes through — fire-and-forget with a catch, body capped at 300 chars, carrying <code>eventId</code>. <strong>Closed ahead of its own stated prerequisite</strong>, which is why UTC quiet hours moved <em>up</em> the open list. §26.</td></tr>
+        <tr><td><strong>D10 — dead Taste-Twins surface</strong> mounted on a live API: <code>/twins</code>, <code>/packs</code>, four Prisma models, for a feature the product explicitly anti-features</td><td><span class="chip status-open">was P2</span></td><td>Routes deleted, code moved to <code>graveyard/</code>. Dead endpoints are attack surface, diligence noise, and a standing invitation to build on an abandoned idea.</td></tr>
+        <tr><td><strong><code>/ready</code> never checked Postgres.</strong> An API that could not authenticate a request or read a subscription reported itself healthy and stayed in load-balancer rotation</td><td><span class="chip status-broken">was P0 · live</span></td><td><code>SELECT 1</code> through Prisma; 503 on failure, verified live. The probe covered the two <em>exotic</em> dependencies and skipped the one that had always been there. §31.</td></tr>
+        <tr><td><strong>Client and server response shapes had no shared checker</strong> — two shipped defects (invented <code>AgentInfo.subscription</code>, flat <code>CardScore</code> drift) had the same root cause</td><td><span class="chip status-wip">was P1</span></td><td>A <code>contracts/</code> directory of fixtures <em>generated by the real handlers</em> and type-checked by the real client types, so drift is a compile error in CI. §01.</td></tr>
+        <tr><td><strong>Concierge could never price-check in production.</strong> Keepa keys on ASIN; entity names are free-text titles — the stub vendor accepted anything, so the mismatch was invisible until a real vendor was licensed</td><td><span class="chip status-wip">was P1 (latent)</span></td><td><code>resolveAsinFromUrl()</code> mines the ASIN from the PDP the user is already on; <code>lookupKey</code> and <code>label</code> split so the vendor gets the ID and the copy keeps the name. Watchlist labels still need a free-text resolver. §15.</td></tr>
+        <tr><td><strong>InsightCard spanned the entire viewport as a collapsed vertical pile</strong> — the only surface still styling itself from <code>document.head</code>, and anchored to both viewport edges</td><td><span class="chip status-broken">was P1</span></td><td>Rebuilt into a shadow root with inline fixed geometry; old hosts detected by absent <code>shadowRoot</code> and rebuilt in place so open tabs heal. Five tests pin the invariants. §23, §37.</td></tr>
+        <tr><td><strong>Any failed token refresh destroyed the session.</strong> On a scale-to-zero API, a 502/503 cold start or a 429 read as “this credential is invalid” — users were logged out four times an hour and every later request went out headerless</td><td><span class="chip status-broken">was P0 · live</span></td><td>Only 400/401/403 clear tokens; 5xx/429/network keep the session. <code>authedFetch</code> never fires an unauthenticated request, and distinguishes 401 (signed out) from 503 (refresh unavailable) so the UI does not flip on a blip. Five tests, one per status class. §20.</td></tr>
+        <tr><td><strong>The Decision greeting was ungrammatical</strong> on every open: “I can pull your prior research for you’re looking at …”</td><td><span class="chip status-open">was P2</span></td><td>Two fragments concatenated into one sentence. Trivial to fix, and it appeared in the first round of store screenshots — <em>copy defects are shipped at exactly the moment you are trying to look credible.</em></td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 class="sub">Closed in the first pass (2026-08-11)</h3>
     <p class="feature-lede" style="margin-bottom:14px">Nine commits landed while this document was being written. Seven of
     them fixed defects, and two of those were weaknesses this book had flagged as open.</p>
     <div class="tbl-wrap"><table class="grid">
@@ -6456,8 +6671,11 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
 
     <div class="callout learn">
       <div class="callout-title">How to read a register like this</div>
-      <p>Count the closed rows: eight, all found and fixed within about a week of each other. That is not a coincidence —
-      it is what happens when someone systematically audits a system against its own claims instead of adding features.</p>
+      <p>Count the closed rows: twenty-five across three tables, nearly all found and fixed within two weeks of each other.
+      That is not a coincidence — it is what happens when someone systematically audits a system against its own claims
+      instead of adding features. Note also that <strong>two entries moved <em>into</em> the open list</strong> during that
+      work (UTC quiet hours became live-severity the moment push started delivering; the same commit that closed a defect
+      created the exposure). A register where closing a row can open another is one that is tracking reality.</p>
       <p>Then notice the shape of what remains. Almost every open P0/P1 is either <strong>operational hygiene</strong>
       (backups, migrations, secret scanning, CI gating) or <strong>a read/write mismatch</strong> (D14, D15, D16, D17, D6,
       <code>embeddingsBilled</code> — all “written but never read” or “read but never written”). Two categories, two
@@ -6477,9 +6695,10 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
     <div>
       <div class="feature-num">37 · Judgement</div>
       <h2 class="feature-title">War stories — bugs that encode principles</h2>
-      <p class="feature-lede">Ten real bugs from this repository, each chosen because the principle it teaches is worth
+      <p class="feature-lede">Twelve real bugs from this repository, each chosen because the principle it teaches is worth
       more than the fix. Read these the way a pilot reads incident reports: not for the specific aircraft, but for the
-      class of mistake. The last four landed <em>while this document was being written</em>.</p>
+      class of mistake. The last six landed <em>while this document was being written</em> — and 37.12 is a bug in a claim
+      this book itself made, which is the most useful kind of entry a register like this can contain.</p>
     </div>
   </div>
 
@@ -6611,11 +6830,41 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
         proactively; keep the 401 path for mid-session revocation, which is genuinely exceptional. ③ Any log line you have
         learned to ignore is a defect, either in the code or in the logging.</p>
       </div></div>
+
+      <div class="card"><div class="card-head"><span class="card-title">37.11 · The outage that logged everyone out</span><span class="card-tag">refresh semantics</span></div><div class="card-body prose">
+        <p><strong>Symptom:</strong> “I signed in on the web but the extension says Signed out,” recurring for hours, with
+        <code>Missing authorization header: 401</code> in the console — the <em>same line</em> 37.10 had already fixed, which
+        sent the first hour of debugging back to the login handoff.</p>
+        <p><strong>Cause:</strong> <code>refreshAccessToken()</code> called <code>clearTokens()</code> on any non-2xx. On an
+        API running <code>min_machines_running = 0</code>, a ~10 s cold start returns 502/503 and a burst returns 429 — so
+        the two most routine events in this deployment were read as “this refresh token is invalid.” Access tokens expire
+        every 15 minutes, so users hit it four times an hour. The 401s were the <em>echo</em> of a session already deleted
+        locally.</p>
+        <p><strong>Principles:</strong> ① <em>Never share a handler between “this credential is bad” and “I could not ask
+        right now.”</em> Only 400/401/403 may destroy a session; 5xx, 429 and network errors must preserve it. ② <strong>Your
+        own cost optimisations look like attacks to code that conflates those.</strong> Scale-to-zero and aggressive rate
+        limits generate exactly the statuses this code punished. ③ A previously-fixed error string reappearing from a new
+        cause is the most expensive kind of noise — the second bug hides behind the first bug’s reputation.</p>
+      </div></div>
+
+      <div class="card"><div class="card-head"><span class="card-title">37.12 · The principle that was only true three times out of four</span><span class="card-tag">InsightCard</span></div><div class="card-body prose">
+        <p><strong>Symptom:</strong> the first insight a new user ever sees rendered as a full-width band with its contents
+        stacked vertically — on the exact screen the onboarding walkthrough had just spent ten minutes earning.</p>
+        <p><strong>Cause:</strong> two, and they compounded. The host was anchored to both viewport edges (width as a
+        by-product of someone else’s layout), and its styles lived in <code>document.head</code>, where the host page’s CSS
+        beat them and collapsed the flex row. <strong>This book asserted “all injected UI lives in a shadow root” — and one
+        of the four surfaces did not.</strong></p>
+        <p><strong>Principles:</strong> ① <em>An architectural rule stated in prose is unenforced by construction.</em> Three
+        correct instances made the fourth invisible; a lint rule forbidding <code>document.head</code> writes in content
+        scripts would have caught it. ② Give injected elements a <em>size</em>, not two margins. ③ When you change the
+        structure of a long-lived injected element, <strong>the upgrade path is part of the fix</strong> — the rebuild
+        detects hosts from older versions and heals open tabs.</p>
+      </div></div>
     </div>
 
     <div class="callout learn">
-      <div class="callout-title">The thread running through all ten</div>
-      <p>Nine of the ten produced <strong>no error signal a human would see</strong>. Not an exception surfaced to a user, not
+      <div class="callout-title">The thread running through all twelve</div>
+      <p>Ten of the twelve produced <strong>no error signal a human would see</strong>. Not an exception surfaced to a user, not
       a 500, not a failing test.
       The system behaved exactly as written, and what was written was wrong in a way that looks like normal operation:
       an empty result set, a default value, a fallback branch, a variable that resolves to nothing.</p>
@@ -6857,12 +7106,16 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
       <div class="rung">
         <div class="rung-scale"><b>R2</b><span>launch</span></div>
         <div class="rung-body">
-          <p>Chrome Web Store listing live with audited claims. Onboarding: sign-in → first capture → first Recall within ten
+          <p>Chrome Web Store listing live with audited claims. Onboarding: sign-in → first capture → first insight within ten
           minutes of install. Push delivery and digest live with a preference centre. Consumer Pro purchasable. iOS share
           extension in TestFlight.</p>
           <p><strong>Exit:</strong> installable by a stranger; first 100 external weekly actives; RAR baseline measured.</p>
-          <p><strong>Note the dependency nobody has written down:</strong> “first Recall within ten minutes” is an onboarding
-          promise that D14 makes impossible to keep.</p>
+          <p><strong>Progress (2026-08-13):</strong> the walkthrough shipped (§23) and push delivery is live (§26). The
+          criterion above has also been <em>rewritten</em> — it used to say “first <strong>Recall</strong> within ten
+          minutes,” which D14 made impossible and which dormancy makes impossible for a new account even after D14 is fixed.
+          The walkthrough delivers a real cited Synthesist emission instead. <strong>The metric was wrong, not the
+          product</strong>: it named a mechanism where it meant an outcome, and a goal stated as a mechanism eventually asks
+          you to fake the mechanism. Remaining for R2: store submission, the preference centre, Pro, TestFlight.</p>
         </div>
       </div>
       <div class="rung">
@@ -6916,7 +7169,8 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
       <li><strong>Turn on backups and drill a restore.</strong> Neo4j first — its loss is unrecoverable and there is no derivation path. Postgres PITR is a checkbox. Then actually restore something, because untested backups do not count.</li>
       <li><strong>Fix D14.</strong> Two MERGE statements plus a backfill plus one integration test. It restores the flagship agent, unblocks the Personality Mirror trajectory (D15), and removes the impossible promise from the R2 onboarding target.</li>
       <li><strong>Fix D16.</strong> One line and a re-index. It closes a live cross-user seam and a GDPR-erasure hole.</li>
-      <li><strong>Put the cloud tests in CI, and gate the deploy on it.</strong> One <code>--exclude</code> flag plus a <code>needs:</code>. 147 tests currently produce no signal on anyone’s pull request.</li>
+      <li><strong>Put the cloud tests in CI, and gate the deploy on it.</strong> One <code>--exclude</code> flag plus a <code>needs:</code>. 155 tests currently produce no signal on anyone’s pull request — including the new wire-contract suite (§01), whose entire value is failing before a shape change reaches a client.</li>
+      <li><strong>Give quiet hours a per-user timezone.</strong> Newly urgent: push delivery went live on 2026-08-13, so the UTC-only window is no longer a latent rudeness — it is a 1 a.m. notification waiting for a user far enough from Greenwich (§26).</li>
       <li><strong>Add the post-deploy smoke journey</strong> — sign up, capture, fetch a trail, delete. The nine-commit batch in §36 contained two P0 composition failures that unit tests structurally cannot catch and one scripted journey would have. This has moved up the list on evidence.</li>
       <li><strong>Add rollback on readiness-probe failure.</strong> Presently a bad deploy stays live and the pipeline merely turns red.</li>
       <li><strong>Fix D17</strong> before the entity table grows further — the backfill gets more expensive every day it runs live.</li>
@@ -6948,10 +7202,10 @@ app.<span class="c-fn">use</span>(<span class="c-str">'*'</span>, <span class="c
 <footer>
   <p><strong>RecoMe — The Complete Architecture Book</strong><br/>
   HLD · LLD · Infrastructure · Scale · Judgement</p>
-  <p>Verified against the working tree at commit <code style="font-family:var(--mono)">d056805</code> · production probed live ·
-  2026-08-11<br/>
-  Extension 147/147 tests · cloud 147 passing / 3 skipped · typecheck and lint clean<br/>
-  Four previously-unrecorded defects (D14–D17) and one security finding were discovered while writing this document.<br/>Nine commits landed during the writing; §36 and §37 record them.</p>
+  <p>Verified against the working tree at commit <code style="font-family:var(--mono)">1fb0d7d</code> · production probed live ·
+  2026-08-13<br/>
+  Extension 166/166 tests · cloud 155 passing / 3 skipped · typecheck and lint clean<br/>
+  Four previously-unrecorded defects (D14–D17) and one security finding were discovered while writing this document.<br/>Twenty-one commits landed during the writing, across two verification passes; §36 and §37 record them — including one defect in a claim this book had made about its own architecture (§37.12).</p>
   <p style="margin-top:18px;color:var(--text-faint)">Written with <span class="heart">♥</span> and a great deal of reading the actual code.</p>
 </footer>
 
