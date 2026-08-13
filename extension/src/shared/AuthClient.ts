@@ -68,6 +68,12 @@ async function getRefreshToken(): Promise<string | null> {
   return (r[STORAGE_KEYS.refresh_token] as string | undefined) ?? null;
 }
 
+/** True when a refresh token exists — i.e. the user has a session, even if
+ *  the access token is momentarily unavailable. */
+export async function hasRefreshToken(): Promise<boolean> {
+  return (await getRefreshToken()) !== null;
+}
+
 /**
  * Refresh the access token using the stored refresh token. De-duped: if a
  * refresh is already in flight, callers share that single promise.
@@ -91,7 +97,13 @@ export async function refreshAccessToken(): Promise<string | null> {
 
       if (!res.ok) {
         log.warn(`refresh failed: ${res.status}`);
-        await clearTokens();
+        // Only an explicit rejection of the refresh token means the session
+        // is dead. Transient failures — cold-start 502/503 from scale-to-zero,
+        // 429 from the API's own rate limiter, any 5xx — must NOT clear
+        // tokens: that silently signed users out on server blips.
+        if (res.status === 400 || res.status === 401 || res.status === 403) {
+          await clearTokens();
+        }
         return null;
       }
 

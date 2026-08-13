@@ -11,7 +11,7 @@
  */
 
 import { getCloudUrl } from './constants';
-import { getAccessToken, refreshAccessToken } from './AuthClient';
+import { getAccessToken, hasRefreshToken, refreshAccessToken } from './AuthClient';
 import type { Signal, AgentEvent, AgentEventKind, Platform, SignalKind } from './types';
 import { createLogger } from './Logger';
 
@@ -37,6 +37,22 @@ async function authedFetch(
   // Access tokens live 15 minutes. If ours is gone, refresh BEFORE firing a
   // headerless request — the old order guaranteed a noisy 401 per expiry.
   if (!token) token = await refreshAccessToken();
+  if (!token) {
+    // Still no token: never fire a headerless request at the API. A missing
+    // refresh token means genuinely signed out (401). A present refresh token
+    // whose refresh just failed means a transient server problem (503) — the
+    // UI must NOT flip to signed-out over a cold start or rate-limit blip.
+    const signedOut = !(await hasRefreshToken());
+    return new Response(
+      JSON.stringify({
+        error: signedOut ? 'not_authenticated:401' : 'auth temporarily unavailable',
+      }),
+      {
+        status: signedOut ? 401 : 503,
+        headers: { 'content-type': 'application/json' },
+      },
+    );
+  }
 
   const headers = new Headers(init.headers);
   headers.set('content-type', 'application/json');

@@ -79,7 +79,7 @@ export function AppShell({ children, title, subtitle, actions, preface }: AppShe
             className="text-[15px] font-semibold tracking-tight"
             style={{ color: 'var(--ink)' }}
           >
-            Reco<span style={{ color: 'var(--accent)' }}>.</span>me
+            Reco<span style={{ color: 'var(--accent)' }}>Me</span>
           </span>
         </Link>
 
