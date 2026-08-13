@@ -38,7 +38,7 @@ Ordered by value-per-minute. Each unblocks work I can then finish unattended.
 
 ## 2 · Claude's build queue (in order)
 
-1. - [ ] **Store submission package** — produce the screenshots (surfaces are ready and show real data), final listing-copy audit against the shipped product, submit `recome-extension-2.0.0.zip`. Days-not-weeks from "in review."
+1. - [ ] **Store submission package** — produce the screenshots (surfaces are ready and show real data), final listing-copy audit against the shipped product, submit `recome-extension-2.0.1.zip`. Days-not-weeks from "in review."
 2. - [x] **Onboarding polish** _(done 2026-08-13)_ — sidebar "Getting started" walkthrough: Sign in → Capture your first page → Meet your first insight. Steps check off live; first capture auto-fires a Synthesist on-demand run (a real, cited "New this week" — honest substitute for Recall, which needs ≥14-day-old signals), surfaced through the normal inbox → InsightCard path. Panel celebrates once, then retires permanently (`recome_onboarding` in chrome.storage.local).
 3. - [x] **Push delivery + digest + preference center** (D6) — ✅ 2026-08-13. VAPID keys live, delivery wired into every emission, pref center verified (digest toggle + push toggle in Settings, per-agent pause on /agents). Email half still waits on the Resend key above.
 4. - [ ] **Consumer Pro purchasable** — wire the existing Stripe checkout end-to-end in prod. (Needs Stripe keys above.)

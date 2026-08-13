@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "RecoMe",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Your personal interest graph plus a team of background agents that work it for you.",
   "permissions": ["storage", "alarms", "tabs"],
   "host_permissions": [

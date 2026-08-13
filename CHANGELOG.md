@@ -1,5 +1,45 @@
 # Changelog
 
+## [2.0.1] - 2026-08-13
+
+First release since the cloud stack went live. Everything here came from
+running the product against real pages and fixing what broke.
+
+### Added
+
+- **Getting-started walkthrough**
+  ([extension/src/surfaces/onboarding.ts](extension/src/surfaces/onboarding.ts)) —
+  sidebar panel with three live steps (sign in → capture your first page →
+  meet your first insight), persisted in `chrome.storage.local`, retiring
+  itself permanently after one celebration render. The first capture fires a
+  Synthesist run on demand so a new account gets a **real, cited** first
+  insight; Recall is not used here because it requires ≥14-day-old signals a
+  new user cannot have.
+
+### Fixed
+
+- **Sessions no longer die on server blips**
+  ([AuthClient.ts](extension/src/shared/AuthClient.ts)) — any failed token
+  refresh cleared both tokens, so a scale-to-zero cold start (502/503) or a
+  rate-limit (429) logged the user out and every later request went out with
+  no `Authorization` header. Only 400/401/403 clear tokens now; `authedFetch`
+  never fires an unauthenticated request and distinguishes signed-out (401)
+  from refresh-unavailable (503).
+- **InsightCard no longer spans the viewport**
+  ([InsightCard.ts](extension/src/surfaces/InsightCard.ts)) — it was anchored
+  to both viewport edges and styled from `document.head`, where the host
+  page's CSS collapsed its layout. Rebuilt with inline fixed geometry inside a
+  shadow root; hosts from older versions are detected and rebuilt so open tabs
+  heal without a reload.
+- **Decision greeting grammar** — "I can pull your prior research for you're
+  looking at …" was two fragments concatenated into one sentence.
+
+### Changed
+
+- `AgentRunOnDemandPayload.agent` accepts `synthesist`.
+- Client types are now pinned to server responses by the wire-contract
+  fixtures in [contracts/](contracts/), so shape drift fails compilation.
+
 ## [2.0.0] - 2026-05-30
 
 ### Architectural reset
