@@ -43,3 +43,5 @@ docs/private/
 *.sql
 *.sqlite
 *.db
+# Store-listing screenshots — raw captures contain personal data; keep out of git
+screenshots/
