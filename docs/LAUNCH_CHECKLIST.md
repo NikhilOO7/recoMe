@@ -31,6 +31,11 @@ Ordered by value-per-minute. Each unblocks work I can then finish unattended.
       `flyctl secrets set RESEND_API_KEY=… -a recome-api`.
       _Unblocks:_ build-queue item 3 (weekly digest email — the worker already runs Sundays and silently no-ops today without the key).
 
+- [ ] **Keepa API key** (when ready to light up Concierge — [keepa.com/#!api](https://keepa.com/#!api), ~€19/mo basic tier) →
+      `flyctl secrets set KEEPA_API_KEY=… INTELLIGENCE_AGENTS_PRICE_VENDOR=keepa -a recome-api`.
+      _State:_ the agent is fully built (event-triggered PDP checks + 6-hourly watchlist sweeps + ASIN resolution from Amazon URLs, shipped 2026-08-13) but deliberately dark in prod — the stub price vendor is hard-blocked there so we never show a user an illustrative price (principle 7). Keepa is Amazon-only; Walmart/eBay quotes need a second vendor later.
+      _Then:_ Claude verifies a live deal_drop end-to-end and flips the landing page's Concierge card from "coming soon" to live.
+
 ## 2 · Claude's build queue (in order)
 
 1. - [ ] **Store submission package** — produce the screenshots (surfaces are ready and show real data), final listing-copy audit against the shipped product, submit `recome-extension-2.0.0.zip`. Days-not-weeks from "in review."
