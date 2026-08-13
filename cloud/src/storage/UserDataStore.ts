@@ -7,6 +7,8 @@ export interface UserProfile {
   displayName: string | null;
   avatarUrl: string | null;
   tier: Tier;
+  /** Weekly email digest preference (preference center, D6). */
+  digestEnabled: boolean;
   createdAt: string;
   lastSyncAt: string | null;
 }
@@ -20,7 +22,7 @@ export class UserDataStore {
 
   async updateProfile(
     userId: string,
-    data: { displayName?: string; avatarUrl?: string },
+    data: { displayName?: string; avatarUrl?: string; digestEnabled?: boolean },
   ): Promise<UserProfile | null> {
     const user = await prisma.user.update({
       where: { id: userId },
@@ -89,6 +91,7 @@ export class UserDataStore {
       displayName: user.displayName,
       avatarUrl: user.avatarUrl,
       tier: user.tier,
+      digestEnabled: user.digestEnabled,
       createdAt: user.createdAt.toISOString(),
       lastSyncAt: user.lastSyncAt?.toISOString() ?? null,
     };

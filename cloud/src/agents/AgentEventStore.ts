@@ -1,6 +1,7 @@
 import { prisma } from '../db.js';
 import type { AgentEmission } from './types.js';
 import { logger } from '../observability/logger.js';
+import { getPushService } from '../notifications/PushService.js';
 
 /**
  * Persists AgentEvents with dedupe. The (userId, dedupeKey) window
@@ -50,6 +51,20 @@ export class AgentEventStore {
       },
       select: { id: true },
     });
+
+    // Best-effort push delivery (D6 — this call site was documented in
+    // PushService but never existed, so subscriptions accumulated and
+    // nothing was ever sent). Fire-and-forget: a push failure must never
+    // affect the emission path.
+    void getPushService()
+      .notifyUser(userId, {
+        title: emit.title,
+        ...(emit.body ? { body: emit.body.slice(0, 300) } : {}),
+        ...(emit.actionUrl ? { url: emit.actionUrl } : {}),
+        eventId: row.id,
+      })
+      .catch((err) => logger.warn({ err, userId, agent }, 'push delivery failed'));
+
     return row.id;
   }
 

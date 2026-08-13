@@ -9,6 +9,7 @@ import type { Tier } from '@prisma/client';
 const updateProfileSchema = z.object({
   displayName: z.string().min(1).max(100).optional(),
   avatarUrl: z.string().url().optional(),
+  digestEnabled: z.boolean().optional(),
 });
 
 const registerDeviceSchema = z.object({
