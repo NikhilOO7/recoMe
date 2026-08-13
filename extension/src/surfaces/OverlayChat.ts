@@ -109,10 +109,13 @@ function build(): void {
 function seedGreeting(): void {
   const platform = detectPlatform();
   const ex = createCapture(platform).extract();
-  const where = ex?.pageTitle ? `you're looking at "${ex.pageTitle.slice(0, 80)}".` : 'this page.';
+  const title = ex?.pageTitle?.trim();
+  const opener = title
+    ? `You're looking at "${title.length > 80 ? `${title.slice(0, 80)}…` : title}" — I can pull what your graph already knows about it.`
+    : 'I can pull your prior research on this page.';
   pushTurn({
     role: 'agent',
-    text: `I can pull your prior research for ${where}\n\nAsk me about a decision, a comparison, or what your graph says about the topic.`,
+    text: `${opener}\n\nAsk me about a decision, a comparison, or what your graph says about the topic.`,
   });
 }
 
