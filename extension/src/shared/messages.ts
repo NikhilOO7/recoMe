@@ -69,7 +69,7 @@ export interface InboxFeedbackPayload {
 }
 
 export interface AgentRunOnDemandPayload {
-  agent: 'concierge' | 'recall' | 'curator' | 'decision' | 'curriculum';
+  agent: 'concierge' | 'recall' | 'curator' | 'decision' | 'curriculum' | 'synthesist';
   event?: Record<string, unknown>;
   trigger?: 'scheduled' | 'event' | 'on_demand';
 }

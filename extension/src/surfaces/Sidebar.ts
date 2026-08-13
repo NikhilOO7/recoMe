@@ -9,8 +9,21 @@
  * mutates by targeted text replacement on a fixed structure.
  */
 
-import { sendMessage, type GetIntentsPayload, type GetInboxPayload } from '@shared/messages';
+import {
+  sendMessage,
+  type GetIntentsPayload,
+  type GetInboxPayload,
+  type AgentRunOnDemandPayload,
+} from '@shared/messages';
 import { getWebAppUrl } from '@shared/constants';
+import type { AgentRunResult } from '@shared/CloudClient';
+import {
+  onboardingSteps,
+  loadOnboarding,
+  saveOnboarding,
+  EMPTY_ONBOARDING,
+  type OnboardingState,
+} from './onboarding';
 import type { IntentRow, AgentInfo } from '@shared/CloudClient';
 import type { AgentEvent } from '@shared/types';
 import type { Workflow } from './workflows';
@@ -35,6 +48,7 @@ interface SidebarRefs {
   collapseBtn: HTMLButtonElement;
   infoBtn: HTMLButtonElement;
   helpPanel: HTMLDivElement;
+  onboardPanel: HTMLDivElement;
 }
 
 export class Sidebar {
@@ -71,6 +85,16 @@ export class Sidebar {
     // Push the queue now and re-pull intents so the topic appears live.
     void sendMessage('FLUSH_NOW', undefined).then(() => {
       setTimeout(() => void this.refresh(), 1500);
+      // Onboarding: first capture achieved → after ingestion settles, fire
+      // the starter Synthesist run (the honest "first insight" moment).
+      if (!this.onboarding.capture) {
+        this.onboarding = { ...this.onboarding, capture: true };
+        void saveOnboarding(this.onboarding);
+        this.renderOnboarding();
+      }
+      if (!this.onboarding.insight) {
+        setTimeout(() => void this.runStarterInsight(), 2500);
+      }
     });
   }
 
@@ -85,12 +109,108 @@ export class Sidebar {
     this.countdownTimer = null;
   }
 
+  private onboarding: OnboardingState = { ...EMPTY_ONBOARDING };
+  private signedIn = false;
+  private starterRunInFlight = false;
+
   mount(): void {
     if (this.refs) return;
     this.refs = this.buildShell();
     document.body.appendChild(this.refs.host);
+    void loadOnboarding().then((state) => {
+      this.onboarding = state;
+      this.renderOnboarding();
+    });
     this.refresh();
     this.refreshTimer = setInterval(() => this.refresh(), 60_000);
+  }
+
+  // ── Getting-started walkthrough (R2: sign-in → capture → insight) ──────
+  private renderOnboarding(): void {
+    if (!this.refs) return;
+    const model = onboardingSteps(this.onboarding, this.signedIn);
+    const panel = this.refs.onboardPanel;
+    if (!model) {
+      panel.style.display = 'none';
+      return;
+    }
+    panel.style.display = '';
+    panel.innerHTML = '';
+
+    const title = document.createElement('div');
+    title.className = 'rcm-panel-title';
+    title.textContent = model.complete ? 'You’re set' : 'Getting started';
+    panel.appendChild(title);
+
+    if (model.complete) {
+      const done = document.createElement('div');
+      done.className = 'rcm-onboard-done';
+      done.textContent =
+        'Your graph is live and the agents are watching it. Everything they surface lands bottom-left and in your inbox.';
+      panel.appendChild(done);
+      // Celebrate once, retire forever.
+      this.onboarding = { ...this.onboarding, dismissed: true };
+      void saveOnboarding(this.onboarding);
+      setTimeout(() => this.renderOnboarding(), 8000);
+      return;
+    }
+
+    for (const step of model.steps) {
+      const row = document.createElement('div');
+      row.className = 'rcm-onboard-step';
+      const mark = document.createElement('span');
+      mark.className = step.done ? 'rcm-onboard-mark rcm-onboard-mark-done' : 'rcm-onboard-mark';
+      mark.textContent = step.done ? '✓' : '';
+      const body = document.createElement('div');
+      const label = document.createElement('div');
+      label.className = 'rcm-onboard-label';
+      label.textContent = step.label;
+      body.appendChild(label);
+      if (!step.done && step.hint) {
+        const hint = document.createElement('div');
+        hint.className = 'rcm-onboard-hint';
+        hint.textContent = step.hint;
+        body.appendChild(hint);
+      }
+      row.appendChild(mark);
+      row.appendChild(body);
+      panel.appendChild(row);
+    }
+  }
+
+  /**
+   * The "first insight" moment: after the first capture reaches the graph,
+   * run Synthesist on demand. Its emission is REAL — built from the topic
+   * the user just captured — and surfaces via the normal inbox → InsightCard
+   * path. Retries once for ingestion lag; gives up quietly otherwise (the
+   * scheduled Sunday run will cover it).
+   */
+  private async runStarterInsight(attempt = 0): Promise<void> {
+    if (this.onboarding.insight || this.starterRunInFlight) return;
+    this.starterRunInFlight = true;
+    try {
+      const res = await sendMessage<AgentRunOnDemandPayload, AgentRunResult>('AGENT_RUN_ONDEMAND', {
+        agent: 'synthesist',
+        trigger: 'on_demand',
+      });
+      if (res.success && res.data?.status === 'succeeded') {
+        this.onboarding = { ...this.onboarding, insight: true };
+        void saveOnboarding(this.onboarding);
+        this.renderOnboarding();
+        // Force an inbox refresh so the InsightCard appears now, not at the
+        // next 2-minute poll. GET_INBOX triggers a background poll.
+        void sendMessage<GetInboxPayload, unknown>('GET_INBOX', { unseen: true });
+      } else if (attempt < 1) {
+        // Likely ingestion lag (no_trails_for_user) — one retry.
+        setTimeout(() => {
+          this.starterRunInFlight = false;
+          void this.runStarterInsight(attempt + 1);
+        }, 4000);
+        return;
+      }
+    } finally {
+      this.starterRunInFlight = false;
+    }
   }
 
   unmount(): void {
@@ -158,6 +278,10 @@ export class Sidebar {
     const agents = agentsRes.data?.agents ?? [];
     const unseen = inboxRes.data?.events?.length ?? 0;
 
+    if (!this.signedIn) {
+      this.signedIn = true;
+      this.renderOnboarding();
+    }
     this.refs.statusDot.style.background = '#10b981';
     this.refs.statusLabel.textContent = 'RecoMe Active';
     // Never clobber a live capture countdown/confirmation with telemetry.
@@ -176,6 +300,10 @@ export class Sidebar {
 
   private renderSignedOut(): void {
     if (!this.refs) return;
+    if (this.signedIn) {
+      this.signedIn = false;
+      this.renderOnboarding();
+    }
     this.refs.statusDot.style.background = '#94a3b8';
     this.refs.statusLabel.textContent = 'Signed out';
     this.refs.nodesLine.textContent = '';
@@ -286,6 +414,7 @@ export class Sidebar {
             Learn more: how RecoMe works →
           </a>
         </div>
+        <div class="rcm-panel rcm-onboard" style="display:none"></div>
         <div class="rcm-status-lines">
           <div class="rcm-nodes"></div>
           <div class="rcm-session"></div>
@@ -319,6 +448,7 @@ export class Sidebar {
     const collapseBtn = root.querySelector('.rcm-collapse') as HTMLButtonElement;
     const infoBtn = root.querySelector('.rcm-info') as HTMLButtonElement;
     const helpPanel = root.querySelector('.rcm-help') as HTMLDivElement;
+    const onboardPanel = root.querySelector('.rcm-onboard') as HTMLDivElement;
 
     // The web-app base is config (storage-overridable), so the help link is
     // resolved at mount rather than hardcoded in the template.
@@ -354,6 +484,7 @@ export class Sidebar {
       collapseBtn,
       infoBtn,
       helpPanel,
+      onboardPanel,
     };
   }
 }
@@ -625,6 +756,29 @@ const SIDEBAR_CSS = `
   line-height: 1.55;
   padding: 2px 0;
 }
+/* ── Getting started (onboarding walkthrough) ───────────────────── */
+.rcm-onboard-step {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.rcm-onboard-step:last-child { border-bottom: 0; }
+.rcm-onboard-mark {
+  width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.25);
+  color: #0a0d12;
+  font-size: 11px; font-weight: 800;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.rcm-onboard-mark-done {
+  background: #5eead4;
+  border-color: #5eead4;
+}
+.rcm-onboard-label { font-size: 12.5px; font-weight: 600; color: rgba(255,255,255,0.88); }
+.rcm-onboard-hint { font-size: 11.5px; color: rgba(255,255,255,0.5); margin-top: 1px; line-height: 1.45; }
+.rcm-onboard-done { font-size: 12px; color: rgba(255,255,255,0.75); line-height: 1.55; padding-top: 6px; }
+
 .rcm-intents-demo-badge {
   display: inline-block;
   font-size: 10px;

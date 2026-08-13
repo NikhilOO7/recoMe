@@ -47,6 +47,8 @@ export const STORAGE_KEYS = {
   // Onboarding flags — set once, persisted to suppress repeat first-run UI.
   welcome_popup_dismissed: 'recome_welcome_popup_dismissed',
   welcome_card_shown: 'recome_welcome_card_shown',
+  /** Onboarding walkthrough state: { capture, insight, dismissed } booleans. */
+  onboarding: 'recome_onboarding',
 } as const;
 
 // Default user settings (written on install)
