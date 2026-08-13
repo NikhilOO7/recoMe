@@ -37,7 +37,7 @@ Ordered by value-per-minute. Each unblocks work I can then finish unattended.
 2. - [ ] **Onboarding polish** — R2 exit metric is _sign-in → first capture → first Recall within 10 minutes_. Build the first-run sequence that walks a new user to their first captured topic (the liveness countdown/pulse already does the heavy lifting).
 3. - [x] **Push delivery + digest + preference center** (D6) — ✅ 2026-08-13. VAPID keys live, delivery wired into every emission, pref center verified (digest toggle + push toggle in Settings, per-agent pause on /agents). Email half still waits on the Resend key above.
 4. - [ ] **Consumer Pro purchasable** — wire the existing Stripe checkout end-to-end in prod. (Needs Stripe keys above.)
-5. - [ ] **Hygiene pair:** remove Taste Twins routes/models (D10, ADR-0012 anti-feature) · contract-test harness (client API types asserted against recorded server responses in CI — kills the shape-drift bug class that bit us twice).
+5. - [x] **Hygiene pair** — ✅ 2026-08-13. Taste Twins removed end-to-end (D10); wire-contract harness live in `contracts/` (cloud regenerates fixtures from real handlers, extension type-checks the same fixtures — both fail CI on drift). Bonus: /ready now probes Postgres, so a dead-DB deploy can no longer report green. Known deferral: per-instance rate limits across 2 machines (Redis-backed store when traffic warrants).
 6. - [ ] **Then R3 opens:** semantic ingest (LLM entity extraction — the structural fix for junk topics like `men`), vector read path, cross-platform linking (YouTube↔Amazon), mobile connectors v1 (Spotify + Reddit OAuth, security design doc first) + Takeout imports.
 
 ## 3 · Watchpoints this week (eyes only, no action)
