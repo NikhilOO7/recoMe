@@ -7,12 +7,11 @@ import { cors } from 'hono/cors';
 import { logger as honoLogger } from 'hono/logger';
 import { serve } from '@hono/node-server';
 import { getConfig } from './config.js';
+import { prisma } from './db.js';
 import { createAuthRoutes } from './auth/AuthController.js';
 import { createSyncRoutes } from './sync/SyncController.js';
 import { createBillingRoutes } from './billing/BillingController.js';
 import { createUserRoutes } from './storage/UserController.js';
-import { createPackRoutes } from './social/PackController.js';
-import { createTasteTwinRoutes } from './tastetwin/TasteTwinController.js';
 import { createAdminRoutes } from './admin/AdminController.js';
 import { createIntelligenceRoutes } from './intelligence/IntelligenceController.js';
 import { createV1Routes } from './iaas/V1Controller.js';
@@ -66,10 +65,23 @@ app.use('*', ipRateLimiter({ maxRequests: 300 }));
 app.get('/live', (c) => c.json({ status: 'ok' }));
 app.get('/health', (c) => c.json({ status: 'ok', version: '1.0.0' }));
 app.get('/ready', async (c) => {
+  // Postgres is load-bearing for EVERY request path (auth, events, billing)
+  // — a readiness probe that skips it reports green on a dead database,
+  // which is exactly how the 2026-08-10 outage shipped unnoticed.
+  let postgres = true;
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+  } catch {
+    postgres = false;
+  }
+
   const intel = maybeIntelligence();
-  if (!intel) return c.json({ ready: true, intelligence: 'disabled' });
+  if (!intel) {
+    return c.json({ ready: postgres, postgres, intelligence: 'disabled' }, postgres ? 200 : 503);
+  }
   const h = await intel.health();
-  return c.json({ ready: h.ok, ...h }, h.ok ? 200 : 503);
+  const ready = h.ok && postgres;
+  return c.json({ ready, postgres, ...h }, ready ? 200 : 503);
 });
 
 // ── Routes ───────────────────────────────────────────────────────────────────
@@ -78,8 +90,7 @@ app.route('/auth', createAuthRoutes());
 app.route('/sync', createSyncRoutes());
 app.route('/billing', createBillingRoutes());
 app.route('/user', createUserRoutes());
-app.route('/packs', createPackRoutes());
-app.route('/twins', createTasteTwinRoutes());
+// /packs + /twins removed 2026-08-13 (D10, ADR-0012 anti-feature) — code in graveyard.
 // Legacy /agent (singular) chat stub archived to graveyard 2026-05-30.
 // All real agent surfaces live under /intelligence/agents/* — see
 // docs/architecture/0016-lld.md §1 and dev-plan WS-3 P2.5.

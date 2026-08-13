@@ -1,0 +1,25 @@
+{
+  "scores": [
+    {
+      "id": "B0RELEVANT",
+      "score": 0.85,
+      "verdict": "relevant",
+      "reason": "Strong match: you've been researching standing desks across multiple platforms.",
+      "matchedTopics": ["standing desks"]
+    },
+    {
+      "id": "B0NEUTRAL",
+      "score": 0,
+      "verdict": "neutral",
+      "reason": "No signal from your graph yet — neutral.",
+      "matchedTopics": []
+    },
+    {
+      "id": "B0FILTERED",
+      "score": 0.85,
+      "verdict": "filtered",
+      "reason": "Unverified marketing claims detected — dimmed by the claim filter.",
+      "matchedTopics": ["standing desks"]
+    }
+  ]
+}

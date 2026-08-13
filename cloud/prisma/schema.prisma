@@ -43,9 +43,6 @@ model User {
   syncStates    SyncState[]
   devices       Device[]
 
-  // Taste Twin
-  tasteProfile  TasteProfile?
-
   // ConciergeAgent watchlist (see WatchlistItem below)
   watchlistItems WatchlistItem[]
 
@@ -135,79 +132,8 @@ model UsageRecord {
   @@index([userId])
 }
 
-// ── Taste Twin Network ──────────────────────────────────────────────────────
-
-/// User's anonymized taste vector — encrypted interest embeddings for matching.
-/// Privacy: only hashed/bucketed signals are stored; raw interests never leave the device.
-model TasteProfile {
-  id            String    @id @default(cuid())
-  userId        String    @unique
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  /// Consent flag — must be true before any matching occurs
-  consentGiven  Boolean   @default(false)
-  consentAt     DateTime?
-
-  /// Anonymized taste vector (JSON array of bucketed interest signals)
-  tasteVector   Json?
-
-  /// Visibility settings
-  isDiscoverable Boolean  @default(true)
-
-  updatedAt     DateTime  @updatedAt
-  createdAt     DateTime  @default(now())
-}
-
-/// Computed similarity match between two users.
-/// Always stored with userId1 < userId2 (canonical ordering).
-model TwinMatch {
-  id            String    @id @default(cuid())
-  userId1       String
-  userId2       String
-  similarityScore Float
-  sharedBuckets   Int       @default(0)
-
-  /// Whether each user has accepted the match
-  user1Accepted Boolean   @default(false)
-  user2Accepted Boolean   @default(false)
-
-  /// Abuse control: report/block flags
-  reportedBy    String?
-  blockedAt     DateTime?
-
-  computedAt    DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  recommendations TwinRecommendation[]
-
-  @@unique([userId1, userId2])
-  @@index([userId1])
-  @@index([userId2])
-  @@index([similarityScore])
-}
-
-/// Recommendations surfaced from a twin's activity.
-/// Never reveals the twin's identity — only the recommendation content.
-model TwinRecommendation {
-  id            String    @id @default(cuid())
-  matchId       String
-  match         TwinMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  recipientId   String
-  /// Anonymized recommendation: topic, platform, reason — no PII
-  title         String
-  body          String
-  platform      String?
-  relevanceScore Float    @default(0)
-
-  actedOn       Boolean   @default(false)
-  dismissedAt   DateTime?
-  createdAt     DateTime  @default(now())
-
-  @@index([recipientId])
-  @@index([matchId])
-}
-
 // ── Admin: Feature Flags ────────────────────────────────────────────────────
+// (Taste Twin models removed 2026-08-13 — D10, ADR-0012 anti-feature.)
 
 model FeatureFlag {
   id            String    @id @default(cuid())

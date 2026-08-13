@@ -1,0 +1,65 @@
+{
+  "enabled": true,
+  "agents": [
+    {
+      "name": "recall",
+      "displayName": "Recall",
+      "triggers": ["event"],
+      "enabled": true,
+      "paused": false,
+      "pausedReason": null,
+      "lastRunAt": "2026-08-13T08:00:00.000Z",
+      "lastEmittedAt": "2026-08-12T09:00:00.000Z"
+    },
+    {
+      "name": "concierge",
+      "displayName": "Concierge",
+      "triggers": ["event", "scheduled"],
+      "enabled": false,
+      "paused": true,
+      "pausedReason": "user",
+      "lastRunAt": null,
+      "lastEmittedAt": null
+    },
+    {
+      "name": "curator",
+      "displayName": "Curator",
+      "triggers": ["scheduled"],
+      "enabled": true,
+      "paused": false,
+      "pausedReason": null,
+      "lastRunAt": null,
+      "lastEmittedAt": null
+    },
+    {
+      "name": "decision",
+      "displayName": "Decision",
+      "triggers": ["on_demand"],
+      "enabled": true,
+      "paused": false,
+      "pausedReason": null,
+      "lastRunAt": null,
+      "lastEmittedAt": null
+    },
+    {
+      "name": "curriculum",
+      "displayName": "Curriculum",
+      "triggers": ["on_demand"],
+      "enabled": true,
+      "paused": false,
+      "pausedReason": null,
+      "lastRunAt": null,
+      "lastEmittedAt": null
+    },
+    {
+      "name": "synthesist",
+      "displayName": "Synthesist",
+      "triggers": ["scheduled", "on_demand"],
+      "enabled": true,
+      "paused": false,
+      "pausedReason": null,
+      "lastRunAt": null,
+      "lastEmittedAt": null
+    }
+  ]
+}

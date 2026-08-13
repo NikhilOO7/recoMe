@@ -1,0 +1,12 @@
+{
+  "sources": [
+    {
+      "kind": "topic",
+      "id": "standing desks",
+      "label": "standing desks"
+    }
+  ],
+  "actionUrl": null,
+  "dedupeKey": "decision:standing desks",
+  "llm": false
+}
